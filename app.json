@@ -1,0 +1,10 @@
+{
+    "name": "BrightIdDiscordBot",
+    "description": "A barebones Node.js app using Express",
+    "repository": "https://github.com/ShenaniganDApp/brightid-discord-bot",
+    "logo": "https://raw.githubusercontent.com/BrightID/BrightID/master/images/logo.png",
+    "env": {
+      "DISCORD_API_TOKEN": "YOUR_DISCORD_API_TOKEN",
+      "WHITELISTED_CHANNELS": "*"
+    }
+  }
