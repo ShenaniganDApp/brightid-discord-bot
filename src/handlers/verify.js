@@ -11,11 +11,11 @@ const verifiedUsers = require('../verifiedUsers')
 module.exports = async function verify(member) {
   const ID = UUID.v5(member.id, process.env.UUID_NAMESPACE)
   const role = member.guild.roles.cache.find(r => r.name === 'Verified')
-  //   if (verifiedUsers["contextIds"].includes(ID)) {
-  //     member.roles.add(role)
-  //     member.send(`We recognized you! You're now a verified user in ${member.guild.name}`)
-  //     return
-  //   }
+    if (verifiedUsers["contextIds"].includes(ID)) {
+      member.roles.add(role)
+      member.send(`I recognize you! You're now a verified user in ${member.guild.name}`)
+      return
+    }
   const deepLink = `${BRIGHT_ID_APP_DEEPLINK}/${ID}`
   const generateQR = async uri => {
     try {

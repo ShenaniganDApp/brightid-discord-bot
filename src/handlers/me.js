@@ -20,19 +20,22 @@ module.exports = async function me(member) {
       member.send(
         "We recognized you! You're now a verified BrightID user on Discord.",
       )
-      fs.readFile('./src/verifiedUsers.json', 'utf8', function readFileCallback(
-        err,
-        data,
-      ) {
-        if (err) {
-          console.log(err)
-        } else {
-          obj = JSON.parse(data) //now it an object
-          obj.contextIds.push(ID) //add some data
-          json = JSON.stringify(obj) //convert it back to json
-          fs.writeFile('./src/verifiedUsers.json', json, 'utf8', () => {}) // write it back
-        }
-      })
+      if (!verifiedUsers['contextIds'].includes(ID)) {
+        fs.readFile(
+          './src/verifiedUsers.json',
+          'utf8',
+          function readFileCallback(err, data) {
+            if (err) {
+              console.log(err)
+            } else {
+              obj = JSON.parse(data) //now it an object
+              obj.contextIds.push(ID) //add some data
+              json = JSON.stringify(obj) //convert it back to json
+              fs.writeFile('./src/verifiedUsers.json', json, 'utf8', () => {}) // write it back
+            }
+          },
+        )
+      }
     } else {
       member.send('You must be verified for this role.')
     }
