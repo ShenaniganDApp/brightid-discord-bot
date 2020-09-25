@@ -1,26 +1,30 @@
 {
-	"name": "brightid-discord-bot",
-	"version": "1.0.0",
-	"description": "Bot to assign bright-id verified role",
-	"main": "src/index.js",
-	"scripts": {
-		"lint": "npx eslint ./src",
-		"test": "npx jest",
-		"start": "node src/index.js",
-		"dev": "nodemon src/index.js"
-	},
-	"author": "youngkidwarrior",
-	"license": "GPL-3.0-or-later",
-	"devDependencies": {
-		"nodemon": "^2.0.4",
-		"prettier": "^2.1.2"
-	},
-	"dependencies": {
-		"discord.js": "^12.3.1",
-		"dotenv": "^8.2.0",
-		"fast-json-stable-stringify": "^2.1.0",
-		"qrcode": "^1.4.4",
-		"tweetnacl": "^1.0.3",
-		"tweetnacl-util": "^0.15.1"
-	}
+  "name": "brightid-discord-bot",
+  "version": "1.0.0",
+  "description": "Bot to assign bright-id verified role",
+  "main": "src/index.js",
+  "scripts": {
+    "lint": "npx eslint ./src",
+    "test": "npx jest",
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "prettify": "prettier . --write"
+  },
+  "author": "youngkidwarrior",
+  "license": "GPL-3.0-or-later",
+  "devDependencies": {
+    "nodemon": "^2.0.4",
+    "prettier": "^2.1.2"
+  },
+  "dependencies": {
+    "canvas": "^2.6.1",
+    "discord.js": "^12.3.1",
+    "dotenv": "^8.2.0",
+    "fast-json-stable-stringify": "^2.1.0",
+    "node-fetch": "^2.6.1",
+    "qrcode": "^1.4.4",
+    "tweetnacl": "^1.0.3",
+    "tweetnacl-util": "^0.15.1",
+    "uuid": "^8.3.0"
+  }
 }

@@ -8,7 +8,7 @@ const ENV_VARS = {
     'YOUR_DISCORD_API_TOKEN',
     true,
   ],
-  SENTRY_DSN: [process.env.SENTRY_DSN, '', false],
+  UUID_NAMESPACE: [process.env.UUID_NAMESPACE, 'YOUR_UUID_NAMESPACE', true],
   WHITELISTED_CHANNELS: [process.env.WHITELISTED_CHANNELS, '*', false],
 }
 
