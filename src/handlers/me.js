@@ -2,7 +2,6 @@ const fs = require('fs')
 const getBrightIdVerification = require('../services/verificationInfo')
 const UUID = require('uuid')
 const verifiedUsers = require("../verifiedUsers.json")
-
 module.exports = async function me(member) {
   const ID = UUID.v5(member.id, process.env.UUID_NAMESPACE)
   const role = member.guild.roles.cache.find(r => r.name === 'Verified')
@@ -17,11 +16,11 @@ module.exports = async function me(member) {
       )
     }
     if (verificationInfo.userVerified) {
-      member.roles.add(role)
-      member.send(
-        "We recognized you! You're now a verified BrightID user on Discord.",
-      )
       if (!verifiedUsers['contextIds'].includes(ID)) {
+        member.roles.add(role)
+        member.send(
+          "We recognized you! You're now a verified BrightID user on Discord.",
+        )
         fs.readFile(
           './src/verifiedUsers.json',
           'utf8',
