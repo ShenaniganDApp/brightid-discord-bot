@@ -4,6 +4,7 @@ const Discord = require('discord.js')
 const Canvas = require('canvas')
 const {
   BRIGHT_ID_APP_DEEPLINK,
+  BRIGHTID_LINK_VERIFICATION_ENDPOINT,
 } = require('../endpoints')
 
 const { QRCodeError } = require('../error-utils')
@@ -21,6 +22,7 @@ module.exports = async function verify(member) {
     return
   }
   const deepLink = `${BRIGHT_ID_APP_DEEPLINK}/${ID}`
+  const verifyUrl = `${BRIGHTID_LINK_VERIFICATION_ENDPOINT}/${ID}`
   const generateQR = async uri => {
     try {
       const canvas = Canvas.createCanvas(700, 250)
@@ -29,13 +31,13 @@ module.exports = async function verify(member) {
         canvas.toBuffer(),
         'qrcode.png',
       )
-      member.send(`Connect with BrightID\n ${deepLink}`, attachment)
+      member.send(`Connect with BrightID\n ${verifyUrl}`, attachment)
       member.send(
         'After linking in the BrightID app, type the `!me` command in any channel to add the **Verified** role\n If you are not verified yet, consider joining one of these communities https://explorer.brightid.org/apps/index.html ',
       )
     } catch (err) {
       console.log('err: ', err)
-      throw new QRCodeError(`QRCode could not be generated from ${deepLink}`)
+      throw new QRCodeError(`QRCode could not be generated from ${uri}`)
     }
   }
   await generateQR(deepLink)
