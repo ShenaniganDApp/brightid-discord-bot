@@ -1,5 +1,3 @@
-# brightid-discord-bot
-
 :robot: BrightID Bot to verify users in Discord channels automatically
 
 ## Quickstart
