@@ -23,7 +23,7 @@ module.exports = async function verify(member) {
     return
   }
   const deepLink = `${BRIGHT_ID_APP_DEEPLINK}/${ID}`
-  const url = `${BRIGHTID_LINK_VERIFICATION_ENDPOINT}/${CONTEXT_ID}/${ID}`
+  const url = `${BRIGHTID_LINK_VERIFICATION_ENDPOINT}/${ID}`
   const generateQR = async uri => {
     try {
       const canvas = Canvas.createCanvas(700, 250)
