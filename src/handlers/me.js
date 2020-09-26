@@ -2,6 +2,8 @@ const fs = require('fs')
 const getBrightIdVerification = require('../services/verificationInfo')
 const UUID = require('uuid')
 const verifiedUsers = require("../verifiedUsers.json")
+const {VerificationError} = require("../error-utils")
+
 module.exports = async function me(member) {
   const ID = UUID.v5(member.id, process.env.UUID_NAMESPACE)
   const role = member.guild.roles.cache.find(r => r.name === 'Verified')
