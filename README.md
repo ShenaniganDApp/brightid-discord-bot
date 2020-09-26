@@ -1,4 +1,6 @@
-:robot: BrightID Bot to verify users in Discord channels automatically.
+# BrightID Discord Bot
+
+:robot: BrightID Bot to verify users in Discord.
 
 <a href="https://bot.brightid.org">Click here to Invite BrightID Bot to your server</a>
 
