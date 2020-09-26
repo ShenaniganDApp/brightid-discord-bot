@@ -4,9 +4,7 @@
 
 ## Quickstart
 
-<a href="https://heroku.com/">
-<img src="https://www.herokucdn.com/deploy/button.svg" alt="Deploy">
-</a>
+<a href="https://bot.brightid.org">Click here to Invite BrightID Bot to your server</a>
 
 ## Quick end-user guide 
 
