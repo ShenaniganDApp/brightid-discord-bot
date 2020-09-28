@@ -12,6 +12,13 @@ Interacting with the bot is simple; it offers 2 commands
 
 - "!me": Adds the "Verified" role to verified users
 
+### To use BrightID Bot:
+
+1. Type !verify
+2. Scan the code (or click the link) BrightID Bot shows you
+3. Use an app that has sponsorships. See https://explorer.brightid.org/apps/index.html
+4. Type !me
+
 ## Developer quick start 
 
 `npm run dev` will launch the bot locally, with hot reloading included.
