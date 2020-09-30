@@ -3,10 +3,24 @@ const getBrightIdVerification = require('../services/verificationInfo')
 const UUID = require('uuid')
 const verifiedUsers = require('../verifiedUsers.json')
 const { VerificationError } = require('../error-utils')
+const { log } = require('../utils')
+
 
 module.exports = async function me(member) {
   const ID = UUID.v5(member.id, process.env.UUID_NAMESPACE)
   const role = member.guild.roles.cache.find(r => r.name === 'Verified')
+  fs.readFile(
+    './src/verifiedUsers.json',
+    'utf8',
+    function readFileCallback(err, data) {
+      if (err) {
+        console.log(err)
+      } else {
+        const { contextIds } = JSON.parse(data)
+        log(contextIds.length)
+      }
+    },
+  )
   try {
     const verificationInfo = await getBrightIdVerification(member)
     if (verificationInfo.userAddresses.length > 1) {
@@ -47,19 +61,6 @@ module.exports = async function me(member) {
     } else {
       member.send('You must be verified for this role.')
     }
-
-    fs.readFile(
-      './src/verifiedUsers.json',
-      'utf8',
-      function readFileCallback(err, data) {
-        if (err) {
-          console.log(err)
-        } else {
-          const { contextIds } = JSON.parse(data)
-          console.log(contextIds.length)
-        }
-      },
-    )
   } catch (err) {
     throw new Error(err)
   }
