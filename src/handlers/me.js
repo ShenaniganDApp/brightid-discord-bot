@@ -46,6 +46,7 @@ module.exports = async function me(member) {
               member.send(
                 `We recognized you! You are the ${obj.contextIds.length} person to be verified using our bot.`,
               )
+              json = JSON.stringify(obj)
               fs.writeFile('./src/verifiedUsers.json', json, 'utf8', () => {})
             }
           },
