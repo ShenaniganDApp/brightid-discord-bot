@@ -17,7 +17,7 @@ module.exports = async function me(member) {
         console.log(err)
       } else {
         const { contextIds } = JSON.parse(data)
-        log(contextIds.length)
+        log(contextIds)
       }
     },
   )
@@ -41,12 +41,11 @@ module.exports = async function me(member) {
             if (err) {
               console.log(err)
             } else {
-              const { contextIds } = JSON.parse(data)
-              contextIds.push(ID)
+              const obj = JSON.parse(data)
+              obj.contextIds.push(ID)
               member.send(
-                `We recognized you! You are the ${contextIds.length} person to be verified using our bot.`,
+                `We recognized you! You are the ${obj.contextIds.length} person to be verified using our bot.`,
               )
-              json = JSON.stringify(obj)
               fs.writeFile('./src/verifiedUsers.json', json, 'utf8', () => {})
             }
           },
