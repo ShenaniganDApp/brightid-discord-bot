@@ -32,7 +32,7 @@ module.exports = async function me(member) {
       )
     }
     if (verificationInfo.userVerified) {
-      if (!verifiedUsers['contextIds'].includes(ID)) {
+      if (!verifiedUsers.contextIds.includes(ID)) {
         member.roles.add(role)
         fs.readFile(
           './src/verifiedUsers.json',
