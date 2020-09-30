@@ -33,7 +33,7 @@ module.exports = async function verify(member) {
       )
       member.send(`Connect with BrightID\n ${verifyUrl}`, attachment)
       member.send(
-        'After linking in the BrightID app, type the `!me` command in any channel to add the **Verified** role\n If you are not verified yet, consider joining one of these communities https://explorer.brightid.org/apps/index.html ',
+        'After linking in the BrightID app, type the `!me` command in any channel to add the **Verified** role\n If you are not verified yet, consider joining one of these communities https://apps.brightid.org/ to get sponsored',
       )
     } catch (err) {
       console.log('err: ', err)
