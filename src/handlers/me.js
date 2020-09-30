@@ -17,7 +17,7 @@ module.exports = async function me(member) {
         console.log(err)
       } else {
         const { contextIds } = JSON.parse(data)
-        log(contextIds)
+        log(contextIds.length)
       }
     },
   )
