@@ -1,8 +1,8 @@
 const fs = require('fs')
 const getBrightIdVerification = require('../services/verificationInfo')
 const UUID = require('uuid')
-const verifiedUsers = require("../verifiedUsers.json")
-const {VerificationError} = require("../error-utils")
+const verifiedUsers = require('../verifiedUsers.json')
+const { VerificationError } = require('../error-utils')
 
 module.exports = async function me(member) {
   const ID = UUID.v5(member.id, process.env.UUID_NAMESPACE)
@@ -20,9 +20,6 @@ module.exports = async function me(member) {
     if (verificationInfo.userVerified) {
       if (!verifiedUsers['contextIds'].includes(ID)) {
         member.roles.add(role)
-        member.send(
-          "We recognized you! You're now a verified BrightID user on Discord.",
-        )
         fs.readFile(
           './src/verifiedUsers.json',
           'utf8',
@@ -30,8 +27,12 @@ module.exports = async function me(member) {
             if (err) {
               console.log(err)
             } else {
-              obj = JSON.parse(data)
-              obj.contextIds.push(ID)
+              const { contextIds } = JSON.parse(data)
+              contextIds.push(ID)
+              member.send(
+                `We recognized you! You are the ${contextIds.length} person to be verified using our bot.`,
+              )
+              console.log(contextIds.length)
               json = JSON.stringify(obj)
               fs.writeFile('./src/verifiedUsers.json', json, 'utf8', () => {})
             }
