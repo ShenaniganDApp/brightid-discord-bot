@@ -32,7 +32,6 @@ module.exports = async function me(member) {
               member.send(
                 `We recognized you! You are the ${contextIds.length} person to be verified using our bot.`,
               )
-              console.log(contextIds.length)
               json = JSON.stringify(obj)
               fs.writeFile('./src/verifiedUsers.json', json, 'utf8', () => {})
             }
@@ -48,6 +47,19 @@ module.exports = async function me(member) {
     } else {
       member.send('You must be verified for this role.')
     }
+
+    fs.readFile(
+      './src/verifiedUsers.json',
+      'utf8',
+      function readFileCallback(err, data) {
+        if (err) {
+          console.log(err)
+        } else {
+          const { contextIds } = JSON.parse(data)
+          console.log(contextIds.length)
+        }
+      },
+    )
   } catch (err) {
     throw new Error(err)
   }
