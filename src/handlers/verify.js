@@ -40,7 +40,7 @@ module.exports = async function verify(member) {
         )
         return
       }
-      
+
       const canvas = Canvas.createCanvas(700, 250)
       await QRCode.toCanvas(canvas, uri)
       const attachment = new Discord.MessageAttachment(
@@ -72,7 +72,7 @@ module.exports = async function verify(member) {
           {
             name: '2. Link to a Sponsored App (like 1hive, gitcoin, etc)',
             value:
-              'You can link to these [sponsored apps](https://apps.brightid.org/ "https://apps.brightid.org/") once you are verified within the app. Connect your account by following the prompts in the top left of the screen and linking your ethereum wallet.',
+              'You can link to these [sponsored apps](https://apps.brightid.org/ "https://apps.brightid.org/") once you are verified within the app.',
           },
           {
             name: '3. Type the `!verify` command in any public channel',
