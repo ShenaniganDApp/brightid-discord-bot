@@ -16,7 +16,7 @@ client.on('ready', () => {
   console.log(`Logged in as ${client.user.tag}!`)
   client.guilds.cache.map(guild => {
     const fileData = JSON.parse(fs.readFileSync('./src/guildData.json'))
-    if (!fileData[guild.id].name) {
+    if (!guild.id in fileData) {
       fileData[guild.id] = {
         name: guild.name,
         role: 'Verified',
