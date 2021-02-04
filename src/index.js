@@ -22,6 +22,7 @@ client.on('ready', () => {
         role: 'Verified',
       }
     }
+    console.log(fileData);
     fs.writeFileSync('./src/guildData.json', JSON.stringify(fileData, null, 2))
   })
 })
