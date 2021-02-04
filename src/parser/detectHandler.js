@@ -3,15 +3,16 @@ const errors = require('../error-utils')
 const handlers = require('../handlers/index')
 
 const noop = () => undefined
-const commmands = ['!verify', '!me']
+const commmands = ['!verify', '!me', '!guilds', '!invite', "!role"]
 module.exports = function detectHandler(message) {
   // If it's not a flag, we can safely ignore this command.
   if (!message.includes('!')) {
     return noop()
   }
-  const command = message.split('!')[1]
+  const command = message.split(' ')[0]
+
   const receivedHandler = handlers.get(command)
-  if (!commmands.includes(message)) {
+  if (!commmands.includes(command)) {
     throw new errors.RequestHandlerError(
       `Could not find command with flag ${requestedNamespace}`,
     )

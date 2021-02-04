@@ -14,6 +14,16 @@ const parseWhitelistedChannels = require('./parser/whitelistedChannels')
 dotenv.config()
 client.on('ready', () => {
   console.log(`Logged in as ${client.user.tag}!`)
+  client.guilds.cache.map(guild => {
+    const fileData = JSON.parse(fs.readFileSync('./src/guildData.json'))
+    if (!fileData[guild.id].name) {
+      fileData[guild.id] = {
+        name: guild.name,
+        role: 'Verified',
+      }
+    }
+    fs.writeFileSync('./src/guildData.json', JSON.stringify(fileData, null, 2))
+  })
 })
 
 client.on('guildCreate', guild => {
@@ -26,6 +36,14 @@ client.on('guildCreate', guild => {
       reason: 'Verify users with BrightID',
     })
     .catch(console.error)
+  const fileData = JSON.parse(fs.readFileSync('./src/guildData.json'))
+  fileData[guild.id] = {
+    name: guild.name,
+    role: 'Verified',
+    inviteLink: '',
+    verifications: [],
+  }
+  fs.writeFileSync('./src/guildData.json', JSON.stringify(fileData, null, 2))
 })
 
 client.on('guildMemberAdd', member => {
@@ -39,6 +57,7 @@ client.on('message', message => {
   }
 
   let member = message.member
+
   try {
     const whitelistedChannels = parseWhitelistedChannels()
 
@@ -53,19 +72,19 @@ client.on('message', message => {
     }
 
     const handler = detectHandler(message.content)
-    handler(member)
+    handler(member, client, message)
     log(
       `Served command ${message.content} successfully for ${message.author.username}`,
     )
   } catch (err) {
     if (err instanceof RequestHandlerError) {
-      message.reply(
-        'Could not find the requested command. Please use !ac help for more info.',
-      )
+      message.reply('Could not find the requested command')
     } else if (err instanceof WhitelistedChannelError) {
       error('FATAL: No whitelisted channels set in the environment variables.')
     }
   }
 })
+
+module.exports = client
 
 client.login(process.env.DISCORD_API_TOKEN)

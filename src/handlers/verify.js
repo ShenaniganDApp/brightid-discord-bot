@@ -1,3 +1,4 @@
+const fs = require('fs')
 const QRCode = require('qrcode')
 const UUID = require('uuid')
 const Discord = require('discord.js')
@@ -10,9 +11,13 @@ const {
 const { QRCodeError } = require('../error-utils')
 const fetch = require('node-fetch')
 
-module.exports = async function verify(member) {
+module.exports = async function verify(member, _, message) {
   const ID = UUID.v5(member.id, process.env.UUID_NAMESPACE)
-  const role = member.guild.roles.cache.find(r => r.name === 'Verified')
+  const guild = JSON.parse(fs.readFileSync('./src/guildData.json'))[
+    message.guild.id
+  ]
+
+  const role = member.guild.roles.cache.find(r => r.name === guild.role)
 
   const deepLink = `${BRIGHT_ID_APP_DEEPLINK}/${ID}`
   const verifyUrl = `${BRIGHTID_LINK_VERIFICATION_ENDPOINT}/${ID}`
@@ -81,8 +86,7 @@ module.exports = async function verify(member) {
           },
           {
             name: `4. Scan the DM'd QR Code`,
-            value:
-              `Open the BrightID app and scan the QR code. Mobile users can click [this link](${verifyUrl}).`,
+            value: `Open the BrightID app and scan the QR code. Mobile users can click [this link](${verifyUrl}).`,
           },
           {
             name: '5. Type the `!me` command in any public channel',

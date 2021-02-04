@@ -36,6 +36,7 @@ module.exports = async function getBrightIdVerification(member) {
   const fetchVerificationInfo = async () => {
     const ID = UUID.v5(member.id, process.env.UUID_NAMESPACE)
     const endpoint = `${BRIGHTID_VERIFICATION_ENDPOINT}/${CONTEXT_ID}/${ID}?timestamp=seconds`
+    console.log('endpoint: ', endpoint)
     try {
       const rawResponse = await fetch(endpoint, {
         method: 'GET',
