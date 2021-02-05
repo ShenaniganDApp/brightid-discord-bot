@@ -5,7 +5,7 @@ const {
   marshallFileUpdate,
 } = require('./handler-utils')
 
-const { error } = require('./utils')
+const { error, log } = require('./utils')
 
 function updateGist(guildId, obj) {
   fetch(`https://api.github.com/gists/bf60347b40acabad78e3f840ba2b5c7f`, {
@@ -38,7 +38,13 @@ function updateGist(guildId, obj) {
         body: JSON.stringify(updatedBody),
       })
     })
-
+    .then(res => {
+      if ((res.status = 200)) {
+        log(`${res.status}: Updated guild Data for ${guildId}`)
+      } else {
+        log(`${res.status}: Something went wrong`)
+      }
+    })
     .catch(err => {
       error(err)
     })
