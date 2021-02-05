@@ -13,9 +13,8 @@ const fetch = require('node-fetch')
 
 module.exports = async function verify(member, _, message) {
   const ID = UUID.v5(member.id, process.env.UUID_NAMESPACE)
-  const guild = JSON.parse(fs.readFileSync('./src/guildData.json'))[
-    message.guild.id
-  ]
+  const guilds = await readGist()
+  const guild = guilds[message.guild.id]
 
   const role = member.guild.roles.cache.find(r => r.name === guild.role)
 

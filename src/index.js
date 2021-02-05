@@ -10,20 +10,19 @@ const {
 } = require('./error-utils')
 const { error, log } = require('./utils')
 const parseWhitelistedChannels = require('./parser/whitelistedChannels')
+const { updateGist, readGist } = require('./updateOrReadGist')
 
 dotenv.config()
 client.on('ready', () => {
   console.log(`Logged in as ${client.user.tag}!`)
-  client.guilds.cache.map(guild => {
-    const fileData = JSON.parse(fs.readFileSync('./src/guildData.json'))
-    if (!guild.id in fileData) {
-      fileData[guild.id] = {
+  client.guilds.cache.map(async guild => {
+    const guilds = await readGist()
+    if (!(guild.id in guilds)) {
+      updateGist(guild.id, {
         name: guild.name,
         role: 'Verified',
-      }
+      })
     }
-    console.log(fileData);
-    fs.writeFileSync('./src/guildData.json', JSON.stringify(fileData, null, 2))
   })
 })
 

@@ -2,11 +2,11 @@ const fs = require('fs')
 
 const getBrightIdVerification = require('../services/verificationInfo')
 const { VerificationError } = require('../error-utils')
+const { readGist } = require('../updateOrReadGist')
 
 module.exports = async function me(member, _, message) {
-  const guild = JSON.parse(fs.readFileSync('./src/guildData.json'))[
-    message.guild.id
-  ]
+  const guilds = await readGist()
+  const guild = guilds[message.guild.id]
   const role = member.guild.roles.cache.find(r => r.name === guild.role)
   try {
     const verificationInfo = await getBrightIdVerification(member)
