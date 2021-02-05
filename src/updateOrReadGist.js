@@ -37,10 +37,10 @@ function updateGist(guildId, obj) {
         },
         body: JSON.stringify(updatedBody),
       }).then(res => {
-        if ((res.status = 200)) {
+        if (res.status == 200) {
           log(`${res.status}: Updated guild Data for ${guildId}`)
         } else {
-          log(`${res.status}: Something went wrong`)
+          log(`${res.error}: Something went wrong`)
         }
       })
     })

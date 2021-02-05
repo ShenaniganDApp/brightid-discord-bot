@@ -18,16 +18,21 @@ client.on('ready', async () => {
   const guilds = await readGist()
   const clientGuilds = client.guilds.cache
 
-  for (let i = 0; i < clientGuilds.length; i++) {
-    if (!(clientGuilds[i].id in guilds)) {
-      setTimeout(() => {
-        updateGist(clientGuilds[i].id, {
-          name: clientGuilds[i].name,
+  function printSlowly(array, speed) {
+    if (array.length == 0) return
+
+    setTimeout(function () {
+      if (!(clientGuilds[array.length].id in guilds)) {
+        updateGist(clientGuilds[array.length].id, {
+          name: clientGuilds[array.length].name,
           role: 'Verified',
         })
-      }, 5000 * i)
-    }
+      }
+      printSlowly(array.slice(1), speed)
+    }, speed)
   }
+
+  printSlowly(clientGuilds, 5000)
 })
 
 client.on('guildCreate', guild => {
