@@ -10,13 +10,16 @@ const {
 
 const { QRCodeError } = require('../error-utils')
 const fetch = require('node-fetch')
+const { readGist } = require('../updateOrReadGist')
 
 module.exports = async function verify(member, _, message) {
   const ID = UUID.v5(member.id, process.env.UUID_NAMESPACE)
   const guilds = await readGist()
   const guild = guilds[message.guild.id]
+  console.log('guild: ', guild);
 
   const role = member.guild.roles.cache.find(r => r.name === guild.role)
+  console.log('role: ', role);
 
   const deepLink = `${BRIGHT_ID_APP_DEEPLINK}/${ID}`
   const verifyUrl = `${BRIGHTID_LINK_VERIFICATION_ENDPOINT}/${ID}`
