@@ -17,7 +17,7 @@ client.on('ready', () => {
   console.log(`Logged in as ${client.user.tag}!`)
   function delay(i) {
     setTimeout(() => {
-      console.log(array[i])
+      console.log("Time")
     }, 1000)
   }
   client.guilds.cache.map(async (guild, index) => {
