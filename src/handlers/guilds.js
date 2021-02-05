@@ -3,8 +3,10 @@ const { MessageEmbed } = require('discord.js')
 const { readGist } = require('../updateOrReadGist')
 
 module.exports = async function guilds(member, client, message) {
-  const guilds = client.guilds.cache.array()
-
+  const unsortedGuilds = client.guilds.cache.array()
+  const guilds = unsortedGuilds.sort((a, b) =>
+    a.memberCount > b.memberCount ? 1 : -1,
+  )
   /**
    * Creates an embed with guilds starting from an index.
    * @param {number} start The index to start from.
@@ -19,6 +21,7 @@ module.exports = async function guilds(member, client, message) {
       }`,
     )
     const fetchedGuilds = await readGist()
+
     current.forEach(g => {
       const guild = fetchedGuilds[g.id]
 
@@ -26,7 +29,9 @@ module.exports = async function guilds(member, client, message) {
 
       embed.addField(
         `${g.name}`,
-        `${guildLink ? `**Invite:** ${guildLink}` : 'No Invite Link Available'}`,
+        `${
+          guildLink ? `**Invite:** ${guildLink}` : 'No Invite Link Available'
+        }`,
       )
     })
     return embed
