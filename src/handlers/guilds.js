@@ -54,18 +54,24 @@ module.exports = async function guilds(member, client, message) {
     let currentIndex = 0
     collector.on('collect', reaction => {
       // remove the existing reactions
-      message.reactions.removeAll().then(async () => {
-        // increase/decrease index
-        reaction.emoji.name === '⬅️'
-          ? (currentIndex -= 10)
-          : (currentIndex += 10)
-        // edit message with new embed
-        await message.edit(generateEmbed(currentIndex))
-        // react with left arrow if it isn't the start (await is used so that the right arrow always goes after the left)
-        if (currentIndex !== 0) await message.react('⬅️')
-        // react with right arrow if it isn't the end
-        if (currentIndex + 10 < guilds.length) message.react('➡️')
-      })
+      message.reactions
+        .removeAll()
+        .then(async () => {
+          // increase/decrease index
+          reaction.emoji.name === '⬅️'
+            ? (currentIndex -= 10)
+            : (currentIndex += 10)
+          // edit message with new embed
+          await message.edit(generateEmbed(currentIndex))
+          // react with left arrow if it isn't the start (await is used so that the right arrow always goes after the left)
+          if (currentIndex !== 0) await message.react('⬅️')
+          // react with right arrow if it isn't the end
+          if (currentIndex + 10 < guilds.length) await message.react('➡️')
+        })
+        .catch(err)
+      {
+        console.log(err)
+      }
     })
   })
 }
