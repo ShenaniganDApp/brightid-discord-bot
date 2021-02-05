@@ -36,14 +36,13 @@ function updateGist(guildId, obj) {
           Accept: 'application/vnd.github.v3+json',
         },
         body: JSON.stringify(updatedBody),
+      }).then(res => {
+        if ((res.status = 200)) {
+          log(`${res.status}: Updated guild Data for ${guildId}`)
+        } else {
+          log(`${res.status}: Something went wrong`)
+        }
       })
-    })
-    .then(res => {
-      if ((res.status = 200)) {
-        log(`${res.status}: Updated guild Data for ${guildId}`)
-      } else {
-        log(`${res.status}: Something went wrong`)
-      }
     })
     .catch(err => {
       error(err)
