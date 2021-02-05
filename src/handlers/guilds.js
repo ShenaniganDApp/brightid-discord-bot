@@ -60,7 +60,7 @@ module.exports = async function guilds(member, client, message) {
           ? (currentIndex -= 10)
           : (currentIndex += 10)
         // edit message with new embed
-        message.edit(generateEmbed(currentIndex))
+        await message.edit(generateEmbed(currentIndex))
         // react with left arrow if it isn't the start (await is used so that the right arrow always goes after the left)
         if (currentIndex !== 0) await message.react('⬅️')
         // react with right arrow if it isn't the end
