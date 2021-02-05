@@ -18,10 +18,14 @@ client.on('ready', () => {
   client.guilds.cache.map(async guild => {
     const guilds = await readGist()
     if (!(guild.id in guilds)) {
-      updateGist(guild.id, {
-        name: guild.name,
-        role: 'Verified',
-      })
+      setTimeout(
+        () =>
+          updateGist(guild.id, {
+            name: guild.name,
+            role: 'Verified',
+          }),
+        10000,
+      )
     }
   })
 })
