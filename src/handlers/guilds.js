@@ -5,7 +5,7 @@ const { readGist } = require('../updateOrReadGist')
 module.exports = async function guilds(member, client, message) {
   const unsortedGuilds = client.guilds.cache.array()
   const guilds = unsortedGuilds.sort((a, b) =>
-    a.memberCount > b.memberCount ? 1 : -1,
+    a.memberCount > b.memberCount ? -1 : 1,
   )
   /**
    * Creates an embed with guilds starting from an index.
