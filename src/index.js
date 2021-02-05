@@ -13,23 +13,21 @@ const parseWhitelistedChannels = require('./parser/whitelistedChannels')
 const { updateGist, readGist } = require('./updateOrReadGist')
 
 dotenv.config()
-client.on('ready', () => {
+client.on('ready', async () => {
   console.log(`Logged in as ${client.user.tag}!`)
-  function delay(i) {
-    setTimeout(() => {
-      console.log(i)
-    }, 5000)
-  }
-  client.guilds.cache.forEach(async (guild, index) => {
-    const guilds = await readGist()
-    if (!(guild.id in guilds)) {
-      delay(index)
-      updateGist(guild.id, {
-        name: guild.name,
-        role: 'Verified',
-      })
+  const guilds = await readGist()
+  const clientGuilds = client.guilds.cache
+
+  for (let i = 0; i < clientGuilds.length; i++) {
+    if (!(clientGuilds[i].id in guilds)) {
+      setTimeout(() => {
+        updateGist(clientGuilds[i].id, {
+          name: clientGuilds[i].name,
+          role: 'Verified',
+        })
+      }, 5000 * i)
     }
-  })
+  }
 })
 
 client.on('guildCreate', guild => {
