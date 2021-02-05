@@ -18,7 +18,7 @@ module.exports = async function invite(member, client, message) {
       )
     }
   } else {
-    member.reply('You do not have the admin privileges for this command')
+    message.reply('You do not have the admin privileges for this command')
     throw new Error(err)
   }
 }
