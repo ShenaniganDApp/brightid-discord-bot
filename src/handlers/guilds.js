@@ -2,7 +2,7 @@ const fs = require('fs')
 const { MessageEmbed } = require('discord.js')
 const { readGist } = require('../updateOrReadGist')
 
-module.exports = async function guilds(member, client) {
+module.exports = async function guilds(member, client, message) {
   const guilds = client.guilds.cache.array()
 
   /**
@@ -33,7 +33,7 @@ module.exports = async function guilds(member, client) {
   }
 
   // send the embed with the first 10 guilds
-  member.send(await generateEmbed(0)).then(message => {
+  message.reply(await generateEmbed(0)).then(message => {
     // exit if there is only one page of guilds (no need for all of this)
     if (guilds.length <= 10) return
     // react with the right arrow (so that the user can click it) (left arrow isn't needed because it is the start)

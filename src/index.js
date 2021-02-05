@@ -20,16 +20,18 @@ client.on('ready', async () => {
 
   function printSlowly(array, speed) {
     if (array.length == 0) return
-
-    setTimeout(function () {
-      if (!(clientGuilds[array.length - 1].id in guilds)) {
+    if (!(clientGuilds[array.length - 1].id in guilds)) {
+      setTimeout(function () {
         updateGist(clientGuilds[array.length - 1].id, {
           name: clientGuilds[array.length - 1].name,
           role: 'Verified',
         })
-      }
+
+        printSlowly(array.slice(1), speed)
+      }, speed)
+    } else {
       printSlowly(array.slice(1), speed)
-    }, speed)
+    }
   }
 
   printSlowly(clientGuilds, 5000)
