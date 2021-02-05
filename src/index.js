@@ -17,10 +17,10 @@ client.on('ready', () => {
   console.log(`Logged in as ${client.user.tag}!`)
   function delay(i) {
     setTimeout(() => {
-      console.log("Time")
-    }, 1000)
+      console.log(i)
+    }, 5000)
   }
-  client.guilds.cache.map(async (guild, index) => {
+  client.guilds.cache.forEach(async (guild, index) => {
     const guilds = await readGist()
     if (!(guild.id in guilds)) {
       delay(index)
