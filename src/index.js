@@ -16,7 +16,7 @@ dotenv.config()
 client.on('ready', async () => {
   console.log(`Logged in as ${client.user.tag}!`)
   const guilds = await readGist()
-  const clientGuilds = client.guilds.cache
+  const clientGuilds = client.guilds.cache.array()
 
   function printSlowly(array, speed) {
     if (array.length == 0) return
