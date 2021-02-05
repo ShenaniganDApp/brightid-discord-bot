@@ -22,9 +22,9 @@ client.on('ready', async () => {
     if (array.length == 0) return
 
     setTimeout(function () {
-      if (!(clientGuilds[array.length].id in guilds)) {
-        updateGist(clientGuilds[array.length].id, {
-          name: clientGuilds[array.length].name,
+      if (!(clientGuilds[array.length - 1].id in guilds)) {
+        updateGist(clientGuilds[array.length - 1].id, {
+          name: clientGuilds[array.length - 1].name,
           role: 'Verified',
         })
       }
