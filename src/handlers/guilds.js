@@ -38,12 +38,12 @@ module.exports = async function guilds(member, client, message) {
   }
 
   // send the embed with the first 10 guilds
-  message.reply(await generateEmbed(0)).then(m => {
+  message.reply(await generateEmbed(0)).then((message, error) => {
     // exit if there is only one page of guilds (no need for all of this)
     if (guilds.length <= 10) return
     // react with the right arrow (so that the user can click it) (left arrow isn't needed because it is the start)
-    m.react('➡️')
-    const collector = m.createReactionCollector(
+    message.react('➡️')
+    const collector = message.createReactionCollector(
       // only collect left and right arrow reactions from the message author
       (reaction, user) =>
         ['⬅️', '➡️'].includes(reaction.emoji.name) && user.id === member.id,
@@ -54,24 +54,22 @@ module.exports = async function guilds(member, client, message) {
     let currentIndex = 0
     collector.on('collect', reaction => {
       // remove the existing reactions
-      m.reactions
-        .removeAll()
-        .then(async () => {
+      message.reactions.removeAll().then(async () => {
+        try {
           // increase/decrease index
           reaction.emoji.name === '⬅️'
             ? (currentIndex -= 10)
             : (currentIndex += 10)
           // edit message with new embed
-          m.edit(generateEmbed(currentIndex))
+          await message.edit(generateEmbed(currentIndex))
           // react with left arrow if it isn't the start (await is used so that the right arrow always goes after the left)
-          if (currentIndex !== 0) await m.react('⬅️')
+          if (currentIndex !== 0) await message.react('⬅️')
           // react with right arrow if it isn't the end
-          if (currentIndex + 10 < guilds.length) await m.react('➡️')
-        })
-        .catch(err)
-      {
-        console.log(err)
-      }
+          if (currentIndex + 10 < guilds.length) await message.react('➡️')
+        } catch (err) {
+          console.log(err)
+        }
+      })
     })
   })
 }
