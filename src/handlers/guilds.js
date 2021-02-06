@@ -13,7 +13,6 @@ module.exports = async function guilds(member, client, message) {
    */
   const generateEmbed = async start => {
     const current = guilds.slice(start, start + 10)
-    console.log('current: ', current);
 
     // you can of course customise this embed however you want
     const embed = new MessageEmbed().setTitle(
@@ -55,22 +54,23 @@ module.exports = async function guilds(member, client, message) {
     let currentIndex = 0
     collector.on('collect', reaction => {
       // remove the existing reactions
-      message.reactions.removeAll().then(async () => {
-        try {
+      message.reactions
+        .removeAll()
+        .then(async () => {
           // increase/decrease index
           reaction.emoji.name === '⬅️'
             ? (currentIndex -= 10)
             : (currentIndex += 10)
           // edit message with new embed
-          message.edit(generateEmbed(currentIndex))
+          message.edit(await generateEmbed(currentIndex))
           // react with left arrow if it isn't the start (await is used so that the right arrow always goes after the left)
           if (currentIndex !== 0) message.react('⬅️')
           // react with right arrow if it isn't the end
           if (currentIndex + 10 < guilds.length) message.react('➡️')
-        } catch (err) {
+        })
+        .catch(err => {
           console.log(err)
-        }
-      })
+        })
     })
   })
 }
