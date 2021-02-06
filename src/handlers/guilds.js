@@ -13,6 +13,7 @@ module.exports = async function guilds(member, client, message) {
    */
   const generateEmbed = async start => {
     const current = guilds.slice(start, start + 10)
+    console.log('current: ', current);
 
     // you can of course customise this embed however you want
     const embed = new MessageEmbed().setTitle(
