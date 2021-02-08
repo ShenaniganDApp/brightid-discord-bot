@@ -47,14 +47,10 @@ client.on('guildCreate', guild => {
       reason: 'Verify users with BrightID',
     })
     .catch(console.error)
-  const fileData = JSON.parse(fs.readFileSync('./src/guildData.json'))
-  fileData[guild.id] = {
+  updateGist(guild.id, {
     name: guild.name,
     role: 'Verified',
-    inviteLink: '',
-    verifications: [],
-  }
-  fs.writeFileSync('./src/guildData.json', JSON.stringify(fileData, null, 2))
+  })
 })
 
 client.on('guildMemberAdd', member => {
