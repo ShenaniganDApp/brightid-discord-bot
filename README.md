@@ -16,7 +16,7 @@ Interacting with the bot is simple; it offers 2 commands
 
 1. Type !verify
 2. Scan the code (or click the link) BrightID Bot shows you
-3. Use an app that has sponsorships. See https://explorer.brightid.org/apps/index.html
+3. Use an [app that has sponsorships](https://apps.brightid.org).
 4. Type !me
 
 ## Developer quick start 
