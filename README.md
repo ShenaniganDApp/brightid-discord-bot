@@ -21,7 +21,7 @@ Interacting with the bot is simple; it offers 2 commands
 
 ## Developer quick start 
 
-`npm run dev` will launch the bot locally, with hot reloading included.
+`npm install` followed by `npm run dev` will launch the bot locally, with hot reloading included.
 
 There are a few other scripts provided:
 
