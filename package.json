@@ -17,9 +17,11 @@
     "prettier": "^2.1.2"
   },
   "dependencies": {
+    "brightid_sdk": "^1.0.1",
     "canvas": "^2.6.1",
     "discord.js": "^12.3.1",
     "dotenv": "^8.2.0",
+    "ethers": "^5.5.1",
     "fast-json-stable-stringify": "^2.1.0",
     "node-fetch": "^2.6.1",
     "qrcode": "^1.4.4",

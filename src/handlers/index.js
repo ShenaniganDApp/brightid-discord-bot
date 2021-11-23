@@ -4,6 +4,7 @@ const guildsHandler = require('./guilds')
 const inviteHandler = require('./invite')
 const roleHandler = require('./role')
 const brightIdHandler = require('./brightid')
+const guildAddressHandler = require('./guildAddress')
 
 const handlers = new Map([
   ['!verify', verifyHandler],
@@ -12,6 +13,7 @@ const handlers = new Map([
   ['!invite', inviteHandler],
   ['!role', roleHandler],
   ['!brightid', brightIdHandler],
+  ['!guildAddress', guildAddressHandler],
 ])
 
 module.exports = handlers

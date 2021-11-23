@@ -3,7 +3,15 @@ const errors = require('../error-utils')
 const handlers = require('../handlers/index')
 
 const noop = () => undefined
-const commmands = ['!verify', '!me', '!guilds', '!invite', '!role', '!brightid']
+const commmands = [
+  '!verify',
+  '!me',
+  '!guilds',
+  '!invite',
+  '!role',
+  '!brightid',
+  '!guildAddress',
+]
 module.exports = function detectHandler(message) {
   // If it's not a flag, we can safely ignore this command.
   if (!message.includes('!')) {

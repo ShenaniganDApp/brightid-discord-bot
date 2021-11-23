@@ -38,6 +38,9 @@ client.on('ready', async () => {
 })
 
 client.on('guildCreate', guild => {
+  guild.systemChannel.send(
+    `Hey there! I'm the BrightID bot. The first thing you'll need to do to get the verification bot working on your server is to buy some sponsorships so that your server can sponsor users. You can do that at https://sp.brightid.org/. After you buy your sponsorships, you'll want to run the !guildAddress command and input the address you used to buy the sponsorships. This is how BrightID keeps track of how many sponsorships each individual Discord server has available. Note that this is a mod-only command.`,
+  )
   guild.roles
     .create({
       data: {

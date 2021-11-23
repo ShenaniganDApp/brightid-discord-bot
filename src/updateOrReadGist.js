@@ -54,9 +54,6 @@ function readGist() {
     'https://api.github.com/gists/bf60347b40acabad78e3f840ba2b5c7f',
     {
       method: 'GET',
-      headers: {
-        Authorization: `Bearer ${process.env.GITHUB_API_TOKEN}`,
-      },
     },
   )
     .then(res => res.json())
