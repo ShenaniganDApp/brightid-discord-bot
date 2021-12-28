@@ -1,21 +1,11 @@
 const fs = require('fs')
-const QRCode = require('qrcode')
-const UUID = require('uuid')
 const Discord = require('discord.js')
-const Canvas = require('canvas')
 const { ethers } = require('ethers')
-const {
-  BRIGHT_ID_APP_DEEPLINK,
-  BRIGHTID_LINK_VERIFICATION_ENDPOINT,
-} = require('../endpoints')
 
 const { QRCodeError } = require('../error-utils')
-const fetch = require('node-fetch')
 const { readGist, updateGist } = require('../updateOrReadGist')
 
 const { CONTRACT_ABI, CONTRACT_ADDRESS } = require('../constants')
-
-const client = new Discord.Client()
 
 module.exports = async function guildAddress(member, _, message) {
   // Make sure only mods can run this command
@@ -60,7 +50,6 @@ module.exports = async function guildAddress(member, _, message) {
     // Get the number of sponsorships assigned to the Discord context by the specified address
     const formattedContext = ethers.utils.formatBytes32String('Discord')
     const spBalance = await contract.contextBalance(address, formattedContext)
-    const formattedBalance = parseInt(ethers.utils.formatUnits(spBalance, 0))
 
     // Set that amount as the totalAssignedSp for this guild
     updateGist(message.guild.id, {
