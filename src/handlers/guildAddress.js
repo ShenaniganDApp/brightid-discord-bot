@@ -1,8 +1,5 @@
-const fs = require('fs')
-const Discord = require('discord.js')
 const { ethers } = require('ethers')
 
-const { QRCodeError } = require('../error-utils')
 const { readGist, updateGist } = require('../updateOrReadGist')
 
 const { CONTRACT_ABI, CONTRACT_ADDRESS } = require('../constants')

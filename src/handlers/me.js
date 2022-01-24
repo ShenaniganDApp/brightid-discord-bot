@@ -1,4 +1,3 @@
-const fs = require('fs')
 const { sponsor } = require('brightid_sdk')
 const UUID = require('uuid')
 const { ethers } = require('ethers')
