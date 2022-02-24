@@ -4,7 +4,7 @@
 
 <a href="https://bot.brightid.org">Click here to Invite BrightID Bot to your server</a>
 
-## Quick end-user guide 
+## Quick end-user guide
 
 Interacting with the bot is simple; it offers 2 commands
 
@@ -19,9 +19,9 @@ Interacting with the bot is simple; it offers 2 commands
 3. Use an [app that has sponsorships](https://apps.brightid.org).
 4. Type !me
 
-## Developer quick start 
+## Developer quick start
 
-`npm install` followed by `npm run dev` will launch the bot locally, with hot reloading included.
+`yarn` followed by `yarn dev` will launch the bot locally, with hot reloading included.
 
 There are a few other scripts provided:
 
@@ -33,10 +33,17 @@ There are a few other scripts provided:
 
 For the bot to run properly, it needs these variables, laid out in the `.env.sample` file:
 
-- `DISCORD_API_TOKEN`: Your discord API token. [See this guide on how to obtain one](https://github.com/reactiflux/discord-irc/wiki/Creating-a-discord-bot-&-getting-a-token).
-  
+There have been staging variables supplied for you already to help you get started an safely test new code.
+
+- [Join the testing server](https://discord.gg/KA7qVfVW)
+
+- `DISCORD_API_TOKEN`: A discord API token. [See this guide on how to obtain one](https://github.com/reactiflux/discord-irc/wiki/Creating-a-discord-bot-&-getting-a-token).
 - `UUID_NAMESPACE`: Generate a new one [here](https://www.uuidgenerator.net/version4)
-  
+
+- `GIST_ID`: The ID of the gist being used to store guild data. The staging gist is [here](https://gist.github.com/brightidbotdev/617e860aeb4a21ae2118947e6fbedccdX)
+
+- `GITHUB_ACCESS_TOKEN`: A personal access token with write acesss to the Gist provided in `GIST_ID`
+
 - `WHITELISTED_CHANNELS`: The whitelisted channels for the bot to read messages from, in the form of comma separated words, as in `bot,general,channel`. If you want the bot to listen to all channels, set this variable to `*`.
 
 ### Deployment

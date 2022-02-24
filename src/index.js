@@ -15,26 +15,6 @@ const { updateGist, readGist } = require('./updateOrReadGist')
 dotenv.config()
 client.on('ready', async () => {
   console.log(`Logged in as ${client.user.tag}!`)
-  const guilds = await readGist()
-  const clientGuilds = client.guilds.cache.array()
-
-  function printSlowly(array, speed) {
-    if (array.length == 0) return
-    if (!(clientGuilds[array.length - 1].id in guilds)) {
-      setTimeout(function () {
-        updateGist(clientGuilds[array.length - 1].id, {
-          name: clientGuilds[array.length - 1].name,
-          role: 'Verified',
-        })
-
-        printSlowly(array.slice(1), speed)
-      }, speed)
-    } else {
-      printSlowly(array.slice(1), speed)
-    }
-  }
-
-  printSlowly(clientGuilds, 5000)
 })
 
 client.on('guildCreate', guild => {
