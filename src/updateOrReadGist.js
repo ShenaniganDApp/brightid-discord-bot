@@ -8,10 +8,10 @@ const {
 const { error, log } = require('./utils')
 
 function updateGist(guildId, obj) {
-  fetch(`https://api.github.com/gists/bf60347b40acabad78e3f840ba2b5c7f`, {
+  fetch(`https://api.github.com/gists/${process.env.GIST_ID}`, {
     method: 'GET',
     headers: {
-      Authorization: `Bearer ${process.env.GITHUB_API_TOKEN}`,
+      Authorization: `Bearer ${process.env.GITHUB_ACCESS_TOKEN}`,
     },
   })
     .then(res => res.json())
@@ -28,11 +28,12 @@ function updateGist(guildId, obj) {
           },
         },
       }
+      console.log('updatedBody: ', updatedBody);
 
-      fetch(`https://api.github.com/gists/bf60347b40acabad78e3f840ba2b5c7f`, {
+      fetch(`https://api.github.com/gists/${process.env.GIST_ID}`, {
         method: 'PATCH',
         headers: {
-          Authorization: `token ${process.env.GITHUB_API_TOKEN}`,
+          Authorization: `token ${process.env.GITHUB_ACCESS_TOKEN}`,
           Accept: 'application/vnd.github.v3+json',
         },
         body: JSON.stringify(updatedBody),
@@ -50,15 +51,12 @@ function updateGist(guildId, obj) {
 }
 
 function readGist() {
-  return fetch(
-    'https://api.github.com/gists/bf60347b40acabad78e3f840ba2b5c7f',
-    {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${process.env.GITHUB_API_TOKEN}`,
-      },
+  return fetch(`https://api.github.com/gists/${process.env.GIST_ID}`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${process.env.GITHUB_ACCESS_TOKEN}`,
     },
-  )
+  })
     .then(res => res.json())
     .then(body => {
       const {

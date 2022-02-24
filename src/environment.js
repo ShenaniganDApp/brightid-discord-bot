@@ -10,6 +10,7 @@ const ENV_VARS = {
   ],
   UUID_NAMESPACE: [process.env.UUID_NAMESPACE, 'YOUR_UUID_NAMESPACE', true],
   WHITELISTED_CHANNELS: [process.env.WHITELISTED_CHANNELS, '*', false],
+  GIST_ID: [process.env.GIST_ID, '', true],
 }
 
 function environment(name) {

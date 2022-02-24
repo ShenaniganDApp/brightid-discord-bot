@@ -7,7 +7,7 @@
     "lint": "npx eslint ./src",
     "test": "npx jest",
     "start": "node src/index.js",
-    "dev": "nodemon src/index.js",
+    "dev": "node src/index.js",
     "prettify": "prettier . --write"
   },
   "author": "youngkidwarrior",
@@ -17,7 +17,7 @@
     "prettier": "^2.1.2"
   },
   "dependencies": {
-    "canvas": "^2.6.1",
+    "canvas": "^2.9.0",
     "discord.js": "^12.3.1",
     "dotenv": "^8.2.0",
     "fast-json-stable-stringify": "^2.1.0",
