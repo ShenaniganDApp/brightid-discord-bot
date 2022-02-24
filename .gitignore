@@ -104,3 +104,6 @@ dist
 .tern-port
 
 .env
+.merlin
+lib
+.bsb.lock
