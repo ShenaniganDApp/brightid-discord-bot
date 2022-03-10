@@ -1,11 +1,12 @@
-open Node.Fs
-open Promise
+let detectHandler = %raw(`require('./parser/detectHandler')`)
+let errorUtils = %raw(`require('./error-utils')`)
+let utils = %raw(`require('./utils')`)
+let parseWhitelistedChannels = %raw(`require('./parser/whitelistedChannels')`)
+@module("./updateOrReadGist.js") external updateGist: (string, 'a) => unit = "updateGist"
 
-type c
-@module("discord.js") @new external createDiscordClient: unit => c = "Client"
-@send external on: (c, string, unit => unit) => unit = "on"
-@send external login: (c, string) => unit = "login"
 @val @module("discord.js") external user: 'a = "Client"
+
+open Promise
 
 Env.createEnv()
 
@@ -17,7 +18,7 @@ client
 ->Discord_Client.onEvent(
   Ready(
     () => {
-  Js.log("Logged In")
+      Js.log("Logged In")
     },
   ),
 )
@@ -28,32 +29,47 @@ switch config {
 | Error(err) => Js.log(err)
 }
 
+// let validateGuild = guild => {
+//   switch guild {
+//   | Discord_Client.Guild({roles: roleManager}) => {"roles": roleManager}
+//   }
+// }
+
+client->Discord_Client.onEvent(
+  GuildCreate(
+    guild => {
+      open Discord_Client
+      let roleManager = guild->getGuildRoleManager
+      let createRoleOptions = CreateRoleOptions({
+        data: RoleData({
+          name: RoleName("Verified"),
+          color: String("ORANGE"),
+        }),
+        reason: Reason("Verify users with BrightID"),
+      })
+      roleManager
+      ->createGuildRoleClient(createRoleOptions)
+      ->then(role => {
+        Js.log2("role", role)
+        resolve(role)
+      })
+      ->ignore
+      // ->then(
+      //   resolve
+      //   updateGist(
+      //     guild.id,
+      //     {
+      //       name: guild.name,
+      //       role: "Verified",
+      //     },
+      //   ),
+      // )
+      // ->catch(err => Js.log(err)->ignore)
+    },
+  ),
+)
+
 // %%raw(`
-
-// const detectHandler = require('./parser/detectHandler')
-// const {
-//   RequestHandlerError,
-//   WhitelistedChannelError,
-// } = require('./error-utils')
-// const { error, log } = require('./utils')
-// const parseWhitelistedChannels = require('./parser/whitelistedChannels')
-// const { updateGist, readGist } = require('./updateOrReadGist')
-
-// client.on('guildCreate', guild => {
-//   guild.roles
-//     .create({
-//       data: {
-//         name: 'Verified',
-//         color: 'ORANGE',
-//       },
-//       reason: 'Verify users with BrightID',
-//     })
-//     .catch(console.error)
-//   updateGist(guild.id, {
-//     name: guild.name,
-//     role: 'Verified',
-//   })
-// })
 
 // client.on('guildMemberAdd', member => {
 //   const handler = detectHandler('!verify')
