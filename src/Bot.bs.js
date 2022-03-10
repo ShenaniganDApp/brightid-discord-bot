@@ -3,25 +3,71 @@
 
 var Env = require("./Env.bs.js");
 var Dotenv = require("dotenv");
-var DiscordJs = require("discord.js");
+var Discord_Client = require("./Discord/Discord_Client.bs.js");
+var UpdateOrReadGistJs = require("./updateOrReadGist.js");
+
+var detectHandler = (require('./parser/detectHandler'));
+
+var errorUtils = (require('./error-utils'));
+
+var utils = (require('./utils'));
+
+var parseWhitelistedChannels = (require('./parser/whitelistedChannels'));
+
+function updateGist(prim0, prim1) {
+  UpdateOrReadGistJs.updateGist(prim0, prim1);
+  
+}
 
 Dotenv.config();
 
 var config = Env.getConfig(undefined);
 
-var client = new DiscordJs.Client();
+var client = Discord_Client.make(undefined);
 
-client.on("ready", (function (param) {
-        console.log("Logged In");
-        
-      }));
+Discord_Client.onEvent(client, {
+      TAG: /* Ready */0,
+      _0: (function (param) {
+          console.log("Logged In");
+          
+        })
+    });
 
 if (config.TAG === /* Ok */0) {
-  client.login(config._0);
+  Discord_Client.loginClient(client, config._0);
 } else {
   console.log(config._0);
 }
 
+Discord_Client.onEvent(client, {
+      TAG: /* GuildCreate */1,
+      _0: (function (guild) {
+          var roleManager = guild.roles;
+          Discord_Client.createGuildRoleClient(roleManager, /* CreateRoleOptions */{
+                  data: /* RoleData */{
+                    name: /* RoleName */{
+                      _0: "Verified"
+                    },
+                    color: /* String */{
+                      _0: "ORANGE"
+                    }
+                  },
+                  reason: /* Reason */{
+                    _0: "Verify users with BrightID"
+                  }
+                }).then(function (role) {
+                console.log("role", role);
+                return Promise.resolve(role);
+              });
+          
+        })
+    });
+
+exports.detectHandler = detectHandler;
+exports.errorUtils = errorUtils;
+exports.utils = utils;
+exports.parseWhitelistedChannels = parseWhitelistedChannels;
+exports.updateGist = updateGist;
 exports.config = config;
 exports.client = client;
-/*  Not a pure module */
+/* detectHandler Not a pure module */
