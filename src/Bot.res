@@ -11,16 +11,20 @@ Env.createEnv()
 
 let config = Env.getConfig()
 
-let client = createDiscordClient()
+let client = Discord_Client.make()
 
 client
-->on("ready", () => {
+->Discord_Client.onEvent(
+  Ready(
+    () => {
   Js.log("Logged In")
-})
+    },
+  ),
+)
 ->ignore
 
 switch config {
-| Ok(discordApiToken) => client->login(discordApiToken)
+| Ok(discordToken) => client->Discord_Client.loginClient(discordToken)
 | Error(err) => Js.log(err)
 }
 
