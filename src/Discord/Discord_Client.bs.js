@@ -2,6 +2,26 @@
 'use strict';
 
 var DiscordJs = require("discord.js");
+var Caml_exceptions = require("rescript/lib/js/caml_exceptions.js");
+
+function validateSnowflake(snowflake) {
+  return snowflake._0;
+}
+
+var CreateRoleError = /* @__PURE__ */Caml_exceptions.create("Discord_Client.CreateRoleError");
+
+function validateGuildName(guildName) {
+  return guildName._0;
+}
+
+function validateGuild(guild) {
+  var id = guild.id._0;
+  var name = guild.name._0;
+  return {
+          id: id,
+          name: name
+        };
+}
 
 function make(param) {
   var client = new DiscordJs.Client(undefined);
@@ -32,47 +52,52 @@ function validateOptions(options) {
         };
 }
 
-function validateRoleData(data) {
-  return {
-          name: data.name,
-          color: data.color
-        };
-}
-
 function validateName(name) {
   return name._0;
+}
+
+function validateColor(color) {
+  return color._0;
+}
+
+function validateRoleData(data) {
+  var name = data.name._0;
+  var color = data.color._0;
+  return {
+          name: name,
+          color: color
+        };
 }
 
 function validateReason(reason) {
   return reason._0;
 }
 
-function resolveColor(color) {
-  return color._0;
-}
-
 function createGuildRoleClient(roleManager, options) {
   var options$1 = validateOptions(options);
   var data = validateRoleData(options$1.data);
-  var name = data.name._0;
-  var color = data.color._0;
   var reason = options$1.reason._0;
-  return roleManager.create({
-              data: {
-                name: name,
-                color: color
-              },
-              reason: reason
-            });
+  var createOptions = {
+    data: {
+      name: data.name,
+      color: data.color
+    },
+    reason: reason
+  };
+  return roleManager.create(createOptions);
 }
 
+exports.validateSnowflake = validateSnowflake;
+exports.CreateRoleError = CreateRoleError;
+exports.validateGuildName = validateGuildName;
+exports.validateGuild = validateGuild;
 exports.make = make;
 exports.onEvent = onEvent;
 exports.loginClient = loginClient;
 exports.validateOptions = validateOptions;
-exports.validateRoleData = validateRoleData;
 exports.validateName = validateName;
+exports.validateColor = validateColor;
+exports.validateRoleData = validateRoleData;
 exports.validateReason = validateReason;
-exports.resolveColor = resolveColor;
 exports.createGuildRoleClient = createGuildRoleClient;
 /* discord.js Not a pure module */

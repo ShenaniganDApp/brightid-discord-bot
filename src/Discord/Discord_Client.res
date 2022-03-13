@@ -1,10 +1,21 @@
+open Promise
 //Client
 @module("discord.js") @new external createDiscordClient: 'a => 'b = "Client"
 type rec client = Client(client)
 @send external on: ('a, 'b, 'c => unit) => unit = "on"
 @send external login: ('a, string) => unit = "login"
 
+// Snowflake
+type snowflake = Snowflake(string)
+let validateSnowflake = snowflake => {
+  switch snowflake {
+  | Snowflake(snowflake) => snowflake
+  }
+}
+
 // Roles
+exception CreateRoleError(string)
+
 type role
 type roleManager
 type roleName = RoleName(string)
@@ -23,8 +34,26 @@ external createGuildRole: ('roleManager, ~options: 'options=?) => Js.Promise.t<'
 // @val @module(("discord.js", "Guild")) external guildId: 'a = ""
 // Js.log(guildId)
 
-type rec guild = Guild(guild)
+type guildName = GuildName(string)
+
+let validateGuildName = guildName => {
+  switch guildName {
+  | GuildName(guildName) => guildName
+  }
+}
+
+type guild = Guild({id: snowflake, name: guildName})
 @get external getGuildRoleManager: guild => roleManager = "roles"
+
+let validateGuild = guild => {
+  switch guild {
+  | Guild(guild) => {
+      let id = validateSnowflake(guild.id)
+      let name = validateGuildName(guild.name)
+      {"id": id, "name": name}
+    }
+  }
+}
 
 type event =
   | Ready(unit => unit)
@@ -60,25 +89,12 @@ let validateOptions = options => {
   }
 }
 
-let validateRoleData = data =>
-  switch data {
-  | RoleData({name: roleName, color: colorResolvable}) => {
-      "name": roleName,
-      "color": colorResolvable,
-    }
-  }
-
 let validateName = name =>
   switch name {
   | RoleName(name) => name
   }
 
-let validateReason = reason =>
-  switch reason {
-  | Reason(reason) => reason
-  }
-
-let resolveColor = color => {
+let validateColor = color => {
   switch color {
   // | RGB(r, g, b) => [r, g, b]
   // | Hex(hex) => hex
@@ -86,16 +102,27 @@ let resolveColor = color => {
   }
 }
 
+let validateRoleData = data =>
+  switch data {
+  | RoleData(data) => {
+      let name = validateName(data.name)
+      let color = validateColor(data.color)
+      {"name": name, "color": color}
+    }
+  }
+
+let validateReason = reason =>
+  switch reason {
+  | Reason(reason) => reason
+  }
+
 // @TODO: options should be an optional type
+// @TODO: The data and reason fields should be optional
+// as well as the name and color fields
 let createGuildRoleClient = (roleManager, options) => {
   let options = options->validateOptions
   let data = options["data"]->validateRoleData
-  let name = data["name"]->validateName
-  let color = data["color"]->resolveColor
   let reason = options["reason"]->validateReason
-
-  // @TODO: The data and reason fields should be optional
-  // as well ar the name and color fields
-  let createOptions = {"data": {"name": name, "color": color}, "reason": reason}
-  roleManager->createGuildRole(~options: createOptions)
+  let createOptions = {"data": {"name": data["name"], "color": data["color"]}, "reason": reason}
+  roleManager->createGuildRole(~options=createOptions)
 }
