@@ -3,8 +3,13 @@
 
 var Env = require("./Env.bs.js");
 var Dotenv = require("dotenv");
+var Discord_User = require("./Discord/Discord_User.bs.js");
+var Discord_Guild = require("./Discord/Discord_Guild.bs.js");
 var Discord_Client = require("./Discord/Discord_Client.bs.js");
+var Discord_Message = require("./Discord/Discord_Message.bs.js");
+var Discord_RoleManager = require("./Discord/Discord_RoleManager.bs.js");
 var UpdateOrReadGistJs = require("./updateOrReadGist.js");
+var WhitelistedChannels = require("./parser/whitelistedChannels");
 
 var detectHandler = (require('./parser/detectHandler'));
 
@@ -12,7 +17,9 @@ var errorUtils = (require('./error-utils'));
 
 var utils = (require('./utils'));
 
-var parseWhitelistedChannels = (require('./parser/whitelistedChannels'));
+function parseWhitelistedChannels(prim) {
+  return WhitelistedChannels();
+}
 
 function updateGist(prim0, prim1) {
   UpdateOrReadGistJs.updateGist(prim0, prim1);
@@ -25,43 +32,72 @@ var config = Env.getConfig(undefined);
 
 var client = Discord_Client.make(undefined);
 
-Discord_Client.onEvent(client, {
-      TAG: /* Ready */0,
-      _0: (function (param) {
-          console.log("Logged In");
-          
-        })
-    });
+Discord_Client.validateClient(client).on("ready", (function (param) {
+        console.log("Logged In");
+        
+      }));
+
+function updateGistOnGuildCreate(guild) {
+  UpdateOrReadGistJs.updateGist(guild.id, {
+        name: guild.name,
+        role: "Verified"
+      });
+  
+}
+
+function onGuildCreate(guild) {
+  var roleManager = guild.roles;
+  Discord_RoleManager.makeGuildRole(roleManager, {
+        data: {
+          name: /* RoleName */{
+            _0: "Verified"
+          },
+          color: /* String */{
+            _0: "ORANGE"
+          }
+        },
+        reason: /* Reason */{
+          _0: "Verify users with BrightID"
+        }
+      });
+  return updateGistOnGuildCreate(guild);
+}
+
+Discord_Client.validateClient(client).on("guildCreate", (function (guild) {
+        return onGuildCreate(Discord_Guild.make(guild));
+      }));
+
+function tap(args) {
+  console.log(args);
+  return args;
+}
+
+function onMessage(message) {
+  Discord_User.validateBot(message.author.bot);
+  var args = WhitelistedChannels();
+  console.log(args);
+  var args$1 = args.reduce((function (whitelisted, channel) {
+          if (/* ChannelName */({
+                _0: channel
+              }) === message.channel.name || channel === "*") {
+            return true;
+          } else {
+            return whitelisted;
+          }
+        }), false);
+  console.log(args$1);
+  
+}
+
+Discord_Client.validateClient(client).on("message", (function (message) {
+        return onMessage(Discord_Message.make(message));
+      }));
 
 if (config.TAG === /* Ok */0) {
-  Discord_Client.loginClient(client, config._0);
+  Discord_Client.login(client, config._0);
 } else {
   console.log(config._0);
 }
-
-Discord_Client.onEvent(client, {
-      TAG: /* GuildCreate */1,
-      _0: (function (guild) {
-          var roleManager = guild.roles;
-          Discord_Client.createGuildRoleClient(roleManager, /* CreateRoleOptions */{
-                  data: /* RoleData */{
-                    name: /* RoleName */{
-                      _0: "Verified"
-                    },
-                    color: /* String */{
-                      _0: "ORANGE"
-                    }
-                  },
-                  reason: /* Reason */{
-                    _0: "Verify users with BrightID"
-                  }
-                }).then(function (role) {
-                console.log("role", role);
-                return Promise.resolve(role);
-              });
-          
-        })
-    });
 
 exports.detectHandler = detectHandler;
 exports.errorUtils = errorUtils;
@@ -70,4 +106,8 @@ exports.parseWhitelistedChannels = parseWhitelistedChannels;
 exports.updateGist = updateGist;
 exports.config = config;
 exports.client = client;
+exports.updateGistOnGuildCreate = updateGistOnGuildCreate;
+exports.onGuildCreate = onGuildCreate;
+exports.tap = tap;
+exports.onMessage = onMessage;
 /* detectHandler Not a pure module */

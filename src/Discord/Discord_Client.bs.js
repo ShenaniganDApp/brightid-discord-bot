@@ -2,26 +2,6 @@
 'use strict';
 
 var DiscordJs = require("discord.js");
-var Caml_exceptions = require("rescript/lib/js/caml_exceptions.js");
-
-function validateSnowflake(snowflake) {
-  return snowflake._0;
-}
-
-var CreateRoleError = /* @__PURE__ */Caml_exceptions.create("Discord_Client.CreateRoleError");
-
-function validateGuildName(guildName) {
-  return guildName._0;
-}
-
-function validateGuild(guild) {
-  var id = guild.id._0;
-  var name = guild.name._0;
-  return {
-          id: id,
-          name: name
-        };
-}
 
 function make(param) {
   var client = new DiscordJs.Client(undefined);
@@ -30,74 +10,16 @@ function make(param) {
         };
 }
 
-function onEvent(client, $$event) {
-  var client$1 = client._0;
-  if ($$event.TAG === /* Ready */0) {
-    client$1.on("ready", $$event._0);
-    return ;
-  }
-  client$1.on("guildCreate", $$event._0);
-  
+function validateClient(client) {
+  return client._0;
 }
 
-function loginClient(client, token) {
+function login(client, token) {
   client._0.login(token._0);
   
 }
 
-function validateOptions(options) {
-  return {
-          data: options.data,
-          reason: options.reason
-        };
-}
-
-function validateName(name) {
-  return name._0;
-}
-
-function validateColor(color) {
-  return color._0;
-}
-
-function validateRoleData(data) {
-  var name = data.name._0;
-  var color = data.color._0;
-  return {
-          name: name,
-          color: color
-        };
-}
-
-function validateReason(reason) {
-  return reason._0;
-}
-
-function createGuildRoleClient(roleManager, options) {
-  var options$1 = validateOptions(options);
-  var data = validateRoleData(options$1.data);
-  var reason = options$1.reason._0;
-  var createOptions = {
-    data: {
-      name: data.name,
-      color: data.color
-    },
-    reason: reason
-  };
-  return roleManager.create(createOptions);
-}
-
-exports.validateSnowflake = validateSnowflake;
-exports.CreateRoleError = CreateRoleError;
-exports.validateGuildName = validateGuildName;
-exports.validateGuild = validateGuild;
 exports.make = make;
-exports.onEvent = onEvent;
-exports.loginClient = loginClient;
-exports.validateOptions = validateOptions;
-exports.validateName = validateName;
-exports.validateColor = validateColor;
-exports.validateRoleData = validateRoleData;
-exports.validateReason = validateReason;
-exports.createGuildRoleClient = createGuildRoleClient;
+exports.validateClient = validateClient;
+exports.login = login;
 /* discord.js Not a pure module */
