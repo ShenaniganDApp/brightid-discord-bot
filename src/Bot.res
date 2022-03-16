@@ -1,12 +1,13 @@
+open Promise
 let detectHandler = %raw(`require('./parser/detectHandler')`)
 let errorUtils = %raw(`require('./error-utils')`)
 let utils = %raw(`require('./utils')`)
-let parseWhitelistedChannels = %raw(`require('./parser/whitelistedChannels')`)
-@module("./updateOrReadGist.js") external updateGist: (string, 'a) => unit = "updateGist"
+@module
+external parseWhitelistedChannels: unit => array<string> = "./parser/whitelistedChannels"
+@module("./updateOrReadGist.js")
+external updateGist: (Discord_Snowflake.snowflake, 'a) => unit = "updateGist"
 
 @val @module("discord.js") external user: 'a = "Client"
-
-open Promise
 
 Env.createEnv()
 
@@ -15,97 +16,105 @@ let config = Env.getConfig()
 let client = Discord_Client.make()
 
 client
-->Discord_Client.onEvent(
-  Ready(
+->Discord_Client.validateClient
+->Discord_Client.on(
+  #ready(
     () => {
       Js.log("Logged In")
     },
   ),
 )
-->ignore
 
-switch config {
-| Ok(discordToken) => client->Discord_Client.loginClient(discordToken)
-| Error(err) => Js.log(err)
+let updateGistOnGuildCreate = (guild: Discord_Guild.guild) =>
+  guild.id->updateGist({"name": guild.name, "role": "Verified"})
+
+let onGuildCreate = (guild: Discord_Guild.guild) => {
+  let roleManager = guild.roles
+  let makeRoleOptions: Discord_RoleManager.makeRoleOptions = {
+    data: {
+      name: Discord_RoleManager.RoleName("Verified"),
+      color: String("ORANGE"),
+    },
+    reason: Reason("Verify users with BrightID"),
+  }
+  roleManager->Discord_RoleManager.makeGuildRole(makeRoleOptions)->ignore
+  guild->updateGistOnGuildCreate
+  // ->catch(e => {
+  //   switch e {
+  //   | CreateRoleError(msg) => Js.log("ReScript Error caught:" ++ msg)
+  //   | JsError(obj) =>
+  //     switch Js.Exn.message(obj) {
+  //     | Some(msg) => Js.log("Some JS error msg: " ++ msg)
+  //     | None => Js.log("Must be some non-error value")
+  //     }
+  //   | _ => Js.log("Some unknown error")
+  //   }
+  //   resolve()
+  // })
 }
 
-// let validateGuild = guild => {
-//   switch guild {
-//   | Discord_Client.Guild({roles: roleManager}) => {"roles": roleManager}
-//   }
-// }
+client
+->Discord_Client.validateClient
+->Discord_Client.on(#guildCreate(guild => guild->Discord_Guild.make->onGuildCreate))
 
-client->Discord_Client.onEvent(
-  GuildCreate(
-    guild => {
-      open Discord_Client
-      let roleManager = guild->getGuildRoleManager
-      let createRoleOptions = CreateRoleOptions({
-        data: RoleData({
-          name: RoleName("Verified"),
-          color: String("ORANGE"),
-        }),
-        reason: Reason("Verify users with BrightID"),
-      })
-      roleManager
-      ->createGuildRoleClient(createRoleOptions)
-      ->then(role => {
-        Js.log2("role", role)
-        resolve(role)
-      })
-      ->ignore
-      // ->then(
-      //   resolve
-      //   updateGist(
-      //     guild.id,
-      //     {
-      //       name: guild.name,
-      //       role: "Verified",
-      //     },
-      //   ),
-      // )
-      // ->catch(err => Js.log(err)->ignore)
-    },
+let tap = args => {
+  Js.log(args)
+  args
+}
+
+let onMessage = (message: Discord_Message.message) => {
+  if message.author.bot->Discord_User.validateBot {
+    ()
+  }
+
+  let member = message.member
+  let whitelistedChannels = parseWhitelistedChannels()->tap
+  let messageWhitelisted =
+    whitelistedChannels
+    ->Js.Array2.reduce(
+      (whitelisted, channel) =>
+        Discord_Channel.ChannelName(channel) === message.channel.name ||
+        channel === "*" ||
+        whitelisted,
+      false,
+    )
+    ->tap
+}
+
+client
+->Discord_Client.validateClient
+->Discord_Client.on(
+  #message(
+    message =>
+      message->Discord_Message.make->onMessage,
+
+      //   if (!messageWhitelisted && whitelistedChannels) {
+      //     return
+      //   }
+
+      //   const handler = detectHandler(message.content)
+      //   handler(member, client, message)
+
+      // } catch (err) {
+      //   if (err instanceof RequestHandlerError) {
+      //     message.reply('Could not find the requested command')
+      //   } else if (err instanceof WhitelistedChannelError) {
+      //     error('FATAL: No whitelisted channels set in the environment variables.')
+      //   }
+      //}
   ),
 )
+
+switch config {
+| Ok(discordToken) => client->Discord_Client.login(discordToken)
+| Error(err) => Js.log(err)
+}
 
 // %%raw(`
 
 // client.on('guildMemberAdd', member => {
 //   const handler = detectHandler('!verify')
 //   handler(member)
-// })
-
-// client.on('message', message => {
-//   if (message.author.bot) {
-//     return
-//   }
-
-//   let member = message.member
-
-//   try {
-//     const whitelistedChannels = parseWhitelistedChannels()
-
-//     const messageWhitelisted = whitelistedChannels.reduce(
-//       (whitelisted, channel) =>
-//         channel === message.channel.name || channel === '*' || whitelisted,
-//       false,
-//     )
-
-//     if (!messageWhitelisted && whitelistedChannels) {
-//       return
-//     }
-
-//     const handler = detectHandler(message.content)
-//     handler(member, client, message)
-
-//   } catch (err) {
-//     if (err instanceof RequestHandlerError) {
-//       message.reply('Could not find the requested command')
-//     } else if (err instanceof WhitelistedChannelError) {
-//       error('FATAL: No whitelisted channels set in the environment variables.')
-//     }
-//   }
 // })
 
 // module.exports = client

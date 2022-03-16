@@ -28,7 +28,7 @@ function updateGist(guildId, obj) {
           },
         },
       }
-      console.log('updatedBody: ', updatedBody);
+      console.log('updatedBody: ', updatedBody)
 
       fetch(`https://api.github.com/gists/${process.env.GIST_ID}`, {
         method: 'PATCH',
