@@ -1,7 +1,9 @@
 open Discord_Snowflake
 type content = Content(string)
 
+type t
 type message = {
+  t: t,
   id: snowflake,
   content: content,
   author: Discord_User.user,
@@ -9,11 +11,22 @@ type message = {
   channel: Discord_Channel.channel,
 }
 
-@get external getMessageContent: 'message => string = "content"
-@get external getMessageId: 'message => string = "id"
-@get external getMessageAuthor: 'message => 'author = "author"
-@get external getMessageMember: 'message => Discord_Guild.guildMember = "member"
-@get external getMessageChannel: 'message => 'channel = "channel"
+@send external createReply: (t, string) => unit = "reply"
+@get external getMessageContent: t => string = "content"
+@get external getMessageId: t => string = "id"
+@get external getMessageAuthor: t => Discord_User.t = "author"
+@get external getMessageMember: t => Discord_Guild.guildMember = "member"
+@get external getMessageChannel: t => 'channel = "channel"
+
+let validateContent = content =>
+  switch content {
+  | Content(content) => content
+  }
+
+let reply = (message, content) => {
+  let content = validateContent(content)
+  createReply(message, content)
+}
 
 let make = message => {
   let id = getMessageId(message)
@@ -22,9 +35,10 @@ let make = message => {
   let member = getMessageMember(message)
   let channel = getMessageChannel(message)
   {
+    t: message,
     id: Snowflake(id),
     content: Content(content),
-    author: author,
+    author: Discord_User.make(author),
     member: member,
     channel: channel,
   }

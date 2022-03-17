@@ -1,16 +1,16 @@
 type t
-type rec client = Client(client)
-@module("discord.js") @new external createDiscordClient: 'a => 'b = "Client"
-@send external createLogin: ('client, string) => unit = "login"
+type client = Client(t)
+@module("discord.js") @new external createDiscordClient: 'a => t = "Client"
+@send external createLogin: (t, string) => unit = "login"
 
 @send
 external on: (
-  'client,
+  t,
   @string
   [
     | #ready(unit => unit)
     | #guildCreate('guild => unit)
-    | #message('message => unit)
+    | #message(Discord_Message.t => unit)
   ],
 ) => unit = "on"
 
