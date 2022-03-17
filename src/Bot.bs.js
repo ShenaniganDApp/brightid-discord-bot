@@ -88,13 +88,28 @@ function checkWhitelistedChannel(message) {
     return whitelistedChannels.length !== 0;
   }
 }
-  
+
 function onMessage(message) {
   var isBot = Discord_User.validateBot(message.author.bot);
   if (isBot) {
     return ;
   }
   if (checkWhitelistedChannel(message)) {
+    return ;
+  }
+  var validClient = Discord_Client.validateClient(client);
+  var handler = Parser_DetectHandler.detectHandler(message.content);
+  if (handler !== undefined) {
+    return Curry._3(handler, message.member, validClient, message.t);
+  } else {
+    Discord_Message.reply(message.t, /* Content */{
+          _0: "Could not find the requested command"
+        });
+    console.error({
+          RE_EXN_ID: RequestHandlerError,
+          date: Date.now(),
+          message: "Could not find the requested command"
+        });
     return ;
   }
 }
