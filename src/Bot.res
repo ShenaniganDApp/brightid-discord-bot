@@ -62,23 +62,30 @@ let tap = args => {
   args
 }
 
-let onMessage = (message: Discord_Message.message) => {
-  if message.author.bot->Discord_User.validateBot {
-    ()
-  }
-
-  let member = message.member
-  let whitelistedChannels = parseWhitelistedChannels()->tap
+let checkWhitelistedChannel = (message: Discord_Message.message) => {
+  let whitelistedChannels = parseWhitelistedChannels()
   let messageWhitelisted =
-    whitelistedChannels
-    ->Js.Array2.reduce(
+    whitelistedChannels->Js.Array2.reduce(
       (whitelisted, channel) =>
         Discord_Channel.ChannelName(channel) === message.channel.name ||
         channel === "*" ||
         whitelisted,
       false,
     )
-    ->tap
+  !messageWhitelisted && whitelistedChannels->Belt.Array.length > 0
+}
+
+let onMessage = (message: Discord_Message.message) => {
+  let isBot = message.author.bot->Discord_User.validateBot
+  switch isBot {
+  | true => ()
+  | false =>
+    switch message->checkWhitelistedChannel {
+    | true => ()
+    | false => {
+      }
+    }
+  }
 }
 
 client

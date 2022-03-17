@@ -2,20 +2,19 @@
 'use strict';
 
 var Env = require("./Env.bs.js");
+var Curry = require("rescript/lib/js/curry.js");
 var Dotenv = require("dotenv");
 var Discord_User = require("./Discord/Discord_User.bs.js");
 var Discord_Guild = require("./Discord/Discord_Guild.bs.js");
 var Discord_Client = require("./Discord/Discord_Client.bs.js");
+var Caml_exceptions = require("rescript/lib/js/caml_exceptions.js");
 var Discord_Message = require("./Discord/Discord_Message.bs.js");
 var Discord_RoleManager = require("./Discord/Discord_RoleManager.bs.js");
+var Parser_DetectHandler = require("./parser/Parser_DetectHandler.bs.js");
 var UpdateOrReadGistJs = require("./updateOrReadGist.js");
 var WhitelistedChannels = require("./parser/whitelistedChannels");
 
-var detectHandler = (require('./parser/detectHandler'));
-
-var errorUtils = (require('./error-utils'));
-
-var utils = (require('./utils'));
+var RequestHandlerError = /* @__PURE__ */Caml_exceptions.create("Bot.RequestHandlerError");
 
 function parseWhitelistedChannels(prim) {
   return WhitelistedChannels();
@@ -72,11 +71,9 @@ function tap(args) {
   return args;
 }
 
-function onMessage(message) {
-  Discord_User.validateBot(message.author.bot);
-  var args = WhitelistedChannels();
-  console.log(args);
-  var args$1 = args.reduce((function (whitelisted, channel) {
+function checkWhitelistedChannel(message) {
+  var whitelistedChannels = WhitelistedChannels();
+  var messageWhitelisted = whitelistedChannels.reduce((function (whitelisted, channel) {
           if (/* ChannelName */({
                 _0: channel
               }) === message.channel.name || channel === "*") {
@@ -85,8 +82,21 @@ function onMessage(message) {
             return whitelisted;
           }
         }), false);
-  console.log(args$1);
+  if (messageWhitelisted) {
+    return false;
+  } else {
+    return whitelistedChannels.length !== 0;
+  }
+}
   
+function onMessage(message) {
+  var isBot = Discord_User.validateBot(message.author.bot);
+  if (isBot) {
+    return ;
+  }
+  if (checkWhitelistedChannel(message)) {
+    return ;
+  }
 }
 
 Discord_Client.validateClient(client).on("message", (function (message) {
@@ -99,9 +109,7 @@ if (config.TAG === /* Ok */0) {
   console.log(config._0);
 }
 
-exports.detectHandler = detectHandler;
-exports.errorUtils = errorUtils;
-exports.utils = utils;
+exports.RequestHandlerError = RequestHandlerError;
 exports.parseWhitelistedChannels = parseWhitelistedChannels;
 exports.updateGist = updateGist;
 exports.config = config;
@@ -109,5 +117,6 @@ exports.client = client;
 exports.updateGistOnGuildCreate = updateGistOnGuildCreate;
 exports.onGuildCreate = onGuildCreate;
 exports.tap = tap;
+exports.checkWhitelistedChannel = checkWhitelistedChannel;
 exports.onMessage = onMessage;
-/* detectHandler Not a pure module */
+/*  Not a pure module */

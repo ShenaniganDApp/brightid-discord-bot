@@ -6,5 +6,15 @@ function validateBot(bot) {
   return bot._0;
 }
 
+function make(user) {
+  var bot = user.bot;
+  return {
+          bot: /* Bot */{
+            _0: bot
+          }
+        };
+}
+
 exports.validateBot = validateBot;
+exports.make = make;
 /* No side effect */
