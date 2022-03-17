@@ -1,4 +1,5 @@
-const brightIdContent = `
+open Discord_Message
+let brightIdContent = `
 __**Available BrightId commands:**__
 - \`!verify\` → Sends a BrightID QR code for users to connect with their BrightId
 - \`!me\`→ After scanning the qr code, add yourself to the list of verified users
@@ -8,6 +9,6 @@ __**admin only**__
 - \`!invite\` → Use this command to add an invite for this discord to the guilds
 `
 
-module.exports = function brightId(_, _, message) {
-  message.reply(brightIdContent)
+let brightId = (_: Discord_Guild.guildMember, _: Discord_Client.t, message: t) => {
+  message->reply(Content(brightIdContent))
 }
