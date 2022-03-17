@@ -1,7 +1,6 @@
-open Promise
-let detectHandler = %raw(`require('./parser/detectHandler')`)
-let errorUtils = %raw(`require('./error-utils')`)
-let utils = %raw(`require('./utils')`)
+// let errorUtils = %raw(`require('./error-utils')`)
+// let utils = %raw(`require('./utils')`)
+exception RequestHandlerError({date: float, message: string})
 @module
 external parseWhitelistedChannels: unit => array<string> = "./parser/whitelistedChannels"
 @module("./updateOrReadGist.js")
@@ -83,6 +82,22 @@ let onMessage = (message: Discord_Message.message) => {
     switch message->checkWhitelistedChannel {
     | true => ()
     | false => {
+        let validClient = client->Discord_Client.validateClient
+        let handler = Parser_DetectHandler.detectHandler(message.content)
+        switch handler {
+        | Some(handler) => handler(message.member, validClient, message.t)
+        | None => {
+            message.t->Discord_Message.reply(
+              Discord_Message.Content("Could not find the requested command"),
+            )
+            Js.Console.error(
+              RequestHandlerError({
+                date: Js.Date.now(),
+                message: "Could not find the requested command",
+              }),
+            )
+          }
+        }
       }
     }
   }
@@ -94,21 +109,12 @@ client
   #message(
     message =>
       message->Discord_Message.make->onMessage,
-
-      //   if (!messageWhitelisted && whitelistedChannels) {
-      //     return
-      //   }
-
-      //   const handler = detectHandler(message.content)
-      //   handler(member, client, message)
-
-      // } catch (err) {
       //   if (err instanceof RequestHandlerError) {
       //     message.reply('Could not find the requested command')
       //   } else if (err instanceof WhitelistedChannelError) {
       //     error('FATAL: No whitelisted channels set in the environment variables.')
       //   }
-      //}
+      // }
   ),
 )
 
