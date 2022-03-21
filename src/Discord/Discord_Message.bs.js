@@ -2,6 +2,8 @@
 'use strict';
 
 var Discord_User = require("./Discord_User.bs.js");
+var Discord_Guild = require("./Discord_Guild.bs.js");
+var Discord_Channel = require("./Discord_Channel.bs.js");
 
 function validateContent(content) {
   return content._0;
@@ -9,7 +11,7 @@ function validateContent(content) {
 
 function reply(message, content) {
   var content$1 = content._0;
-  message.reply(content$1);
+  message.t.reply(content$1);
   
 }
 
@@ -19,6 +21,7 @@ function make(message) {
   var author = message.author;
   var member = message.member;
   var channel = message.channel;
+  var guild = message.guild;
   return {
           t: message,
           id: /* Snowflake */{
@@ -29,7 +32,8 @@ function make(message) {
           },
           author: Discord_User.make(author),
           member: member,
-          channel: channel
+          channel: Discord_Channel.make(channel),
+          guild: Discord_Guild.make(guild)
         };
 }
 
