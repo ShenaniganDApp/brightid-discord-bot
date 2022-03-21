@@ -9,6 +9,6 @@ __**admin only**__
 - \`!invite\` → Use this command to add an invite for this discord to the guilds
 `
 
-let brightId = (_: Discord_Guild.guildMember, _: Discord_Client.t, message: t) => {
-  message->reply(Content(brightIdContent))
+let brightId = (_: Discord_Guild.guildMember, _: Discord_Client.client, message: message) => {
+  message->reply(brightIdContent->Content)
 }
