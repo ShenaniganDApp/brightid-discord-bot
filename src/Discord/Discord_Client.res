@@ -9,7 +9,7 @@ external on: (
   @string
   [
     | #ready(unit => unit)
-    | #guildCreate('guild => unit)
+    | #guildCreate(Discord_Guild.t => unit)
     | #message(Discord_Message.t => unit)
   ],
 ) => unit = "on"
