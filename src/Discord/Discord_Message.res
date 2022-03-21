@@ -25,7 +25,7 @@ let validateContent = content =>
 
 let reply = (message, content) => {
   let content = validateContent(content)
-  createReply(message, content)
+  createReply(message.t, content)
 }
 
 let make = message => {

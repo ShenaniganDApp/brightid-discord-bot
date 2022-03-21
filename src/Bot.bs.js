@@ -46,7 +46,7 @@ function updateGistOnGuildCreate(guild) {
 
 function onGuildCreate(guild) {
   var roleManager = guild.roles;
-  Discord_RoleManager.makeGuildRole(roleManager, {
+  Discord_RoleManager.makeGuildRole(roleManager.t, {
         data: {
           name: /* RoleName */{
             _0: "Verified"
@@ -97,12 +97,11 @@ function onMessage(message) {
   if (checkWhitelistedChannel(message)) {
     return ;
   }
-  var validClient = Discord_Client.validateClient(client);
   var handler = Parser_DetectHandler.detectHandler(message.content);
   if (handler !== undefined) {
-    return Curry._3(handler, message.member, validClient, message.t);
+    return Curry._3(handler, message.member, client, message);
   } else {
-    Discord_Message.reply(message.t, /* Content */{
+    Discord_Message.reply(message, /* Content */{
           _0: "Could not find the requested command"
         });
     console.error({
