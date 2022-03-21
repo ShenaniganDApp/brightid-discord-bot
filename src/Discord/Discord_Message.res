@@ -16,7 +16,7 @@ type message = {
 @get external getMessageId: t => string = "id"
 @get external getMessageAuthor: t => Discord_User.t = "author"
 @get external getMessageMember: t => Discord_Guild.guildMember = "member"
-@get external getMessageChannel: t => 'channel = "channel"
+@get external getMessageChannel: t => Discord_Channel.t = "channel"
 
 let validateContent = content =>
   switch content {
@@ -40,6 +40,6 @@ let make = message => {
     content: Content(content),
     author: Discord_User.make(author),
     member: member,
-    channel: channel,
+    channel: Discord_Channel.make(channel),
   }
 }
