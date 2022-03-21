@@ -29,14 +29,15 @@ let updateGistOnGuildCreate = (guild: Discord_Guild.guild) =>
 
 let onGuildCreate = (guild: Discord_Guild.guild) => {
   let roleManager = guild.roles
+
   let makeRoleOptions: Discord_RoleManager.makeRoleOptions = {
     data: {
-      name: Discord_RoleManager.RoleName("Verified"),
+      name: Discord_Role.RoleName("Verified"),
       color: String("ORANGE"),
     },
     reason: Reason("Verify users with BrightID"),
   }
-  roleManager->Discord_RoleManager.makeGuildRole(makeRoleOptions)->ignore
+  roleManager.t->Discord_RoleManager.makeGuildRole(makeRoleOptions)->ignore
   guild->updateGistOnGuildCreate
   // ->catch(e => {
   //   switch e {
@@ -82,12 +83,11 @@ let onMessage = (message: Discord_Message.message) => {
     switch message->checkWhitelistedChannel {
     | true => ()
     | false => {
-        let validClient = client->Discord_Client.validateClient
         let handler = Parser_DetectHandler.detectHandler(message.content)
         switch handler {
-        | Some(handler) => handler(message.member, validClient, message.t)
+        | Some(handler) => message.member->handler(client, message)
         | None => {
-            message.t->Discord_Message.reply(
+            message->Discord_Message.reply(
               Discord_Message.Content("Could not find the requested command"),
             )
             Js.Console.error(
