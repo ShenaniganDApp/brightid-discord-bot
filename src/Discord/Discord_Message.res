@@ -1,3 +1,4 @@
+open Promise
 open Discord_Snowflake
 type content = Content(string)
 
@@ -12,7 +13,7 @@ type message = {
   guild: Discord_Guild.guild,
 }
 
-@send external createReply: (t, string) => unit = "reply"
+@send external _reply: (t, string) => Js.Promise.t<t> = "reply"
 @get external getMessageContent: t => string = "content"
 @get external getMessageId: t => string = "id"
 @get external getMessageAuthor: t => Discord_User.t = "author"
@@ -28,7 +29,17 @@ let validateContent = content =>
 
 let reply = (message, content) => {
   let content = validateContent(content)
-  createReply(message.t, content)
+  _reply(message.t, content)->catch(e => {
+    switch e {
+    | JsError(obj) =>
+      switch Js.Exn.message(obj) {
+      | Some(msg) => Js.Console.error(msg)
+      | None => Js.Console.error("Must be some non-error value")
+      }
+    | _ => Js.Console.error("Some unknown error")
+    }
+    message.t->resolve
+  })
 }
 
 let make = message => {

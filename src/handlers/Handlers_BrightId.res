@@ -1,3 +1,4 @@
+open Promise
 open Discord_Message
 let brightIdContent = `
 __**Available BrightId commands:**__
@@ -10,5 +11,6 @@ __**admin only**__
 `
 
 let brightId = (_: Discord_Guild.guildMember, _: Discord_Client.client, message: message) => {
-  message->reply(brightIdContent->Content)
+  message->reply(brightIdContent->Content)->ignore
+  resolve()
 }

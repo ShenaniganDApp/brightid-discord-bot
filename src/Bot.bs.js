@@ -9,6 +9,7 @@ var Discord_Guild = require("./Discord/Discord_Guild.bs.js");
 var Discord_Client = require("./Discord/Discord_Client.bs.js");
 var Caml_exceptions = require("rescript/lib/js/caml_exceptions.js");
 var Discord_Message = require("./Discord/Discord_Message.bs.js");
+var Discord_Snowflake = require("./Discord/Discord_Snowflake.bs.js");
 var Discord_RoleManager = require("./Discord/Discord_RoleManager.bs.js");
 var Parser_DetectHandler = require("./parser/Parser_DetectHandler.bs.js");
 var UpdateOrReadGistJs = require("./updateOrReadGist.js");
@@ -21,8 +22,7 @@ function parseWhitelistedChannels(prim) {
 }
 
 function updateGist(prim0, prim1) {
-  UpdateOrReadGistJs.updateGist(prim0, prim1);
-  
+  return UpdateOrReadGistJs.updateGist(prim0, prim1);
 }
 
 Dotenv.config();
@@ -37,11 +37,10 @@ Discord_Client.validateClient(client).on("ready", (function (param) {
       }));
 
 function updateGistOnGuildCreate(guild) {
-  UpdateOrReadGistJs.updateGist(guild.id, {
-        name: guild.name,
-        role: "Verified"
-      });
-  
+  return UpdateOrReadGistJs.updateGist(Discord_Snowflake.validateSnowflake(guild.id), {
+              name: Discord_Guild.validateGuildName(guild.name),
+              role: "Verified"
+            });
 }
 
 function onGuildCreate(guild) {
@@ -59,7 +58,8 @@ function onGuildCreate(guild) {
           _0: "Verify users with BrightID"
         }
       });
-  return updateGistOnGuildCreate(guild);
+  updateGistOnGuildCreate(guild);
+  
 }
 
 Discord_Client.validateClient(client).on("guildCreate", (function (guild) {
@@ -99,7 +99,7 @@ function onMessage(message) {
   }
   var handler = Parser_DetectHandler.detectHandler(message.content);
   if (handler !== undefined) {
-    return Curry._3(handler, message.member, client, message);
+    Curry._3(handler, message.member, client, message);
   } else {
     Discord_Message.reply(message, /* Content */{
           _0: "Could not find the requested command"
@@ -109,8 +109,8 @@ function onMessage(message) {
           date: Date.now(),
           message: "Could not find the requested command"
         });
-    return ;
   }
+  
 }
 
 Discord_Client.validateClient(client).on("message", (function (message) {
