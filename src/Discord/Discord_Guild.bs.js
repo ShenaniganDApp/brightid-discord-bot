@@ -24,4 +24,4 @@ function make(guild) {
 
 exports.validateGuildName = validateGuildName;
 exports.make = make;
-/* No side effect */
+/* Discord_RoleManager Not a pure module */
