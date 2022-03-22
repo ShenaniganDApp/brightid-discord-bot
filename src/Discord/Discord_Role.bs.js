@@ -6,9 +6,27 @@ function validateRoleName(name) {
   return name._0;
 }
 
+function validateColor(color) {
+  return color._0;
+}
+
+function validateReason(reason) {
+  return reason._0;
+}
+
+function edit(role, data, reason) {
+  var name = data.name._0;
+  var reason$1 = reason._0;
+  var data$1 = {
+    name: name
+  };
+  return role.t.edit(data$1, reason$1);
+}
+
 function make(role) {
   var name = role.name;
   return {
+          t: role,
           name: /* RoleName */{
             _0: name
           }
@@ -16,5 +34,8 @@ function make(role) {
 }
 
 exports.validateRoleName = validateRoleName;
+exports.validateColor = validateColor;
+exports.validateReason = validateReason;
+exports.edit = edit;
 exports.make = make;
 /* No side effect */
