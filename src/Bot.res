@@ -4,7 +4,7 @@ exception RequestHandlerError({date: float, message: string})
 @module
 external parseWhitelistedChannels: unit => array<string> = "./parser/whitelistedChannels"
 @module("./updateOrReadGist.js")
-external updateGist: (Discord_Snowflake.snowflake, 'a) => unit = "updateGist"
+external updateGist: (string, 'a) => Js.Promise.t<unit> = "updateGist"
 
 @val @module("discord.js") external user: 'a = "Client"
 
@@ -25,7 +25,9 @@ client
 )
 
 let updateGistOnGuildCreate = (guild: Discord_Guild.guild) =>
-  guild.id->updateGist({"name": guild.name, "role": "Verified"})
+  guild.id
+  ->Discord_Snowflake.validateSnowflake
+  ->updateGist({"name": guild.name->Discord_Guild.validateGuildName, "role": "Verified"})
 
 let onGuildCreate = (guild: Discord_Guild.guild) => {
   let roleManager = guild.roles
@@ -38,7 +40,7 @@ let onGuildCreate = (guild: Discord_Guild.guild) => {
     reason: Reason("Verify users with BrightID"),
   }
   roleManager.t->Discord_RoleManager.makeGuildRole(makeRoleOptions)->ignore
-  guild->updateGistOnGuildCreate
+  guild->updateGistOnGuildCreate->ignore
   // ->catch(e => {
   //   switch e {
   //   | CreateRoleError(msg) => Js.log("ReScript Error caught:" ++ msg)
@@ -85,11 +87,11 @@ let onMessage = (message: Discord_Message.message) => {
     | false => {
         let handler = Parser_DetectHandler.detectHandler(message.content)
         switch handler {
-        | Some(handler) => message.member->handler(client, message)
+        | Some(handler) => message.member->handler(client, message)->ignore
         | None => {
-            message->Discord_Message.reply(
-              Discord_Message.Content("Could not find the requested command"),
-            )
+            message
+            ->Discord_Message.reply(Discord_Message.Content("Could not find the requested command"))
+            ->ignore
             Js.Console.error(
               RequestHandlerError({
                 date: Js.Date.now(),
