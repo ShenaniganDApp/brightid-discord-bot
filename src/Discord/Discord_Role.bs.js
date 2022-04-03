@@ -23,19 +23,8 @@ function edit(role, data, reason) {
   return role.t.edit(data$1, reason$1);
 }
 
-function make(role) {
-  var name = role.name;
-  return {
-          t: role,
-          name: /* RoleName */{
-            _0: name
-          }
-        };
-}
-
 exports.validateRoleName = validateRoleName;
 exports.validateColor = validateColor;
 exports.validateReason = validateReason;
 exports.edit = edit;
-exports.make = make;
 /* No side effect */
