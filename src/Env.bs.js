@@ -22,16 +22,26 @@ function env(name) {
 }
 
 function getConfig(param) {
-  var discordApiToken = env("DISCORD_API_TOKEN");
-  if (discordApiToken.TAG === /* Ok */0) {
-    return {
-            TAG: /* Ok */0,
-            _0: /* DiscordToken */{
-              _0: discordApiToken._0
-            }
-          };
+  var match = env("DISCORD_API_TOKEN");
+  var match$1 = env("UUID_NAMESPACE");
+  if (match.TAG === /* Ok */0) {
+    if (match$1.TAG === /* Ok */0) {
+      return {
+              TAG: /* Ok */0,
+              _0: {
+                discordApiToken: /* DiscordToken */{
+                  _0: match._0
+                },
+                uuidNamespace: /* UUIDNamespace */{
+                  _0: match$1._0
+                }
+              }
+            };
+    } else {
+      return match$1;
+    }
   } else {
-    return discordApiToken;
+    return match;
   }
 }
 
