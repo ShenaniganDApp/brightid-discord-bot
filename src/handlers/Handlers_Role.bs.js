@@ -4,6 +4,7 @@
 var Js_dict = require("rescript/lib/js/js_dict.js");
 var $$Promise = require("@ryyppy/rescript-promise/src/Promise.bs.js");
 var Belt_Map = require("rescript/lib/js/belt_Map.js");
+var Variants = require("../Discord/Variants.bs.js");
 var Belt_Array = require("rescript/lib/js/belt_Array.js");
 var Caml_option = require("rescript/lib/js/caml_option.js");
 var Discord_Role = require("../Discord/Discord_Role.bs.js");
@@ -24,50 +25,55 @@ function readGist(prim) {
 
 var newRoleRe = /(?<=^\S+)\s/;
 
+function getRolebyRoleName(guildRoleManager, roleName) {
+  var guildRole = Belt_Map.findFirstBy(guildRoleManager.cache, (function (param, role) {
+          var role$1 = Variants.wrapRole(role);
+          return Discord_Role.validateRoleName(role$1.name) === roleName;
+        }));
+  if (guildRole !== undefined) {
+    return Variants.wrapRole(guildRole[1]);
+  }
+  throw {
+        RE_EXN_ID: RoleHandlerError,
+        _1: "Could not find a role with the name " + roleName,
+        Error: new Error()
+      };
+}
+
 function role(member, param, message) {
+  var guild = Variants.wrapGuild(member.guild);
+  var guildRoleManager = Variants.wrapRoleManager(guild.roles);
   var tmp;
-  if (member.hasPermission("ADMINISTRATOR")) {
+  if (member.t.hasPermission("ADMINISTRATOR")) {
     var role$1 = Discord_Message.validateContent(message.content).split(newRoleRe);
     var role$2 = Belt_Array.get(role$1, 1);
     if (role$2 !== undefined) {
       var role$3 = Caml_option.valFromOption(role$2);
       tmp = role$3 !== undefined ? UpdateOrReadGistJs.readGist().then(function (guilds) {
-              var guildId = Discord_Snowflake.validateSnowflake(message.guild.id);
+              var guildId = Discord_Snowflake.validateSnowflake(guild.id);
               var guildData = Js_dict.get(guilds, guildId);
               if (guildData !== undefined) {
                 var previousRole = guildData.role;
-                var guildRole = Belt_Map.findFirstBy(message.guild.roles.cache, (function (param, role) {
-                        return Discord_Role.validateRoleName(role.name) === previousRole;
-                      }));
-                if (guildRole !== undefined) {
-                  return Discord_Role.edit(guildRole[1], {
-                                  name: /* RoleName */{
-                                    _0: role$3
-                                  },
-                                  color: /* String */{
-                                    _0: ""
-                                  }
-                                }, /* Reason */{
-                                  _0: "Update BrightId role name"
-                                }).then(function (param) {
-                                return UpdateOrReadGistJs.updateGist(Discord_Snowflake.validateSnowflake(message.guild.id), {
-                                            role: role$3
-                                          });
+                var guildRole = getRolebyRoleName(guildRoleManager, previousRole);
+                return Discord_Role.edit(guildRole, {
+                                name: /* RoleName */{
+                                  _0: role$3
+                                },
+                                color: /* String */{
+                                  _0: ""
+                                }
+                              }, /* Reason */{
+                                _0: "Update BrightId role name"
                               }).then(function (param) {
-                              Discord_Message.reply(message, /* Content */{
-                                    _0: "Succesfully update verified role to " + role$3
-                                  });
-                              return Promise.resolve(undefined);
-                            });
-                } else {
-                  Discord_Message.reply(message, /* Content */{
-                        _0: "No role found with name: " + previousRole
-                      });
-                  return Promise.reject({
-                              RE_EXN_ID: RoleHandlerError,
-                              _1: "No role found with name: " + previousRole
-                            });
-                }
+                              return UpdateOrReadGistJs.updateGist(Discord_Snowflake.validateSnowflake(guild.id), {
+                                          role: role$3
+                                        });
+                            }).then(function (param) {
+                            Discord_Message.reply(message, /* Content */{
+                                  _0: "Succesfully update verified role to `" + role$3 + "`"
+                                });
+                            return Promise.resolve(message.t);
+                          });
               }
               Discord_Message.reply(message, /* Content */{
                     _0: "Failed to retreive role data for guild"
@@ -111,7 +117,7 @@ function role(member, param, message) {
                 } else {
                   console.error("Some unknown error");
                 }
-                return Promise.resolve(undefined);
+                return Promise.resolve(message.t);
               }));
 }
 
@@ -119,5 +125,6 @@ exports.RoleHandlerError = RoleHandlerError;
 exports.updateGist = updateGist;
 exports.readGist = readGist;
 exports.newRoleRe = newRoleRe;
+exports.getRolebyRoleName = getRolebyRoleName;
 exports.role = role;
-/* Discord_Message Not a pure module */
+/* Variants Not a pure module */

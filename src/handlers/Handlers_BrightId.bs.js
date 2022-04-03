@@ -9,9 +9,9 @@ function brightId(param, param$1, message) {
   Discord_Message.reply(message, /* Content */{
         _0: brightIdContent
       });
-  return Promise.resolve(undefined);
+  return Promise.resolve(message.t);
 }
 
 exports.brightIdContent = brightIdContent;
 exports.brightId = brightId;
-/* Discord_Message Not a pure module */
+/* No side effect */

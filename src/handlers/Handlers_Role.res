@@ -1,4 +1,6 @@
 open Promise
+open Types
+open Variants
 
 exception RoleHandlerError(string)
 
@@ -14,73 +16,67 @@ external readGist: unit => Promise.t<Js.Dict.t<brightIdGuildData>> = "readGist"
 
 let newRoleRe = %re("/(?<=^\S+)\s/")
 
-let role = (
-  member: Discord_Guild.guildMember,
-  _: Discord_Client.client,
-  message: Discord_Message.message,
-) => {
-  switch member->Discord_Guild.hasPermission("ADMINISTRATOR") {
+let getRolebyRoleName = (guildRoleManager, roleName) => {
+  let guildRole = guildRoleManager.cache->Belt.Map.findFirstBy((_, role) => {
+    let role = role->wrapRole
+    role.name->Discord_Role.validateRoleName === roleName
+  })
+  switch guildRole {
+  | Some((_, guildRole)) => guildRole->wrapRole
+  | None => RoleHandlerError("Could not find a role with the name " ++ roleName)->raise
+  }
+}
+
+let role = (member: guildMember, _: client, message: message) => {
+  let guild = member.guild->wrapGuild
+  let guildRoleManager = guild.roles->wrapRoleManager
+  switch member.t->Discord_Guild.hasPermission("ADMINISTRATOR") {
   | false => {
-      message->Discord_Message.reply(Discord_Message.Content("Must be an administrator"))->ignore
+      message->Discord_Message.reply(Content("Must be an administrator"))->ignore
       reject(RoleHandlerError("Administrator permissions are required"))
     }
   | true => {
       let role = message.content->Discord_Message.validateContent->Js.String2.splitByRe(newRoleRe)
       switch role->Belt.Array.get(1) {
       | None =>
-        message
-        ->Discord_Message.reply(Discord_Message.Content("Please specify a role -> `!role <role>`"))
-        ->ignore
+        message->Discord_Message.reply(Content("Please specify a role -> `!role <role>`"))->ignore
         reject(RoleHandlerError("No role specified"))
       | Some(role) =>
         switch role {
         | None => reject(RoleHandlerError("Role is empty"))
         | Some(role) =>
           readGist()->then(guilds => {
-            let guildId = message.guild.id->Discord_Snowflake.validateSnowflake
+            let guildId = guild.id->Discord_Snowflake.validateSnowflake
             let guildData = guilds->Js.Dict.get(guildId)
             switch guildData {
             | None =>
               message
-              ->Discord_Message.reply(
-                Discord_Message.Content("Failed to retreive role data for guild"),
-              )
+              ->Discord_Message.reply(Content("Failed to retreive role data for guild"))
               ->ignore
               reject(RoleHandlerError("Guild does not exist"))
             | Some(guildData) => {
                 let previousRole = guildData.role
-                let guildRole =
-                  message.guild.roles.cache->Belt.Map.findFirstBy((_, role) =>
-                    role.name->Discord_Role.validateRoleName === previousRole
-                  )
-                switch guildRole {
-                | None =>
+                let guildRole = getRolebyRoleName(guildRoleManager, previousRole)
+                guildRole
+                ->Discord_Role.edit(
+                  {name: RoleName(role), color: String("")},
+                  Reason("Update BrightId role name"),
+                )
+                ->then(_ => {
+                  guild.id
+                  ->Discord_Snowflake.validateSnowflake
+                  ->updateGist({
+                    "role": role,
+                  })
+                })
+                ->then(_ => {
                   message
                   ->Discord_Message.reply(
-                    Discord_Message.Content(`No role found with name: ${previousRole}`),
+                    Content(`Succesfully update verified role to \`${role}\``),
                   )
                   ->ignore
-                  reject(RoleHandlerError(`No role found with name: ${previousRole}`))
-                | Some(_, guildRole) =>
-                  guildRole
-                  ->Discord_Role.edit(
-                    {name: RoleName(role), color: String("")},
-                    Reason("Update BrightId role name"),
-                  )
-                  ->then(_ => {
-                    message.guild.id
-                    ->Discord_Snowflake.validateSnowflake
-                    ->updateGist({
-                      "role": role,
-                    })
-                  })
-                  ->then(_ => {
-                    message
-                    ->Discord_Message.reply(Content(`Succesfully update verified role to ${role}`))
-                    ->ignore
-                    resolve()
-                  })
-                }
+                  resolve(message.t)
+                })
               }
             }
           })
@@ -97,6 +93,6 @@ let role = (
       }
     | _ => Js.Console.error("Some unknown error")
     }
-    resolve()
+    resolve(message.t)
   })
 }
