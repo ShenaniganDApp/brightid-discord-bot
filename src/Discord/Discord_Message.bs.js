@@ -2,9 +2,6 @@
 'use strict';
 
 var $$Promise = require("@ryyppy/rescript-promise/src/Promise.bs.js");
-var Discord_User = require("./Discord_User.bs.js");
-var Discord_Guild = require("./Discord_Guild.bs.js");
-var Discord_Channel = require("./Discord_Channel.bs.js");
 
 function validateContent(content) {
   return content._0;
@@ -27,29 +24,6 @@ function reply(message, content) {
               }));
 }
 
-function make(message) {
-  var id = message.id;
-  var content = message.content;
-  var author = message.author;
-  var member = message.member;
-  var channel = message.channel;
-  var guild = message.guild;
-  return {
-          t: message,
-          id: /* Snowflake */{
-            _0: id
-          },
-          content: /* Content */{
-            _0: content
-          },
-          author: Discord_User.make(author),
-          member: member,
-          channel: Discord_Channel.make(channel),
-          guild: Discord_Guild.make(guild)
-        };
-}
-
 exports.validateContent = validateContent;
 exports.reply = reply;
-exports.make = make;
-/* Discord_Guild Not a pure module */
+/* No side effect */

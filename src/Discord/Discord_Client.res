@@ -1,5 +1,4 @@
-type t
-type client = Client(t)
+type t = Types.clientT
 @module("discord.js") @new external createDiscordClient: 'a => t = "Client"
 @send external createLogin: (t, string) => unit = "login"
 
@@ -16,18 +15,18 @@ external on: (
 
 let make = () => {
   let client = createDiscordClient()
-  Client(client)
+  Types.Client(client)
 }
 
 let validateClient = client => {
   switch client {
-  | Client(client) => client
+  | Types.Client(client) => client
   }
 }
 
 let login = (client, token) => {
   switch client {
-  | Client(client) =>
+  | Types.Client(client) =>
     switch token {
     | Env.DiscordToken(token) => createLogin(client, token)
     }

@@ -1,33 +1,26 @@
 open Promise
-open Discord_Snowflake
-type content = Content(string)
 
-type t
-type message = {
-  t: t,
-  id: snowflake,
-  content: content,
-  author: Discord_User.user,
-  member: Discord_Guild.guildMember,
-  channel: Discord_Channel.channel,
-  guild: Discord_Guild.guild,
-}
+type t = Types.messageT
+type messageAttachment
 
 @send external _reply: (t, string) => Js.Promise.t<t> = "reply"
 @get external getMessageContent: t => string = "content"
 @get external getMessageId: t => string = "id"
-@get external getMessageAuthor: t => Discord_User.t = "author"
-@get external getMessageMember: t => Discord_Guild.guildMember = "member"
-@get external getMessageChannel: t => Discord_Channel.t = "channel"
+@get external getMessageAuthor: t => Types.userT = "author"
+@get external getMessageMember: t => Types.guildMemberT = "member"
+@get external getMessageChannel: t => Types.channelT = "channel"
 //This return should be Js.Nullable
-@get external getMessageGuild: t => Discord_Guild.t = "guild"
+@get external getMessageGuild: t => Types.guildT = "guild"
 
+@module("discord.js") @new
+external createMessageAttachment: ('attachment, string, 'data) => messageAttachment =
+  "MessageAttachment"
 let validateContent = content =>
   switch content {
-  | Content(content) => content
+  | Types.Content(content) => content
   }
 
-let reply = (message, content) => {
+let reply = (message: Types.message, content) => {
   let content = validateContent(content)
   _reply(message.t, content)->catch(e => {
     switch e {
@@ -40,22 +33,4 @@ let reply = (message, content) => {
     }
     message.t->resolve
   })
-}
-
-let make = message => {
-  let id = getMessageId(message)
-  let content = getMessageContent(message)
-  let author = getMessageAuthor(message)
-  let member = getMessageMember(message)
-  let channel = getMessageChannel(message)
-  let guild = getMessageGuild(message)
-  {
-    t: message,
-    id: Snowflake(id),
-    content: Content(content),
-    author: Discord_User.make(author),
-    guild: Discord_Guild.make(guild),
-    member: member,
-    channel: Discord_Channel.make(channel),
-  }
 }

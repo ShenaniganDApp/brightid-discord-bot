@@ -6,20 +6,5 @@ function validateChannelName(channelName) {
   return channelName._0;
 }
 
-function make(channel) {
-  var id = channel.id;
-  var name = channel.name;
-  return {
-          t: channel,
-          id: /* Snowflake */{
-            _0: id
-          },
-          name: /* ChannelName */{
-            _0: name
-          }
-        };
-}
-
 exports.validateChannelName = validateChannelName;
-exports.make = make;
 /* No side effect */
