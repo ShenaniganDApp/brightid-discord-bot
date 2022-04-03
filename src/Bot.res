@@ -1,3 +1,5 @@
+open Types
+open Variants
 // let errorUtils = %raw(`require('./error-utils')`)
 // let utils = %raw(`require('./utils')`)
 exception RequestHandlerError({date: float, message: string})
@@ -24,73 +26,56 @@ client
   ),
 )
 
-let updateGistOnGuildCreate = (guild: Discord_Guild.guild) =>
+let updateGistOnGuildCreate = (guild: guild) =>
   guild.id
   ->Discord_Snowflake.validateSnowflake
   ->updateGist({"name": guild.name->Discord_Guild.validateGuildName, "role": "Verified"})
 
-let onGuildCreate = (guild: Discord_Guild.guild) => {
-  let roleManager = guild.roles
+let onGuildCreate = (guild: guild) => {
+  let roleManager = guild.roles->wrapRoleManager
 
-  let makeRoleOptions: Discord_RoleManager.makeRoleOptions = {
+  let createRoleOptions: createRoleOptions = {
     data: {
-      name: Discord_Role.RoleName("Verified"),
+      name: Types.RoleName("Verified"),
       color: String("ORANGE"),
     },
     reason: Reason("Verify users with BrightID"),
   }
-  roleManager.t->Discord_RoleManager.makeGuildRole(makeRoleOptions)->ignore
+  roleManager.t->Discord_RoleManager.create(createRoleOptions)->ignore
   guild->updateGistOnGuildCreate->ignore
-  // ->catch(e => {
-  //   switch e {
-  //   | CreateRoleError(msg) => Js.log("ReScript Error caught:" ++ msg)
-  //   | JsError(obj) =>
-  //     switch Js.Exn.message(obj) {
-  //     | Some(msg) => Js.log("Some JS error msg: " ++ msg)
-  //     | None => Js.log("Must be some non-error value")
-  //     }
-  //   | _ => Js.log("Some unknown error")
-  //   }
-  //   resolve()
-  // })
 }
 
 client
 ->Discord_Client.validateClient
-->Discord_Client.on(#guildCreate(guild => guild->Discord_Guild.make->onGuildCreate))
+->Discord_Client.on(#guildCreate(guild => guild->wrapGuild->onGuildCreate))
 
-let tap = args => {
-  Js.log(args)
-  args
-}
-
-let checkWhitelistedChannel = (message: Discord_Message.message) => {
+let checkWhitelistedChannel = (message: message) => {
+  let channel = message.channel->wrapChannel
   let whitelistedChannels = parseWhitelistedChannels()
   let messageWhitelisted =
     whitelistedChannels->Js.Array2.reduce(
-      (whitelisted, channel) =>
-        Discord_Channel.ChannelName(channel) === message.channel.name ||
-        channel === "*" ||
-        whitelisted,
+      (whitelisted, name) => ChannelName(name) === channel.name || name === "*" || whitelisted,
       false,
     )
   !messageWhitelisted && whitelistedChannels->Belt.Array.length > 0
 }
 
-let onMessage = (message: Discord_Message.message) => {
-  let isBot = message.author.bot->Discord_User.validateBot
+let onMessage = (message: Types.message) => {
+  let author = message.author->wrapUser
+  let isBot = author.bot->Discord_User.validateBot
   switch isBot {
   | true => ()
   | false =>
     switch message->checkWhitelistedChannel {
     | true => ()
     | false => {
+        let guildMember = message.member->wrapGuildMember
         let handler = Parser_DetectHandler.detectHandler(message.content)
         switch handler {
-        | Some(handler) => message.member->handler(client, message)->ignore
+        | Some(handler) => guildMember->handler(client, message)->ignore
         | None => {
             message
-            ->Discord_Message.reply(Discord_Message.Content("Could not find the requested command"))
+            ->Discord_Message.reply(Types.Content("Could not find the requested command"))
             ->ignore
             Js.Console.error(
               RequestHandlerError({
@@ -110,7 +95,7 @@ client
 ->Discord_Client.on(
   #message(
     message =>
-      message->Discord_Message.make->onMessage,
+      message->Variants.wrapMessage->onMessage,
       //   if (err instanceof RequestHandlerError) {
       //     message.reply('Could not find the requested command')
       //   } else if (err instanceof WhitelistedChannelError) {
@@ -121,7 +106,7 @@ client
 )
 
 switch config {
-| Ok(discordToken) => client->Discord_Client.login(discordToken)
+| Ok(config) => client->Discord_Client.login(config["discordApiToken"])
 | Error(err) => Js.log(err)
 }
 

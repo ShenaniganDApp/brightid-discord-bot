@@ -4,6 +4,7 @@
 var Env = require("./Env.bs.js");
 var Curry = require("rescript/lib/js/curry.js");
 var Dotenv = require("dotenv");
+var Variants = require("./Discord/Variants.bs.js");
 var Discord_User = require("./Discord/Discord_User.bs.js");
 var Discord_Guild = require("./Discord/Discord_Guild.bs.js");
 var Discord_Client = require("./Discord/Discord_Client.bs.js");
@@ -44,8 +45,8 @@ function updateGistOnGuildCreate(guild) {
 }
 
 function onGuildCreate(guild) {
-  var roleManager = guild.roles;
-  Discord_RoleManager.makeGuildRole(roleManager.t, {
+  var roleManager = Variants.wrapRoleManager(guild.roles);
+  Discord_RoleManager.create(roleManager.t, {
         data: {
           name: /* RoleName */{
             _0: "Verified"
@@ -63,20 +64,16 @@ function onGuildCreate(guild) {
 }
 
 Discord_Client.validateClient(client).on("guildCreate", (function (guild) {
-        return onGuildCreate(Discord_Guild.make(guild));
+        return onGuildCreate(Variants.wrapGuild(guild));
       }));
 
-function tap(args) {
-  console.log(args);
-  return args;
-}
-
 function checkWhitelistedChannel(message) {
+  var channel = Variants.wrapChannel(message.channel);
   var whitelistedChannels = WhitelistedChannels();
-  var messageWhitelisted = whitelistedChannels.reduce((function (whitelisted, channel) {
+  var messageWhitelisted = whitelistedChannels.reduce((function (whitelisted, name) {
           if (/* ChannelName */({
-                _0: channel
-              }) === message.channel.name || channel === "*") {
+                _0: name
+              }) === channel.name || name === "*") {
             return true;
           } else {
             return whitelisted;
@@ -90,16 +87,18 @@ function checkWhitelistedChannel(message) {
 }
 
 function onMessage(message) {
-  var isBot = Discord_User.validateBot(message.author.bot);
+  var author = Variants.wrapUser(message.author);
+  var isBot = Discord_User.validateBot(author.bot);
   if (isBot) {
     return ;
   }
   if (checkWhitelistedChannel(message)) {
     return ;
   }
+  var guildMember = Variants.wrapGuildMember(message.member);
   var handler = Parser_DetectHandler.detectHandler(message.content);
   if (handler !== undefined) {
-    Curry._3(handler, message.member, client, message);
+    Curry._3(handler, guildMember, client, message);
   } else {
     Discord_Message.reply(message, /* Content */{
           _0: "Could not find the requested command"
@@ -114,11 +113,11 @@ function onMessage(message) {
 }
 
 Discord_Client.validateClient(client).on("message", (function (message) {
-        return onMessage(Discord_Message.make(message));
+        return onMessage(Variants.wrapMessage(message));
       }));
 
 if (config.TAG === /* Ok */0) {
-  Discord_Client.login(client, config._0);
+  Discord_Client.login(client, config._0.discordApiToken);
 } else {
   console.log(config._0);
 }
@@ -130,7 +129,6 @@ exports.config = config;
 exports.client = client;
 exports.updateGistOnGuildCreate = updateGistOnGuildCreate;
 exports.onGuildCreate = onGuildCreate;
-exports.tap = tap;
 exports.checkWhitelistedChannel = checkWhitelistedChannel;
 exports.onMessage = onMessage;
 /*  Not a pure module */
