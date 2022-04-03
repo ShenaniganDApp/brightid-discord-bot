@@ -1,6 +1,5 @@
 let handlers = Belt.Map.String.fromArray([
-  //   ("!verify", verifyHandler),
-  //   ("!me", meHandler),
+  ("!verify", Handlers_Verify.verify),
   //   ("!guilds", guildsHandler),
   //   ("!invite", inviteHandler),
   ("!role", Handlers_Role.role),
