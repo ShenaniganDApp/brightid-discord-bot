@@ -5,6 +5,13 @@ var Belt_Map = require("rescript/lib/js/belt_Map.js");
 var Belt_Array = require("rescript/lib/js/belt_Array.js");
 var Discord_Snowflake = require("./Discord_Snowflake.bs.js");
 
+function wrapClient(client) {
+  var guilds = client.guilds;
+  return {
+          guilds: guilds
+        };
+}
+
 function wrapGuild(guild) {
   var id = /* Snowflake */{
     _0: guild.id
@@ -13,11 +20,29 @@ function wrapGuild(guild) {
     _0: guild.name
   };
   var roles = guild.roles;
+  var memberCount = /* MemberCount */{
+    _0: guild.memberCount
+  };
   return {
           t: guild,
           id: id,
           name: name,
+          memberCount: memberCount,
           roles: roles
+        };
+}
+
+function wrapGuildManager(guildManager) {
+  var keys = Belt_Array.map(guildManager.cache.keyArray(), (function (key) {
+          return /* Snowflake */{
+                  _0: key
+                };
+        }));
+  var values = guildManager.cache.array();
+  var cache = Belt_Map.fromArray(Belt_Array.zip(keys, values), Discord_Snowflake.SnowflakeCompare);
+  return {
+          t: guildManager,
+          cache: cache
         };
 }
 
@@ -90,11 +115,15 @@ function wrapMessage(message) {
 }
 
 function wrapUser(user) {
-  var bot = user.bot;
+  var id = /* Snowflake */{
+    _0: user.id
+  };
+  var bot = /* Bot */{
+    _0: user.bot
+  };
   return {
-          bot: /* Bot */{
-            _0: bot
-          }
+          id: id,
+          bot: bot
         };
 }
 
@@ -112,7 +141,29 @@ function wrapChannel(channel) {
         };
 }
 
+function wrapReaction(reaction) {
+  var emoji = reaction.emoji;
+  var message = reaction.message;
+  return {
+          t: reaction,
+          message: message,
+          emoji: emoji
+        };
+}
+
+function wrapEmoji(emoji) {
+  var name = /* EmojiName */{
+    _0: emoji.emoji
+  };
+  return {
+          t: emoji,
+          name: name
+        };
+}
+
+exports.wrapClient = wrapClient;
 exports.wrapGuild = wrapGuild;
+exports.wrapGuildManager = wrapGuildManager;
 exports.wrapRoleManager = wrapRoleManager;
 exports.wrapRole = wrapRole;
 exports.wrapGuildMember = wrapGuildMember;
@@ -120,4 +171,6 @@ exports.wrapGuildMemberRoleManager = wrapGuildMemberRoleManager;
 exports.wrapMessage = wrapMessage;
 exports.wrapUser = wrapUser;
 exports.wrapChannel = wrapChannel;
+exports.wrapReaction = wrapReaction;
+exports.wrapEmoji = wrapEmoji;
 /* Discord_Snowflake Not a pure module */

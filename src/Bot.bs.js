@@ -5,6 +5,7 @@ var Env = require("./Env.bs.js");
 var Curry = require("rescript/lib/js/curry.js");
 var Dotenv = require("dotenv");
 var Variants = require("./Discord/Variants.bs.js");
+var DiscordJs = require("discord.js");
 var Discord_User = require("./Discord/Discord_User.bs.js");
 var Discord_Guild = require("./Discord/Discord_Guild.bs.js");
 var Discord_Client = require("./Discord/Discord_Client.bs.js");
@@ -30,9 +31,9 @@ Dotenv.config();
 
 var config = Env.getConfig(undefined);
 
-var client = Discord_Client.make(undefined);
+var client = new DiscordJs.Client(undefined);
 
-Discord_Client.validateClient(client).on("ready", (function (param) {
+client.on("ready", (function (param) {
         console.log("Logged In");
         
       }));
@@ -63,7 +64,7 @@ function onGuildCreate(guild) {
   
 }
 
-Discord_Client.validateClient(client).on("guildCreate", (function (guild) {
+client.on("guildCreate", (function (guild) {
         return onGuildCreate(Variants.wrapGuild(guild));
       }));
 
@@ -98,21 +99,22 @@ function onMessage(message) {
   var guildMember = Variants.wrapGuildMember(message.member);
   var handler = Parser_DetectHandler.detectHandler(message.content);
   if (handler !== undefined) {
-    Curry._3(handler, guildMember, client, message);
-  } else {
-    Discord_Message.reply(message, /* Content */{
-          _0: "Could not find the requested command"
-        });
-    console.error({
-          RE_EXN_ID: RequestHandlerError,
-          date: Date.now(),
-          message: "Could not find the requested command"
-        });
+    var client$1 = Variants.wrapClient(client);
+    Curry._3(handler, guildMember, client$1, message);
+    return ;
   }
+  Discord_Message.reply(message, /* Content */{
+        _0: "Could not find the requested command"
+      });
+  console.error({
+        RE_EXN_ID: RequestHandlerError,
+        date: Date.now(),
+        message: "Could not find the requested command"
+      });
   
 }
 
-Discord_Client.validateClient(client).on("message", (function (message) {
+client.on("message", (function (message) {
         return onMessage(Variants.wrapMessage(message));
       }));
 

@@ -3,13 +3,17 @@
 
 var $$Promise = require("@ryyppy/rescript-promise/src/Promise.bs.js");
 
+function validateEmojiName(name) {
+  return name._0;
+}
+
 function validateContent(content) {
   return content._0;
 }
 
-function reply(message, content) {
-  var content$1 = content._0;
-  return $$Promise.$$catch(message.t.reply(content$1), (function (e) {
+function reply(message, options) {
+  var content = typeof options === "number" ? "" : options._0;
+  return $$Promise.$$catch(message.t.reply(content), (function (e) {
                 if (e.RE_EXN_ID === $$Promise.JsError) {
                   var msg = e._1.message;
                   if (msg !== undefined) {
@@ -24,6 +28,7 @@ function reply(message, content) {
               }));
 }
 
+exports.validateEmojiName = validateEmojiName;
 exports.validateContent = validateContent;
 exports.reply = reply;
 /* No side effect */

@@ -1,21 +1,19 @@
-type t = Types.guildT
+open Types
+type t = guildT
 
-@get external getGuildRoleManager: t => Types.roleManagerT = "roles"
+@get external getGuildRoleManager: t => roleManagerT = "roles"
 @get external getGuildId: t => string = "id"
 @get external getGuildName: t => string = "name"
+@get external getMemberCount: t => int = "memberCount"
 
-@send external hasPermission: (Types.guildMemberT, string) => bool = "hasPermission"
+@send external hasPermission: (guildMemberT, string) => bool = "hasPermission"
 
 let validateGuildName = guildName =>
   switch guildName {
-  | Types.GuildName(guildName) => guildName
+  | GuildName(guildName) => guildName
   }
 
-// let validateGuild = guild =>
-//   switch guild {
-//   | Guild(guild) => {
-//       let id = guild.id->validateSnowflake
-//       let name = guild.name->validateGuildName
-//       {"id": id, "name": name}
-//     }
-//   }
+let validateMemberCount = memberCount =>
+  switch memberCount {
+  | MemberCount(memberCount) => memberCount
+  }
