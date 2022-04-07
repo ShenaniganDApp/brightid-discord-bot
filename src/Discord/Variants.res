@@ -1,16 +1,38 @@
 open Discord_Snowflake
 open Types
+
+let wrapClient = (client): client => {
+  open Discord_Client
+  let guilds = client->getGuildManager
+  {guilds: guilds}
+}
+
 let wrapGuild = (guild): guild => {
   open Discord_Guild
   let id = guild->getGuildId->Discord_Snowflake.Snowflake
   let name = guild->getGuildName->GuildName
   let roles = guild->getGuildRoleManager
+  let memberCount = guild->getMemberCount->MemberCount
   {
     t: guild,
     id: id,
+    memberCount: memberCount,
     name: name,
     roles: roles,
   }
+}
+
+let wrapGuildManager = (guildManager): guildManager => {
+  open Discord_GuildManager
+  let keys =
+    guildManager
+    ->getCache
+    ->Discord_Collection.keyArray
+    ->Belt.Array.map(key => Discord_Snowflake.Snowflake(key))
+  let values = guildManager->getCache->Discord_Collection.array
+  let cache =
+    Belt.Array.zip(keys, values)->Belt.Map.fromArray(~id=module(Discord_Snowflake.SnowflakeCompare))
+  {t: guildManager, cache: cache}
 }
 
 let wrapRoleManager = (roleManager): roleManager => {
@@ -72,8 +94,9 @@ let wrapMessage = (message): message => {
 }
 let wrapUser = (user): user => {
   open Discord_User
-  let bot = user->getUserBot
-  {bot: Bot(bot)}
+  let id = user->getUserId->Snowflake
+  let bot = user->getUserBot->Bot
+  {id: id, bot: bot}
 }
 
 let wrapChannel = (channel): channel => {
@@ -84,5 +107,24 @@ let wrapChannel = (channel): channel => {
     t: channel,
     id: Snowflake(id),
     name: ChannelName(name),
+  }
+}
+
+let wrapReaction = reaction => {
+  open Discord_Reaction
+  let emoji = reaction->getReactionEmoji
+  let message = reaction->getReactionMessage
+  {
+    t: reaction,
+    message: message,
+    emoji: emoji,
+  }
+}
+
+let wrapEmoji = (emoji): emoji => {
+  let name = emoji->Discord_Message.getEmojiName->EmojiName
+  {
+    t: emoji,
+    name: name,
   }
 }

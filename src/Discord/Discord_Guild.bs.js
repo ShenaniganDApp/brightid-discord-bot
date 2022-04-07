@@ -6,5 +6,10 @@ function validateGuildName(guildName) {
   return guildName._0;
 }
 
+function validateMemberCount(memberCount) {
+  return memberCount._0;
+}
+
 exports.validateGuildName = validateGuildName;
+exports.validateMemberCount = validateMemberCount;
 /* No side effect */

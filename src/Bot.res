@@ -14,11 +14,9 @@ Env.createEnv()
 
 let config = Env.getConfig()
 
-let client = Discord_Client.make()
+let client = Discord_Client.createDiscordClient()
 
-client
-->Discord_Client.validateClient
-->Discord_Client.on(
+client->Discord_Client.on(
   #ready(
     () => {
       Js.log("Logged In")
@@ -45,9 +43,7 @@ let onGuildCreate = (guild: guild) => {
   guild->updateGistOnGuildCreate->ignore
 }
 
-client
-->Discord_Client.validateClient
-->Discord_Client.on(#guildCreate(guild => guild->wrapGuild->onGuildCreate))
+client->Discord_Client.on(#guildCreate(guild => guild->wrapGuild->onGuildCreate))
 
 let checkWhitelistedChannel = (message: message) => {
   let channel = message.channel->wrapChannel
@@ -72,7 +68,10 @@ let onMessage = (message: Types.message) => {
         let guildMember = message.member->wrapGuildMember
         let handler = Parser_DetectHandler.detectHandler(message.content)
         switch handler {
-        | Some(handler) => guildMember->handler(client, message)->ignore
+        | Some(handler) => {
+            let client = client->wrapClient
+            guildMember->handler(client, message)->ignore
+          }
         | None => {
             message
             ->Discord_Message.reply(Types.Content("Could not find the requested command"))
@@ -90,9 +89,7 @@ let onMessage = (message: Types.message) => {
   }
 }
 
-client
-->Discord_Client.validateClient
-->Discord_Client.on(
+client->Discord_Client.on(
   #message(
     message =>
       message->Variants.wrapMessage->onMessage,

@@ -4,14 +4,19 @@ type clientT
 type channelT
 type roleT
 type guildT
+type guildManagerT
 type roleManagerT
 type guildMemberRoleManagerT
 type guildMemberT
 type userT
 type messageT
+type reactionT
+type reactionCollectorT
+type reactionManagerT
+type emojiT
 
 // Client
-type client = Client(clientT)
+type client = {guilds: guildManagerT}
 
 // Channel
 type channelName = ChannelName(string)
@@ -35,6 +40,7 @@ type role = {t: roleT, name: roleName}
 //Guild
 
 type guildName = GuildName(string)
+type memberCount = MemberCount(int)
 
 type createRoleOptions = {data: roleData, reason: reason}
 
@@ -42,7 +48,13 @@ type guild = {
   t: guildT,
   id: snowflake,
   name: guildName,
+  memberCount: memberCount,
   roles: roleManagerT,
+}
+
+type guildManager = {
+  t: guildManagerT,
+  cache: Belt.Map.t<snowflake, guildT, SnowflakeCompare.identity>,
 }
 
 //RoleManager
@@ -61,11 +73,12 @@ type guildMember = {t: guildMemberT, id: snowflake, roles: guildMemberRoleManage
 
 //User
 type bot = Bot(bool)
-type user = {bot: bot}
+type user = {id: snowflake, bot: bot}
 
 // Message
 
 type content = Content(string)
+type replyOptions = Content(string) | MessagePayload | MessageOptions
 type message = {
   t: messageT,
   id: snowflake,
@@ -75,3 +88,14 @@ type message = {
   channel: channelT,
   guild: guildT,
 }
+
+//Reaction
+type reaction = {
+  t: reactionT,
+  message: messageT,
+  emoji: emojiT,
+}
+
+//Emoji
+type emojiName = EmojiName(string)
+type emoji = {t: emojiT, name: emojiName}
