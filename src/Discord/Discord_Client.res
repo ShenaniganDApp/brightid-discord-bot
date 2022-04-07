@@ -11,6 +11,7 @@ external on: (
     | #ready(unit => unit)
     | #guildCreate(Discord_Guild.t => unit)
     | #message(Discord_Message.t => unit)
+    | #guildMemberAdd(Discord_GuildMember.t => unit)
   ],
 ) => unit = "on"
 

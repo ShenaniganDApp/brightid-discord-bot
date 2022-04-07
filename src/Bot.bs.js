@@ -33,10 +33,24 @@ var config = Env.getConfig(undefined);
 
 var client = new DiscordJs.Client(undefined);
 
-client.on("ready", (function (param) {
-        console.log("Logged In");
-        
-      }));
+function checkWhitelistedChannel(message) {
+  var channel = Variants.wrapChannel(message.channel);
+  var whitelistedChannels = WhitelistedChannels();
+  var messageWhitelisted = whitelistedChannels.reduce((function (whitelisted, name) {
+          if (/* ChannelName */({
+                _0: name
+              }) === channel.name || name === "*") {
+            return true;
+          } else {
+            return whitelisted;
+          }
+        }), false);
+  if (messageWhitelisted) {
+    return false;
+  } else {
+    return whitelistedChannels.length !== 0;
+  }
+}
 
 function updateGistOnGuildCreate(guild) {
   return UpdateOrReadGistJs.updateGist(Discord_Snowflake.validateSnowflake(guild.id), {
@@ -62,29 +76,6 @@ function onGuildCreate(guild) {
       });
   updateGistOnGuildCreate(guild);
   
-}
-
-client.on("guildCreate", (function (guild) {
-        return onGuildCreate(Variants.wrapGuild(guild));
-      }));
-
-function checkWhitelistedChannel(message) {
-  var channel = Variants.wrapChannel(message.channel);
-  var whitelistedChannels = WhitelistedChannels();
-  var messageWhitelisted = whitelistedChannels.reduce((function (whitelisted, name) {
-          if (/* ChannelName */({
-                _0: name
-              }) === channel.name || name === "*") {
-            return true;
-          } else {
-            return whitelisted;
-          }
-        }), false);
-  if (messageWhitelisted) {
-    return false;
-  } else {
-    return whitelistedChannels.length !== 0;
-  }
 }
 
 function onMessage(message) {
@@ -114,6 +105,15 @@ function onMessage(message) {
   
 }
 
+client.on("ready", (function (param) {
+        console.log("Logged In");
+        
+      }));
+
+client.on("guildCreate", (function (guild) {
+        return onGuildCreate(Variants.wrapGuild(guild));
+      }));
+
 client.on("message", (function (message) {
         return onMessage(Variants.wrapMessage(message));
       }));
@@ -129,8 +129,8 @@ exports.parseWhitelistedChannels = parseWhitelistedChannels;
 exports.updateGist = updateGist;
 exports.config = config;
 exports.client = client;
+exports.checkWhitelistedChannel = checkWhitelistedChannel;
 exports.updateGistOnGuildCreate = updateGistOnGuildCreate;
 exports.onGuildCreate = onGuildCreate;
-exports.checkWhitelistedChannel = checkWhitelistedChannel;
 exports.onMessage = onMessage;
 /*  Not a pure module */

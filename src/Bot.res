@@ -1,7 +1,7 @@
 open Types
 open Variants
-// let errorUtils = %raw(`require('./error-utils')`)
-// let utils = %raw(`require('./utils')`)
+open Discord_Client
+
 exception RequestHandlerError({date: float, message: string})
 @module
 external parseWhitelistedChannels: unit => array<string> = "./parser/whitelistedChannels"
@@ -14,15 +14,18 @@ Env.createEnv()
 
 let config = Env.getConfig()
 
-let client = Discord_Client.createDiscordClient()
+let client = createDiscordClient()
 
-client->Discord_Client.on(
-  #ready(
-    () => {
-      Js.log("Logged In")
-    },
-  ),
-)
+let checkWhitelistedChannel = (message: message) => {
+  let channel = message.channel->wrapChannel
+  let whitelistedChannels = parseWhitelistedChannels()
+  let messageWhitelisted =
+    whitelistedChannels->Js.Array2.reduce(
+      (whitelisted, name) => ChannelName(name) === channel.name || name === "*" || whitelisted,
+      false,
+    )
+  !messageWhitelisted && whitelistedChannels->Belt.Array.length > 0
+}
 
 let updateGistOnGuildCreate = (guild: guild) =>
   guild.id
@@ -41,19 +44,6 @@ let onGuildCreate = (guild: guild) => {
   }
   roleManager.t->Discord_RoleManager.create(createRoleOptions)->ignore
   guild->updateGistOnGuildCreate->ignore
-}
-
-client->Discord_Client.on(#guildCreate(guild => guild->wrapGuild->onGuildCreate))
-
-let checkWhitelistedChannel = (message: message) => {
-  let channel = message.channel->wrapChannel
-  let whitelistedChannels = parseWhitelistedChannels()
-  let messageWhitelisted =
-    whitelistedChannels->Js.Array2.reduce(
-      (whitelisted, name) => ChannelName(name) === channel.name || name === "*" || whitelisted,
-      false,
-    )
-  !messageWhitelisted && whitelistedChannels->Belt.Array.length > 0
 }
 
 let onMessage = (message: Types.message) => {
@@ -89,32 +79,19 @@ let onMessage = (message: Types.message) => {
   }
 }
 
-client->Discord_Client.on(
-  #message(
-    message =>
-      message->Variants.wrapMessage->onMessage,
-      //   if (err instanceof RequestHandlerError) {
-      //     message.reply('Could not find the requested command')
-      //   } else if (err instanceof WhitelistedChannelError) {
-      //     error('FATAL: No whitelisted channels set in the environment variables.')
-      //   }
-      // }
+client->on(
+  #ready(
+    () => {
+      Js.log("Logged In")
+    },
   ),
 )
+
+client->on(#guildCreate(guild => guild->wrapGuild->onGuildCreate))
+
+client->on(#message(message => message->Variants.wrapMessage->onMessage))
 
 switch config {
 | Ok(config) => client->Discord_Client.login(config["discordApiToken"])
 | Error(err) => Js.log(err)
 }
-
-// %%raw(`
-
-// client.on('guildMemberAdd', member => {
-//   const handler = detectHandler('!verify')
-//   handler(member)
-// })
-
-// module.exports = client
-
-// client.login(process.env.DISCORD_API_TOKEN)
-// `)
