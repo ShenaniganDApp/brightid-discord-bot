@@ -2,14 +2,13 @@
 'use strict';
 
 var Env = require("../Env.bs.js");
+var UUID = require("UUID");
 var Dotenv = require("dotenv");
 var $$Promise = require("@ryyppy/rescript-promise/src/Promise.bs.js");
 var Constants = require("../Constants.bs.js");
 var Endpoints = require("../Endpoints.bs.js");
 var NodeFetch = require("node-fetch");
 var Caml_exceptions = require("rescript/lib/js/caml_exceptions.js");
-var Handlers_Verify = require("../handlers/Handlers_Verify.bs.js");
-var Discord_Snowflake = require("../Discord/Discord_Snowflake.bs.js");
 var Services_ResponseCodes = require("./Services_ResponseCodes.bs.js");
 
 var VerificationInfoError = /* @__PURE__ */Caml_exceptions.create("Services_VerificationInfo.VerificationInfoError");
@@ -47,9 +46,7 @@ var defaultVerification = {
 
 function fetchVerificationInfo(retryOpt, id) {
   var retry = retryOpt !== undefined ? retryOpt : 5;
-  var id$1 = Handlers_Verify.UUID.v5(/* UUIDName */{
-        _0: id
-      }, uuidNAMESPACE);
+  var id$1 = UUID.v5(id, uuidNAMESPACE);
   var endpoint = Endpoints.brightIdVerificationEndpoint + "/" + Constants.contextId + "/" + id$1 + "?timestamp=seconds";
   var params = {
     method: "GET",
@@ -133,7 +130,7 @@ function fetchVerificationInfo(retryOpt, id) {
 }
 
 function getBrightIdVerification(member) {
-  var id = Discord_Snowflake.validateSnowflake(member.id);
+  var id = member.id;
   return fetchVerificationInfo(undefined, id);
 }
 

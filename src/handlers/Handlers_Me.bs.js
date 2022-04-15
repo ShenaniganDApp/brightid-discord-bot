@@ -3,17 +3,10 @@
 
 var Js_dict = require("rescript/lib/js/js_dict.js");
 var $$Promise = require("@ryyppy/rescript-promise/src/Promise.bs.js");
-var Belt_Map = require("rescript/lib/js/belt_Map.js");
-var Variants = require("../Discord/Variants.bs.js");
 var Caml_option = require("rescript/lib/js/caml_option.js");
-var Discord_Role = require("../Discord/Discord_Role.bs.js");
 var Caml_exceptions = require("rescript/lib/js/caml_exceptions.js");
-var Discord_Message = require("../Discord/Discord_Message.bs.js");
-var Discord_Snowflake = require("../Discord/Discord_Snowflake.bs.js");
-var Discord_GuildMember = require("../Discord/Discord_GuildMember.bs.js");
 var UpdateOrReadGistJs = require("../updateOrReadGist.js");
 var Services_VerificationInfo = require("../services/Services_VerificationInfo.bs.js");
-var Discord_GuildMemberRoleManager = require("../Discord/Discord_GuildMemberRoleManager.bs.js");
 
 var MeHandlerError = /* @__PURE__ */Caml_exceptions.create("Handlers_Me.MeHandlerError");
 
@@ -21,13 +14,12 @@ function readGist(prim) {
   return UpdateOrReadGistJs.readGist();
 }
 
-function getRolebyRoleName(roleName, guildRoleManager) {
-  var guildRole = Belt_Map.findFirstBy(guildRoleManager.cache, (function (param, role) {
-          var role$1 = Variants.wrapRole(role);
-          return Discord_Role.validateRoleName(role$1.name) === roleName;
-        }));
-  if (guildRole !== undefined) {
-    return Variants.wrapRole(guildRole[1]);
+function getRolebyRoleName(guildRoleManager, roleName) {
+  var guildRole = guildRoleManager.cache.find(function (role) {
+        return role.name === roleName;
+      });
+  if (!(guildRole == null)) {
+    return guildRole;
   }
   throw {
         RE_EXN_ID: MeHandlerError,
@@ -45,9 +37,7 @@ function getGuildDataFromGist(guilds, guildId, message) {
   if (guildData !== undefined) {
     return Caml_option.valFromOption(guildData);
   }
-  Discord_Message.reply(message, /* Content */{
-        _0: "Failed to retreive data for this Discord Guild"
-      });
+  message.reply("Failed to retreive data for this Discord Guild");
   throw {
         RE_EXN_ID: MeHandlerError,
         _1: "Failed to retreive data for this Discord Guild",
@@ -56,15 +46,13 @@ function getGuildDataFromGist(guilds, guildId, message) {
 }
 
 function verifyMember(guildRole, member) {
-  var guildMemberRoleManager = Variants.wrapGuildMemberRoleManager(member.roles);
-  Discord_GuildMemberRoleManager.add(guildMemberRoleManager, guildRole, /* Reason */{
-        _0: "Add BrightId Verified role"
-      });
-  return Discord_GuildMember.send(member, "You are now verified", undefined);
+  var guildMemberRoleManager = member.roles;
+  guildMemberRoleManager.add(guildRole, "Add BrightId Verified role");
+  return member.send("You are now verified", undefined);
 }
 
 function noMultipleAccounts(member) {
-  Discord_GuildMember.send(member, "You are currently limited to one Discord account with BrightID. If there has been a mistake, message the BrightID team on Discord https://discord.gg/N4ZbNjP", undefined);
+  member.send("You are currently limited to one Discord account with BrightID. If there has been a mistake, message the BrightID team on Discord https://discord.gg/N4ZbNjP", undefined);
   return Promise.reject({
               RE_EXN_ID: MeHandlerError,
               _1: "Verification Info can not be retrieved from more than one Discord account."
@@ -72,18 +60,18 @@ function noMultipleAccounts(member) {
 }
 
 function me(member, param, message) {
-  var guild = Variants.wrapGuild(member.guild);
-  var guildRoleManager = Variants.wrapRoleManager(guild.roles);
-  var guildId = Discord_Snowflake.validateSnowflake(guild.id);
+  var guild = member.guild;
+  var guildRoleManager = guild.roles;
+  var guildId = guild.id;
   return $$Promise.$$catch(UpdateOrReadGistJs.readGist().then(function (guilds) {
-                  var guildRole = getRolebyRoleName(getGuildDataFromGist(guilds, guildId, message).role, guildRoleManager);
+                  var guildRole = getRolebyRoleName(guildRoleManager, getGuildDataFromGist(guilds, guildId, message).role);
                   return Services_VerificationInfo.getBrightIdVerification(member).then(function (verificationInfo) {
                               if (verificationInfo.userAddresses.length > 1) {
                                 return noMultipleAccounts(member);
                               } else if (verificationInfo.userVerified) {
                                 return verifyMember(guildRole, member);
                               } else {
-                                Discord_GuildMember.send(member, "You must be verified for this role", undefined);
+                                member.send("You must be verified for this role", undefined);
                                 return Promise.reject({
                                             RE_EXN_ID: MeHandlerError,
                                             _1: "Member is not verified"
@@ -103,7 +91,7 @@ function me(member, param, message) {
                 } else {
                   console.error("Some unknown error");
                 }
-                return Promise.resolve(message.t);
+                return Promise.resolve(message);
               }));
 }
 
@@ -115,4 +103,4 @@ exports.getGuildDataFromGist = getGuildDataFromGist;
 exports.verifyMember = verifyMember;
 exports.noMultipleAccounts = noMultipleAccounts;
 exports.me = me;
-/* Variants Not a pure module */
+/* ../updateOrReadGist.js Not a pure module */

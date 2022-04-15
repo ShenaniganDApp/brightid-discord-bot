@@ -1,5 +1,4 @@
-open Types
-open Variants
+open Discord
 open Promise
 
 exception MeHandlerError(string)
@@ -12,13 +11,15 @@ type brightIdGuildData = {
 @module("../updateOrReadGist.js")
 external readGist: unit => Promise.t<Js.Dict.t<brightIdGuildData>> = "readGist"
 
-let getRolebyRoleName = (roleName, guildRoleManager) => {
-  let guildRole = guildRoleManager.cache->Belt.Map.findFirstBy((_, role) => {
-    let role = role->wrapRole
-    role.name->Discord_Role.validateRoleName === roleName
-  })
+let getRolebyRoleName = (guildRoleManager, roleName) => {
+  let guildRole =
+    guildRoleManager
+    ->RoleManager.getCache
+    ->Collection.find(role => role->Role.getName === roleName)
+    ->Js.Nullable.toOption
+
   switch guildRole {
-  | Some((_, guildRole)) => guildRole->wrapRole
+  | Some(guildRole) => guildRole
   | None => MeHandlerError("Could not find a role with the name " ++ roleName)->raise
   }
 }
@@ -29,24 +30,23 @@ let getGuildDataFromGist = (guilds, guildId, message) => {
   let guildData = guilds->Js.Dict.get(guildId)
   switch guildData {
   | None =>
-    message
-    ->Discord_Message.reply(Content("Failed to retreive data for this Discord Guild"))
-    ->ignore
+    message->Message.reply("Failed to retreive data for this Discord Guild")->ignore
     MeHandlerError("Failed to retreive data for this Discord Guild")->raise
   | Some(guildData) => guildData
   }
 }
 
 let verifyMember = (guildRole, member) => {
-  open Discord_GuildMemberRoleManager
-  let guildMemberRoleManager = member.roles->wrapGuildMemberRoleManager
-  guildMemberRoleManager->add(guildRole, Reason("Add BrightId Verified role"))->ignore
-  member->Discord_GuildMember.send("You are now verified", ())
+  let guildMemberRoleManager = member->GuildMember.getGuildMemberRoleManager
+  guildMemberRoleManager
+  ->GuildMemberRoleManager.add(guildRole, "Add BrightId Verified role")
+  ->ignore
+  member->GuildMember.send("You are now verified", ())
 }
 
 let noMultipleAccounts = member => {
   member
-  ->Discord_GuildMember.send(
+  ->GuildMember.send(
     "You are currently limited to one Discord account with BrightID. If there has been a mistake, message the BrightID team on Discord https://discord.gg/N4ZbNjP",
     (),
   )
@@ -56,31 +56,30 @@ let noMultipleAccounts = member => {
   )->reject
 }
 
-let me = (member: guildMember, _: client, message: message) => {
-  let guild = member.guild->wrapGuild
-  let guildRoleManager = guild.roles->wrapRoleManager
+let me = (member: GuildMember.t, _: Client.t, message: Message.t) => {
+  let guild = member->GuildMember.getGuild
+  let guildRoleManager = guild->Guild.getGuildRoleManager
 
-  let guildId = guild.id->Discord_Snowflake.validateSnowflake
+  let guildId = guild->Guild.getGuildId
 
   readGist()
   ->then(guilds => {
     let guildRole =
-      getGuildDataFromGist(guilds, guildId, message)
+      guilds
+      ->getGuildDataFromGist(guildId, message)
       ->getRoleFromGuildData
-      ->getRolebyRoleName(guildRoleManager)
+      ->getRolebyRoleName(guildRoleManager, _)
     member
     ->Services_VerificationInfo.getBrightIdVerification
     ->then(verificationInfo => {
-      switch verificationInfo.userAddresses->Belt.Array.length > 1 {
-      | true => member->noMultipleAccounts
-      | false =>
-        switch verificationInfo.userVerified {
-        | true => guildRole->verifyMember(member)
-        | false =>
-          member->Discord_GuildMember.send("You must be verified for this role", ())->ignore
-          MeHandlerError("Member is not verified")->reject
-        }
-      }
+      verificationInfo.userAddresses->Belt.Array.length > 1
+        ? member->noMultipleAccounts
+        : verificationInfo.userVerified
+        ? guildRole->verifyMember(member)
+        : {
+            member->GuildMember.send("You must be verified for this role", ())->ignore
+            MeHandlerError("Member is not verified")->reject
+          }
     })
   })
   ->catch(e => {
@@ -93,6 +92,6 @@ let me = (member: guildMember, _: client, message: message) => {
       }
     | _ => Js.Console.error("Some unknown error")
     }
-    message.t->resolve
+    message->resolve
   })
 }
