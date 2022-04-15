@@ -13,5 +13,5 @@
     }
   ],
   "suffix": ".bs.js",
-  "bs-dependencies": ["@ryyppy/rescript-promise"]
+  "bs-dependencies": ["@ryyppy/rescript-promise", "rescript-discordjs"]
 }

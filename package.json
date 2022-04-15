@@ -6,8 +6,8 @@
   "scripts": {
     "lint": "npx eslint ./src",
     "test": "npx jest",
-    "start": "node src/index.js",
-    "dev": "node src/index.js",
+    "start": "node src/Bot.bs.js",
+    "dev": "node src/Bot.bs.js",
     "re:build": "rescript",
     "re:start": "rescript build -w",
     "prettify": "prettier . --write"
@@ -27,6 +27,7 @@
     "fast-json-stable-stringify": "^2.1.0",
     "node-fetch": "^2.6.1",
     "qrcode": "^1.4.4",
+    "rescript-discordjs": "https://github.com/youngkidwarrior/rescript-discordjs.git",
     "tweetnacl": "^1.0.3",
     "tweetnacl-util": "^0.15.1",
     "uuid": "^8.3.0"
