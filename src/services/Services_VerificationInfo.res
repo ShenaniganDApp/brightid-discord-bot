@@ -61,7 +61,7 @@ let defaultVerification = {
 }
 
 let rec fetchVerificationInfo = (~retry=5, id): Promise.t<verification> => {
-  let id = id->Handlers_Verify.UUID.UUIDName->Handlers_Verify.UUID.v5(uuidNAMESPACE)
+  let id = id->Handlers_Verify.UUID.v5(uuidNAMESPACE)
   let endpoint = `${brightIdVerificationEndpoint}/${contextId}/${id}?timestamp=seconds`
 
   let params = {
@@ -130,7 +130,7 @@ let rec fetchVerificationInfo = (~retry=5, id): Promise.t<verification> => {
   })
 }
 
-let getBrightIdVerification = (member: Types.guildMember) => {
-  let id = member.id->Discord_Snowflake.validateSnowflake
+let getBrightIdVerification = (member: Discord.GuildMember.t) => {
+  let id = member->Discord.GuildMember.getGuildMemberId
   id->fetchVerificationInfo
 }
