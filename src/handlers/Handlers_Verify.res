@@ -1,39 +1,23 @@
 open Promise
 open Endpoints
-open Types
-open Variants
+open Discord
 exception VerifyHandlerError(string)
 
 module UUID = {
   type t = string
   type name = UUIDName(string)
-  @module("UUID") external _v5: (string, string) => t = "v5"
-
-  let validateNamespace = namespace =>
-    switch namespace {
-    | Env.UUIDNamespace(namespace) => namespace
-    }
-  let validateName = name =>
-    switch name {
-    | UUIDName(name) => name
-    }
-
-  let v5 = (name, namespace) => {
-    let name = name->validateName
-    let namespace = namespace->validateNamespace
-    _v5(name, namespace)
-  }
+  @module("UUID") external v5: (string, string) => t = "v5"
 }
 
 module Canvas = {
   type t
-  @module("Canvas") external _createCanvas: (int, int) => t = "createCanvas"
+  @module("Canvas") external createCanvas: (int, int) => t = "createCanvas"
   @send external toBuffer: t => Node.Buffer.t = "toBuffer"
 }
 
 module QRCode = {
   type t
-  @module("QRCode") external _toCanvas: (Canvas.t, string) => Promise.t<unit> = "toCanvas"
+  @module("QRCode") external toCanvas: (Canvas.t, string) => Promise.t<unit> = "toCanvas"
 }
 
 module Response = {
@@ -49,6 +33,15 @@ type response = {
   }>,
 }
 
+type brightIdGuildData = {
+  name: string,
+  role: string,
+  inviteLink: Js.Nullable.t<string>,
+}
+
+@module("../updateOrReadGist.js")
+external readGist: unit => Promise.t<Js.Dict.t<brightIdGuildData>> = "readGist"
+
 @module
 external fetch: (string, 'params) => Promise.t<Response.t<response>> = "node-fetch"
 
@@ -61,16 +54,34 @@ let uuidNAMESPACE = switch config {
 | Error(err) => err->VerifyHandlerError->raise
 }
 
-let addVerifiedRole = (member: Types.guildMember, role: Types.role, reason) => {
-  let guildMemberRoleManager = member.roles->wrapGuildMemberRoleManager
-  let guild = member.guild->wrapGuild
-  guildMemberRoleManager->Discord_GuildMemberRoleManager.add(role, reason)->ignore
-  member->Discord_GuildMember.send(
-    `I recognize you! You're now a verified user in ${guild.name->Discord_Guild.validateGuildName}`,
+let addVerifiedRole = (member, role, reason) => {
+  let guildMemberRoleManager = member->GuildMember.getGuildMemberRoleManager
+  let guild = member->GuildMember.getGuild
+  guildMemberRoleManager->GuildMemberRoleManager.add(role, reason)->ignore
+  member->GuildMember.send(
+    `I recognize you! You're now a verified user in ${guild->Guild.getGuildName}`,
   )
 }
 
-let idExists = id => {
+let isIdInVerifications = (data, id) => {
+  switch Js.Nullable.toOption(data["error"]) {
+  | Some(_) =>
+    switch Js.Nullable.toOption(data["errorMessage"]) {
+    | None => reject(VerifyHandlerError("No error message"))
+    | Some(msg) => reject(VerifyHandlerError(msg))
+    }
+  | None =>
+    switch Js.Nullable.toOption(data["contextIds"]) {
+    | None => reject(VerifyHandlerError("Didn't return contextIds"))
+    | Some(contextIds) => {
+        let exists = contextIds->Belt.Array.some(contextId => id === contextId)
+        exists->resolve
+      }
+    }
+  }
+}
+
+let fetchVerifications = () => {
   let params = {
     "method": "GET",
     "headers": {
@@ -79,48 +90,15 @@ let idExists = id => {
     },
     "timeout": 60000,
   }
-  fetch("https://app.brightid.org/node/v5/verifications/Discord", params)
+  "https://app.brightid.org/node/v5/verifications/Discord"
+  ->fetch(params)
   ->then(res => res->Response.json)
   ->then(res =>
     switch Js.Nullable.toOption(res["data"]) {
-    | Some(data) => resolve(data)
-    | None => reject(VerifyHandlerError("No data"))
+    | Some(data) => data->resolve
+    | None => VerifyHandlerError("No data")->reject
     }
   )
-  ->then(data => {
-    //Notice we use pattern matching to extract the json
-    //Heavily relient on backend specification
-    switch Js.Nullable.toOption(data["error"]) {
-    | Some(_) =>
-      switch Js.Nullable.toOption(data["errorMessage"]) {
-      | None => reject(VerifyHandlerError("No error message"))
-      | Some(msg) => reject(VerifyHandlerError(msg))
-      }
-    | None =>
-      switch Js.Nullable.toOption(data["contextIds"]) {
-      | None => reject(VerifyHandlerError("Didn't return contextIds"))
-      | Some(contextIds) => {
-          let exists = contextIds->Belt.Array.some(contextId => id === contextId)
-          switch exists {
-          | true => resolve(exists)
-          | false => resolve(exists)
-          }
-        }
-      }
-    }
-  })
-  ->catch(e => {
-    switch e {
-    | VerifyHandlerError(msg) => Js.Console.error(msg)
-    | JsError(obj) =>
-      switch Js.Exn.message(obj) {
-      | Some(msg) => Js.Console.error(msg)
-      | None => Js.Console.error("Must be some non-error value")
-      }
-    | _ => Js.Console.error("Some unknown error")
-    }
-    resolve(false)
-  })
 }
 
 let makeEmbed = verifyUrl => {
@@ -170,72 +148,80 @@ let makeEmbed = verifyUrl => {
 }
 
 let createMessageAttachmentFromUri = uri => {
-  let canvas = Canvas._createCanvas(700, 250)
+  let canvas = Canvas.createCanvas(700, 250)
 
-  QRCode._toCanvas(canvas, uri)->then(_ => {
+  QRCode.toCanvas(canvas, uri)->then(_ => {
     let attachment = Discord_Message.createMessageAttachment(
       canvas->Canvas.toBuffer,
       "qrcode.png",
       (),
     )
-    resolve(attachment)
+    attachment->resolve
   })
 }
 
 let getRolebyRoleName = (guildRoleManager, roleName) => {
-  let guildRole = guildRoleManager.cache->Belt.Map.findFirstBy((_, role) => {
-    let role = role->wrapRole
-    role.name->Discord_Role.validateRoleName === roleName
-  })
+  let guildRole =
+    guildRoleManager
+    ->RoleManager.getCache
+    ->Collection.find(role => role->Role.getName === roleName)
+    ->Js.Nullable.toOption
+
   switch guildRole {
-  | Some((_, guildRole)) => guildRole->wrapRole
+  | Some(guildRole) => guildRole
   | None => VerifyHandlerError("Could not find a role with the name " ++ roleName)->raise
   }
 }
 
-let verify = (member: guildMember, _: client, message: message) => {
-  let guild = member.guild->wrapGuild
-  let guildRoleManager = guild.roles->wrapRoleManager
-  let guildMemberRoleManager = member.roles->wrapGuildMemberRoleManager
-  let memberId = member.id->Discord_Snowflake.validateSnowflake
-  let id = memberId->UUIDName->UUID.v5(uuidNAMESPACE)
-  Handlers_Role.readGist()->then(guilds => {
-    let guildId = guild.id->Discord_Snowflake.validateSnowflake
+let verify = (member: GuildMember.t, _: Client.t, message: Message.t) => {
+  let guild = member->GuildMember.getGuild
+  let guildRoleManager = guild->Guild.getGuildRoleManager
+  let guildMemberRoleManager = member->GuildMember.getGuildMemberRoleManager
+  let memberId = member->GuildMember.getGuildMemberId
+  let id = memberId->UUID.v5(uuidNAMESPACE)
+  readGist()
+  ->then(guilds => {
+    let guildId = guild->Guild.getGuildId
     let guildData = guilds->Js.Dict.get(guildId)
     switch guildData {
     | None =>
-      message
-      ->Discord_Message.reply(Types.Content("Failed to retrieve role data for guild"))
-      ->ignore
-      reject(VerifyHandlerError("Guild does not exist"))
+      message->Message.reply("Failed to retrieve role data for guild")->ignore
+      VerifyHandlerError("Guild does not exist")->reject
     | Some(guildData) => {
         let guildRole = guildRoleManager->getRolebyRoleName(guildData.role)
         let deepLink = `${brightIdAppDeeplink}/${id}`
         let verifyUrl = `${brightIdLinkVerificationEndpoint}/${id}`
-        id
-        ->idExists
-        ->then(exists => {
-          open Discord_GuildMemberRoleManager
-          switch exists {
-          | true => {
-              guildMemberRoleManager->add(guildRole, Reason(""))->ignore
-              member->Discord_GuildMember.send(
-                `I recognize you! You're now a verified user in ${guild.name->Discord_Guild.validateGuildName}`,
-                (),
-              )
-            }
-          | false =>
-            deepLink
-            ->createMessageAttachmentFromUri
-            ->then(attachment => {
-              open Discord_GuildMember
-              let embed = verifyUrl->makeEmbed
-              member->send({"embed": embed, "files": [attachment]}, ())->ignore
-              resolve(message.t)
-            })
-          }
+        fetchVerifications()
+        ->then(data => isIdInVerifications(data, id))
+        ->then(idExists => {
+          idExists
+            ? {
+                guildMemberRoleManager->GuildMemberRoleManager.add(guildRole, "")->ignore
+                member->GuildMember.send(
+                  `I recognize you! You're now a verified user in ${guild->Guild.getGuildName}!`,
+                  (),
+                )
+              }
+            : deepLink
+              ->createMessageAttachmentFromUri
+              ->then(attachment => {
+                let embed = verifyUrl->makeEmbed
+                member->GuildMember.send({"embed": embed, "files": [attachment]}, ())
+              })
         })
       }
     }
+  })
+  ->catch(e => {
+    switch e {
+    | VerifyHandlerError(msg) => Js.Console.error(msg)
+    | JsError(obj) =>
+      switch Js.Exn.message(obj) {
+      | Some(msg) => Js.Console.error(msg)
+      | None => Js.Console.error("Verify Handler: Unknown error")
+      }
+    | _ => Js.Console.error("Verify Handler: Unknown error")
+    }
+    message->resolve
   })
 }
