@@ -1,5 +1,5 @@
-open Promise
-open Discord_Message
+open Discord
+
 let brightIdContent = `
 __**Available BrightId commands:**__
 - \`!verify\` → Sends a BrightID QR code for users to connect with their BrightId
@@ -10,7 +10,6 @@ __**admin only**__
 - \`!invite\` → Use this command to add an invite for this discord to the guilds
 `
 
-let brightId = (_: Types.guildMember, _: Types.client, message: Types.message) => {
-  message->reply(brightIdContent->Content)->ignore
-  resolve(message.t)
+let brightId = (_: GuildMember.t, _: Client.t, message: Message.t) => {
+  message->Message.reply(brightIdContent)
 }

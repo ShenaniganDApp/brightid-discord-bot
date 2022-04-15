@@ -6,7 +6,6 @@ var Caml_array = require("rescript/lib/js/caml_array.js");
 var ErrorUtils = require("../error-utils");
 var Belt_MapString = require("rescript/lib/js/belt_MapString.js");
 var Caml_exceptions = require("rescript/lib/js/caml_exceptions.js");
-var Discord_Message = require("../Discord/Discord_Message.bs.js");
 
 var RequestHandlerError = /* @__PURE__ */Caml_exceptions.create("Parser_DetectHandler.RequestHandlerError");
 
@@ -22,7 +21,7 @@ var commands = [
 ];
 
 function detectHandler(message) {
-  var content = Discord_Message.validateContent(message);
+  var content = message.content;
   !content.includes("!");
   var command = Caml_array.get(content.split(" "), 0);
   var receivedHandler = Belt_MapString.get(Handlers.handlers, command);

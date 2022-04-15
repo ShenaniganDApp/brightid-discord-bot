@@ -4,15 +4,8 @@
 var Env = require("./Env.bs.js");
 var Curry = require("rescript/lib/js/curry.js");
 var Dotenv = require("dotenv");
-var Variants = require("./Discord/Variants.bs.js");
 var DiscordJs = require("discord.js");
-var Discord_User = require("./Discord/Discord_User.bs.js");
-var Discord_Guild = require("./Discord/Discord_Guild.bs.js");
-var Discord_Client = require("./Discord/Discord_Client.bs.js");
 var Caml_exceptions = require("rescript/lib/js/caml_exceptions.js");
-var Discord_Message = require("./Discord/Discord_Message.bs.js");
-var Discord_Snowflake = require("./Discord/Discord_Snowflake.bs.js");
-var Discord_RoleManager = require("./Discord/Discord_RoleManager.bs.js");
 var Parser_DetectHandler = require("./parser/Parser_DetectHandler.bs.js");
 var UpdateOrReadGistJs = require("./updateOrReadGist.js");
 var WhitelistedChannels = require("./parser/whitelistedChannels");
@@ -34,12 +27,10 @@ var config = Env.getConfig(undefined);
 var client = new DiscordJs.Client(undefined);
 
 function checkWhitelistedChannel(message) {
-  var channel = Variants.wrapChannel(message.channel);
+  var channel = message.channel;
   var whitelistedChannels = WhitelistedChannels();
   var messageWhitelisted = whitelistedChannels.reduce((function (whitelisted, name) {
-          if (/* ChannelName */({
-                _0: name
-              }) === channel.name || name === "*") {
+          if (name === channel.name || name === "*") {
             return true;
           } else {
             return whitelisted;
@@ -53,55 +44,47 @@ function checkWhitelistedChannel(message) {
 }
 
 function updateGistOnGuildCreate(guild) {
-  return UpdateOrReadGistJs.updateGist(Discord_Snowflake.validateSnowflake(guild.id), {
-              name: Discord_Guild.validateGuildName(guild.name),
+  return UpdateOrReadGistJs.updateGist(guild.id, {
+              name: guild.name,
               role: "Verified"
             });
 }
 
 function onGuildCreate(guild) {
-  var roleManager = Variants.wrapRoleManager(guild.roles);
-  Discord_RoleManager.create(roleManager.t, {
-        data: {
-          name: /* RoleName */{
-            _0: "Verified"
-          },
-          color: /* String */{
-            _0: "ORANGE"
-          }
-        },
-        reason: /* Reason */{
-          _0: "Verify users with BrightID"
-        }
-      });
+  var roleManager = guild.roles;
+  var createRoleOptions = {
+    data: {
+      name: "Verified",
+      color: "ORANGE"
+    },
+    reason: "Verify users with BrightID"
+  };
+  roleManager.create(createRoleOptions);
   updateGistOnGuildCreate(guild);
   
 }
 
 function onMessage(message) {
-  var author = Variants.wrapUser(message.author);
-  var isBot = Discord_User.validateBot(author.bot);
+  var author = message.author;
+  var isBot = author.bot;
   if (isBot) {
     return ;
   }
   if (checkWhitelistedChannel(message)) {
     return ;
   }
-  var guildMember = Variants.wrapGuildMember(message.member);
-  var handler = Parser_DetectHandler.detectHandler(message.content);
+  var guildMember = message.member;
+  var handler = Parser_DetectHandler.detectHandler(message);
   if (handler !== undefined) {
-    var client$1 = Variants.wrapClient(client);
-    Curry._3(handler, guildMember, client$1, message);
-    return ;
+    Curry._3(handler, guildMember, client, message);
+  } else {
+    message.reply("Could not find the requested command");
+    console.error({
+          RE_EXN_ID: RequestHandlerError,
+          date: Date.now(),
+          message: "Could not find the requested command"
+        });
   }
-  Discord_Message.reply(message, /* Content */{
-        _0: "Could not find the requested command"
-      });
-  console.error({
-        RE_EXN_ID: RequestHandlerError,
-        date: Date.now(),
-        message: "Could not find the requested command"
-      });
   
 }
 
@@ -110,16 +93,12 @@ client.on("ready", (function (param) {
         
       }));
 
-client.on("guildCreate", (function (guild) {
-        return onGuildCreate(Variants.wrapGuild(guild));
-      }));
+client.on("guildCreate", onGuildCreate);
 
-client.on("message", (function (message) {
-        return onMessage(Variants.wrapMessage(message));
-      }));
+client.on("message", onMessage);
 
 if (config.TAG === /* Ok */0) {
-  Discord_Client.login(client, config._0.discordApiToken);
+  client.login(config._0.discordApiToken);
 } else {
   console.log(config._0);
 }
