@@ -8,48 +8,26 @@ var QRCode = require("QRCode");
 var Dotenv = require("dotenv");
 var Js_dict = require("rescript/lib/js/js_dict.js");
 var $$Promise = require("@ryyppy/rescript-promise/src/Promise.bs.js");
-var Belt_Map = require("rescript/lib/js/belt_Map.js");
-var Variants = require("../Discord/Variants.bs.js");
 var Endpoints = require("../Endpoints.bs.js");
 var Belt_Array = require("rescript/lib/js/belt_Array.js");
 var DiscordJs = require("discord.js");
 var NodeFetch = require("node-fetch");
-var Discord_Role = require("../Discord/Discord_Role.bs.js");
-var Discord_Guild = require("../Discord/Discord_Guild.bs.js");
-var Handlers_Role = require("./Handlers_Role.bs.js");
 var Caml_exceptions = require("rescript/lib/js/caml_exceptions.js");
-var Discord_Message = require("../Discord/Discord_Message.bs.js");
-var Discord_Snowflake = require("../Discord/Discord_Snowflake.bs.js");
-var Discord_GuildMember = require("../Discord/Discord_GuildMember.bs.js");
-var Discord_GuildMemberRoleManager = require("../Discord/Discord_GuildMemberRoleManager.bs.js");
+var UpdateOrReadGistJs = require("../updateOrReadGist.js");
 
 var VerifyHandlerError = /* @__PURE__ */Caml_exceptions.create("Handlers_Verify.VerifyHandlerError");
 
-function validateNamespace(namespace) {
-  return namespace._0;
-}
-
-function validateName(name) {
-  return name._0;
-}
-
-function v5(name, namespace) {
-  var name$1 = name._0;
-  var namespace$1 = namespace._0;
-  return UUID.v5(name$1, namespace$1);
-}
-
-var UUID$1 = {
-  validateNamespace: validateNamespace,
-  validateName: validateName,
-  v5: v5
-};
+var UUID$1 = {};
 
 var Canvas$1 = {};
 
 var QRCode$1 = {};
 
 var $$Response = {};
+
+function readGist(prim) {
+  return UpdateOrReadGistJs.readGist();
+}
 
 Dotenv.config();
 
@@ -68,16 +46,45 @@ if (config.TAG === /* Ok */0) {
 }
 
 function addVerifiedRole(member, role, reason) {
-  var guildMemberRoleManager = Variants.wrapGuildMemberRoleManager(member.roles);
-  var guild = Variants.wrapGuild(member.guild);
-  Discord_GuildMemberRoleManager.add(guildMemberRoleManager, role, reason);
-  var partial_arg = "I recognize you! You're now a verified user in " + Discord_Guild.validateGuildName(guild.name);
+  var guildMemberRoleManager = member.roles;
+  var guild = member.guild;
+  guildMemberRoleManager.add(role, reason);
+  var partial_arg = "I recognize you! You're now a verified user in " + guild.name;
   return function (param) {
-    return Discord_GuildMember.send(member, partial_arg, param);
+    return member.send(partial_arg, param);
   };
 }
 
-function idExists(id) {
+function isIdInVerifications(data, id) {
+  var match = data.error;
+  if (match == null) {
+    var contextIds = data.contextIds;
+    if (contextIds == null) {
+      return Promise.reject({
+                  RE_EXN_ID: VerifyHandlerError,
+                  _1: "Didn't return contextIds"
+                });
+    } else {
+      return Promise.resolve(Belt_Array.some(contextIds, (function (contextId) {
+                        return id === contextId;
+                      })));
+    }
+  }
+  var msg = data.errorMessage;
+  if (msg == null) {
+    return Promise.reject({
+                RE_EXN_ID: VerifyHandlerError,
+                _1: "No error message"
+              });
+  } else {
+    return Promise.reject({
+                RE_EXN_ID: VerifyHandlerError,
+                _1: msg
+              });
+  }
+}
+
+function fetchVerifications(param) {
   var params = {
     method: "GET",
     headers: {
@@ -86,60 +93,19 @@ function idExists(id) {
     },
     timeout: 60000
   };
-  return $$Promise.$$catch(NodeFetch("https://app.brightid.org/node/v5/verifications/Discord", params).then(function (res) {
-                      return res.json();
-                    }).then(function (res) {
-                    var data = res.data;
-                    if (data == null) {
-                      return Promise.reject({
-                                  RE_EXN_ID: VerifyHandlerError,
-                                  _1: "No data"
-                                });
-                    } else {
-                      return Promise.resolve(data);
-                    }
-                  }).then(function (data) {
-                  var match = data.error;
-                  if (match == null) {
-                    var contextIds = data.contextIds;
-                    if (contextIds == null) {
-                      return Promise.reject({
-                                  RE_EXN_ID: VerifyHandlerError,
-                                  _1: "Didn't return contextIds"
-                                });
-                    }
-                    var exists = Belt_Array.some(contextIds, (function (contextId) {
-                            return id === contextId;
-                          }));
-                    return Promise.resolve(exists);
-                  }
-                  var msg = data.errorMessage;
-                  if (msg == null) {
-                    return Promise.reject({
-                                RE_EXN_ID: VerifyHandlerError,
-                                _1: "No error message"
-                              });
-                  } else {
-                    return Promise.reject({
-                                RE_EXN_ID: VerifyHandlerError,
-                                _1: msg
-                              });
-                  }
-                }), (function (e) {
-                if (e.RE_EXN_ID === VerifyHandlerError) {
-                  console.error(e._1);
-                } else if (e.RE_EXN_ID === $$Promise.JsError) {
-                  var msg = e._1.message;
-                  if (msg !== undefined) {
-                    console.error(msg);
-                  } else {
-                    console.error("Must be some non-error value");
-                  }
-                } else {
-                  console.error("Some unknown error");
-                }
-                return Promise.resolve(false);
-              }));
+  return NodeFetch("https://app.brightid.org/node/v5/verifications/Discord", params).then(function (res) {
+                return res.json();
+              }).then(function (res) {
+              var data = res.data;
+              if (data == null) {
+                return Promise.reject({
+                            RE_EXN_ID: VerifyHandlerError,
+                            _1: "No data"
+                          });
+              } else {
+                return Promise.resolve(data);
+              }
+            });
 }
 
 function makeEmbed(verifyUrl) {
@@ -176,12 +142,11 @@ function createMessageAttachmentFromUri(uri) {
 }
 
 function getRolebyRoleName(guildRoleManager, roleName) {
-  var guildRole = Belt_Map.findFirstBy(guildRoleManager.cache, (function (param, role) {
-          var role$1 = Variants.wrapRole(role);
-          return Discord_Role.validateRoleName(role$1.name) === roleName;
-        }));
-  if (guildRole !== undefined) {
-    return Variants.wrapRole(guildRole[1]);
+  var guildRole = guildRoleManager.cache.find(function (role) {
+        return role.name === roleName;
+      });
+  if (!(guildRole == null)) {
+    return guildRole;
   }
   throw {
         RE_EXN_ID: VerifyHandlerError,
@@ -191,46 +156,55 @@ function getRolebyRoleName(guildRoleManager, roleName) {
 }
 
 function verify(member, param, message) {
-  var guild = Variants.wrapGuild(member.guild);
-  var guildRoleManager = Variants.wrapRoleManager(guild.roles);
-  var guildMemberRoleManager = Variants.wrapGuildMemberRoleManager(member.roles);
-  var memberId = Discord_Snowflake.validateSnowflake(member.id);
-  var id = v5(/* UUIDName */{
-        _0: memberId
-      }, uuidNAMESPACE);
-  return Handlers_Role.readGist(undefined).then(function (guilds) {
-              var guildId = Discord_Snowflake.validateSnowflake(guild.id);
-              var guildData = Js_dict.get(guilds, guildId);
-              if (guildData !== undefined) {
-                var guildRole = getRolebyRoleName(guildRoleManager, guildData.role);
-                var deepLink = Endpoints.brightIdAppDeeplink + "/" + id;
-                var verifyUrl = Endpoints.brightIdLinkVerificationEndpoint + "/" + id;
-                return idExists(id).then(function (exists) {
-                            if (exists) {
-                              Discord_GuildMemberRoleManager.add(guildMemberRoleManager, guildRole, /* Reason */{
-                                    _0: ""
-                                  });
-                              return Discord_GuildMember.send(member, "I recognize you! You're now a verified user in " + Discord_Guild.validateGuildName(guild.name), undefined);
-                            } else {
-                              return createMessageAttachmentFromUri(deepLink).then(function (attachment) {
-                                          var embed = makeEmbed(verifyUrl);
-                                          Discord_GuildMember.send(member, {
-                                                embed: embed,
-                                                files: [attachment]
-                                              }, undefined);
-                                          return Promise.resolve(message.t);
-                                        });
-                            }
-                          });
-              }
-              Discord_Message.reply(message, /* Content */{
-                    _0: "Failed to retrieve role data for guild"
-                  });
-              return Promise.reject({
-                          RE_EXN_ID: VerifyHandlerError,
-                          _1: "Guild does not exist"
-                        });
-            });
+  var guild = member.guild;
+  var guildRoleManager = guild.roles;
+  var guildMemberRoleManager = member.roles;
+  var memberId = member.id;
+  var id = UUID.v5(memberId, uuidNAMESPACE);
+  return $$Promise.$$catch(UpdateOrReadGistJs.readGist().then(function (guilds) {
+                  var guildId = guild.id;
+                  var guildData = Js_dict.get(guilds, guildId);
+                  if (guildData !== undefined) {
+                    var guildRole = getRolebyRoleName(guildRoleManager, guildData.role);
+                    var deepLink = Endpoints.brightIdAppDeeplink + "/" + id;
+                    var verifyUrl = Endpoints.brightIdLinkVerificationEndpoint + "/" + id;
+                    return fetchVerifications(undefined).then(function (data) {
+                                  return isIdInVerifications(data, id);
+                                }).then(function (idExists) {
+                                if (idExists) {
+                                  guildMemberRoleManager.add(guildRole, "");
+                                  return member.send("I recognize you! You're now a verified user in " + guild.name + "!", undefined);
+                                } else {
+                                  return createMessageAttachmentFromUri(deepLink).then(function (attachment) {
+                                              var embed = makeEmbed(verifyUrl);
+                                              return member.send({
+                                                          embed: embed,
+                                                          files: [attachment]
+                                                        }, undefined);
+                                            });
+                                }
+                              });
+                  }
+                  message.reply("Failed to retrieve role data for guild");
+                  return Promise.reject({
+                              RE_EXN_ID: VerifyHandlerError,
+                              _1: "Guild does not exist"
+                            });
+                }), (function (e) {
+                if (e.RE_EXN_ID === VerifyHandlerError) {
+                  console.error(e._1);
+                } else if (e.RE_EXN_ID === $$Promise.JsError) {
+                  var msg = e._1.message;
+                  if (msg !== undefined) {
+                    console.error(msg);
+                  } else {
+                    console.error("Verify Handler: Unknown error");
+                  }
+                } else {
+                  console.error("Verify Handler: Unknown error");
+                }
+                return Promise.resolve(message);
+              }));
 }
 
 exports.VerifyHandlerError = VerifyHandlerError;
@@ -238,10 +212,12 @@ exports.UUID = UUID$1;
 exports.Canvas = Canvas$1;
 exports.QRCode = QRCode$1;
 exports.$$Response = $$Response;
+exports.readGist = readGist;
 exports.config = config;
 exports.uuidNAMESPACE = uuidNAMESPACE;
 exports.addVerifiedRole = addVerifiedRole;
-exports.idExists = idExists;
+exports.isIdInVerifications = isIdInVerifications;
+exports.fetchVerifications = fetchVerifications;
 exports.makeEmbed = makeEmbed;
 exports.createMessageAttachmentFromUri = createMessageAttachmentFromUri;
 exports.getRolebyRoleName = getRolebyRoleName;

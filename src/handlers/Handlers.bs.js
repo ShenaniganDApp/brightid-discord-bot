@@ -3,9 +3,14 @@
 
 var Belt_MapString = require("rescript/lib/js/belt_MapString.js");
 var Handlers_Invite = require("./Handlers_Invite.bs.js");
+var Handlers_Verify = require("./Handlers_Verify.bs.js");
 var Handlers_BrightId = require("./Handlers_BrightId.bs.js");
 
 var handlers = Belt_MapString.fromArray([
+      [
+        "!verify",
+        Handlers_Verify.verify
+      ],
       [
         "!invite",
         Handlers_Invite.invite
