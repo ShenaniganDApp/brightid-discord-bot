@@ -14,9 +14,3 @@ external on: (
     | #guildMemberAdd(Discord_GuildMember.t => unit)
   ],
 ) => unit = "on"
-
-let login = (client, token) => {
-  switch token {
-  | Env.DiscordToken(token) => createLogin(client, token)
-  }
-}

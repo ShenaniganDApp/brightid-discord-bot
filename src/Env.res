@@ -1,8 +1,5 @@
 @module("dotenv") external createEnv: unit => unit = "config"
-
-type discordToken = DiscordToken(string)
 type uuidNamespace = UUIDNamespace(string)
-
 let nodeEnv = Node.Process.process["env"]
 
 let env = name =>
@@ -16,8 +13,8 @@ let getConfig = () =>
   // Got all vars
   | (Ok(discordApiToken), Ok(uuidNamespace)) =>
     Ok({
-      "discordApiToken": DiscordToken(discordApiToken),
-      "uuidNamespace": UUIDNamespace(uuidNamespace),
+      "discordApiToken": discordApiToken,
+      "uuidNamespace": uuidNamespace,
     })
   // Did not get one or more vars, return the first error
   | (Error(_) as err, _)

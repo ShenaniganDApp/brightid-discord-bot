@@ -29,12 +29,8 @@ function getConfig(param) {
       return {
               TAG: /* Ok */0,
               _0: {
-                discordApiToken: /* DiscordToken */{
-                  _0: match._0
-                },
-                uuidNamespace: /* UUIDNamespace */{
-                  _0: match$1._0
-                }
+                discordApiToken: match._0,
+                uuidNamespace: match$1._0
               }
             };
     } else {
