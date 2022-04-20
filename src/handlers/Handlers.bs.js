@@ -2,6 +2,7 @@
 'use strict';
 
 var Handlers_Me = require("./Handlers_Me.bs.js");
+var Handlers_Role = require("./Handlers_Role.bs.js");
 var Belt_MapString = require("rescript/lib/js/belt_MapString.js");
 var Handlers_Invite = require("./Handlers_Invite.bs.js");
 var Handlers_Verify = require("./Handlers_Verify.bs.js");
@@ -19,6 +20,10 @@ var handlers = Belt_MapString.fromArray([
       [
         "!invite",
         Handlers_Invite.invite
+      ],
+      [
+        "!role",
+        Handlers_Role.role
       ],
       [
         "!brightid",

@@ -1,6 +1,5 @@
 open Promise
-open Types
-open Variants
+open Discord
 
 exception RoleHandlerError(string)
 
@@ -17,65 +16,56 @@ external readGist: unit => Promise.t<Js.Dict.t<brightIdGuildData>> = "readGist"
 let newRoleRe = %re("/(?<=^\S+)\s/")
 
 let getRolebyRoleName = (guildRoleManager, roleName) => {
-  let guildRole = guildRoleManager.cache->Belt.Map.findFirstBy((_, role) => {
-    let role = role->wrapRole
-    role.name->Discord_Role.validateRoleName === roleName
-  })
+  let guildRole =
+    guildRoleManager
+    ->RoleManager.getCache
+    ->Collection.find(role => role->Role.getName === roleName)
+    ->Js.Nullable.toOption
+
   switch guildRole {
-  | Some((_, guildRole)) => guildRole->wrapRole
+  | Some(guildRole) => guildRole
   | None => RoleHandlerError("Could not find a role with the name " ++ roleName)->raise
   }
 }
 
-let role = (member: guildMember, _: client, message: message) => {
-  let guild = member.guild->wrapGuild
-  let guildRoleManager = guild.roles->wrapRoleManager
-  switch member.t->Discord_Guild.hasPermission("ADMINISTRATOR") {
+let role = (member: GuildMember.t, _: Client.t, message: Message.t) => {
+  let guild = member->GuildMember.getGuild
+  let guildRoleManager = guild->Guild.getGuildRoleManager
+  switch member->Guild.hasPermission("ADMINISTRATOR") {
   | false => {
-      message->Discord_Message.reply(Content("Must be an administrator"))->ignore
-      reject(RoleHandlerError("Administrator permissions are required"))
+      message->Message.reply("Must be an administrator")->ignore
+      RoleHandlerError("Administrator permissions are required")->reject
     }
   | true => {
-      let role = message.content->Discord_Message.validateContent->Js.String2.splitByRe(newRoleRe)
+      let role = message->Message.getMessageContent->Js.String2.splitByRe(newRoleRe)
       switch role->Belt.Array.get(1) {
       | None =>
-        message->Discord_Message.reply(Content("Please specify a role -> `!role <role>`"))->ignore
-        reject(RoleHandlerError("No role specified"))
+        message->Message.reply("Please specify a role -> `!role <role>`")->ignore
+        RoleHandlerError("No role specified")->reject
       | Some(role) =>
         switch role {
-        | None => reject(RoleHandlerError("Role is empty"))
+        | None => RoleHandlerError("Role is empty")->reject
         | Some(role) =>
           readGist()->then(guilds => {
-            let guildId = guild.id->Discord_Snowflake.validateSnowflake
+            let guildId = guild->Guild.getGuildId
             let guildData = guilds->Js.Dict.get(guildId)
             switch guildData {
             | None =>
-              message
-              ->Discord_Message.reply(Content("Failed to retreive role data for guild"))
-              ->ignore
+              message->Message.reply("Failed to retreive role data for guild")->ignore
               reject(RoleHandlerError("Guild does not exist"))
             | Some(guildData) => {
                 let previousRole = guildData.role
                 let guildRole = getRolebyRoleName(guildRoleManager, previousRole)
                 guildRole
-                ->Discord_Role.edit(
-                  {name: RoleName(role), color: String("")},
-                  Reason("Update BrightId role name"),
-                )
+                ->Role.edit(~data={"name": role}, ~reason="Update BrightId role name")
                 ->then(_ => {
-                  guild.id
-                  ->Discord_Snowflake.validateSnowflake
-                  ->updateGist({
+                  guildId->updateGist({
                     "role": role,
                   })
                 })
                 ->then(_ => {
-                  message
-                  ->Discord_Message.reply(
-                    Content(`Succesfully update verified role to \`${role}\``),
-                  )
-                  ->ignore
-                  resolve(message.t)
+                  message->Message.reply(`Succesfully update verified role to \`${role}\``)->ignore
+                  message->resolve
                 })
               }
             }
@@ -93,6 +83,6 @@ let role = (member: guildMember, _: client, message: message) => {
       }
     | _ => Js.Console.error("Some unknown error")
     }
-    resolve(message.t)
+    message->resolve
   })
 }
