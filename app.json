@@ -1,6 +1,6 @@
 {
   "name": "BrightIdDiscordBot",
-  "description": "A barebones Node.js app using Express",
+  "description": "A bot that connects to brightid endpoint and verifies users",
   "repository": "https://github.com/ShenaniganDApp/brightid-discord-bot",
   "logo": "https://raw.githubusercontent.com/BrightID/BrightID/master/images/logo.png",
   "env": {
