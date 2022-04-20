@@ -102,7 +102,7 @@ let fetchVerifications = () => {
 }
 
 let makeEmbed = verifyUrl => {
-  let fields: array<Discord_MessageEmbed.embedFieldData> = [
+  let fields: array<MessageEmbed.embedFieldData> = [
     {
       name: "1. Get Verified in the BrightID app",
       value: `Getting verified requires you make connections with other trusted users. Given the concept is new and there are not many trusted users, this is currently being done through [Verification parties](https://www.brightid.org/meet "https://www.brightid.org/meet") that are hosted in the BrightID server and require members join a voice/video call.`,
@@ -124,8 +124,7 @@ let makeEmbed = verifyUrl => {
       value: "Once you have scanned the QR code you can return to any public channel and type the `!me` command which should grant you the orange verified role.",
     },
   ]
-  open Discord_MessageEmbed
-
+  open MessageEmbed
   createMessageEmbed()
   ->setColor("#fb8b60")
   ->setTitle("How To Get Verified with Bright ID")
@@ -151,11 +150,7 @@ let createMessageAttachmentFromUri = uri => {
   let canvas = Canvas.createCanvas(700, 250)
 
   QRCode.toCanvas(canvas, uri)->then(_ => {
-    let attachment = Discord_Message.createMessageAttachment(
-      canvas->Canvas.toBuffer,
-      "qrcode.png",
-      (),
-    )
+    let attachment = Message.createMessageAttachment(canvas->Canvas.toBuffer, "qrcode.png", ())
     attachment->resolve
   })
 }
