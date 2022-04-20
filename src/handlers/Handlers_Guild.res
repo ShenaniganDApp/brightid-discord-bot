@@ -1,5 +1,4 @@
-open Types
-open Variants
+open Discord
 open Promise
 
 exception GuildHandlerError(string)
@@ -17,16 +16,14 @@ let getGuildDataFromGist = (guilds, guildId, message) => {
   let guildData = guilds->Js.Dict.get(guildId)
   switch guildData {
   | None =>
-    message
-    ->Discord_Message.reply(Content("Failed to retreive data for this Discord Guild"))
-    ->ignore
+    message->Message.reply("Failed to retreive data for this Discord Guild")->ignore
     GuildHandlerError("Failed to retreive data for this Discord Guild")->raise
   | Some(guildData) => guildData
   }
 }
 
-let generateEmbed = (guilds: array<guild>, message, offset) => {
-  open Discord_MessageEmbed
+let generateEmbed = (guilds: array<Guild.t>, message, offset) => {
+  open MessageEmbed
   let current = guilds->Belt.Array.slice(~offset, ~len=offset + 10)
 
   let embed =
@@ -37,76 +34,71 @@ let generateEmbed = (guilds: array<guild>, message, offset) => {
 
   readGist()->then(guilds => {
     current->Belt.Array.forEach(g => {
-      let guildData = getGuildDataFromGist(
-        guilds,
-        g.id->Discord_Snowflake.validateSnowflake,
-        message,
-      )
+      let guildData = guilds->getGuildDataFromGist(g->Guild.getGuildId, message)
       let guildLink = switch guildData.inviteLink->Js.Nullable.toOption {
       | None => "No Invite Link Available"
       | Some(inviteLink) => `**Invite:** ${inviteLink}`
       }
 
-      embed->addField(g.name->Discord_Guild.validateGuildName, guildLink, false)->ignore
+      embed->addField(g->Guild.getGuildName, guildLink, false)->ignore
     })
     embed->resolve
   })
 }
 
-let guilds = (member: guildMember, client: client, message: message) => {
-  let clientGuildManager = client.guilds->wrapGuildManager
-  let unsortedGuilds = clientGuildManager.cache
+let guilds = (member: GuildMember.t, client: Client.t, message: Message.t) => {
+  let clientGuildManager = client->Client.getGuildManager
+  let unsortedGuilds = clientGuildManager->GuildManager.getCache
   let guilds =
     unsortedGuilds
-    ->Belt.Map.valuesToArray
-    ->Belt.Array.map(wrapGuild)
-    ->Belt.SortArray.stableSortBy((a, b) => a.memberCount > b.memberCount ? -1 : 1)
+    ->Collection.sort((a, b) => a->Guild.getMemberCount > b->Guild.getMemberCount ? -1 : 1)
+    ->Collection.array
   guilds
   ->generateEmbed(message, 0)
-  ->then(embed => message.t->Discord_Message._reply({"embed": embed}))
+  ->then(embed => message->Message.reply({"embed": embed}))
   ->then(guildsMessage => {
     switch guilds->Belt.Array.length < 10 {
     | true => ()
     | false =>
       // react with the right arrow (so that the user can click it) (left arrow isn't needed because it is the start)
-      guildsMessage->Discord_Message._react(`➡️`)->ignore
+      guildsMessage->Message.react(`➡️`)->ignore
       let collector =
-        guildsMessage->Discord_ReactionCollector.createReactionCollector(
+        guildsMessage->ReactionCollector.createReactionCollector(
           // only collect left and right arrow reactions from the message author
           (reaction, user) => {
-            let emoji = reaction.emoji->wrapEmoji
-            let name = emoji.name->Discord_Message.validateEmojiName
+            let emoji = reaction->Reaction.getReactionEmoji
+            let name = emoji->Emoji.getEmojiName
             ([`⬅️`, `➡️`]->Belt.Array.some(arrow => name === arrow) &&
-              user.id === member.id)->resolve
+              user->User.getUserId === member->GuildMember.getGuildMemberId)->resolve
           },
           {"time": 60000},
         )
       let currentIndex = 0
-      collector->Discord_ReactionCollector.on(
+      collector->ReactionCollector.on(
         #collect(
           reaction => {
-            open Discord_Message
-            guildsMessage->getMessageReactions->Discord_ReactionManager.removeAll->ignore
+            open Message
+            guildsMessage->getMessageReactions->ReactionManager.removeAll->ignore
 
-            let emoji = reaction.emoji->wrapEmoji
+            let emoji = reaction->Reaction.getReactionEmoji
 
-            let name = emoji.name->validateEmojiName
+            let name = emoji->Emoji.getEmojiName
             let currentIndex = name === `⬅️` ? currentIndex - 10 : currentIndex + 10
-            guilds->generateEmbed(message, currentIndex)->then(message.t->_edit(_))->ignore
+            guilds->generateEmbed(message, currentIndex)->then(message->Message.edit(_))->ignore
             switch currentIndex {
             | 0 =>
               // react with the left arrow (so that the user can click it)
-              guildsMessage->_react(`⬅️`)->ignore
+              guildsMessage->Message.react(`⬅️`)->ignore
             | _ =>
               currentIndex + 10 < guilds->Belt.Array.length
-                ? guildsMessage->_react(`➡️`)->ignore
+                ? guildsMessage->Message.react(`➡️`)->ignore
                 : () //react with the right arrow (so that the user can click it) (left arrow isn't needed because it is the start)
             }
           },
         ),
       )
     }
-    message.t->resolve
+    message->resolve
   })
   ->catch(e => {
     switch e {
@@ -118,6 +110,6 @@ let guilds = (member: guildMember, client: client, message: message) => {
       }
     | _ => Js.Console.error("Some unknown error")
     }
-    resolve(message.t)
+    message->resolve
   })
 }
