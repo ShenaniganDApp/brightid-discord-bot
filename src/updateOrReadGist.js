@@ -1,9 +1,4 @@
 const fetch = require('node-fetch')
-const {
-  decodeData,
-  encodeData,
-  marshallFileUpdate,
-} = require('./handler-utils')
 
 const { error, log } = require('./utils')
 
