@@ -3,17 +3,10 @@
 
 var Js_dict = require("rescript/lib/js/js_dict.js");
 var $$Promise = require("@ryyppy/rescript-promise/src/Promise.bs.js");
-var Belt_Map = require("rescript/lib/js/belt_Map.js");
-var Caml_obj = require("rescript/lib/js/caml_obj.js");
-var Variants = require("../Discord/Variants.bs.js");
 var Belt_Array = require("rescript/lib/js/belt_Array.js");
 var DiscordJs = require("discord.js");
 var Caml_option = require("rescript/lib/js/caml_option.js");
-var Discord_Guild = require("../Discord/Discord_Guild.bs.js");
-var Belt_SortArray = require("rescript/lib/js/belt_SortArray.js");
 var Caml_exceptions = require("rescript/lib/js/caml_exceptions.js");
-var Discord_Message = require("../Discord/Discord_Message.bs.js");
-var Discord_Snowflake = require("../Discord/Discord_Snowflake.bs.js");
 var UpdateOrReadGistJs = require("../updateOrReadGist.js");
 
 var GuildHandlerError = /* @__PURE__ */Caml_exceptions.create("Handlers_Guild.GuildHandlerError");
@@ -27,9 +20,7 @@ function getGuildDataFromGist(guilds, guildId, message) {
   if (guildData !== undefined) {
     return Caml_option.valFromOption(guildData);
   }
-  Discord_Message.reply(message, /* Content */{
-        _0: "Failed to retreive data for this Discord Guild"
-      });
+  message.reply("Failed to retreive data for this Discord Guild");
   throw {
         RE_EXN_ID: GuildHandlerError,
         _1: "Failed to retreive data for this Discord Guild",
@@ -42,10 +33,10 @@ function generateEmbed(guilds, message, offset) {
   var embed = new DiscordJs.MessageEmbed().setTitle("Showing guilds " + (offset + 1 | 0).toString() + "-" + (offset + current.length | 0).toString() + " out of " + guilds.length.toString());
   return UpdateOrReadGistJs.readGist().then(function (guilds) {
               Belt_Array.forEach(current, (function (g) {
-                      var guildData = getGuildDataFromGist(guilds, Discord_Snowflake.validateSnowflake(g.id), message);
+                      var guildData = getGuildDataFromGist(guilds, g.id, message);
                       var inviteLink = guildData.inviteLink;
                       var guildLink = (inviteLink == null) ? "No Invite Link Available" : "**Invite:** " + inviteLink;
-                      embed.addField(Discord_Guild.validateGuildName(g.name), guildLink, false);
+                      embed.addField(g.name, guildLink, false);
                       
                     }));
               return Promise.resolve(embed);
@@ -53,25 +44,25 @@ function generateEmbed(guilds, message, offset) {
 }
 
 function guilds(member, client, message) {
-  var clientGuildManager = Variants.wrapGuildManager(client.guilds);
+  var clientGuildManager = client.guilds;
   var unsortedGuilds = clientGuildManager.cache;
-  var guilds$1 = Belt_SortArray.stableSortBy(Belt_Array.map(Belt_Map.valuesToArray(unsortedGuilds), Variants.wrapGuild), (function (a, b) {
-          if (Caml_obj.caml_greaterthan(a.memberCount, b.memberCount)) {
+  var guilds$1 = unsortedGuilds.sort(function (a, b) {
+          if (a.memberCount > b.memberCount) {
             return -1;
           } else {
             return 1;
           }
-        }));
+        }).array();
   return $$Promise.$$catch(generateEmbed(guilds$1, message, 0).then(function (embed) {
-                    return message.t.reply({
+                    return message.reply({
                                 embed: embed
                               });
                   }).then(function (guildsMessage) {
                   if (guilds$1.length >= 10) {
                     guildsMessage.react("➡️");
                     var collector = guildsMessage.createReactionCollector((function (reaction, user) {
-                            var emoji = Variants.wrapEmoji(reaction.emoji);
-                            var name = Discord_Message.validateEmojiName(emoji.name);
+                            var emoji = reaction.emoji;
+                            var name = emoji.emoji;
                             return Promise.resolve(Belt_Array.some([
                                             "⬅️",
                                             "➡️"
@@ -83,12 +74,11 @@ function guilds(member, client, message) {
                         });
                     collector.on("collect", (function (reaction) {
                             guildsMessage.reactions.removeAll();
-                            var emoji = Variants.wrapEmoji(reaction.emoji);
-                            var name = Discord_Message.validateEmojiName(emoji.name);
+                            var emoji = reaction.emoji;
+                            var name = emoji.emoji;
                             var currentIndex = name === "⬅️" ? -10 : 10;
-                            var partial_arg = message.t;
                             generateEmbed(guilds$1, message, currentIndex).then(function (param) {
-                                  return partial_arg.pin(param);
+                                  return message.edit(param);
                                 });
                             if (currentIndex !== 0) {
                               if ((currentIndex + 10 | 0) < guilds$1.length) {
@@ -103,7 +93,7 @@ function guilds(member, client, message) {
                             }
                           }));
                   }
-                  return Promise.resolve(message.t);
+                  return Promise.resolve(message);
                 }), (function (e) {
                 if (e.RE_EXN_ID === GuildHandlerError) {
                   console.error(e._1);
@@ -117,7 +107,7 @@ function guilds(member, client, message) {
                 } else {
                   console.error("Some unknown error");
                 }
-                return Promise.resolve(message.t);
+                return Promise.resolve(message);
               }));
 }
 
@@ -126,4 +116,4 @@ exports.readGist = readGist;
 exports.getGuildDataFromGist = getGuildDataFromGist;
 exports.generateEmbed = generateEmbed;
 exports.guilds = guilds;
-/* Variants Not a pure module */
+/* discord.js Not a pure module */
