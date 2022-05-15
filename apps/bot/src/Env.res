@@ -1,4 +1,5 @@
-@module("dotenv") external createEnv: unit => unit = "config"
+@module("dotenv") external createEnv: {"path": string} => unit = "config"
+
 type uuidNamespace = UUIDNamespace(string)
 let nodeEnv = Node.Process.process["env"]
 

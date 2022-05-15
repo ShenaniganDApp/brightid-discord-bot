@@ -8,7 +8,7 @@ external updateGist: (string, 'a) => Js.Promise.t<unit> = "updateGist"
 
 @val @module("discord.js") external user: 'a = "Client"
 
-Env.createEnv()
+Env.createEnv({"path": "../../.env"})
 
 let config = Env.getConfig()
 

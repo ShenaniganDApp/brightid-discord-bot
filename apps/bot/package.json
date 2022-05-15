@@ -1,0 +1,35 @@
+{
+  "name": "bot",
+  "version": "1.0.0",
+  "description": "Bot to assign bright-id verified role",
+  "main": "src/index.js",
+  "scripts": {
+    "lint": "npx eslint ./src",
+    "test": "npx jest",
+    "start": "node src/Bot.bs.js",
+    "dev": "concurrently  \"yarn re:start\" \"node src/Bot.bs.js\" ",
+    "re:build": "rescript",
+    "re:start": "rescript build -w",
+    "prettify": "prettier . --write"
+  },
+  "author": "youngkidwarrior",
+  "license": "GPL-3.0-or-later",
+  "devDependencies": {
+    "nodemon": "^2.0.4",
+    "prettier": "^2.1.2",
+    "rescript": "^9.1.4"
+  },
+  "dependencies": {
+    "@ryyppy/rescript-promise": "^2.1.0",
+    "canvas": "^2.9.0",
+    "discord.js": "^12.3.1",
+    "dotenv": "^8.2.0",
+    "fast-json-stable-stringify": "^2.1.0",
+    "node-fetch": "^2.6.1",
+    "qrcode": "^1.4.4",
+    "rescript-discordjs": "https://github.com/youngkidwarrior/rescript-discordjs.git/",
+    "tweetnacl": "^1.0.3",
+    "tweetnacl-util": "^0.15.1",
+    "uuid": "^8.3.0"
+  }
+}

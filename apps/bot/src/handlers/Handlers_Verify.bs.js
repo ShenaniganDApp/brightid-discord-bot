@@ -29,7 +29,9 @@ function readGist(prim) {
   return UpdateOrReadGistJs.readGist();
 }
 
-Dotenv.config();
+Dotenv.config({
+      path: "../../.env"
+    });
 
 var config = Env.getConfig(undefined);
 
