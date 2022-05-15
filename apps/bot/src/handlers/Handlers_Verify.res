@@ -45,7 +45,7 @@ external readGist: unit => Promise.t<Js.Dict.t<brightIdGuildData>> = "readGist"
 @module
 external fetch: (string, 'params) => Promise.t<Response.t<response>> = "node-fetch"
 
-Env.createEnv()
+Env.createEnv({"path": "../../.env"})
 
 let config = Env.getConfig()
 

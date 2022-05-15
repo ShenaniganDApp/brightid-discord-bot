@@ -20,7 +20,9 @@ function updateGist(prim0, prim1) {
   return UpdateOrReadGistJs.updateGist(prim0, prim1);
 }
 
-Dotenv.config();
+Dotenv.config({
+      path: "../../.env"
+    });
 
 var config = Env.getConfig(undefined);
 

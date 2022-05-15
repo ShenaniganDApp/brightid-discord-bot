@@ -15,7 +15,9 @@ var VerificationInfoError = /* @__PURE__ */Caml_exceptions.create("Services_Veri
 
 var FetchVerificationInfoError = /* @__PURE__ */Caml_exceptions.create("Services_VerificationInfo.FetchVerificationInfoError");
 
-Dotenv.config();
+Dotenv.config({
+      path: "../../.env"
+    });
 
 var config = Env.getConfig(undefined);
 
