@@ -1,8 +1,8 @@
-const fetch = require('node-fetch')
+import fetch from 'node-fetch'
 
-const { error, log } = require('./utils')
+import { error, log } from './utils.mjs'
 
-function updateGist(guildId, obj) {
+export function updateGist(guildId, obj) {
   fetch(`https://api.github.com/gists/${process.env.GIST_ID}`, {
     method: 'GET',
     headers: {
@@ -44,7 +44,7 @@ function updateGist(guildId, obj) {
     })
 }
 
-function readGist() {
+export function readGist() {
   return fetch(`https://api.github.com/gists/${process.env.GIST_ID}`, {
     method: 'GET',
     headers: {
@@ -62,5 +62,3 @@ function readGist() {
       return JSON.parse(content) // Manipulated the decoded content:
     })
 }
-
-module.exports = { updateGist, readGist }

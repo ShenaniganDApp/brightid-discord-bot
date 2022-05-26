@@ -8,10 +8,10 @@
   ],
   "package-specs": [
     {
-      "module": "commonjs",
+      "module": "es6-global",
       "in-source": true
     }
   ],
-  "suffix": ".bs.js",
+  "suffix": ".mjs",
   "bs-dependencies": ["@ryyppy/rescript-promise", "rescript-discordjs"]
 }

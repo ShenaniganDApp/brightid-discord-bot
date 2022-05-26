@@ -5,7 +5,7 @@ exception VerificationInfoError(string)
 exception FetchVerificationInfoError({error: string, fetching: bool})
 
 //@TODO I shouldnt have to keep importing this
-Env.createEnv({"path": "../../.env"})
+Env.createEnv()
 
 let config = Env.getConfig()
 
