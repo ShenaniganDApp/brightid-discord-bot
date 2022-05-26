@@ -2,10 +2,11 @@
 
 import * as Env from "./Env.mjs";
 import * as $$Promise from "../../../node_modules/@ryyppy/rescript-promise/src/Promise.mjs";
+import * as Commands_Help from "./commands/Commands_Help.mjs";
 import * as Rest from "@discordjs/rest";
 import * as Caml_exceptions from "../../../node_modules/rescript/lib/es6/caml_exceptions.js";
+import * as Commands_Verify from "./commands/Commands_Verify.mjs";
 import * as V9 from "discord-api-types/v9";
-import * as Commands_ExampleCommand from "./commands/Commands_ExampleCommand.mjs";
 
 var DeployCommandsError = /* @__PURE__ */Caml_exceptions.create("DeployCommands.DeployCommandsError");
 
@@ -33,9 +34,14 @@ var token = envConfig$1.discordApiToken;
 
 var clientId = envConfig$1.discordClientId;
 
-var exampleCommand = Commands_ExampleCommand.data.toJSON();
+var helpCommand = Commands_Help.data.toJSON();
 
-var commands = [exampleCommand];
+var verifyCommand = Commands_Verify.data.toJSON();
+
+var commands = [
+  helpCommand,
+  verifyCommand
+];
 
 var rest = new Rest.REST({
         version: 9
@@ -71,7 +77,8 @@ export {
   envConfig$1 as envConfig,
   token ,
   clientId ,
-  exampleCommand ,
+  helpCommand ,
+  verifyCommand ,
   commands ,
   rest ,
   applicationGuildCommands ,
