@@ -1,30 +1,30 @@
 open Discord
 
 exception RequestHandlerError({date: float, message: string})
-@module
-external parseWhitelistedChannels: unit => array<string> = "./parser/whitelistedChannels"
-@module("./updateOrReadGist.js")
+// @module
+// external parseWhitelistedChannels: unit => <string> = "./parser/whitelistedChannels"
+@module("./updateOrReadGist.mjs")
 external updateGist: (string, 'a) => Js.Promise.t<unit> = "updateGist"
 
 @val @module("discord.js") external user: 'a = "Client"
 
-Env.createEnv({"path": "../../.env"})
+Env.createEnv()
 
 let config = Env.getConfig()
 
 let client = Client.createDiscordClient()
 
-let checkWhitelistedChannel = (message: Message.t) => {
-  let channel = message->Message.getMessageChannel
-  let whitelistedChannels = parseWhitelistedChannels()
-  let messageWhitelisted =
-    whitelistedChannels->Js.Array2.reduce(
-      (whitelisted, name) =>
-        name === channel->Channel.getChannelName || name === "*" || whitelisted,
-      false,
-    )
-  !messageWhitelisted && whitelistedChannels->Belt.Array.length > 0
-}
+// let checkWhitelistedChannel = (message: Message.t) => {
+//   let channel = message->Message.getMessageChannel
+//   let whitelistedChannels = parseWhitelistedChannels()
+//   let messageWhitelisted =
+//     whitelistedChannels->Js.Array2.reduce(
+//       (whitelisted, name) =>
+//         name === channel->Channel.getChannelName || name === "*" || whitelisted,
+//       false,
+//     )
+//   !messageWhitelisted && whitelistedChannels->Belt.Array.length > 0
+// }
 
 let updateGistOnGuildCreate = (guild: Guild.t) =>
   guild->Guild.getGuildId->updateGist({"name": guild->Guild.getGuildName, "role": "Verified"})
@@ -49,23 +49,21 @@ let onMessage = (message: Message.t) => {
   switch isBot {
   | true => ()
   | false =>
-    switch message->checkWhitelistedChannel {
-    | true => ()
-    | false => {
-        let guildMember = message->Message.getMessageMember
-        let handler = message->Parser_DetectHandler.detectHandler
-        switch handler {
-        | Some(handler) => guildMember->handler(client, message)->ignore
-        | None => {
-            message->Message.reply("Could not find the requested command")->ignore
-            Js.Console.error(
-              RequestHandlerError({
-                date: Js.Date.now(),
-                message: "Could not find the requested command",
-              }),
-            )
-          }
-        }
+    // switch message->checkWhitelistedChannel {
+    // | true => ()
+    // | false => {
+    let guildMember = message->Message.getMessageMember
+    let handler = message->Parser_DetectHandler.detectHandler
+    switch handler {
+    | Some(handler) => guildMember->handler(client, message)->ignore
+    | None => {
+        message->Message.reply("Could not find the requested command")->ignore
+        Js.Console.error(
+          RequestHandlerError({
+            date: Js.Date.now(),
+            message: "Could not find the requested command",
+          }),
+        )
       }
     }
   }

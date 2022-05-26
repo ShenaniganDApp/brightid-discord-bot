@@ -2,7 +2,7 @@
   "name": "bot",
   "version": "1.0.0",
   "description": "Bot to assign bright-id verified role",
-  "main": "src/index.js",
+  "type": "module",
   "scripts": {
     "lint": "npx eslint ./src",
     "test": "npx jest",
@@ -25,6 +25,7 @@
     "discord.js": "^12.3.1",
     "dotenv": "^8.2.0",
     "fast-json-stable-stringify": "^2.1.0",
+    "find-up": "^6.3.0",
     "node-fetch": "^2.6.1",
     "qrcode": "^1.4.4",
     "rescript-discordjs": "https://github.com/youngkidwarrior/rescript-discordjs.git/",

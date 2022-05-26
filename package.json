@@ -9,7 +9,8 @@
     "find-up": "^6.3.0"
   },
   "scripts": {
-    "bot": "yarn workspace bot"
+    "bot": "yarn workspace bot",
+    "web": "yarn workspace web"
   },
   "workspaces": [
     "apps/*",

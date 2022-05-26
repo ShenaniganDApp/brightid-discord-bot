@@ -1,7 +1,16 @@
+@module("find-up") external findUpSync: (string, 'options) => string = "findUpSync"
 @module("dotenv") external createEnv: {"path": string} => unit = "config"
 
 type uuidNamespace = UUIDNamespace(string)
 let nodeEnv = Node.Process.process["env"]
+
+let createEnv = () => {
+  let path = switch nodeEnv->Js.Dict.get("ENV_FILE") {
+  | None => ".env.local"->findUpSync()
+  | Some(envFile) => envFile->findUpSync()
+  }
+  createEnv({"path": path})
+}
 
 let env = name =>
   switch Js.Dict.get(nodeEnv, name) {

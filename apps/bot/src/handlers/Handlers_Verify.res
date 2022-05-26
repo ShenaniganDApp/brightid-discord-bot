@@ -39,13 +39,13 @@ type brightIdGuildData = {
   inviteLink: Js.Nullable.t<string>,
 }
 
-@module("../updateOrReadGist.js")
+@module("../updateOrReadGist.mjs")
 external readGist: unit => Promise.t<Js.Dict.t<brightIdGuildData>> = "readGist"
 
 @module
 external fetch: (string, 'params) => Promise.t<Response.t<response>> = "node-fetch"
 
-Env.createEnv({"path": "../../.env"})
+Env.createEnv()
 
 let config = Env.getConfig()
 

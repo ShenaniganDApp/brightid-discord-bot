@@ -1,6 +1,6 @@
 open Discord
 
-@module("../updateOrReadGist.js")
+@module("../updateOrReadGist.mjs")
 external updateGist: (string, 'a) => Js.Promise.t<unit> = "updateGist"
 
 let invite = (member: GuildMember.t, _: Client.t, message: Message.t): Promise.t<Message.t> => {

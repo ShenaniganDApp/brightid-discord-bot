@@ -1,7 +1,5 @@
 exception RequestHandlerError({date: float, message: string})
 
-@module external errorUtils: 'a = "../error-utils"
-
 let commands = ["!verify", "!me", "!guilds", "!invite", "!role", "!brightid"]
 
 let detectHandler = message => {
