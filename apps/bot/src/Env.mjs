@@ -4,6 +4,9 @@ import * as Dotenv from "dotenv";
 import * as Js_dict from "../../../node_modules/rescript/lib/es6/js_dict.js";
 import * as FindUp from "find-up";
 import * as Process from "process";
+import * as Caml_exceptions from "../../../node_modules/rescript/lib/es6/caml_exceptions.js";
+
+var EnvError = /* @__PURE__ */Caml_exceptions.create("Env.EnvError");
 
 var nodeEnv = Process.env;
 
@@ -33,16 +36,22 @@ function env(name) {
 
 function getConfig(param) {
   var match = env("DISCORD_API_TOKEN");
-  var match$1 = env("UUID_NAMESPACE");
+  var match$1 = env("DISCORD_CLIENT_ID");
+  var match$2 = env("UUID_NAMESPACE");
   if (match.TAG === /* Ok */0) {
     if (match$1.TAG === /* Ok */0) {
-      return {
-              TAG: /* Ok */0,
-              _0: {
-                discordApiToken: match._0,
-                uuidNamespace: match$1._0
-              }
-            };
+      if (match$2.TAG === /* Ok */0) {
+        return {
+                TAG: /* Ok */0,
+                _0: {
+                  discordApiToken: match._0,
+                  discordClientId: match$1._0,
+                  uuidNamespace: match$2._0
+                }
+              };
+      } else {
+        return match$2;
+      }
     } else {
       return match$1;
     }
@@ -52,6 +61,7 @@ function getConfig(param) {
 }
 
 export {
+  EnvError ,
   nodeEnv ,
   createEnv ,
   env ,

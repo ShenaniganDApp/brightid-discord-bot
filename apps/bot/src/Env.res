@@ -1,3 +1,4 @@
+exception EnvError(string)
 @module("find-up") external findUpSync: (string, 'options) => string = "findUpSync"
 @module("dotenv") external createEnv: {"path": string} => unit = "config"
 
@@ -19,14 +20,16 @@ let env = name =>
   }
 
 let getConfig = () =>
-  switch (env("DISCORD_API_TOKEN"), env("UUID_NAMESPACE")) {
+  switch (env("DISCORD_API_TOKEN"), env("DISCORD_CLIENT_ID"), env("UUID_NAMESPACE")) {
   // Got all vars
-  | (Ok(discordApiToken), Ok(uuidNamespace)) =>
+  | (Ok(discordApiToken), Ok(discordClientId), Ok(uuidNamespace)) =>
     Ok({
       "discordApiToken": discordApiToken,
+      "discordClientId": discordClientId,
       "uuidNamespace": uuidNamespace,
     })
   // Did not get one or more vars, return the first error
-  | (Error(_) as err, _)
-  | (_, Error(_) as err) => err
+  | (Error(_) as err, _, _)
+  | (_, Error(_) as err, _)
+  | (_, _, Error(_) as err) => err
   }
