@@ -31,8 +31,8 @@ type response = {
   "code": Js.Nullable.t<int>,
 }
 
-@module
-external fetch: (string, 'params) => Promise.t<Response.t<response>> = "node-fetch"
+@module("node-fetch")
+external fetch: (string, 'params) => Promise.t<Response.t<response>> = "default"
 
 let {contextId} = module(Constants)
 let {brightIdVerificationEndpoint} = module(Endpoints)

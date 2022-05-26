@@ -4,9 +4,9 @@ import * as Env from "./Env.mjs";
 import * as Curry from "../../../node_modules/rescript/lib/es6/curry.js";
 import * as DiscordJs from "discord.js";
 import * as Commands_Help from "./commands/Commands_Help.mjs";
+import * as Buttons_Verify from "./buttons/Buttons_Verify.mjs";
 import * as Caml_exceptions from "../../../node_modules/rescript/lib/es6/caml_exceptions.js";
 import * as Commands_Verify from "./commands/Commands_Verify.mjs";
-import * as Parser_DetectHandler from "./parser/Parser_DetectHandler.mjs";
 import * as UpdateOrReadGistMjs from "./updateOrReadGist.mjs";
 
 var RequestHandlerError = /* @__PURE__ */Caml_exceptions.create("Bot.RequestHandlerError");
@@ -30,12 +30,19 @@ var client = new DiscordJs.Client(options);
 
 var commands = new DiscordJs.Collection();
 
+var buttons = new DiscordJs.Collection();
+
 commands.set(Commands_Help.data.name, {
         data: Commands_Help.data,
         execute: Commands_Help.execute
       }).set(Commands_Verify.data.name, {
       data: Commands_Verify.data,
       execute: Commands_Verify.execute
+    });
+
+buttons.set(Buttons_Verify.customId, {
+      customId: Buttons_Verify.customId,
+      execute: Buttons_Verify.execute
     });
 
 function updateGistOnGuildCreate(guild) {
@@ -47,41 +54,27 @@ function updateGistOnGuildCreate(guild) {
 
 function onGuildCreate(guild) {
   var roleManager = guild.roles;
-  var createRoleOptions = {
-    data: {
-      name: "Verified",
-      color: "ORANGE"
-    },
-    reason: "Verify users with BrightID"
-  };
-  roleManager.create(createRoleOptions);
+  roleManager.create({
+        name: "Verified",
+        color: "ORANGE",
+        reason: "Create a role to mark verified users with BrightID"
+      });
   updateGistOnGuildCreate(guild);
   
 }
 
 function onMessage(message) {
-  var author = message.author;
-  var isBot = author.bot;
-  if (isBot) {
-    return ;
-  }
-  var guildMember = message.member;
-  var handler = Parser_DetectHandler.detectHandler(message);
-  if (handler !== undefined) {
-    Curry._3(handler, guildMember, client, message);
-  } else {
-    message.reply("Could not find the requested command");
-    console.error({
-          RE_EXN_ID: RequestHandlerError,
-          date: Date.now(),
-          message: "Could not find the requested command"
-        });
-  }
   
 }
 
 function onInteraction(interaction) {
-  if (interaction.isCommand()) {
+  var isCommand = interaction.isCommand();
+  var isButton = interaction.isButton();
+  if (isCommand) {
+    if (isButton) {
+      console.error("Bot.res: Unknown interaction");
+      return ;
+    }
     var commandName = interaction.commandName;
     var command = commands.get(commandName);
     if (command == null) {
@@ -91,7 +84,17 @@ function onInteraction(interaction) {
     }
     return ;
   }
-  console.log("Not a command");
+  if (isButton) {
+    var buttonCustomId = interaction.customId;
+    var button = buttons.get(buttonCustomId);
+    if (button == null) {
+      console.error("Bot.res: Button not found");
+    } else {
+      Curry._1(button.execute, interaction);
+    }
+    return ;
+  }
+  console.error("Bot.res: Unknown interaction");
   
 }
 
@@ -119,6 +122,7 @@ export {
   options ,
   client ,
   commands ,
+  buttons ,
   updateGistOnGuildCreate ,
   onGuildCreate ,
   onMessage ,
