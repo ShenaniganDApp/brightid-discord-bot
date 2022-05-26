@@ -9,7 +9,7 @@ type brightIdGuildData = {
   inviteLink: Js.Nullable.t<string>,
 }
 
-@module("../updateOrReadGist.js")
+@module("../updateOrReadGist.mjs")
 external readGist: unit => Promise.t<Js.Dict.t<brightIdGuildData>> = "readGist"
 
 let getGuildDataFromGist = (guilds, guildId, message) => {

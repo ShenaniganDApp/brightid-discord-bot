@@ -8,7 +8,7 @@ type brightIdGuildData = {
   role: string,
 }
 
-@module("../updateOrReadGist.js")
+@module("../updateOrReadGist.mjs")
 external readGist: unit => Promise.t<Js.Dict.t<brightIdGuildData>> = "readGist"
 
 let getRolebyRoleName = (guildRoleManager, roleName) => {

@@ -8,9 +8,9 @@ type brightIdGuildData = {
   role: string,
 }
 
-@module("../updateOrReadGist.js")
+@module("../updateOrReadGist.mjs")
 external updateGist: (string, 'a) => Js.Promise.t<unit> = "updateGist"
-@module("../updateOrReadGist.js")
+@module("../updateOrReadGist.mjs")
 external readGist: unit => Promise.t<Js.Dict.t<brightIdGuildData>> = "readGist"
 
 let newRoleRe = %re("/(?<=^\S+)\s/")
