@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "baseUrl": ".",
+    "paths": {
+      "~/*": ["./app/*"]
+    },
+    "allowJs": true,
+    "forceConsistentCasingInFileNames": true,
+    "lib": ["DOM", "DOM.Iterable", "ES2019"],
+    "strict": true,
+    "target": "ES2019",
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "moduleResolution": "node",
+    "noEmit": true,
+    "resolveJsonModule": true
+  },
+  "include": ["remix.env.d.ts", "**/*.ts", "**/*.tsx"]
+}

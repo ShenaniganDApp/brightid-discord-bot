@@ -1,0 +1,12 @@
+node_modules
+
+/.cache
+/build
+/public/build
+.env
+
+/app/**/*.jsx
+/app/**/*.js
+/lib/
+.bsb.lock
+.merlin
