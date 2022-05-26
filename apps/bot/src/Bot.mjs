@@ -6,6 +6,7 @@ import * as DiscordJs from "discord.js";
 import * as Caml_exceptions from "../../../node_modules/rescript/lib/es6/caml_exceptions.js";
 import * as Parser_DetectHandler from "./parser/Parser_DetectHandler.mjs";
 import * as UpdateOrReadGistMjs from "./updateOrReadGist.mjs";
+import * as Commands_ExampleCommand from "./commands/Commands_ExampleCommand.mjs";
 
 var RequestHandlerError = /* @__PURE__ */Caml_exceptions.create("Bot.RequestHandlerError");
 
@@ -17,7 +18,21 @@ Env.createEnv(undefined);
 
 var config = Env.getConfig(undefined);
 
-var client = new DiscordJs.Client(undefined);
+var options = {
+  intents: [
+    "GUILDS",
+    "GUILD_MESSAGES"
+  ]
+};
+
+var client = new DiscordJs.Client(options);
+
+var commands = new DiscordJs.Collection();
+
+commands.set(Commands_ExampleCommand.data.name, {
+      data: Commands_ExampleCommand.data,
+      execute: Commands_ExampleCommand.execute
+    });
 
 function updateGistOnGuildCreate(guild) {
   return UpdateOrReadGistMjs.updateGist(guild.id, {
@@ -61,6 +76,21 @@ function onMessage(message) {
   
 }
 
+function onInteraction(interaction) {
+  if (interaction.isCommand()) {
+    var commandName = interaction.commandName;
+    var command = commands.get(commandName);
+    if (command == null) {
+      console.error("Bot.res: Command not found");
+    } else {
+      Curry._1(command.execute, interaction);
+    }
+    return ;
+  }
+  console.log("Not a command");
+  
+}
+
 client.on("ready", (function (param) {
         console.log("Logged In");
         
@@ -68,7 +98,9 @@ client.on("ready", (function (param) {
 
 client.on("guildCreate", onGuildCreate);
 
-client.on("message", onMessage);
+client.on("messageCreate", onMessage);
+
+client.on("interactionCreate", onInteraction);
 
 if (config.TAG === /* Ok */0) {
   client.login(config._0.discordApiToken);
@@ -80,10 +112,13 @@ export {
   RequestHandlerError ,
   updateGist ,
   config ,
+  options ,
   client ,
+  commands ,
   updateGistOnGuildCreate ,
   onGuildCreate ,
   onMessage ,
+  onInteraction ,
   
 }
 /*  Not a pure module */

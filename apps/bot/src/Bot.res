@@ -1,8 +1,12 @@
 open Discord
 
 exception RequestHandlerError({date: float, message: string})
-// @module
-// external parseWhitelistedChannels: unit => <string> = "./parser/whitelistedChannels"
+
+module type Command = {
+  let data: SlashCommandBuilder.t
+  let execute: Interaction.t => Js.Promise.t<Message.t>
+}
+
 @module("./updateOrReadGist.mjs")
 external updateGist: (string, 'a) => Js.Promise.t<unit> = "updateGist"
 
@@ -12,19 +16,19 @@ Env.createEnv()
 
 let config = Env.getConfig()
 
-let client = Client.createDiscordClient()
+let options: Client.clientOptions = {
+  intents: ["GUILDS", "GUILD_MESSAGES"],
+}
 
-// let checkWhitelistedChannel = (message: Message.t) => {
-//   let channel = message->Message.getMessageChannel
-//   let whitelistedChannels = parseWhitelistedChannels()
-//   let messageWhitelisted =
-//     whitelistedChannels->Js.Array2.reduce(
-//       (whitelisted, name) =>
-//         name === channel->Channel.getChannelName || name === "*" || whitelisted,
-//       false,
-//     )
-//   !messageWhitelisted && whitelistedChannels->Belt.Array.length > 0
-// }
+let client = Client.createDiscordClient(~options)
+
+let commands: Collection.t<string, module(Command)> = Collection.make()
+commands
+->Collection.set(
+  Commands_ExampleCommand.data->SlashCommandBuilder.getCommandName,
+  module(Commands_ExampleCommand),
+)
+->ignore
 
 let updateGistOnGuildCreate = (guild: Guild.t) =>
   guild->Guild.getGuildId->updateGist({"name": guild->Guild.getGuildName, "role": "Verified"})
@@ -69,6 +73,20 @@ let onMessage = (message: Message.t) => {
   }
 }
 
+let onInteraction = (interaction: Interaction.t) => {
+  !(interaction->Interaction.isCommand)
+    ? Js.log("Not a command")
+    : {
+        let commandName = interaction->Interaction.getCommandName
+
+        let command = commands->Collection.get(commandName)
+        switch command->Js.Nullable.toOption {
+        | None => Js.Console.error("Bot.res: Command not found")
+        | Some(module(Command)) => Command.execute(interaction)->ignore
+        }
+      }
+}
+
 client->Client.on(
   #ready(
     () => {
@@ -79,9 +97,26 @@ client->Client.on(
 
 client->Client.on(#guildCreate(guild => guild->onGuildCreate))
 
-client->Client.on(#message(message => message->onMessage))
+client->Client.on(#messageCreate(message => message->onMessage))
+
+client->Client.on(#interactionCreate(interaction => interaction->onInteraction))
 
 switch config {
 | Ok(config) => client->Client.login(config["discordApiToken"])
 | Error(err) => Js.log(err)
 }
+
+// @module
+// external parseWhitelistedChannels: unit => <string> = "./parser/whitelistedChannels"
+
+// let checkWhitelistedChannel = (message: Message.t) => {
+//   let channel = message->Message.getMessageChannel
+//   let whitelistedChannels = parseWhitelistedChannels()
+//   let messageWhitelisted =
+//     whitelistedChannels->Js.Array2.reduce(
+//       (whitelisted, name) =>
+//         name === channel->Channel.getChannelName || name === "*" || whitelisted,
+//       false,
+//     )
+//   !messageWhitelisted && whitelistedChannels->Belt.Array.length > 0
+// }
