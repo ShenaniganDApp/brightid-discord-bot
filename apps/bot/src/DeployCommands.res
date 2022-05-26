@@ -28,9 +28,10 @@ let token = envConfig["discordApiToken"]
 let clientId = envConfig["discordClientId"]
 
 // @TODO: Shouldn't need to hardcode each command, instaed loop through files
-let exampleCommand = Commands_ExampleCommand.data->SlashCommandBuilder.toJSON
+let helpCommand = Commands_Help.data->SlashCommandBuilder.toJSON
+let verifyCommand = Commands_Verify.data->SlashCommandBuilder.toJSON
 
-let commands = [exampleCommand]
+let commands = [helpCommand, verifyCommand]
 
 let rest = Rest.make({"version": 9})->Rest.setToken(token)
 
