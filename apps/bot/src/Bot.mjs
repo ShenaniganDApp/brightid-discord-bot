@@ -3,10 +3,11 @@
 import * as Env from "./Env.mjs";
 import * as Curry from "../../../node_modules/rescript/lib/es6/curry.js";
 import * as DiscordJs from "discord.js";
+import * as Commands_Help from "./commands/Commands_Help.mjs";
 import * as Caml_exceptions from "../../../node_modules/rescript/lib/es6/caml_exceptions.js";
+import * as Commands_Verify from "./commands/Commands_Verify.mjs";
 import * as Parser_DetectHandler from "./parser/Parser_DetectHandler.mjs";
 import * as UpdateOrReadGistMjs from "./updateOrReadGist.mjs";
-import * as Commands_ExampleCommand from "./commands/Commands_ExampleCommand.mjs";
 
 var RequestHandlerError = /* @__PURE__ */Caml_exceptions.create("Bot.RequestHandlerError");
 
@@ -29,9 +30,12 @@ var client = new DiscordJs.Client(options);
 
 var commands = new DiscordJs.Collection();
 
-commands.set(Commands_ExampleCommand.data.name, {
-      data: Commands_ExampleCommand.data,
-      execute: Commands_ExampleCommand.execute
+commands.set(Commands_Help.data.name, {
+        data: Commands_Help.data,
+        execute: Commands_Help.execute
+      }).set(Commands_Verify.data.name, {
+      data: Commands_Verify.data,
+      execute: Commands_Verify.execute
     });
 
 function updateGistOnGuildCreate(guild) {

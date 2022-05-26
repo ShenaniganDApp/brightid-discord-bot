@@ -4,7 +4,7 @@ exception RequestHandlerError({date: float, message: string})
 
 module type Command = {
   let data: SlashCommandBuilder.t
-  let execute: Interaction.t => Js.Promise.t<Message.t>
+  let execute: Interaction.t => Js.Promise.t<unit>
 }
 
 @module("./updateOrReadGist.mjs")
@@ -24,10 +24,8 @@ let client = Client.createDiscordClient(~options)
 
 let commands: Collection.t<string, module(Command)> = Collection.make()
 commands
-->Collection.set(
-  Commands_ExampleCommand.data->SlashCommandBuilder.getCommandName,
-  module(Commands_ExampleCommand),
-)
+->Collection.set(Commands_Help.data->SlashCommandBuilder.getCommandName, module(Commands_Help))
+->Collection.set(Commands_Verify.data->SlashCommandBuilder.getCommandName, module(Commands_Verify))
 ->ignore
 
 let updateGistOnGuildCreate = (guild: Guild.t) =>
