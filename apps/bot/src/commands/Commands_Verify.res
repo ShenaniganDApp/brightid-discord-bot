@@ -169,12 +169,15 @@ let getRolebyRoleName = (guildRoleManager, roleName) => {
   }
 }
 
-let data =
-  SlashCommandBuilder.make()
-  ->SlashCommandBuilder.setName("verify")
-  ->SlashCommandBuilder.setDescription(
-    "Sends a BrightID QR code for users to connect with their BrightId",
-  )
+let makeVerifyActionRow = () => {
+  let button =
+    MessageButton.make()
+    ->MessageButton.setCustomId("verify")
+    ->MessageButton.setLabel("Click here after scanning QR Code in the BrightID app")
+    ->MessageButton.setStyle("PRIMARY")
+
+  MessageActionRow.make()->MessageActionRow.addComponents(button)
+}
 
 let execute = (interaction: Interaction.t) => {
   let guild = interaction->Interaction.getGuild
@@ -191,8 +194,10 @@ let execute = (interaction: Interaction.t) => {
     switch guildData {
     | None =>
       interaction
-      ->Interaction.reply(
-        ~content="Hi, sorry about that. I couldn't retrieve the data for this server from BrightId",
+      ->Interaction.editReply(
+        ~options={
+          "content": "Hi, sorry about that. I couldn't retrieve the data for this server from BrightId",
+        },
         (),
       )
       ->ignore
@@ -204,13 +209,15 @@ let execute = (interaction: Interaction.t) => {
         fetchVerifications()
         ->then(data => isIdInVerifications(data, id))
         ->then(idExists => {
-          idExists
+          false
             ? {
                 guildMemberRoleManager->GuildMemberRoleManager.add(guildRole, "")->ignore
                 interaction
-                ->Interaction.reply(
-                  ~content=`I recognize you! You're now a verified user in ${guild->Guild.getGuildName}!`,
-                  ~options={"ephemeral": true},
+                ->Interaction.editReply(
+                  ~options={
+                    "content": `Hey, I recognize you! I just gave you the \`${guildRole->Role.getName}\` role. You are now BrightID verified in ${guild->Guild.getGuildName} server!`,
+                    "ephemeral": true,
+                  },
                   (),
                 )
                 ->ignore
@@ -220,9 +227,15 @@ let execute = (interaction: Interaction.t) => {
               ->createMessageAttachmentFromUri
               ->then(attachment => {
                 let embed = verifyUrl->makeEmbed
+                let row = makeVerifyActionRow()
                 interaction
                 ->Interaction.editReply(
-                  ~options={"embeds": [embed], "files": [attachment], "ephemeral": true},
+                  ~options={
+                    "embeds": [embed],
+                    "files": [attachment],
+                    "ephemeral": true,
+                    "components": [row],
+                  },
                   (),
                 )
                 ->ignore
@@ -245,3 +258,10 @@ let execute = (interaction: Interaction.t) => {
     resolve()
   })
 }
+
+let data =
+  SlashCommandBuilder.make()
+  ->SlashCommandBuilder.setName("verify")
+  ->SlashCommandBuilder.setDescription(
+    "Sends a BrightID QR code for users to connect with their BrightId",
+  )

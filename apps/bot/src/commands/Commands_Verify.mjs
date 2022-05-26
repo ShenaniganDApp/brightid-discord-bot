@@ -154,13 +154,15 @@ function getRolebyRoleName(guildRoleManager, roleName) {
       };
 }
 
-var data = new Builders.SlashCommandBuilder().setName("verify").setDescription("Sends a BrightID QR code for users to connect with their BrightId");
+function makeVerifyActionRow(param) {
+  var button = new DiscordJs.MessageButton().setCustomId("verify").setLabel("Click here after scanning QR Code in the BrightID app").setStyle("PRIMARY");
+  return new DiscordJs.MessageActionRow().addComponents(button);
+}
 
 function execute(interaction) {
   var guild = interaction.guild;
   var member = interaction.member;
   var guildRoleManager = guild.roles;
-  var guildMemberRoleManager = member.roles;
   var memberId = member.id;
   var id = UUID.v5(memberId, uuidNAMESPACE);
   interaction.deferReply({
@@ -170,32 +172,28 @@ function execute(interaction) {
                   var guildId = guild.id;
                   var guildData = Js_dict.get(guilds, guildId);
                   if (guildData !== undefined) {
-                    var guildRole = getRolebyRoleName(guildRoleManager, guildData.role);
+                    getRolebyRoleName(guildRoleManager, guildData.role);
                     var deepLink = Endpoints.brightIdAppDeeplink + "/" + id;
                     var verifyUrl = Endpoints.brightIdLinkVerificationEndpoint + "/" + id;
                     return fetchVerifications(undefined).then(function (data) {
                                   return isIdInVerifications(data, id);
                                 }).then(function (idExists) {
-                                if (idExists) {
-                                  guildMemberRoleManager.add(guildRole, "");
-                                  interaction.reply("I recognize you! You're now a verified user in " + guild.name + "!", {
-                                        ephemeral: true
-                                      });
-                                  return Promise.resolve(undefined);
-                                } else {
-                                  return createMessageAttachmentFromUri(deepLink).then(function (attachment) {
-                                              var embed = makeEmbed(verifyUrl);
-                                              interaction.editReply({
-                                                    embeds: [embed],
-                                                    files: [attachment],
-                                                    ephemeral: true
-                                                  });
-                                              return Promise.resolve(undefined);
-                                            });
-                                }
+                                return createMessageAttachmentFromUri(deepLink).then(function (attachment) {
+                                            var embed = makeEmbed(verifyUrl);
+                                            var row = makeVerifyActionRow(undefined);
+                                            interaction.editReply({
+                                                  embeds: [embed],
+                                                  files: [attachment],
+                                                  ephemeral: true,
+                                                  components: [row]
+                                                });
+                                            return Promise.resolve(undefined);
+                                          });
                               });
                   }
-                  interaction.reply("Hi, sorry about that. I couldn't retrieve the data for this server from BrightId", undefined);
+                  interaction.editReply({
+                        content: "Hi, sorry about that. I couldn't retrieve the data for this server from BrightId"
+                      });
                   return Promise.reject({
                               RE_EXN_ID: VerifyHandlerError,
                               _1: "Guild does not exist"
@@ -217,6 +215,8 @@ function execute(interaction) {
               }));
 }
 
+var data = new Builders.SlashCommandBuilder().setName("verify").setDescription("Sends a BrightID QR code for users to connect with their BrightId");
+
 export {
   VerifyHandlerError ,
   UUID$1 as UUID,
@@ -232,8 +232,9 @@ export {
   makeEmbed ,
   createMessageAttachmentFromUri ,
   getRolebyRoleName ,
-  data ,
+  makeVerifyActionRow ,
   execute ,
+  data ,
   
 }
 /*  Not a pure module */
