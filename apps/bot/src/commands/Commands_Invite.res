@@ -26,7 +26,7 @@ let execute = (interaction: Interaction.t) => {
         (),
       )
       ->ignore
-      InviteCommandError("Commands_Invite: User does not hav Administrator permissions")->raise
+      InviteCommandError("Commands_Invite: User does not have Administrator permissions")->raise
     | true => {
         let inviteLink = commandOptions->CommandInteractionOptionResolver.getString("invite")
         switch inviteLink->Js.Nullable.toOption {
@@ -50,28 +50,40 @@ let execute = (interaction: Interaction.t) => {
               InviteCommandError("Commands_Invite: Invite Link is not a valid URL")->reject
             }
 
-          | true =>
-            updateGist(
-              guild->Guild.getGuildId,
-              {
-                "inviteLink": inviteLink,
-              },
-            )->ignore
+          | true => {
+              updateGist(
+                guild->Guild.getGuildId,
+                {
+                  "inviteLink": inviteLink,
+                },
+              )->ignore
 
-            interaction
-            ->Interaction.editReply(
-              ~options={
-                "content": `Successfully update server invite link to ${inviteLink}`,
-                "ephemeral": true,
-              },
-              (),
-            )
-            ->ignore
-            resolve()
+              interaction
+              ->Interaction.editReply(
+                ~options={
+                  "content": `Successfully update server invite link to ${inviteLink}`,
+                  "ephemeral": true,
+                },
+                (),
+              )
+              ->ignore
+              resolve()
+            }
           }
         }
       }
-    }
+    }->catch(e => {
+      switch e {
+      | InviteCommandError(msg) => Js.Console.error(msg)
+      | JsError(obj) =>
+        switch Js.Exn.message(obj) {
+        | Some(msg) => Js.Console.error(msg)
+        | None => Js.Console.error("Must be some non-error value")
+        }
+      | _ => Js.Console.error("Some unknown error")
+      }
+      resolve()
+    })
   })
 }
 
