@@ -1,6 +1,7 @@
 open Promise
 open Discord
 
+// @TODO: Update name of error to reflect Command namespace
 exception RoleHandlerError(string)
 
 type brightIdGuildData = {
@@ -28,11 +29,6 @@ let getRolebyRoleName = (guildRoleManager, roleName) => {
   }
 }
 
-let isAdministrator = member => {
-  let permissions = member->GuildMember.getPermissions
-  permissions->Permissions.has(Permissions.Flags.administrator)
-}
-
 let execute = interaction => {
   let guild = interaction->Interaction.getGuild
   let member = interaction->Interaction.getGuildMember
@@ -49,7 +45,7 @@ let execute = interaction => {
         interaction
         ->Interaction.editReply(~options={"content": "Only administrators can change the role"}, ())
         ->ignore
-        RoleHandlerError("Commands_Role: Administrator permissions are required")->reject
+        RoleHandlerError("Commands_Role: User does not hav Administrator permissions")->reject
       }
     | true => {
         let role = commandOptions->CommandInteractionOptionResolver.getString("role")

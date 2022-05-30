@@ -7,6 +7,7 @@ import * as Commands_Help from "./commands/Commands_Help.mjs";
 import * as Commands_Role from "./commands/Commands_Role.mjs";
 import * as Buttons_Verify from "./buttons/Buttons_Verify.mjs";
 import * as Caml_exceptions from "../../../node_modules/rescript/lib/es6/caml_exceptions.js";
+import * as Commands_Invite from "./commands/Commands_Invite.mjs";
 import * as Commands_Verify from "./commands/Commands_Verify.mjs";
 import * as UpdateOrReadGistMjs from "./updateOrReadGist.mjs";
 
@@ -34,14 +35,17 @@ var commands = new DiscordJs.Collection();
 var buttons = new DiscordJs.Collection();
 
 commands.set(Commands_Help.data.name, {
-          data: Commands_Help.data,
-          execute: Commands_Help.execute
-        }).set(Commands_Verify.data.name, {
-        data: Commands_Verify.data,
-        execute: Commands_Verify.execute
-      }).set(Commands_Role.data.name, {
-      data: Commands_Role.data,
-      execute: Commands_Role.execute
+            data: Commands_Help.data,
+            execute: Commands_Help.execute
+          }).set(Commands_Verify.data.name, {
+          data: Commands_Verify.data,
+          execute: Commands_Verify.execute
+        }).set(Commands_Role.data.name, {
+        data: Commands_Role.data,
+        execute: Commands_Role.execute
+      }).set(Commands_Invite.data.name, {
+      data: Commands_Invite.data,
+      execute: Commands_Invite.execute
     });
 
 buttons.set(Buttons_Verify.customId, {

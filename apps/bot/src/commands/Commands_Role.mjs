@@ -33,11 +33,6 @@ function getRolebyRoleName(guildRoleManager, roleName) {
       };
 }
 
-function isAdministrator(member) {
-  var permissions = member.permissions;
-  return permissions.has(DiscordJs.Permissions.FLAGS.ADMINISTRATOR);
-}
-
 function execute(interaction) {
   var guild = interaction.guild;
   var member = interaction.member;
@@ -93,7 +88,7 @@ function execute(interaction) {
                     });
                 tmp = Promise.reject({
                       RE_EXN_ID: RoleHandlerError,
-                      _1: "Commands_Role: Administrator permissions are required"
+                      _1: "Commands_Role: User does not hav Administrator permissions"
                     });
               }
               return $$Promise.$$catch(tmp, (function (e) {
@@ -124,7 +119,6 @@ export {
   readGist ,
   newRoleRe ,
   getRolebyRoleName ,
-  isAdministrator ,
   execute ,
   data ,
   

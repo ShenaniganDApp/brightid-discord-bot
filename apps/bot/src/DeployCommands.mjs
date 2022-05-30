@@ -6,6 +6,7 @@ import * as Commands_Help from "./commands/Commands_Help.mjs";
 import * as Commands_Role from "./commands/Commands_Role.mjs";
 import * as Rest from "@discordjs/rest";
 import * as Caml_exceptions from "../../../node_modules/rescript/lib/es6/caml_exceptions.js";
+import * as Commands_Invite from "./commands/Commands_Invite.mjs";
 import * as Commands_Verify from "./commands/Commands_Verify.mjs";
 import * as V9 from "discord-api-types/v9";
 
@@ -41,10 +42,13 @@ var verifyCommand = Commands_Verify.data.toJSON();
 
 var roleCommand = Commands_Role.data.toJSON();
 
+var inviteCommand = Commands_Invite.data.toJSON();
+
 var commands = [
   helpCommand,
   verifyCommand,
-  roleCommand
+  roleCommand,
+  inviteCommand
 ];
 
 var rest = new Rest.REST({
@@ -84,6 +88,7 @@ export {
   helpCommand ,
   verifyCommand ,
   roleCommand ,
+  inviteCommand ,
   commands ,
   rest ,
   applicationGuildCommands ,
