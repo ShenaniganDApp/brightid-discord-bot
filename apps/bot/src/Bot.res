@@ -29,9 +29,11 @@ let client = Client.createDiscordClient(~options)
 let commands: Collection.t<string, module(Command)> = Collection.make()
 let buttons: Collection.t<string, module(Button)> = Collection.make()
 
+// One by one is the only way I can find to do this atm. Hopefully we find a better way
 commands
 ->Collection.set(Commands_Help.data->SlashCommandBuilder.getCommandName, module(Commands_Help))
 ->Collection.set(Commands_Verify.data->SlashCommandBuilder.getCommandName, module(Commands_Verify))
+->Collection.set(Commands_Role.data->SlashCommandBuilder.getCommandName, module(Commands_Role))
 ->ignore
 
 buttons->Collection.set(Buttons_Verify.customId, module(Buttons_Verify))->ignore

@@ -5,7 +5,7 @@ external updateGist: (string, 'a) => Js.Promise.t<unit> = "updateGist"
 
 let invite = (member: GuildMember.t, _: Client.t, message: Message.t): Promise.t<Message.t> => {
   let guild = message->Message.getMessageGuild
-  let isAdmin = member->GuildMember.hasPermission("ADMINISTRATOR")
+  let isAdmin = member->GuildMember.getPermissions->Permissions.has(Permissions.Flags.administrator)
   switch isAdmin {
   | false => message->Message.reply("You do not have the admin privileges for this command")
   | true => {
