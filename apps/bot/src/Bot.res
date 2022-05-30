@@ -35,6 +35,7 @@ commands
 ->Collection.set(Commands_Verify.data->SlashCommandBuilder.getCommandName, module(Commands_Verify))
 ->Collection.set(Commands_Role.data->SlashCommandBuilder.getCommandName, module(Commands_Role))
 ->Collection.set(Commands_Invite.data->SlashCommandBuilder.getCommandName, module(Commands_Invite))
+->Collection.set(Commands_Guild.data->SlashCommandBuilder.getCommandName, module(Commands_Guild))
 ->ignore
 
 buttons->Collection.set(Buttons_Verify.customId, module(Buttons_Verify))->ignore
