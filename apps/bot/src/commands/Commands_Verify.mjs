@@ -118,7 +118,7 @@ function makeEmbed(verifyUrl) {
       value: "You can link to these [sponsored apps](https://apps.brightid.org/ \"https://apps.brightid.org/\") once you are verified within the app."
     },
     {
-      name: "3. Type the `!verify` command in any public channel",
+      name: "3. Type the `/verify` command in an appropriate channel",
       value: "You can type this command in any public channel with access to the BrightID Bot, like the official BrightID server which [you can access here](https://discord.gg/gH6qAUH \"https://discord.gg/gH6qAUH\")."
     },
     {
@@ -126,8 +126,8 @@ function makeEmbed(verifyUrl) {
       value: "Open the BrightID app and scan the QR code. Mobile users can click [this link](" + verifyUrl + ")."
     },
     {
-      name: "5. Type the `!me` command in any public channel",
-      value: "Once you have scanned the QR code you can return to any public channel and type the `!me` command which should grant you the orange verified role."
+      name: "5. Click the button after you scanned the QR code",
+      value: "Once you have scanned the QR code you can return to Discord and click the button to receive the appropriate BrightID role."
     }
   ];
   return new DiscordJs.MessageEmbed().setColor("#fb8b60").setTitle("How To Get Verified with Bright ID").setURL("https://www.brightid.org/").setAuthor("BrightID Bot", "https://media.discordapp.net/attachments/708186850359246859/760681364163919994/1601430947224.png", "https://www.brightid.org/").setDescription("Here is a step-by-step guide to help you get verified with BrightID.").setThumbnail("https://media.discordapp.net/attachments/708186850359246859/760681364163919994/1601430947224.png").addFields(fields).setTimestamp().setFooter("Bot made by the Shenanigan team", "https://media.discordapp.net/attachments/708186850359246859/760681364163919994/1601430947224.png");
@@ -154,9 +154,13 @@ function getRolebyRoleName(guildRoleManager, roleName) {
       };
 }
 
-function makeVerifyActionRow(param) {
-  var button = new DiscordJs.MessageButton().setCustomId("verify").setLabel("Click here after scanning QR Code in the BrightID app").setStyle("PRIMARY");
-  return new DiscordJs.MessageActionRow().addComponents(button);
+function makeVerifyActionRow(verifyUrl) {
+  var roleButton = new DiscordJs.MessageButton().setLabel("Open QRCode in the BrightID app").setStyle("LINK").setURL(verifyUrl);
+  var mobileButton = new DiscordJs.MessageButton().setCustomId("verify").setLabel("Click here after scanning QR Code in the BrightID app").setStyle("PRIMARY");
+  return new DiscordJs.MessageActionRow().addComponents([
+              mobileButton,
+              roleButton
+            ]);
 }
 
 function execute(interaction) {
@@ -189,7 +193,7 @@ function execute(interaction) {
                                             } else {
                                               return createMessageAttachmentFromUri(deepLink).then(function (attachment) {
                                                           var embed = makeEmbed(verifyUrl);
-                                                          var row = makeVerifyActionRow(undefined);
+                                                          var row = makeVerifyActionRow(verifyUrl);
                                                           interaction.editReply({
                                                                 embeds: [embed],
                                                                 files: [attachment],
