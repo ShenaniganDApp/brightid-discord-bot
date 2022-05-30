@@ -48,13 +48,14 @@ let execute = interaction => {
         RoleHandlerError("Commands_Role: User does not hav Administrator permissions")->reject
       }
     | true => {
-        let role = commandOptions->CommandInteractionOptionResolver.getString("role")
+        let role = commandOptions->CommandInteractionOptionResolver.getString("name")
+
         switch role->Js.Nullable.toOption {
         | None => {
             interaction
             ->Interaction.editReply(
               ~options={
-                "content": "Woah! It seems the developer screwed up somewhere. Go complain!",
+                "content": "Woah! It seems I couldn't find a role to change. This one is on the developer. Go complain!",
               },
               (),
             )
