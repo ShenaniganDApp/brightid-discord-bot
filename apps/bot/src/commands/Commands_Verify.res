@@ -186,76 +186,79 @@ let execute = (interaction: Interaction.t) => {
   let guildMemberRoleManager = member->GuildMember.getGuildMemberRoleManager
   let memberId = member->GuildMember.getGuildMemberId
   let id = memberId->UUID.v5(uuidNAMESPACE)
-  interaction->Interaction.deferReply(~options={"ephemeral": true}, ())->ignore
-  readGist()
-  ->then(guilds => {
-    let guildId = guild->Guild.getGuildId
-    let guildData = guilds->Js.Dict.get(guildId)
-    switch guildData {
-    | None =>
-      interaction
-      ->Interaction.editReply(
-        ~options={
-          "content": "Hi, sorry about that. I couldn't retrieve the data for this server from BrightId",
-        },
-        (),
-      )
-      ->ignore
-      VerifyHandlerError("Guild does not exist")->reject
-    | Some(guildData) => {
-        let guildRole = guildRoleManager->getRolebyRoleName(guildData.role)
-        let deepLink = `${brightIdAppDeeplink}/${id}`
-        let verifyUrl = `${brightIdLinkVerificationEndpoint}/${id}`
-        fetchVerifications()
-        ->then(data => isIdInVerifications(data, id))
-        ->then(idExists => {
-          false
-            ? {
-                guildMemberRoleManager->GuildMemberRoleManager.add(guildRole, "")->ignore
-                interaction
-                ->Interaction.editReply(
-                  ~options={
-                    "content": `Hey, I recognize you! I just gave you the \`${guildRole->Role.getName}\` role. You are now BrightID verified in ${guild->Guild.getGuildName} server!`,
-                    "ephemeral": true,
-                  },
-                  (),
-                )
-                ->ignore
-                resolve()
-              }
-            : deepLink
-              ->createMessageAttachmentFromUri
-              ->then(attachment => {
-                let embed = verifyUrl->makeEmbed
-                let row = makeVerifyActionRow()
-                interaction
-                ->Interaction.editReply(
-                  ~options={
-                    "embeds": [embed],
-                    "files": [attachment],
-                    "ephemeral": true,
-                    "components": [row],
-                  },
-                  (),
-                )
-                ->ignore
-                resolve()
-              })
-        })
+  interaction
+  ->Interaction.deferReply(~options={"ephemeral": true}, ())
+  ->then(_ => {
+    readGist()
+    ->then(guilds => {
+      let guildId = guild->Guild.getGuildId
+      let guildData = guilds->Js.Dict.get(guildId)
+      switch guildData {
+      | None =>
+        interaction
+        ->Interaction.editReply(
+          ~options={
+            "content": "Hi, sorry about that. I couldn't retrieve the data for this server from BrightId",
+          },
+          (),
+        )
+        ->ignore
+        VerifyHandlerError("Guild does not exist")->reject
+      | Some(guildData) => {
+          let guildRole = guildRoleManager->getRolebyRoleName(guildData.role)
+          let deepLink = `${brightIdAppDeeplink}/${id}`
+          let verifyUrl = `${brightIdLinkVerificationEndpoint}/${id}`
+          fetchVerifications()
+          ->then(data => isIdInVerifications(data, id))
+          ->then(idExists => {
+            idExists
+              ? {
+                  guildMemberRoleManager->GuildMemberRoleManager.add(guildRole, "")->ignore
+                  interaction
+                  ->Interaction.editReply(
+                    ~options={
+                      "content": `Hey, I recognize you! I just gave you the \`${guildRole->Role.getName}\` role. You are now BrightID verified in ${guild->Guild.getGuildName} server!`,
+                      "ephemeral": true,
+                    },
+                    (),
+                  )
+                  ->ignore
+                  resolve()
+                }
+              : deepLink
+                ->createMessageAttachmentFromUri
+                ->then(attachment => {
+                  let embed = verifyUrl->makeEmbed
+                  let row = makeVerifyActionRow()
+                  interaction
+                  ->Interaction.editReply(
+                    ~options={
+                      "embeds": [embed],
+                      "files": [attachment],
+                      "ephemeral": true,
+                      "components": [row],
+                    },
+                    (),
+                  )
+                  ->ignore
+                  resolve()
+                })
+          })
+        }
       }
-    }
-  })
-  ->catch(e => {
-    switch e {
-    | VerifyHandlerError(msg) => Js.Console.error(msg)
-    | JsError(obj) =>
-      switch Js.Exn.message(obj) {
-      | Some(msg) => Js.Console.error(msg)
-      | None => Js.Console.error("Verify Handler: Unknown error")
+    })
+    ->catch(e => {
+      switch e {
+      | VerifyHandlerError(msg) => Js.Console.error(msg)
+      | JsError(obj) =>
+        switch Js.Exn.message(obj) {
+        | Some(msg) => Js.Console.error(msg)
+        | None => Js.Console.error("Verify Handler: Unknown error")
+        }
+      | _ => Js.Console.error("Verify Handler: Unknown error")
       }
-    | _ => Js.Console.error("Verify Handler: Unknown error")
-    }
-    resolve()
+      resolve()
+    })
   })
 }
 
