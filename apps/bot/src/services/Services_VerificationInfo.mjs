@@ -13,6 +13,8 @@ var VerificationInfoError = /* @__PURE__ */Caml_exceptions.create("Services_Veri
 
 var FetchVerificationInfoError = /* @__PURE__ */Caml_exceptions.create("Services_VerificationInfo.FetchVerificationInfoError");
 
+var UUID$1 = {};
+
 Env.createEnv(undefined);
 
 var config = Env.getConfig(undefined);
@@ -149,6 +151,7 @@ var requestTimeout = 60000;
 export {
   VerificationInfoError ,
   FetchVerificationInfoError ,
+  UUID$1 as UUID,
   config ,
   uuidNAMESPACE ,
   $$Response ,
