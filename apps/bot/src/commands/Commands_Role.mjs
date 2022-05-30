@@ -44,10 +44,10 @@ function execute(interaction) {
               var isAdmin = member.permissions.has(DiscordJs.Permissions.FLAGS.ADMINISTRATOR);
               var tmp;
               if (isAdmin) {
-                var role = commandOptions.getString("role");
+                var role = commandOptions.getString("name");
                 if (role == null) {
                   interaction.editReply({
-                        content: "Woah! It seems the developer screwed up somewhere. Go complain!"
+                        content: "Woah! It seems I couldn't find a role to change. This one is on the developer. Go complain!"
                       });
                   tmp = Promise.reject({
                         RE_EXN_ID: RoleHandlerError,
