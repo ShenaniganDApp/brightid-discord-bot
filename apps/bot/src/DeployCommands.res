@@ -31,8 +31,9 @@ let clientId = envConfig["discordClientId"]
 let helpCommand = Commands_Help.data->SlashCommandBuilder.toJSON
 let verifyCommand = Commands_Verify.data->SlashCommandBuilder.toJSON
 let roleCommand = Commands_Role.data->SlashCommandBuilder.toJSON
+let inviteCommand = Commands_Invite.data->SlashCommandBuilder.toJSON
 
-let commands = [helpCommand, verifyCommand, roleCommand]
+let commands = [helpCommand, verifyCommand, roleCommand, inviteCommand]
 
 let rest = Rest.make({"version": 9})->Rest.setToken(token)
 
