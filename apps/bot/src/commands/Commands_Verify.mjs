@@ -163,56 +163,67 @@ function execute(interaction) {
   var guild = interaction.guild;
   var member = interaction.member;
   var guildRoleManager = guild.roles;
+  var guildMemberRoleManager = member.roles;
   var memberId = member.id;
   var id = UUID.v5(memberId, uuidNAMESPACE);
-  interaction.deferReply({
-        ephemeral: true
-      });
-  return $$Promise.$$catch(UpdateOrReadGistMjs.readGist().then(function (guilds) {
-                  var guildId = guild.id;
-                  var guildData = Js_dict.get(guilds, guildId);
-                  if (guildData !== undefined) {
-                    getRolebyRoleName(guildRoleManager, guildData.role);
-                    var deepLink = Endpoints.brightIdAppDeeplink + "/" + id;
-                    var verifyUrl = Endpoints.brightIdLinkVerificationEndpoint + "/" + id;
-                    return fetchVerifications(undefined).then(function (data) {
-                                  return isIdInVerifications(data, id);
-                                }).then(function (idExists) {
-                                return createMessageAttachmentFromUri(deepLink).then(function (attachment) {
-                                            var embed = makeEmbed(verifyUrl);
-                                            var row = makeVerifyActionRow(undefined);
-                                            interaction.editReply({
-                                                  embeds: [embed],
-                                                  files: [attachment],
-                                                  ephemeral: true,
-                                                  components: [row]
-                                                });
-                                            return Promise.resolve(undefined);
+  return interaction.deferReply({
+                ephemeral: true
+              }).then(function (param) {
+              return $$Promise.$$catch(UpdateOrReadGistMjs.readGist().then(function (guilds) {
+                              var guildId = guild.id;
+                              var guildData = Js_dict.get(guilds, guildId);
+                              if (guildData !== undefined) {
+                                var guildRole = getRolebyRoleName(guildRoleManager, guildData.role);
+                                var deepLink = Endpoints.brightIdAppDeeplink + "/" + id;
+                                var verifyUrl = Endpoints.brightIdLinkVerificationEndpoint + "/" + id;
+                                return fetchVerifications(undefined).then(function (data) {
+                                              return isIdInVerifications(data, id);
+                                            }).then(function (idExists) {
+                                            if (idExists) {
+                                              guildMemberRoleManager.add(guildRole, "");
+                                              interaction.editReply({
+                                                    content: "Hey, I recognize you! I just gave you the `" + guildRole.name + "` role. You are now BrightID verified in " + guild.name + " server!",
+                                                    ephemeral: true
+                                                  });
+                                              return Promise.resolve(undefined);
+                                            } else {
+                                              return createMessageAttachmentFromUri(deepLink).then(function (attachment) {
+                                                          var embed = makeEmbed(verifyUrl);
+                                                          var row = makeVerifyActionRow(undefined);
+                                                          interaction.editReply({
+                                                                embeds: [embed],
+                                                                files: [attachment],
+                                                                ephemeral: true,
+                                                                components: [row]
+                                                              });
+                                                          return Promise.resolve(undefined);
+                                                        });
+                                            }
                                           });
-                              });
-                  }
-                  interaction.editReply({
-                        content: "Hi, sorry about that. I couldn't retrieve the data for this server from BrightId"
-                      });
-                  return Promise.reject({
-                              RE_EXN_ID: VerifyHandlerError,
-                              _1: "Guild does not exist"
-                            });
-                }), (function (e) {
-                if (e.RE_EXN_ID === VerifyHandlerError) {
-                  console.error(e._1);
-                } else if (e.RE_EXN_ID === $$Promise.JsError) {
-                  var msg = e._1.message;
-                  if (msg !== undefined) {
-                    console.error(msg);
-                  } else {
-                    console.error("Verify Handler: Unknown error");
-                  }
-                } else {
-                  console.error("Verify Handler: Unknown error");
-                }
-                return Promise.resolve(undefined);
-              }));
+                              }
+                              interaction.editReply({
+                                    content: "Hi, sorry about that. I couldn't retrieve the data for this server from BrightId"
+                                  });
+                              return Promise.reject({
+                                          RE_EXN_ID: VerifyHandlerError,
+                                          _1: "Guild does not exist"
+                                        });
+                            }), (function (e) {
+                            if (e.RE_EXN_ID === VerifyHandlerError) {
+                              console.error(e._1);
+                            } else if (e.RE_EXN_ID === $$Promise.JsError) {
+                              var msg = e._1.message;
+                              if (msg !== undefined) {
+                                console.error(msg);
+                              } else {
+                                console.error("Verify Handler: Unknown error");
+                              }
+                            } else {
+                              console.error("Verify Handler: Unknown error");
+                            }
+                            return Promise.resolve(undefined);
+                          }));
+            });
 }
 
 var data = new Builders.SlashCommandBuilder().setName("verify").setDescription("Sends a BrightID QR code for users to connect with their BrightId");

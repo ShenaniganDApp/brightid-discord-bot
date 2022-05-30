@@ -4,6 +4,7 @@ import * as Env from "./Env.mjs";
 import * as Curry from "../../../node_modules/rescript/lib/es6/curry.js";
 import * as DiscordJs from "discord.js";
 import * as Commands_Help from "./commands/Commands_Help.mjs";
+import * as Commands_Role from "./commands/Commands_Role.mjs";
 import * as Buttons_Verify from "./buttons/Buttons_Verify.mjs";
 import * as Caml_exceptions from "../../../node_modules/rescript/lib/es6/caml_exceptions.js";
 import * as Commands_Verify from "./commands/Commands_Verify.mjs";
@@ -33,11 +34,14 @@ var commands = new DiscordJs.Collection();
 var buttons = new DiscordJs.Collection();
 
 commands.set(Commands_Help.data.name, {
-        data: Commands_Help.data,
-        execute: Commands_Help.execute
-      }).set(Commands_Verify.data.name, {
-      data: Commands_Verify.data,
-      execute: Commands_Verify.execute
+          data: Commands_Help.data,
+          execute: Commands_Help.execute
+        }).set(Commands_Verify.data.name, {
+        data: Commands_Verify.data,
+        execute: Commands_Verify.execute
+      }).set(Commands_Role.data.name, {
+      data: Commands_Role.data,
+      execute: Commands_Role.execute
     });
 
 buttons.set(Buttons_Verify.customId, {
