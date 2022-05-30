@@ -75,10 +75,6 @@ function onGuildCreate(guild) {
   
 }
 
-function onMessage(message) {
-  
-}
-
 function onInteraction(interaction) {
   var isCommand = interaction.isCommand();
   var isButton = interaction.isButton();
@@ -117,8 +113,6 @@ client.on("ready", (function (param) {
 
 client.on("guildCreate", onGuildCreate);
 
-client.on("messageCreate", onMessage);
-
 client.on("interactionCreate", onInteraction);
 
 if (config.TAG === /* Ok */0) {
@@ -137,7 +131,6 @@ export {
   buttons ,
   updateGistOnGuildCreate ,
   onGuildCreate ,
-  onMessage ,
   onInteraction ,
   
 }

@@ -56,32 +56,6 @@ let onGuildCreate = guild => {
   guild->updateGistOnGuildCreate->ignore
 }
 
-let onMessage = (message: Message.t) => {
-  let author = message->Message.getMessageAuthor
-  let isBot = author->User.getBot
-  // switch isBot {
-  // | true => ()
-  // | false =>
-  // switch message->checkWhitelistedChannel {
-  // | true => ()
-  // | false => {
-  // let guildMember = message->Message.getMessageMember
-  // let handler = message->Parser_DetectHandler.detectHandler
-  // switch handler {
-  // | Some(handler) => guildMember->handler(client, message)->ignore
-  // | None => {
-  //     message->Message.reply("Could not find the requested command")->ignore
-  //     Js.Console.error(
-  //       RequestHandlerError({
-  //         date: Js.Date.now(),
-  //         message: "Could not find the requested command",
-  //       }),
-  //     )
-  //   }
-  // }
-  // }
-}
-
 let onInteraction = (interaction: Interaction.t) => {
   let isCommand = interaction->Interaction.isCommand
   let isButton = interaction->Interaction.isButton
@@ -118,8 +92,6 @@ client->Client.on(
 )
 
 client->Client.on(#guildCreate(guild => guild->onGuildCreate))
-
-client->Client.on(#messageCreate(message => message->onMessage))
 
 client->Client.on(#interactionCreate(interaction => interaction->onInteraction))
 

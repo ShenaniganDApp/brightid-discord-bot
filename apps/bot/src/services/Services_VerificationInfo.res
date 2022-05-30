@@ -4,6 +4,12 @@ open Promise
 exception VerificationInfoError(string)
 exception FetchVerificationInfoError({error: string, fetching: bool})
 
+module UUID = {
+  type t = string
+  type name = UUIDName(string)
+  @module("UUID") external v5: (string, string) => t = "v5"
+}
+
 //@TODO I shouldnt have to keep importing this
 Env.createEnv()
 
@@ -61,7 +67,7 @@ let defaultVerification = {
 }
 
 let rec fetchVerificationInfo = (~retry=5, id): Promise.t<verification> => {
-  let id = id->Handlers_Verify.UUID.v5(uuidNAMESPACE)
+  let id = id->UUID.v5(uuidNAMESPACE)
   let endpoint = `${brightIdVerificationEndpoint}/${contextId}/${id}?timestamp=seconds`
 
   let params = {
