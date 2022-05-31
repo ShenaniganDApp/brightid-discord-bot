@@ -9691,8 +9691,8 @@ require-main-filename@^2.0.0:
   integrity sha512-NKN5kMDylKuldxYLSUfrbo5Tuzh4hd+2E8NPPX02mZtn1VuREQToYe/ZdlJy+J3uCpfaiGF05e7B8W0iXbQHmg==
 
 "rescript-discordjs@https://github.com/youngkidwarrior/rescript-discordjs.git#v13":
-  version "0.0.1"
-  resolved "https://github.com/youngkidwarrior/rescript-discordjs.git#c66b97f822ecd5e1a1ffb2fa4afa9fbe0f871289"
+  version "0.2.0"
+  resolved "https://github.com/youngkidwarrior/rescript-discordjs.git#36e233f70082a41aa26c315197d9297890370e64"
   dependencies:
     rescript "*"
 
