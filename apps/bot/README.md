@@ -6,28 +6,24 @@
 
 ## Quick end-user guide
 
-Interacting with the bot is simple; it offers 2 commands
+Interacting with the bot is simple;
 
-- "!verify": Sends a QR Code to link the BrightID app to Discord
-
-- "!me": Adds the "Verified" role to verified users
+- "/verify": Sends a QR Code to link the BrightID app to Discord
 
 ### To use BrightID Bot:
 
-1. Type !verify
+1. Type /verify
 2. Scan the code (or click the link) BrightID Bot shows you
 3. Use an [app that has sponsorships](https://apps.brightid.org).
-4. Type !me
+4. Click the button Verifying a successful Discord link
 
 ## Developer quick start
 
-`yarn` followed by `yarn dev` will launch the bot locally, with hot reloading included.
+`yarn` followed by `yarn bot dev` will launch the bot locally, with hot reloading included.
 
 There are a few other scripts provided:
 
 - `start`: Starts up the bot without hot reloading; used for the heroku deployment described below.
-- `lint`: Lints the project with ESLint.
-- `test`: Runs all the tests! (If you contribute some code, please do write tests for it ⌨️!)
 
 ### Configuration
 
@@ -38,6 +34,7 @@ There have been staging variables supplied for you already to help you get start
 - [Join the testing server](https://discord.gg/KA7qVfVW)
 
 - `DISCORD_API_TOKEN`: A discord API token. [See this guide on how to obtain one](https://github.com/reactiflux/discord-irc/wiki/Creating-a-discord-bot-&-getting-a-token).
+
 - `UUID_NAMESPACE`: Generate a new one [here](https://www.uuidgenerator.net/version4)
 
 - `GIST_ID`: The ID of the gist being used to store guild data. The staging gist is [here](https://gist.github.com/brightidbotdev/617e860aeb4a21ae2118947e6fbedccdX)
