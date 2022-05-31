@@ -36,7 +36,9 @@ function getGuildDataFromGist(guilds, guildId, interaction) {
   if (guildData !== undefined) {
     return Caml_option.valFromOption(guildData);
   }
-  interaction.reply("Failed to retreive data for this Discord Guild", undefined);
+  interaction.editReply({
+        content: "Failed to retreive data for this Discord Guild"
+      });
   throw {
         RE_EXN_ID: MeHandlerError,
         _1: "Failed to retreive data for this Discord Guild",

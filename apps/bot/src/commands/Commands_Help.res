@@ -1,7 +1,7 @@
 open Discord
 open Promise
 
-let helpMessage = `\`\`\`
+let helpMessage = `\
 __**Available BrightId Unique Bot commands:**__
 
 - \`/verify\` → Sends a BrightID QR code for users to connect with their BrightId
@@ -14,7 +14,7 @@ Server Admin only:
 
 - \`/invite\` → Use this command to add an invite for this discord to the guilds
 
-\`\`\``
+`
 
 let data =
   SlashCommandBuilder.make()
@@ -22,6 +22,6 @@ let data =
   ->SlashCommandBuilder.setDescription("Explain the BrightId bot commands")
 
 let execute = (interaction: Interaction.t) => {
-  interaction->Interaction.reply(~content=helpMessage, ~options={"ephemeral": true}, ())->ignore
+  interaction->Interaction.reply(~options={"content": helpMessage, "ephemeral": true}, ())->ignore
   resolve()
 }

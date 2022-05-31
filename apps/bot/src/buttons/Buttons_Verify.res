@@ -31,7 +31,10 @@ let getGuildDataFromGist = (guilds, guildId, interaction) => {
   switch guildData {
   | None =>
     interaction
-    ->Interaction.reply(~content="Failed to retreive data for this Discord Guild", ())
+    ->Interaction.editReply(
+      ~options={"content": "Failed to retreive data for this Discord Guild"},
+      (),
+    )
     ->ignore
     MeHandlerError("Failed to retreive data for this Discord Guild")->raise
   | Some(guildData) => guildData

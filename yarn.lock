@@ -9692,7 +9692,7 @@ require-main-filename@^2.0.0:
 
 "rescript-discordjs@https://github.com/youngkidwarrior/rescript-discordjs.git#v13":
   version "0.2.0"
-  resolved "https://github.com/youngkidwarrior/rescript-discordjs.git#36e233f70082a41aa26c315197d9297890370e64"
+  resolved "https://github.com/youngkidwarrior/rescript-discordjs.git#9af80034515bc7cb40d39e4a3b7fb0c5c7a79390"
   dependencies:
     rescript "*"
 
