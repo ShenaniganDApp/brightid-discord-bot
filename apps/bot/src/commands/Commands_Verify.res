@@ -6,19 +6,19 @@ exception VerifyHandlerError(string)
 module UUID = {
   type t = string
   type name = UUIDName(string)
-  @module("UUID") external v5: (string, string) => t = "v5"
+  @module("uuid") external v5: (string, string) => t = "v5"
 }
 
 module Canvas = {
   type t
-  @module("Canvas") @scope("default")
+  @module("canvas") @scope("default")
   external createCanvas: (int, int) => t = "createCanvas"
   @send external toBuffer: t => Node.Buffer.t = "toBuffer"
 }
 
 module QRCode = {
   type t
-  @module("QRCode") external toCanvas: (Canvas.t, string) => Promise.t<unit> = "toCanvas"
+  @module("qrcode") external toCanvas: (Canvas.t, string) => Promise.t<unit> = "toCanvas"
 }
 
 module Response = {

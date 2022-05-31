@@ -7,7 +7,7 @@ exception FetchVerificationInfoError({error: string, fetching: bool})
 module UUID = {
   type t = string
   type name = UUIDName(string)
-  @module("UUID") external v5: (string, string) => t = "v5"
+  @module("uuid") external v5: (string, string) => t = "v5"
 }
 
 //@TODO I shouldnt have to keep importing this
