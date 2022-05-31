@@ -66,38 +66,43 @@ let execute = interaction => {
   let guildRoleManager = guild->Guild.getGuildRoleManager
 
   let guildId = guild->Guild.getGuildId
-  interaction->Interaction.deferReply(~options={"ephemeral": true}, ())->ignore
-  readGist()
-  ->then(guilds => {
-    let guildRole =
-      guilds
-      ->getGuildDataFromGist(guildId, interaction)
-      ->getRoleFromGuildData
-      ->getRolebyRoleName(guildRoleManager, _)
-    member
-    ->Services_VerificationInfo.getBrightIdVerification
-    ->then(verificationInfo => {
-      verificationInfo.userAddresses->Belt.Array.length > 1
-        ? member->noMultipleAccounts
-        : verificationInfo.userVerified
-        ? {
-          guildRole->verifyMember(member)->ignore
-          interaction
-          ->Interaction.editReply(
-            ~options={
-              "content": `Hey, I recognize you! I just gave you the \`${guildRole->Role.getName}\` role. You are now BrightID verified in ${guild->Guild.getGuildName} server!`,
-            },
-            (),
-          )
-          ->ignore
-          resolve()
-        }
-        : {
+  interaction
+  ->Interaction.deferReply(~options={"ephemeral": true}, ())
+  ->then(_ => {
+    readGist()->then(guilds => {
+      let guildRole =
+        guilds
+        ->getGuildDataFromGist(guildId, interaction)
+        ->getRoleFromGuildData
+        ->getRolebyRoleName(guildRoleManager, _)
+      member
+      ->Services_VerificationInfo.getBrightIdVerification
+      ->then(verificationInfo => {
+        verificationInfo.userAddresses->Belt.Array.length > 1
+          ? member->noMultipleAccounts
+          : verificationInfo.userVerified
+          ? {
+            guildRole->verifyMember(member)->ignore
             interaction
-            ->Interaction.editReply(~options={"content": "You must be verified for this role"}, ())
+            ->Interaction.editReply(
+              ~options={
+                "content": `Hey, I recognize you! I just gave you the \`${guildRole->Role.getName}\` role. You are now BrightID verified in ${guild->Guild.getGuildName} server!`,
+              },
+              (),
+            )
             ->ignore
-            MeHandlerError("Member is not verified")->reject
+            resolve()
           }
+          : {
+              interaction
+              ->Interaction.editReply(
+                ~options={"content": "You must be verified for this role"},
+                (),
+              )
+              ->ignore
+              MeHandlerError("Member is not verified")->reject
+            }
+      })
     })
   })
   ->catch(e => {

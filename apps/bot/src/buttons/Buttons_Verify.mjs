@@ -65,29 +65,30 @@ function execute(interaction) {
   var member = interaction.member;
   var guildRoleManager = guild.roles;
   var guildId = guild.id;
-  interaction.deferReply({
-        ephemeral: true
-      });
-  return $$Promise.$$catch(UpdateOrReadGistMjs.readGist().then(function (guilds) {
-                  var guildRole = getRolebyRoleName(guildRoleManager, getGuildDataFromGist(guilds, guildId, interaction).role);
-                  return Services_VerificationInfo.getBrightIdVerification(member).then(function (verificationInfo) {
-                              if (verificationInfo.userAddresses.length > 1) {
-                                return noMultipleAccounts(member);
-                              } else if (verificationInfo.userVerified) {
-                                verifyMember(guildRole, member);
-                                interaction.editReply({
-                                      content: "Hey, I recognize you! I just gave you the `" + guildRole.name + "` role. You are now BrightID verified in " + guild.name + " server!"
-                                    });
-                                return Promise.resolve(undefined);
-                              } else {
-                                interaction.editReply({
-                                      content: "You must be verified for this role"
-                                    });
-                                return Promise.reject({
-                                            RE_EXN_ID: MeHandlerError,
-                                            _1: "Member is not verified"
-                                          });
-                              }
+  return $$Promise.$$catch(interaction.deferReply({
+                    ephemeral: true
+                  }).then(function (param) {
+                  return UpdateOrReadGistMjs.readGist().then(function (guilds) {
+                              var guildRole = getRolebyRoleName(guildRoleManager, getGuildDataFromGist(guilds, guildId, interaction).role);
+                              return Services_VerificationInfo.getBrightIdVerification(member).then(function (verificationInfo) {
+                                          if (verificationInfo.userAddresses.length > 1) {
+                                            return noMultipleAccounts(member);
+                                          } else if (verificationInfo.userVerified) {
+                                            verifyMember(guildRole, member);
+                                            interaction.editReply({
+                                                  content: "Hey, I recognize you! I just gave you the `" + guildRole.name + "` role. You are now BrightID verified in " + guild.name + " server!"
+                                                });
+                                            return Promise.resolve(undefined);
+                                          } else {
+                                            interaction.editReply({
+                                                  content: "You must be verified for this role"
+                                                });
+                                            return Promise.reject({
+                                                        RE_EXN_ID: MeHandlerError,
+                                                        _1: "Member is not verified"
+                                                      });
+                                          }
+                                        });
                             });
                 }), (function (e) {
                 if (e.RE_EXN_ID === MeHandlerError) {
