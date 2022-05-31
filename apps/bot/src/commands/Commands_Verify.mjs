@@ -4,13 +4,13 @@ import * as Env from "../Env.mjs";
 import * as UUID from "UUID";
 import * as Canvas from "Canvas";
 import * as QRCode from "QRCode";
-import * as Js_dict from "../../../../node_modules/rescript/lib/es6/js_dict.js";
-import * as $$Promise from "../../../../node_modules/@ryyppy/rescript-promise/src/Promise.mjs";
+import * as Js_dict from "rescript/lib/es6/js_dict.js";
+import * as $$Promise from "@ryyppy/rescript-promise/src/Promise.mjs";
 import * as Endpoints from "../Endpoints.mjs";
-import * as Belt_Array from "../../../../node_modules/rescript/lib/es6/belt_Array.js";
+import * as Belt_Array from "rescript/lib/es6/belt_Array.js";
 import * as DiscordJs from "discord.js";
 import NodeFetch from "node-fetch";
-import * as Caml_exceptions from "../../../../node_modules/rescript/lib/es6/caml_exceptions.js";
+import * as Caml_exceptions from "rescript/lib/es6/caml_exceptions.js";
 import * as Builders from "@discordjs/builders";
 import * as UpdateOrReadGistMjs from "../updateOrReadGist.mjs";
 
