@@ -61,7 +61,7 @@ let execute = interaction => {
     ->Collection.toJSON
 
   interaction
-  ->Interaction.deferReply(~options={"ephemeral": true}, ())
+  ->Interaction.deferReply()
   ->then(_ => {
     guilds
     ->generateEmbed(interaction, 0)

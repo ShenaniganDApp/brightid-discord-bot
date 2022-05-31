@@ -58,9 +58,7 @@ function execute(interaction) {
             return 1;
           }
         }).toJSON();
-  return interaction.deferReply({
-                ephemeral: true
-              }).then(function (param) {
+  return interaction.deferReply(undefined).then(function (param) {
               return $$Promise.$$catch(generateEmbed(guilds, interaction, 0).then(function (embed) {
                                 return interaction.editReply({
                                             embeds: [embed]
