@@ -2,11 +2,11 @@
 
 import * as Env from "../Env.mjs";
 import * as UUID from "UUID";
-import * as $$Promise from "../../../../node_modules/@ryyppy/rescript-promise/src/Promise.mjs";
+import * as $$Promise from "@ryyppy/rescript-promise/src/Promise.mjs";
 import * as Constants from "../Constants.mjs";
 import * as Endpoints from "../Endpoints.mjs";
 import NodeFetch from "node-fetch";
-import * as Caml_exceptions from "../../../../node_modules/rescript/lib/es6/caml_exceptions.js";
+import * as Caml_exceptions from "rescript/lib/es6/caml_exceptions.js";
 import * as Services_ResponseCodes from "./Services_ResponseCodes.mjs";
 
 var VerificationInfoError = /* @__PURE__ */Caml_exceptions.create("Services_VerificationInfo.VerificationInfoError");
