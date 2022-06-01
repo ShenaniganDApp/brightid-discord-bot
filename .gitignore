@@ -108,3 +108,4 @@ dist
 .merlin
 lib
 .bsb.lock
+.VSCodeCounter

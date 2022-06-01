@@ -64,7 +64,7 @@ function execute(interaction) {
                                             embeds: [embed]
                                           });
                               }).then(function (guildsMessage) {
-                              if (guilds.length >= 10) {
+                              if (guilds.length >= 1) {
                                 guildsMessage.react("➡️");
                                 var collector = guildsMessage.createReactionCollector((function (reaction, user) {
                                         var emoji = reaction.emoji;
@@ -79,6 +79,7 @@ function execute(interaction) {
                                       time: 60000
                                     });
                                 collector.on("collect", (function (reaction) {
+                                        console.log("reaction: ", reaction);
                                         guildsMessage.reactions.removeAll();
                                         var emoji = reaction.emoji;
                                         var name = emoji.emoji;
