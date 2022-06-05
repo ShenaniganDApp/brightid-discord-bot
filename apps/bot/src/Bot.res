@@ -1,4 +1,5 @@
 open Discord
+open Promise
 
 exception RequestHandlerError({date: float, message: string})
 
@@ -59,6 +60,7 @@ let onGuildCreate = guild => {
 let onInteraction = (interaction: Interaction.t) => {
   let isCommand = interaction->Interaction.isCommand
   let isButton = interaction->Interaction.isButton
+  let user = interaction->Interaction.getUser
   switch (isCommand, isButton) {
   | (true, false) => {
       let commandName = interaction->Interaction.getCommandName
@@ -66,7 +68,14 @@ let onInteraction = (interaction: Interaction.t) => {
       let command = commands->Collection.get(commandName)
       switch command->Js.Nullable.toOption {
       | None => Js.Console.error("Bot.res: Command not found")
-      | Some(module(Command)) => Command.execute(interaction)->ignore
+      | Some(module(Command)) =>
+        Command.execute(interaction)
+        ->then(_ =>
+          Js.Console.log(
+            `Successfully served the command ${commandName} for ${user->User.getUsername}`,
+          )->resolve
+        )
+        ->ignore
       }
     }
 
@@ -76,7 +85,14 @@ let onInteraction = (interaction: Interaction.t) => {
       let button = buttons->Collection.get(buttonCustomId)
       switch button->Js.Nullable.toOption {
       | None => Js.Console.error("Bot.res: Button not found")
-      | Some(module(Button)) => Button.execute(interaction)->ignore
+      | Some(module(Button)) =>
+        Button.execute(interaction)
+        ->then(_ =>
+          Js.Console.log(
+            `Successfully served button press "${buttonCustomId}" for ${user->User.getUsername}`,
+          )->resolve
+        )
+        ->ignore
       }
     }
   | (_, _) => Js.Console.error("Bot.res: Unknown interaction")

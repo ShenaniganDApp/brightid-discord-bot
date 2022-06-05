@@ -15,6 +15,8 @@ var FetchVerificationInfoError = /* @__PURE__ */Caml_exceptions.create("Services
 
 var UUID = {};
 
+var BrightID = {};
+
 Env.createEnv(undefined);
 
 var config = Env.getConfig(undefined);
@@ -152,6 +154,7 @@ export {
   VerificationInfoError ,
   FetchVerificationInfoError ,
   UUID ,
+  BrightID ,
   config ,
   uuidNAMESPACE ,
   $$Response ,

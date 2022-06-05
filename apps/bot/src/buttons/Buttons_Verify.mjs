@@ -48,8 +48,7 @@ function getGuildDataFromGist(guilds, guildId, interaction) {
 
 function verifyMember(guildRole, member) {
   var guildMemberRoleManager = member.roles;
-  guildMemberRoleManager.add(guildRole, "Add BrightId Verified role");
-  
+  return guildMemberRoleManager.add(guildRole, "Add BrightId Verified role");
 }
 
 function noMultipleAccounts(member) {
@@ -74,18 +73,19 @@ function execute(interaction) {
                                           if (verificationInfo.userAddresses.length > 1) {
                                             return noMultipleAccounts(member);
                                           } else if (verificationInfo.userVerified) {
-                                            verifyMember(guildRole, member);
-                                            interaction.editReply({
-                                                  content: "Hey, I recognize you! I just gave you the `" + guildRole.name + "` role. You are now BrightID verified in " + guild.name + " server!"
+                                            verifyMember(guildRole, member).then(function (param) {
+                                                  return interaction.editReply({
+                                                              content: "Hey, I recognize you! I just gave you the `" + guildRole.name + "` role. You are now BrightID verified in " + guild.name + " server!"
+                                                            });
                                                 });
                                             return Promise.resolve(undefined);
                                           } else {
                                             interaction.editReply({
-                                                  content: "You must be verified for this role"
+                                                  content: "You are not properly verified with BrightID"
                                                 });
                                             return Promise.reject({
                                                         RE_EXN_ID: MeHandlerError,
-                                                        _1: "Member is not verified"
+                                                        _1: "Member " + member.displayName + " is not verified"
                                                       });
                                           }
                                         });

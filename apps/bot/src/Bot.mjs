@@ -78,6 +78,7 @@ function onGuildCreate(guild) {
 function onInteraction(interaction) {
   var isCommand = interaction.isCommand();
   var isButton = interaction.isButton();
+  var user = interaction.user;
   if (isCommand) {
     if (isButton) {
       console.error("Bot.res: Unknown interaction");
@@ -88,7 +89,9 @@ function onInteraction(interaction) {
     if (command == null) {
       console.error("Bot.res: Command not found");
     } else {
-      Curry._1(command.execute, interaction);
+      Curry._1(command.execute, interaction).then(function (param) {
+            return Promise.resolve((console.log("Successfully served the command " + commandName + " for " + user.username), undefined));
+          });
     }
     return ;
   }
@@ -98,7 +101,9 @@ function onInteraction(interaction) {
     if (button == null) {
       console.error("Bot.res: Button not found");
     } else {
-      Curry._1(button.execute, interaction);
+      Curry._1(button.execute, interaction).then(function (param) {
+            return Promise.resolve((console.log("Successfully served button press \"" + buttonCustomId + "\" for " + user.username), undefined));
+          });
     }
     return ;
   }

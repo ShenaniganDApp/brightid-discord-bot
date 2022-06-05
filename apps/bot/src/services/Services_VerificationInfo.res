@@ -9,6 +9,15 @@ module UUID = {
   type name = UUIDName(string)
   @module("uuid") external v5: (string, string) => t = "v5"
 }
+module BrightID = {
+  @module("brightid_sdk")
+  external verifyContextId: (
+    ~context: string,
+    ~contextId: string,
+    ~nodeUrl: string=?,
+    unit,
+  ) => Js.Promise.t<'a> = "verifyContextId"
+}
 
 //@TODO I shouldnt have to keep importing this
 Env.createEnv()
@@ -98,6 +107,7 @@ let rec fetchVerificationInfo = (~retry=5, id): Promise.t<verification> => {
           userVerified: true,
           fetching: false,
         }->resolve
+
       | _ =>
         VerificationInfoError("Necessary Verification Info missing after successful fetch ")->reject
       }

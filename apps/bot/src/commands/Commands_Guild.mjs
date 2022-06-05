@@ -66,16 +66,20 @@ function execute(interaction) {
                               }).then(function (guildsMessage) {
                               if (guilds.length >= 1) {
                                 guildsMessage.react("➡️");
-                                var collector = guildsMessage.createReactionCollector((function (reaction, user) {
-                                        var emoji = reaction.emoji;
-                                        var name = emoji.emoji;
-                                        return Promise.resolve(Belt_Array.some([
-                                                        "⬅️",
-                                                        "➡️"
-                                                      ], (function (arrow) {
-                                                          return name === arrow;
-                                                        })) && user.id === member.id);
-                                      }), {
+                                var filter = function (reaction, user) {
+                                  console.log("reaction: ", reaction);
+                                  var emoji = reaction.emoji;
+                                  console.log("emoji: ", emoji);
+                                  var name = emoji.emoji;
+                                  return Promise.resolve(Belt_Array.some([
+                                                  "⬅️",
+                                                  "➡️"
+                                                ], (function (arrow) {
+                                                    return name === arrow;
+                                                  })) && user.id === member.id);
+                                };
+                                var collector = guildsMessage.createReactionCollector({
+                                      filter: filter,
                                       time: 60000
                                     });
                                 collector.on("collect", (function (reaction) {

@@ -50,13 +50,6 @@ let generateEmbed = (guilds, interaction, offset) => {
   })
 }
 
-let reactionCollectorFilter = (reaction, user) => {
-  let emoji = reaction->Reaction.getReactionEmoji
-  let name = emoji->Emoji.getEmojiName
-  ([`⬅️`, `➡️`]->Belt.Array.some(arrow => name === arrow) &&
-    user->User.getUserId === member->GuildMember.getGuildMemberId)->resolve
-}
-
 let execute = interaction => {
   let client = interaction->Interaction.getClient
   let clientGuildManager = client->Client.getGuildManager
@@ -78,41 +71,53 @@ let execute = interaction => {
     ->then(guildsMessage => {
       switch guilds->Belt.Array.length < 1 {
       | true => ()
-      | false =>
-        // react with the right arrow (so that the user can click it) (left arrow isn't needed because it is the start)
-        guildsMessage->Message.react(`➡️`)->ignore
-        let collector =
-          guildsMessage->ReactionCollector.createReactionCollector(// only collect left and right arrow reactions from the message author
+      | false => {
+          // react with the right arrow (so that the user can click it) (left arrow isn't needed because it is the start)
+          guildsMessage->Message.react(`➡️`)->ignore
+          let filter = (reaction, user) => {
+            Js.log2("reaction: ", reaction)
+            let emoji = reaction->Reaction.getReactionEmoji
+            Js.log2("emoji: ", emoji)
+            let name = emoji->Emoji.getEmojiName
+            ([`⬅️`, `➡️`]->Belt.Array.some(arrow => name === arrow) &&
+              user->User.getUserId === member->GuildMember.getGuildMemberId)->resolve
+          }
+          let collector = guildsMessage->ReactionCollector.createReactionCollector({
+            "filter": filter,
+            "time": 60000,
+          })
 
-          {"filter": reactionCollectorFilter, "time": 60000})
-        let currentIndex = 0
-        collector->ReactionCollector.on(
-          #collect(
-            reaction => {
-              Js.log2("reaction: ", reaction)
-              open Message
-              guildsMessage->getMessageReactions->ReactionManager.removeAll->ignore
+          let currentIndex = 0
+          collector->ReactionCollector.on(
+            #collect(
+              reaction => {
+                Js.log2("reaction: ", reaction)
+                open Message
+                guildsMessage->getMessageReactions->ReactionManager.removeAll->ignore
 
-              let emoji = reaction->Reaction.getReactionEmoji
+                let emoji = reaction->Reaction.getReactionEmoji
 
-              let name = emoji->Emoji.getEmojiName
-              let currentIndex = name === `⬅️` ? currentIndex - 10 : currentIndex + 10
-              guilds
-              ->generateEmbed(interaction, currentIndex)
-              ->then(embed => interaction->Interaction.editReply(~options={"embeds": [embed]}, ()))
-              ->ignore
-              switch currentIndex {
-              | 0 =>
-                // react with the left arrow (so that the user can click it)
-                guildsMessage->Message.react(`⬅️`)->ignore
-              | _ =>
-                currentIndex + 10 < guilds->Belt.Array.length
-                  ? guildsMessage->Message.react(`➡️`)->ignore
-                  : () //react with the right arrow (so that the user can click it) (left arrow isn't needed because it is the start)
-              }
-            },
-          ),
-        )
+                let name = emoji->Emoji.getEmojiName
+                let currentIndex = name === `⬅️` ? currentIndex - 10 : currentIndex + 10
+                guilds
+                ->generateEmbed(interaction, currentIndex)
+                ->then(embed =>
+                  interaction->Interaction.editReply(~options={"embeds": [embed]}, ())
+                )
+                ->ignore
+                switch currentIndex {
+                | 0 =>
+                  // react with the left arrow (so that the user can click it)
+                  guildsMessage->Message.react(`⬅️`)->ignore
+                | _ =>
+                  currentIndex + 10 < guilds->Belt.Array.length
+                    ? guildsMessage->Message.react(`➡️`)->ignore
+                    : () //react with the right arrow (so that the user can click it) (left arrow isn't needed because it is the start)
+                }
+              },
+            ),
+          )
+        }
       }
       resolve()
     })
