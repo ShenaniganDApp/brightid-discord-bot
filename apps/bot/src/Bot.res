@@ -53,8 +53,10 @@ let onGuildCreate = guild => {
     color: "ORANGE",
     reason: "Create a role to mark verified users with BrightID",
   })
+  ->then(_ => {
+    guild->updateGistOnGuildCreate
+  })
   ->ignore
-  guild->updateGistOnGuildCreate->ignore
 }
 
 let onInteraction = (interaction: Interaction.t) => {

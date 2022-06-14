@@ -67,11 +67,12 @@ function updateGistOnGuildCreate(guild) {
 function onGuildCreate(guild) {
   var roleManager = guild.roles;
   roleManager.create({
-        name: "Verified",
-        color: "ORANGE",
-        reason: "Create a role to mark verified users with BrightID"
+          name: "Verified",
+          color: "ORANGE",
+          reason: "Create a role to mark verified users with BrightID"
+        }).then(function (param) {
+        return updateGistOnGuildCreate(guild);
       });
-  updateGistOnGuildCreate(guild);
   
 }
 
