@@ -4,7 +4,7 @@
   "license": "",
   "version": "0.0.0",
   "scripts": {
-    "build": "npm run build:css && remix build",
+    "build": "yarn build:css && remix build",
     "build:css": "tailwindcss -m -i ./styles/app.css -o app/styles/app.css",
     "dev": "concurrently \"npm run dev:css\" \"rescript build -w\" \"remix dev\"",
     "postinstall": "remix setup node",
@@ -14,6 +14,7 @@
     "@rainbow-me/rainbowkit": "^0.1.0",
     "@remix-run/react": "^1.1.1",
     "@remix-run/serve": "^1.1.1",
+    "@remix-run/vercel": "^1.6.0",
     "@rescript/react": "^0.10.3",
     "@ryyppy/rescript-promise": "^2.1.0",
     "concurrently": "^7.2.0",

@@ -1,9 +1,7 @@
 {
   "name": "root",
   "private": true,
-  "devDependencies": {
-    "lerna": "^3.22.1"
-  },
+  "devDependencies": {},
   "dependencies": {
     "concurrently": "^7.1.0",
     "find-up": "^6.3.0"
