@@ -48,8 +48,8 @@ var defaultVerification = {
 
 function fetchVerificationInfo(retryOpt, id) {
   var retry = retryOpt !== undefined ? retryOpt : 5;
-  var id$1 = Uuid.v5(id, uuidNAMESPACE);
-  var endpoint = Endpoints.brightIdVerificationEndpoint + "/" + Constants.contextId + "/" + id$1 + "?timestamp=seconds";
+  var uuid = Uuid.v5(id, uuidNAMESPACE);
+  var endpoint = Endpoints.brightIdVerificationEndpoint + "/" + Constants.contextId + "/" + uuid + "?timestamp=seconds";
   var params = {
     method: "GET",
     headers: {
@@ -108,6 +108,10 @@ function fetchVerificationInfo(retryOpt, id) {
                               });
                   }
                 }), (function (e) {
+                var retry$1 = retry - 1 | 0;
+                if (retry$1 !== 0) {
+                  return fetchVerificationInfo(retry$1, id);
+                }
                 if (e.RE_EXN_ID === VerificationInfoError) {
                   console.error(e._1);
                 } else if (e.RE_EXN_ID === FetchVerificationInfoError) {
@@ -122,12 +126,7 @@ function fetchVerificationInfo(retryOpt, id) {
                 } else {
                   console.error("Some unknown error");
                 }
-                var retry$1 = retry - 1 | 0;
-                if (retry$1 !== 0) {
-                  return fetchVerificationInfo(retry$1, id$1);
-                } else {
-                  return Promise.resolve(defaultVerification);
-                }
+                return Promise.resolve(defaultVerification);
               }));
 }
 

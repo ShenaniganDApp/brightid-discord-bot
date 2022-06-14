@@ -9,7 +9,7 @@
     "start": "node src/Bot.mjs",
     "dev": "concurrently  \"yarn re:start\" \"yarn start\" ",
     "re:build": "rescript",
-    "re:start": "rescript build -w",
+    "re:start": "rescript build -w -with-deps",
     "prettify": "prettier . --write",
     "deploy-commands": "node src/DeployCommands.mjs"
   },

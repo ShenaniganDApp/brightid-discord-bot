@@ -76,8 +76,8 @@ let defaultVerification = {
 }
 
 let rec fetchVerificationInfo = (~retry=5, id): Promise.t<verification> => {
-  let id = id->UUID.v5(uuidNAMESPACE)
-  let endpoint = `${brightIdVerificationEndpoint}/${contextId}/${id}?timestamp=seconds`
+  let uuid = id->UUID.v5(uuidNAMESPACE)
+  let endpoint = `${brightIdVerificationEndpoint}/${contextId}/${uuid}?timestamp=seconds`
 
   let params = {
     "method": "GET",
@@ -127,22 +127,26 @@ let rec fetchVerificationInfo = (~retry=5, id): Promise.t<verification> => {
     }
   })
   ->catch(e => {
-    switch e {
-    | VerificationInfoError(msg) => Js.Console.error(msg)
-    | FetchVerificationInfoError({error}) =>
-      Js.Console.error(`Fetch Verification Info Error: ${error}`)
-    | JsError(obj) =>
-      switch Js.Exn.message(obj) {
-      | Some(msg) => Js.Console.error(msg)
-      | None => Js.Console.error("Must be some non-error value")
-      }
-    | _ => Js.Console.error("Some unknown error")
-    }
     let retry = retry - 1
     switch retry {
-    | 0 => defaultVerification->resolve
+    | 0 => {
+      switch e {
+      | VerificationInfoError(msg) => Js.Console.error(msg)
+      | FetchVerificationInfoError({error}) =>
+        Js.Console.error(`Fetch Verification Info Error: ${error}`)
+      | JsError(obj) =>
+        switch Js.Exn.message(obj) {
+        | Some(msg) => Js.Console.error(msg)
+        | None => Js.Console.error("Must be some non-error value")
+        }
+      | _ => Js.Console.error("Some unknown error")
+      }
+      defaultVerification->resolve
+    }
     | _ => fetchVerificationInfo(~retry, id)
     }
+
+
   })
 }
 
