@@ -32,12 +32,6 @@ export function updateGist(guildId, obj) {
         },
         body: JSON.stringify(updatedBody),
       }).then(res => {
-        console.log('res: ', res)
-        console.log('process.env.GIST_ID: ', process.env.GIST_ID)
-        console.log(
-          'process.env.GITHUB_ACCESS_TOKEN: ',
-          process.env.GITHUB_ACCESS_TOKEN,
-        )
         if (res.status == 200) {
           log(`${res.status}: Updated guild Data for ${guildId}`)
         } else {
