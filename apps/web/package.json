@@ -15,6 +15,7 @@
     "@rainbow-me/rainbowkit": "^0.1.0",
     "@remix-run/react": "^1.1.1",
     "@remix-run/serve": "^1.1.1",
+    "@remix-run/vercel": "^1.6.0",
     "@rescript/react": "^0.10.3",
     "@ryyppy/rescript-promise": "^2.1.0",
     "brightid_sdk": "^1.0.1",
