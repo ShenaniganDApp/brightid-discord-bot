@@ -74,16 +74,12 @@ let wagmiClient = %raw(`createClient({
 
 @react.component
 let default = () => {
-  let (collapsed, setCollapsed) = React.useState(_ => true)
-  let (toggled, setToggled) = React.useState(_ => true)
-
-  let handleCollapsedChange = checked => {
-    setCollapsed(_prev => checked)
-  }
+  let (toggled, setToggled) = React.useState(_ => false)
 
   let handleToggleSidebar = value => {
     setToggled(_prev => value)
   }
+
   <html>
     <head>
       <meta charSet="utf-8" />
@@ -94,8 +90,9 @@ let default = () => {
     <body>
       <WagmiProvider client={wagmiClient}>
         <RainbowKitProvider chains={chainConfig["chains"]}>
-          <main className="flex h-screen bg-gradient-to-tl from-brightid to-transparent ">
-            <Sidebar collapsed toggled handleToggleSidebar /> <Remix.Outlet />
+          <main className="flex h-screen bg-gradient-to-tl from-brightid to-transparent">
+            <Sidebar toggled handleToggleSidebar />
+            <Remix.Outlet context={{"handleToggleSidebar": handleToggleSidebar}} />
           </main>
         </RainbowKitProvider>
       </WagmiProvider>
@@ -109,30 +106,3 @@ let default = () => {
     </body>
   </html>
 }
-// let catchBoundary = () => {
-//   open Webapi.Fetch
-
-//   let caught = Remix.useCatch()
-
-//   <Document title={`${caught->Response.status->Js.Int.toString} ${caught->Response.statusText}`}>
-//     <div className="error-container">
-//       <h1>
-//         {`${caught->Response.status->Js.Int.toString} ${caught->Response.statusText}`->React.string}
-//       </h1>
-//     </div>
-//   </Document>
-// }
-
-// %%raw(`export const CatchBoundary = catchBoundary`)
-
-// let errorBoundary: Remix.errorBoundaryComponent = props => {
-//   Js.log(props.error)
-
-//   <Document title="Uh-oh!">
-//     <div className="error-container">
-//       <h1> {"App Error"->React.string} </h1>
-//       <pre> {props.error->Js.Exn.message->Belt.Option.getWithDefault("")->React.string} </pre>
-//     </div>
-//   </Document>
-// }
-// %%raw(`export const ErrorBoundary = errorBoundary`)

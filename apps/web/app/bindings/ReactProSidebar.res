@@ -3,10 +3,10 @@ module ProSidebar = {
   external make: (
     ~children: React.element,
     ~className: string=?,
-    ~breakpoint: string,
+    ~breakPoint: string,
     ~onToggle: bool => unit,
-    ~collapsed: bool,
-    ~toggled: bool,
+    ~collapsed: bool=?,
+    ~toggled: bool=?,
   ) => React.element = "ProSidebar"
 }
 
@@ -20,7 +20,8 @@ module MenuItem = {
 }
 module SidebarHeader = {
   @react.component @module("react-pro-sidebar")
-  external make: (~children: React.element) => React.element = "SidebarHeader"
+  external make: (~children: React.element=?, ~className: string=?) => React.element =
+    "SidebarHeader"
 }
 module SidebarContent = {
   @react.component @module("react-pro-sidebar")
@@ -28,5 +29,6 @@ module SidebarContent = {
 }
 module SidebarFooter = {
   @react.component @module("react-pro-sidebar")
-  external make: (~children: React.element=?) => React.element = "SidebarFooter"
+  external make: (~children: React.element=?, ~className: string=?) => React.element =
+    "SidebarFooter"
 }
