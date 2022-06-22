@@ -109,3 +109,5 @@ dist
 lib
 .bsb.lock
 .VSCodeCounter
+.vercel
+.DS_Store
