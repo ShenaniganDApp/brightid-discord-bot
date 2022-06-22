@@ -1054,6 +1054,21 @@
     source-map-support "^0.5.21"
     stream-slice "^0.1.2"
 
+"@remix-run/node@1.6.0":
+  version "1.6.0"
+  resolved "https://registry.yarnpkg.com/@remix-run/node/-/node-1.6.0.tgz#9e3e6752f7b7330ea19231cca2aa932cfde4b639"
+  integrity sha512-9hf+fHXJxondkcdh+f4ZjZtd6rEBGRf50NU35NfEn0pt5AXhgcYI/BfhAaoMafwfPLy7DSADZ3DuVg1NYq/ejA==
+  dependencies:
+    "@remix-run/server-runtime" "1.6.0"
+    "@remix-run/web-fetch" "^4.1.3"
+    "@remix-run/web-file" "^3.0.2"
+    "@remix-run/web-stream" "^1.0.3"
+    "@web3-storage/multipart-parser" "^1.0.0"
+    abort-controller "^3.0.0"
+    cookie-signature "^1.1.0"
+    source-map-support "^0.5.21"
+    stream-slice "^0.1.2"
+
 "@remix-run/react@^1.1.1":
   version "1.5.0"
   resolved "https://registry.yarnpkg.com/@remix-run/react/-/react-1.5.0.tgz#7ca3fde4082db7b3c14b306a86b5ebb45eb40819"
@@ -1084,6 +1099,26 @@
     react-router-dom "^6.2.2"
     set-cookie-parser "^2.4.8"
     source-map "^0.7.3"
+
+"@remix-run/server-runtime@1.6.0":
+  version "1.6.0"
+  resolved "https://registry.yarnpkg.com/@remix-run/server-runtime/-/server-runtime-1.6.0.tgz#ff7617324721941eabd2f3e32e284f9df4e618a7"
+  integrity sha512-23qG0+c1yUuvKOB4R70nWW+I5m+u1jQzwwP+pEn0y9uygO6PcOvA4Y6wE1ojpSmqMANri5gLZFrM3vuRZNl6rA==
+  dependencies:
+    "@types/cookie" "^0.4.0"
+    "@web3-storage/multipart-parser" "^1.0.0"
+    cookie "^0.4.1"
+    jsesc "^3.0.1"
+    react-router-dom "^6.2.2"
+    set-cookie-parser "^2.4.8"
+    source-map "^0.7.3"
+
+"@remix-run/vercel@^1.6.0":
+  version "1.6.0"
+  resolved "https://registry.yarnpkg.com/@remix-run/vercel/-/vercel-1.6.0.tgz#5de12b97edd676ed07fe013b854c7a07d49daccf"
+  integrity sha512-T8f8rMXysGmuavTojv4zPB4RqOgjwKk4gCXJJsdaP17i71Z+UPqsNOQBvcQn6kjqdLHqsdB9LYJ7AAr5cM7W4w==
+  dependencies:
+    "@remix-run/node" "1.6.0"
 
 "@remix-run/web-blob@^3.0.3", "@remix-run/web-blob@^3.0.4":
   version "3.0.4"
