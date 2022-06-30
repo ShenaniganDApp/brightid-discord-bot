@@ -76,7 +76,7 @@ let authenticator: RemixAuth.Authenticator.t = %raw(`require( "~/auth.server").a
 
 type loaderData = {user: option<RemixAuth.User.t>, guilds: option<array<Types.guild>>}
 
-let loader: Remix.loaderFunction = ({request}) => {
+let loader: Remix.loaderFunction<loaderData> = ({request}) => {
   open Promise
   open Webapi.Fetch
 
