@@ -14,17 +14,6 @@ module QRCode = {
   @module("qrcode") external toCanvas: (Canvas.t, string) => Promise.t<unit> = "toCanvas"
 }
 
-let authenticator: RemixAuth.Authenticator.t = %raw(`require( "~/auth.server").auth`)
-
-type guild = {
-  id: string,
-  name: string,
-  // icon: Js.Nullable.t<string>, Need to handle null case
-  permissions: float,
-}
-
-type loaderData = {user: option<RemixAuth.User.t>, guilds: option<array<guild>>}
-
 @react.component
 let default = () => {
   let context = useOutletContext()
