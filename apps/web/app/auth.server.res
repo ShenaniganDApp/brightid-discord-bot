@@ -1,41 +1,34 @@
-// open Promise
-// module RemixAuth = {
-//   module DiscordStrategy = {
-//     type t
-//     module CreateDiscordStategyOptions = {
-//       type t
-//       @obj
-//       external make: (
-//         ~clientID: string,
-//         ~clientSecret: string,
-//         ~callbackURL: string,
-//         // Provide all the scopes you want as an array
-//         ~scope: array<string>,
-//         unit,
-//       ) => t = ""
-//     }
-//     @module("remix-auth") @new
-//     external make: (CreateDiscordStategyOptions.t, unit => Js.Promise.t<unit>) => 'a =
-//       "DiscordStrategy"
-//   }
-//   module Authenticator = {
-//     type t
-//     @module("remix-auth") @new external make: Remix.SessionStorage.t => t = "Authenticator"
-//     @send external use: (t, DiscordStrategy.t) => unit = "use"
-//   }
-// }
+let clientID = Remix.process["env"]["DISCORD_CLIENT_ID"]
+let clientSecret = Remix.process["env"]["DISCORD_CLIENT_SECRET"]
+let baseUrl = Remix.process["env"]["BASE_URL"]
 
-// let sessionStorage: Remix.SessionStorage.t = %raw(`require("./session.server.js").sessionStorage`)
+let cookieOptions = Remix.CreateCookieOptions.make(
+  ~sameSite=#lax,
+  ~path="/",
+  ~httpOnly=true,
+  ~secrets=["s3cr3t"],
+  ~secure=Remix.process["env"]["NODE_ENV"] === "production",
+  (),
+)
 
-// let auth = sessionStorage->RemixAuth.Authenticator.make
-// let discordStrategy =
-//   RemixAuth.DiscordStrategy.CreateDiscordStategyOptions.make(
-//     ~clientID="946229600575438878",
-//     ~clientSecret="",
-//     ~callbackURL="http://localhost:3000/auth/discord/callback",
-//     ~scope=["identify", "email", "guilds"],
-//     (),
-//   )->RemixAuth.DiscordStrategy.make(() => {Promise.resolve()})
+let cookie = Remix.createCookieWithOptions("__session", cookieOptions)
 
-// auth->RemixAuth.Authenticator.use(discordStrategy)
+let sessionStorage =
+  cookie
+  ->Remix.CreateCookieSessionStorageOptions.make(~cookie=_)
+  ->Remix.createCookieSessionStorageWithOptions(~options=_)
 
+let auth = sessionStorage->RemixAuth.Authenticator.make
+
+let discordStrategy = RemixAuth.DiscordStrategy.CreateDiscordStategyOptions.make(
+  ~clientID,
+  ~clientSecret,
+  ~callbackURL=baseUrl ++ "/auth/discord/callback",
+  ~scope=["identify", "guilds", "guilds.join"],
+  (),
+)->RemixAuth.DiscordStrategy.make(({accessToken, extraParams, profile}) => {
+  Js.log2("extraParams: ", extraParams)
+  {"accessToken": accessToken, "profile": profile}->Promise.resolve
+})
+
+auth->RemixAuth.Authenticator.use(discordStrategy)
