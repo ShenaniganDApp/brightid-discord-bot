@@ -5,11 +5,11 @@
     "patch-package": "^6.4.7"
   },
   "dependencies": {
-    "concurrently": "^7.1.0",
-    "find-up": "^6.3.0",
     "brightid_sdk": "^1.0.1",
     "canvas": "^2.9.0",
+    "concurrently": "^7.1.0",
     "dotenv": "^8.2.0",
+    "find-up": "^6.3.0",
     "uuid": "^8.3.0"
   },
   "scripts": {

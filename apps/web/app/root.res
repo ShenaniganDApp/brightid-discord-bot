@@ -72,8 +72,71 @@ let wagmiClient = %raw(`createClient({
   provider:chainConfig.provider,
   })`)
 
+let authenticator: RemixAuth.Authenticator.t = %raw(`require( "~/auth.server").auth`)
+
+type loaderData = {user: option<RemixAuth.User.t>, guilds: option<array<Types.guild>>}
+
+let loader = (args: {"request": Webapi.Fetch.Request.t}) => {
+  open Promise
+  open Webapi.Fetch
+
+  authenticator
+  ->RemixAuth.Authenticator.isAuthenticated(args["request"])
+  ->then(user => {
+    switch user->Js.Nullable.toOption {
+    | None => {user: None, guilds: None}->resolve
+    | Some(user) =>
+      RequestInit.make(
+        ~method_=Get,
+        ~headers=HeadersInit.make({
+          "Authorization": `Bearer ${user->RemixAuth.User.getAccessToken}`,
+        }),
+        (),
+      )
+      ->Request.makeWithInit("https://discord.com/api/users/@me/guilds", _)
+      ->fetchWithRequest
+      ->then(res => res->Response.json)
+      ->then(json => {
+        let guilds =
+          json
+          ->Js.Json.decodeArray
+          ->Belt.Option.map(guilds => {
+            guilds->Js.Array2.map(guild => {
+              let guild = guild->Js.Json.decodeObject->Belt.Option.getUnsafe
+
+              (
+                {
+                  id: guild
+                  ->Js.Dict.get("id")
+                  ->Belt.Option.flatMap(Js.Json.decodeString)
+                  ->Belt.Option.getExn,
+                  name: guild
+                  ->Js.Dict.get("name")
+                  ->Belt.Option.flatMap(Js.Json.decodeString)
+                  ->Belt.Option.getExn,
+                  // icon: guild
+                  // ->Js.Dict.get("icon")
+                  // ->Belt.Option.flatMap(Js.Nullable.toOption)
+                  // ->Belt.Option.flatMap(Js.Json.decodeNumber)
+                  // ->Belt.Option.getExn,
+                  permissions: guild
+                  ->Js.Dict.get("permissions")
+                  ->Belt.Option.flatMap(Js.Json.decodeNumber)
+                  ->Belt.Option.getExn,
+                }: Types.guild
+              )
+            })
+          })
+          ->Belt.Option.getUnsafe
+        {user: Some(user), guilds: Some(guilds)}->resolve
+      })
+    }
+  })
+}
+
 @react.component
 let default = () => {
+  let {user, guilds} = Remix.useLoaderData()
   let (toggled, setToggled) = React.useState(_ => false)
 
   let handleToggleSidebar = value => {
@@ -91,7 +154,7 @@ let default = () => {
       <WagmiProvider client={wagmiClient}>
         <RainbowKitProvider chains={chainConfig["chains"]}>
           <main className="flex h-screen bg-gradient-to-tl from-brightid to-transparent">
-            <Sidebar toggled handleToggleSidebar />
+            <Sidebar toggled handleToggleSidebar user guilds />
             <Remix.Outlet context={{"handleToggleSidebar": handleToggleSidebar}} />
           </main>
         </RainbowKitProvider>

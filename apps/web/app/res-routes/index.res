@@ -2,22 +2,6 @@ exception IndexError(string)
 
 @module("remix") external useOutletContext: unit => 'a = "useOutletContext"
 
-module BrightID = {
-  @module("brightid_sdk")
-  external generateDeepLink: (
-    ~context: string,
-    ~contextId: string,
-    ~nodeUrl: string=?,
-    unit,
-  ) => string = "generateDeepLink"
-}
-
-module UUID = {
-  type t = string
-  type name = UUIDName(string)
-  @module("uuid") external v5: (string, string) => t = "v5"
-}
-
 module Canvas = {
   type t
   @module("canvas") @scope("default")
@@ -30,31 +14,20 @@ module QRCode = {
   @module("qrcode") external toCanvas: (Canvas.t, string) => Promise.t<unit> = "toCanvas"
 }
 
-// let uuidNamespace = Remix.process["env"]["uuidNamespace"]
+let authenticator: RemixAuth.Authenticator.t = %raw(`require( "~/auth.server").auth`)
 
-// let uuidNamespace = switch config {
-// | Ok(config) => config["uuidNamespace"]
-// | Error(err) => err->IndexError->raise
-// }
+type guild = {
+  id: string,
+  name: string,
+  // icon: Js.Nullable.t<string>, Need to handle null case
+  permissions: float,
+}
 
-let context = "Discord"
+type loaderData = {user: option<RemixAuth.User.t>, guilds: option<array<guild>>}
 
 @react.component
 let default = () => {
   let context = useOutletContext()
-
-  // let getDeepLink = discordId => {
-  //   let contextId = UUID.v5(uuidNamespace, discordId)
-  //   BrightID.generateDeepLink(~context, ~contextId, ())
-  // }
-
-  // let createCanvasFromDeepLink = deepLink => {
-  //   let canvas = Canvas.createCanvas(700, 250)
-
-  //   QRCode.toCanvas(canvas, deepLink)->then(canvas => {
-  //     <canvas
-  //   })
-  //
   <div className="flex p-4 h-full w-full justify-center ">
     <SidebarToggle handleToggleSidebar={context["handleToggleSidebar"]} />
     <div className="flex flex-1 flex-col  justify-around items-center">

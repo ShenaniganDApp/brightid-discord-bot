@@ -6,37 +6,40 @@ module ConnectButton = {
     ~className: string=?,
   ) => 'b = "ConnectButton"
 }
-type route = {
-  name: string,
-  path: string,
-  icon: string,
-}
 
-let routes = [{name: "Sponsorships", path: "sponsorships", icon: "/assets/brightid_logo_white.png"}]
 //  <img src={"/assets/brightid_logo.png"}/>
 @react.component
-let make = (~toggled: bool, ~handleToggleSidebar: bool => unit) => {
+let make = (~toggled, ~handleToggleSidebar, ~user, ~guilds: option<array<Types.guild>>) => {
   open ReactProSidebar
 
   let sidebarElements = {
-    routes->Belt.Array.mapWithIndex((i, r) => {
-      <Menu iconShape="square" key={i->Belt.Int.toString}>
-        <MenuItem icon={<img src={r.icon} />}>
-          <Remix.Link to={r.path} prefetch={#intent}> {r.name->React.string} </Remix.Link>
-        </MenuItem>
-      </Menu>
-    })
+    switch user {
+    | None => <DiscordButton label="Login to Discord" />
+    | Some(_) =>
+      switch guilds {
+      | None => <p> {"No Guilds"->React.string} </p>
+      | Some(guilds) =>
+        guilds
+        ->Belt.Array.mapWithIndex((i, guild) => {
+          <Menu iconShape="square" key={i->Belt.Int.toString}>
+            <MenuItem icon={<img src={"/assets/brightid_logo_white.png"} />}>
+              <Remix.Link to={"/"} prefetch={#intent}> {guild.name->React.string} </Remix.Link>
+            </MenuItem>
+          </Menu>
+        })
+        ->React.array
+      }
+    }
   }
-
   <ProSidebar className="bg-dark " breakPoint="md" onToggle={handleToggleSidebar} toggled>
-    <SidebarHeader className="flex justify-center items-center">
-      <Remix.Link to={""}>
+    <SidebarHeader className="p-4 flex justify-center items-center top-0 sticky bg-dark z-10 ">
+    <ConnectButton />
+    </SidebarHeader>
+    <SidebarContent className="no-scrollbar"> {sidebarElements} </SidebarContent>
+    <SidebarFooter className="p-2 bottom-0 sticky bg-dark">
+            <Remix.Link to={""}>
         <MenuItem> <img src={"/assets/brightid_logo.png"} /> </MenuItem>
       </Remix.Link>
-    </SidebarHeader>
-    <SidebarContent> {React.array(sidebarElements)} </SidebarContent>
-    <SidebarFooter className="p-4 flex justify-center items-center">
-      <ConnectButton />
     </SidebarFooter>
   </ProSidebar>
 }
