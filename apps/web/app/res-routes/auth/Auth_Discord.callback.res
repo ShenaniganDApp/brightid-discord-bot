@@ -1,12 +1,10 @@
-let authenticator = %raw(`require( "~/auth.server").auth`)
+let authenticator: RemixAuth.Authenticator.t = %raw(`require( "~/auth.server").auth`)
 
-type loaderData = Webapi.Fetch.Response.t
+type loaderData = RemixAuth.User.t
 
-let loader = (args: {"request": Webapi.Fetch.Request.t, "params": {"provider": 'a}}): Promise.t<
-  loaderData,
-> => {
-  %raw(`authenticator.authenticate("discord", args.request, {
-      successRedirect: "/",
-      failureRedirect: "/login",
-    })`)
+let loader: Remix.loaderFunction<loaderData> = ({request, params}): Promise.t<loaderData> => {
+  open RemixAuth
+
+  let options = CreateAuthenticateOptions.make(~successRedirect="/", ~failureRedirect="/login", ())
+  authenticator->Authenticator.authenticateWithOptions("discord", request, ~options, ())
 }

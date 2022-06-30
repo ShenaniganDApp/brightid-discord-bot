@@ -76,7 +76,7 @@ let authenticator: RemixAuth.Authenticator.t = %raw(`require( "~/auth.server").a
 
 type loaderData = {user: option<RemixAuth.User.t>, guilds: option<array<Types.guild>>}
 
-let loader = (args: {"request": Webapi.Fetch.Request.t}) => {
+let loader: Remix.loaderFunction = ({request}) => {
   open Promise
   open Webapi.Fetch
 
@@ -89,7 +89,7 @@ let loader = (args: {"request": Webapi.Fetch.Request.t}) => {
   }
 
   authenticator
-  ->RemixAuth.Authenticator.isAuthenticated(args["request"])
+  ->RemixAuth.Authenticator.isAuthenticated(request)
   ->then(user => {
     switch user->Js.Nullable.toOption {
     | None => {user: None, guilds: None}->resolve
