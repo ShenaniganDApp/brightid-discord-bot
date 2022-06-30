@@ -25,7 +25,8 @@ module SidebarHeader = {
 }
 module SidebarContent = {
   @react.component @module("react-pro-sidebar")
-  external make: (~children: React.element) => React.element = "SidebarContent"
+  external make: (~children: React.element, ~className: string=?) => React.element =
+    "SidebarContent"
 }
 module SidebarFooter = {
   @react.component @module("react-pro-sidebar")

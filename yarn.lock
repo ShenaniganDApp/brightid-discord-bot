@@ -6893,14 +6893,6 @@ remark-rehype@^9.0.0:
     mdast-util-to-hast "^11.0.0"
     unified "^10.0.0"
 
-remix-auth-discord@^1.0.0:
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/remix-auth-discord/-/remix-auth-discord-1.0.0.tgz#6a9b5f29ce6573982503edbc192c13a96b04542c"
-  integrity sha512-TRY6GKePMCYY73EeWOztrP52sTEQs3GmNW4XYtcKtqbye1vzXDIXXTtSHvbTiNGy3MXarbmeAub7DmLe/VHtiw==
-  dependencies:
-    remix-auth "^3.0.0"
-    remix-auth-oauth2 "^1.0.0"
-
 remix-auth-oauth2@^1.0.0:
   version "1.2.2"
   resolved "https://registry.yarnpkg.com/remix-auth-oauth2/-/remix-auth-oauth2-1.2.2.tgz#bebe0ac586744ed94885bd47f6bcb710d377fede"
@@ -6910,6 +6902,14 @@ remix-auth-oauth2@^1.0.0:
     react-dom "^18.1.0"
     remix-auth "^3.2.2"
     uuid "^8.3.2"
+
+remix-auth-socials@^1.0.2:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/remix-auth-socials/-/remix-auth-socials-1.0.2.tgz#9280ce092d007cb1bb8c8aba888478ac5825ed8c"
+  integrity sha512-X0/tK3DI16R5XsOy2qKhgKa66NdoTcRLiUH5c5PFvBzetbogdX+7j/jgGFDa/t8Tf5nHUD1PlYN3LpR8CA8LgA==
+  dependencies:
+    remix-auth "^3.0.0"
+    remix-auth-oauth2 "^1.0.0"
 
 remix-auth@^3.0.0, remix-auth@^3.2.2:
   version "3.2.2"
