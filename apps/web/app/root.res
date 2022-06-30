@@ -7,7 +7,7 @@ import {
   getDefaultWallets,
   darkTheme,
 } from '@rainbow-me/rainbowkit';
-import { chain, createClient } from 'wagmi';`)
+import { chain, createClient } from 'wagmi'`)
 
 module WagmiProvider = {
   @react.component @module("wagmi")
@@ -80,21 +80,22 @@ let loader = (args: {"request": Webapi.Fetch.Request.t}) => {
   open Promise
   open Webapi.Fetch
 
+  let fetchGuilds = (user: RemixAuth.User.t) => {
+    let headers = HeadersInit.make({
+      "Authorization": `Bearer ${user->RemixAuth.User.getAccessToken}`,
+    })
+    let init = RequestInit.make(~method_=Get, ~headers, ())
+    "https://discord.com/api/users/@me/guilds"->Request.makeWithInit(init)->fetchWithRequest
+  }
+
   authenticator
   ->RemixAuth.Authenticator.isAuthenticated(args["request"])
   ->then(user => {
     switch user->Js.Nullable.toOption {
     | None => {user: None, guilds: None}->resolve
     | Some(user) =>
-      RequestInit.make(
-        ~method_=Get,
-        ~headers=HeadersInit.make({
-          "Authorization": `Bearer ${user->RemixAuth.User.getAccessToken}`,
-        }),
-        (),
-      )
-      ->Request.makeWithInit("https://discord.com/api/users/@me/guilds", _)
-      ->fetchWithRequest
+      user
+      ->fetchGuilds
       ->then(res => res->Response.json)
       ->then(json => {
         let guilds =
