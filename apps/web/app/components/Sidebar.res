@@ -23,7 +23,9 @@ let make = (~toggled, ~handleToggleSidebar, ~user, ~guilds: option<array<Types.g
         ->Belt.Array.mapWithIndex((i, guild) => {
           <Menu iconShape="square" key={i->Belt.Int.toString}>
             <MenuItem icon={<img src={"/assets/brightid_logo_white.png"} />}>
-              <Remix.Link to={"/"} prefetch={#intent}> {guild.name->React.string} </Remix.Link>
+              <Remix.Link to={`/guilds/${guild.id}`} prefetch={#intent}>
+                {guild.name->React.string}
+              </Remix.Link>
             </MenuItem>
           </Menu>
         })
@@ -33,11 +35,11 @@ let make = (~toggled, ~handleToggleSidebar, ~user, ~guilds: option<array<Types.g
   }
   <ProSidebar className="bg-dark " breakPoint="md" onToggle={handleToggleSidebar} toggled>
     <SidebarHeader className="p-4 flex justify-center items-center top-0 sticky bg-dark z-10 ">
-    <ConnectButton />
+      <ConnectButton />
     </SidebarHeader>
     <SidebarContent className="no-scrollbar"> {sidebarElements} </SidebarContent>
     <SidebarFooter className="p-2 bottom-0 sticky bg-dark">
-            <Remix.Link to={""}>
+      <Remix.Link to={""}>
         <MenuItem> <img src={"/assets/brightid_logo.png"} /> </MenuItem>
       </Remix.Link>
     </SidebarFooter>
