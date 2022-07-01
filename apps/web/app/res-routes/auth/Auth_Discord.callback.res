@@ -2,7 +2,7 @@ let authenticator: RemixAuth.Authenticator.t = %raw(`require( "~/auth.server").a
 
 type loaderData = RemixAuth.User.t
 
-let loader: Remix.loaderFunction<loaderData> = ({request, params}): Promise.t<loaderData> => {
+let loader: Remix.loaderFunction<loaderData> = ({request}): Promise.t<loaderData> => {
   open RemixAuth
 
   let options = CreateAuthenticateOptions.make(~successRedirect="/", ~failureRedirect="/login", ())
