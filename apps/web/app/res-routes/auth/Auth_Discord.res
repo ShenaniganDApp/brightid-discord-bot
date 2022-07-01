@@ -1,5 +1,6 @@
 open Promise
-let authenticator = %raw(`require("~/auth.server").auth`)
+
+let authenticator: RemixAuth.Authenticator.t = %raw(`require("~/auth.server").auth`)
 
 type loaderData = RemixAuth.User.t
 
