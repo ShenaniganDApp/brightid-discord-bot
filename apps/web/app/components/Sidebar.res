@@ -38,9 +38,9 @@ let make = (~toggled, ~handleToggleSidebar, ~user, ~guilds: option<array<Types.g
       <ConnectButton />
     </SidebarHeader>
     <SidebarContent className="no-scrollbar"> {sidebarElements} </SidebarContent>
-    <SidebarFooter className="p-2 bottom-0 sticky bg-dark">
+    <SidebarFooter className="bottom-0 sticky bg-dark">
       <Remix.Link to={""}>
-        <MenuItem> <img src={"/assets/brightid_logo.png"} /> </MenuItem>
+        <MenuItem> <img src={"/assets/brightid_reversed.svg"} /> </MenuItem>
       </Remix.Link>
     </SidebarFooter>
   </ProSidebar>

@@ -1,6 +1,8 @@
 type loaderData = string
 let authenticator: RemixAuth.Authenticator.t = %raw(`require( "~/auth.server").auth`)
 
+@module("remix") external useOutletContext: unit => 'a = "useOutletContext"
+
 let loader: Remix.loaderFunction<loaderData> = ({request, params}) => {
   open Promise
 
@@ -16,7 +18,11 @@ let loader: Remix.loaderFunction<loaderData> = ({request, params}) => {
 }
 
 let default = () => {
+  let context = useOutletContext()
   let gistId = Remix.useLoaderData()
 
-  <div> <h1> {gistId->React.string} </h1> </div>
+  <div>
+    <SidebarToggle handleToggleSidebar={context["handleToggleSidebar"]} />
+    <h1> {gistId->React.string} </h1>
+  </div>
 }
