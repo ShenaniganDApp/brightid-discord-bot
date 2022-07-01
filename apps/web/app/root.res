@@ -73,6 +73,7 @@ let wagmiClient = %raw(`createClient({
   })`)
 
 let authenticator: RemixAuth.Authenticator.t = %raw(`require( "~/auth.server").auth`)
+let fetchBotGuilds = %raw(`require( "~/bot.server").fetchBotGuilds`)
 
 type loaderData = {user: option<RemixAuth.User.t>, guilds: option<array<Types.guild>>}
 
@@ -96,40 +97,82 @@ let loader: Remix.loaderFunction<loaderData> = ({request}) => {
     | Some(user) =>
       user
       ->fetchGuilds
-      ->then(res => res->Response.json)
-      ->then(json => {
-        let guilds =
-          json
-          ->Js.Json.decodeArray
-          ->Belt.Option.map(guilds => {
-            guilds->Js.Array2.map(guild => {
-              let guild = guild->Js.Json.decodeObject->Belt.Option.getUnsafe
+      ->then(userRes => userRes->Response.json)
+      ->then(userJson => {
+        fetchBotGuilds()->then(botRes => {
+          botRes
+          ->Response.json
+          ->then(botJson => {
+            let botGuilds =
+              botJson
+              ->Js.Json.decodeArray
+              ->Belt.Option.map(guilds =>
+                guilds->Js.Array2.map(guild => {
+                  let guild = guild->Js.Json.decodeObject->Belt.Option.getUnsafe
 
-              (
-                {
-                  id: guild
-                  ->Js.Dict.get("id")
-                  ->Belt.Option.flatMap(Js.Json.decodeString)
-                  ->Belt.Option.getExn,
-                  name: guild
-                  ->Js.Dict.get("name")
-                  ->Belt.Option.flatMap(Js.Json.decodeString)
-                  ->Belt.Option.getExn,
-                  // icon: guild
-                  // ->Js.Dict.get("icon")
-                  // ->Belt.Option.flatMap(Js.Nullable.toOption)
-                  // ->Belt.Option.flatMap(Js.Json.decodeNumber)
-                  // ->Belt.Option.getExn,
-                  permissions: guild
-                  ->Js.Dict.get("permissions")
-                  ->Belt.Option.flatMap(Js.Json.decodeNumber)
-                  ->Belt.Option.getExn,
-                }: Types.guild
+                  (
+                    {
+                      id: guild
+                      ->Js.Dict.get("id")
+                      ->Belt.Option.flatMap(Js.Json.decodeString)
+                      ->Belt.Option.getExn,
+                      name: guild
+                      ->Js.Dict.get("name")
+                      ->Belt.Option.flatMap(Js.Json.decodeString)
+                      ->Belt.Option.getExn,
+                      // icon: guild
+                      // ->Js.Dict.get("icon")
+                      // ->Belt.Option.flatMap(Js.Nullable.toOption)
+                      // ->Belt.Option.flatMap(Js.Json.decodeNumber)
+                      // ->Belt.Option.getExn,
+                      permissions: guild
+                      ->Js.Dict.get("permissions")
+                      ->Belt.Option.flatMap(Js.Json.decodeNumber)
+                      ->Belt.Option.getExn,
+                    }: Types.guild
+                  )
+                })
               )
-            })
+              ->Belt.Option.getUnsafe
+
+            let userGuilds =
+              userJson
+              ->Js.Json.decodeArray
+              ->Belt.Option.map(guilds =>
+                guilds->Js.Array2.map(guild => {
+                  let guild = guild->Js.Json.decodeObject->Belt.Option.getUnsafe
+
+                  (
+                    {
+                      id: guild
+                      ->Js.Dict.get("id")
+                      ->Belt.Option.flatMap(Js.Json.decodeString)
+                      ->Belt.Option.getExn,
+                      name: guild
+                      ->Js.Dict.get("name")
+                      ->Belt.Option.flatMap(Js.Json.decodeString)
+                      ->Belt.Option.getExn,
+                      // icon: guild
+                      // ->Js.Dict.get("icon")
+                      // ->Belt.Option.flatMap(Js.Nullable.toOption)
+                      // ->Belt.Option.flatMap(Js.Json.decodeNumber)
+                      // ->Belt.Option.getExn,
+                      permissions: guild
+                      ->Js.Dict.get("permissions")
+                      ->Belt.Option.flatMap(Js.Json.decodeNumber)
+                      ->Belt.Option.getExn,
+                    }: Types.guild
+                  )
+                })
+              )
+              ->Belt.Option.getUnsafe
+            let guilds =
+              userGuilds->Js.Array2.filter(userGuild =>
+                botGuilds->Js.Array2.findIndex(botGuild => botGuild.id === userGuild.id) !== -1
+              )
+            {user: Some(user), guilds: Some(guilds)}->resolve
           })
-          ->Belt.Option.getUnsafe
-        {user: Some(user), guilds: Some(guilds)}->resolve
+        })
       })
     }
   })
