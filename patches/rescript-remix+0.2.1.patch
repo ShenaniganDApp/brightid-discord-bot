@@ -29,37 +29,62 @@ index 0000000..96d3f03
 +0
 diff --git a/node_modules/rescript-remix/lib/bs/.bsdeps b/node_modules/rescript-remix/lib/bs/.bsdeps
 new file mode 100644
-index 0000000..09ab2ab
+index 0000000..63f2b64
 --- /dev/null
 +++ b/node_modules/rescript-remix/lib/bs/.bsdeps
 @@ -0,0 +1,7 @@
 +9.1.4
 +/Users/vic__gi/Documents/BrightIDbot/node_modules/rescript-remix
 +1 -bs-package-output es6-global:.:.js
-+bsconfig.json	0x1.8af8752e2beccp+30
-+src	0x1.8af479f0edfe5p+30
++bsconfig.json	0x1.892950dd96873p+30
++src	0x1.8b1fa207dcfb7p+30
 +===
-+/Users/vic__gi/Documents/BrightIDbot/node_modules/rescript/darwin/rescript.exe	0x1.8af4672b44fedp+30
++/Users/vic__gi/Documents/BrightIDbot/node_modules/rescript/darwin/rescript.exe	0x1.8b001f589e649p+30
 diff --git a/node_modules/rescript-remix/lib/bs/.compiler.log b/node_modules/rescript-remix/lib/bs/.compiler.log
 new file mode 100644
-index 0000000..44cad00
+index 0000000..fe8285a
 --- /dev/null
 +++ b/node_modules/rescript-remix/lib/bs/.compiler.log
 @@ -0,0 +1,2 @@
-+#Start(1656631626106)
-+#Done(1656631626106)
++#Start(1657314348264)
++#Done(1657314348264)
 diff --git a/node_modules/rescript-remix/lib/bs/.ninja_log b/node_modules/rescript-remix/lib/bs/.ninja_log
 new file mode 100644
-index 0000000..097dea7
+index 0000000..2b27490
 --- /dev/null
 +++ b/node_modules/rescript-remix/lib/bs/.ninja_log
-@@ -0,0 +1,6 @@
+@@ -0,0 +1,31 @@
 +# ninja log v6
-+0	17	1656626513884633234	src/Remix.ast	4687359a62ebdea4
-+17	26	1656626513894302930	src/Remix.d	12e39fa923432349
-+26	51	1656626513919144855	src/Remix.cmj	c64578a9a6851c37
-+26	51	1656626513919144855	src/Remix.cmi	c64578a9a6851c37
-+26	51	1656626513919144855	../../src/Remix.js	c64578a9a6851c37
++0	17	1657268633118951622	src/Remix.ast	4687359a62ebdea4
++17	23	1657268633125502047	src/Remix.d	12e39fa923432349
++23	48	1657268633149156601	src/Remix.cmj	9d86d704dda128f5
++23	48	1657268633149156601	src/Remix.cmi	9d86d704dda128f5
++23	48	1657268633149156601	../../src/Remix.js	9d86d704dda128f5
++0	14	1657268676553660048	src/Remix.ast	4687359a62ebdea4
++14	20	1657268676553660048	src/Remix.d	12e39fa923432349
++20	44	1657268676553660048	src/Remix.cmj	9d86d704dda128f5
++20	44	1657268676553660048	src/Remix.cmi	9d86d704dda128f5
++20	44	1657268676553660048	../../src/Remix.js	9d86d704dda128f5
++0	14	1657268864564120183	src/Remix.ast	4687359a62ebdea4
++15	20	1657268864564120183	src/Remix.d	12e39fa923432349
++21	43	1657268864564120183	src/Remix.cmj	9d86d704dda128f5
++21	43	1657268864564120183	src/Remix.cmi	9d86d704dda128f5
++21	43	1657268864564120183	../../src/Remix.js	9d86d704dda128f5
++0	17	1657309545918125348	src/Remix.ast	4687359a62ebdea4
++17	26	1657309545918125348	src/Remix.d	12e39fa923432349
++26	58	1657309545918125348	src/Remix.cmj	9d86d704dda128f5
++26	58	1657309545918125348	src/Remix.cmi	9d86d704dda128f5
++26	58	1657309545918125348	../../src/Remix.js	9d86d704dda128f5
++0	22	1657310454540752305	src/Remix.ast	4687359a62ebdea4
++22	31	1657310454540752305	src/Remix.d	12e39fa923432349
++32	68	1657310454540752305	src/Remix.cmj	9d86d704dda128f5
++32	68	1657310454540752305	src/Remix.cmi	9d86d704dda128f5
++32	68	1657310454540752305	../../src/Remix.js	9d86d704dda128f5
++0	18	1657310564232464380	src/Remix.ast	4687359a62ebdea4
++18	25	1657310564232464380	src/Remix.d	12e39fa923432349
++25	48	1657310564232464380	src/Remix.cmj	9d86d704dda128f5
++25	48	1657310564232464380	src/Remix.cmi	9d86d704dda128f5
++25	48	1657310564232464380	../../src/Remix.js	9d86d704dda128f5
 diff --git a/node_modules/rescript-remix/lib/bs/build.ninja b/node_modules/rescript-remix/lib/bs/build.ninja
 new file mode 100644
 index 0000000..f4f33ac
@@ -99,11 +124,11 @@ index 0000000..df0dc3a
 +build install.stamp : touch Remix.cmi Remix.cmj 
 diff --git a/node_modules/rescript-remix/lib/bs/src/Remix.ast b/node_modules/rescript-remix/lib/bs/src/Remix.ast
 new file mode 100644
-index 0000000..72db9df
+index 0000000..c94a7d2
 Binary files /dev/null and b/node_modules/rescript-remix/lib/bs/src/Remix.ast differ
 diff --git a/node_modules/rescript-remix/lib/bs/src/Remix.cmi b/node_modules/rescript-remix/lib/bs/src/Remix.cmi
 new file mode 100644
-index 0000000..dbc78da
+index 0000000..0c5e619
 Binary files /dev/null and b/node_modules/rescript-remix/lib/bs/src/Remix.cmi differ
 diff --git a/node_modules/rescript-remix/lib/bs/src/Remix.cmj b/node_modules/rescript-remix/lib/bs/src/Remix.cmj
 new file mode 100644
@@ -111,34 +136,54 @@ index 0000000..6a38e67
 Binary files /dev/null and b/node_modules/rescript-remix/lib/bs/src/Remix.cmj differ
 diff --git a/node_modules/rescript-remix/lib/bs/src/Remix.cmt b/node_modules/rescript-remix/lib/bs/src/Remix.cmt
 new file mode 100644
-index 0000000..6c32166
+index 0000000..182040b
 Binary files /dev/null and b/node_modules/rescript-remix/lib/bs/src/Remix.cmt differ
 diff --git a/node_modules/rescript-remix/lib/bs/src/Remix.d b/node_modules/rescript-remix/lib/bs/src/Remix.d
 new file mode 100644
 index 0000000..e69de29
 diff --git a/node_modules/rescript-remix/lib/ocaml/.compiler.log b/node_modules/rescript-remix/lib/ocaml/.compiler.log
 new file mode 100644
-index 0000000..88be858
+index 0000000..2f9465d
 --- /dev/null
 +++ b/node_modules/rescript-remix/lib/ocaml/.compiler.log
 @@ -0,0 +1,2 @@
-+#Start(1656631626109)
-+#Done(1656631626109)
++#Start(1657314348268)
++#Done(1657314348268)
 diff --git a/node_modules/rescript-remix/lib/ocaml/.ninja_log b/node_modules/rescript-remix/lib/ocaml/.ninja_log
 new file mode 100644
-index 0000000..4cb1309
+index 0000000..92cd348
 --- /dev/null
 +++ b/node_modules/rescript-remix/lib/ocaml/.ninja_log
-@@ -0,0 +1,6 @@
+@@ -0,0 +1,26 @@
 +# ninja log v6
-+0	6	1656626513929113208	Remix.cmi	864c43fae0753d9f
-+0	6	1656626513929306199	Remix.cmt	7bab0061d509956c
-+0	6	1656626513929345626	Remix.cmj	c1f9dd67cf407cb
-+1	7	1656626513929584550	Remix.res	67e431aea6938a3c
-+6	13	1656626513936415230	install.stamp	cff5a5b4c02d30cf
++0	6	1657268633159602761	Remix.cmj	c1f9dd67cf407cb
++0	6	1657268633159658824	Remix.cmi	864c43fae0753d9f
++0	7	1657268633159674078	Remix.cmt	7bab0061d509956c
++1	7	1657268633159666997	Remix.res	67e431aea6938a3c
++6	13	1657268633166014055	install.stamp	cff5a5b4c02d30cf
++0	6	1657268676592925895	Remix.cmi	864c43fae0753d9f
++1	6	1657268676592981002	Remix.res	67e431aea6938a3c
++1	6	1657268676592964304	Remix.cmt	7bab0061d509956c
++6	11	1657268676598404000	install.stamp	cff5a5b4c02d30cf
++0	5	1657268864602173499	Remix.cmi	864c43fae0753d9f
++0	5	1657268864602188397	Remix.cmt	7bab0061d509956c
++0	5	1657268864602323550	Remix.res	67e431aea6938a3c
++5	10	1657268864607285000	install.stamp	cff5a5b4c02d30cf
++0	12	1657309545976251107	Remix.cmi	864c43fae0753d9f
++1	13	1657309545976280051	Remix.cmt	7bab0061d509956c
++1	13	1657309545976282852	Remix.res	67e431aea6938a3c
++12	22	1657309545986495000	install.stamp	cff5a5b4c02d30cf
++0	8	1657310454598863897	Remix.cmi	864c43fae0753d9f
++0	9	1657310454598867767	Remix.cmt	7bab0061d509956c
++0	9	1657310454598814091	Remix.res	67e431aea6938a3c
++8	15	1657310454606295000	install.stamp	cff5a5b4c02d30cf
++0	8	1657310564274788497	Remix.cmi	864c43fae0753d9f
++1	8	1657310564274801991	Remix.res	67e431aea6938a3c
++0	8	1657310564274838435	Remix.cmt	7bab0061d509956c
++8	13	1657310564280580000	install.stamp	cff5a5b4c02d30cf
 diff --git a/node_modules/rescript-remix/lib/ocaml/Remix.cmi b/node_modules/rescript-remix/lib/ocaml/Remix.cmi
 new file mode 100644
-index 0000000..dbc78da
+index 0000000..0c5e619
 Binary files /dev/null and b/node_modules/rescript-remix/lib/ocaml/Remix.cmi differ
 diff --git a/node_modules/rescript-remix/lib/ocaml/Remix.cmj b/node_modules/rescript-remix/lib/ocaml/Remix.cmj
 new file mode 100644
@@ -146,14 +191,14 @@ index 0000000..6a38e67
 Binary files /dev/null and b/node_modules/rescript-remix/lib/ocaml/Remix.cmj differ
 diff --git a/node_modules/rescript-remix/lib/ocaml/Remix.cmt b/node_modules/rescript-remix/lib/ocaml/Remix.cmt
 new file mode 100644
-index 0000000..6c32166
+index 0000000..182040b
 Binary files /dev/null and b/node_modules/rescript-remix/lib/ocaml/Remix.cmt differ
 diff --git a/node_modules/rescript-remix/lib/ocaml/Remix.res b/node_modules/rescript-remix/lib/ocaml/Remix.res
 new file mode 100644
-index 0000000..40551a0
+index 0000000..cc06645
 --- /dev/null
 +++ b/node_modules/rescript-remix/lib/ocaml/Remix.res
-@@ -0,0 +1,179 @@
+@@ -0,0 +1,217 @@
 +@val external process: 'a = "process"
 +
 +module RemixBrowser = {
@@ -161,11 +206,25 @@ index 0000000..40551a0
 +}
 +
 +type entryContext
++type appLoadContext
 +
-+module DataFunctionArgs = {
-+  type t = {request: Webapi.Fetch.Response.t}
++type params = Js.Dict.t<string>
++
++type dataFunctionArgs = {
++  request: Webapi.Fetch.Request.t,
++  context: appLoadContext,
++  params: params,
 +}
-+// type actionFunction = {args: DataFunctionArgs.t => Js.Promise.t<Webapi.Fetch.Response.t>}
++type headersFunctionArgs = {
++  loaderHeaders: Webapi.Fetch.Headers.t,
++  parentHeaders: Webapi.Fetch.Headers.t,
++  actionHeaders: Webapi.Fetch.Headers.t,
++}
++type headersFunction = headersFunctionArgs => Webapi.Fetch.Headers.t
++
++type loaderFunction<'a> = dataFunctionArgs => Js.Promise.t<'a>
++
++type actionFunction<'a> = dataFunctionArgs => Js.Promise.t<'a>
 +
 +module RemixServer = {
 +  @module("remix") @react.component
@@ -205,6 +264,7 @@ index 0000000..40551a0
 +module Link = {
 +  @module("remix") @react.component
 +  external make: (
++    ~className: string=?,
 +    ~prefetch: [#intent | #render | #none]=?,
 +    ~to: string,
 +    ~reloadDocument: bool=?,
@@ -212,6 +272,19 @@ index 0000000..40551a0
 +    ~state: 'a=?,
 +    ~children: React.element,
 +  ) => React.element = "Link"
++}
++
++module NavLink = {
++  @module("remix") @react.component
++  external make: (
++    ~className: string=?,
++    ~prefetch: [#intent | #render | #none]=?,
++    ~to: string,
++    ~reloadDocument: bool=?,
++    ~replace: bool=?,
++    ~state: 'a=?,
++    ~children: React.element,
++  ) => React.element = "NavLink"
 +}
 +
 +module Form = {
@@ -252,7 +325,7 @@ index 0000000..40551a0
 +  @send external submit: 'target => unit = "submit"
 +  @send
 +  external submitWithOptions: ('target, ~options: CreateFetcherSubmitOptions.t) => unit = "submit"
-+  @send external load: (~hreft: string) => unit = "load"
++  @send external load: (t, ~href: string) => unit = "load"
 +
 +  @get external state: t => 'state = "state"
 +  @get external _type: t => 'a = "type"
@@ -273,6 +346,12 @@ index 0000000..40551a0
 +  }
 +}
 +
++module Location = {
++  type t
++
++  @get external state: t => 'state = "state"
++}
++
 +@module("remix") external json: {..} => Webapi.Fetch.Response.t = "json"
 +
 +@module("remix") external redirect: string => Webapi.Fetch.Response.t = "redirect"
@@ -282,6 +361,10 @@ index 0000000..40551a0
 +@module("remix") external useLoaderData: unit => 'a = "useLoaderData"
 +
 +@module("remix") external useFetcher: unit => Fetcher.t = "useFetcher"
++
++@module("remix") external useLocation: unit => Location.t = "useLocation"
++
++@module("remix") external useOutletContext: unit => 'a = "useOutletContext"
 +
 +module Cookie = {
 +  type t
@@ -338,16 +421,14 @@ new file mode 100644
 index 0000000..e69de29
 diff --git a/node_modules/rescript-remix/src/Remix.js b/node_modules/rescript-remix/src/Remix.js
 new file mode 100644
-index 0000000..e935f6c
+index 0000000..f147240
 --- /dev/null
 +++ b/node_modules/rescript-remix/src/Remix.js
-@@ -0,0 +1,65 @@
+@@ -0,0 +1,68 @@
 +
 +
 +
 +var RemixBrowser = {};
-+
-+var DataFunctionArgs = {};
 +
 +var RemixServer = {};
 +
@@ -365,6 +446,8 @@ index 0000000..e935f6c
 +
 +var Link = {};
 +
++var NavLink = {};
++
 +var Form = {};
 +
 +var Session = {};
@@ -379,6 +462,8 @@ index 0000000..e935f6c
 +  Form: Form$1
 +};
 +
++var $$Location = {};
++
 +var Cookie = {};
 +
 +var CreateCookieOptions = {};
@@ -387,7 +472,6 @@ index 0000000..e935f6c
 +
 +export {
 +  RemixBrowser ,
-+  DataFunctionArgs ,
 +  RemixServer ,
 +  Meta ,
 +  Links ,
@@ -396,11 +480,13 @@ index 0000000..e935f6c
 +  Scripts ,
 +  LiveReload ,
 +  Link ,
++  NavLink ,
 +  Form ,
 +  Session ,
 +  SessionStorage ,
 +  CreateFetcherSubmitOptions ,
 +  Fetcher ,
++  $$Location ,
 +  Cookie ,
 +  CreateCookieOptions ,
 +  CreateCookieSessionStorageOptions ,
@@ -408,7 +494,7 @@ index 0000000..e935f6c
 +}
 +/* No side effect */
 diff --git a/node_modules/rescript-remix/src/Remix.res b/node_modules/rescript-remix/src/Remix.res
-index b320b86..36e405a 100644
+index b320b86..cc06645 100644
 --- a/node_modules/rescript-remix/src/Remix.res
 +++ b/node_modules/rescript-remix/src/Remix.res
 @@ -5,6 +5,25 @@ module RemixBrowser = {
@@ -431,13 +517,37 @@ index b320b86..36e405a 100644
 +}
 +type headersFunction = headersFunctionArgs => Webapi.Fetch.Headers.t
 +
-+type loaderFunction = dataFunctionArgs => Js.Promise.t<Webapi.Fetch.Response.t>
++type loaderFunction<'a> = dataFunctionArgs => Js.Promise.t<'a>
 +
-+type actionFunction = dataFunctionArgs => Js.Promise.t<Webapi.Fetch.Response.t>
++type actionFunction<'a> = dataFunctionArgs => Js.Promise.t<'a>
  
  module RemixServer = {
    @module("remix") @react.component
-@@ -56,6 +75,7 @@ module Link = {
+@@ -44,6 +63,7 @@ module LiveReload = {
+ module Link = {
+   @module("remix") @react.component
+   external make: (
++    ~className: string=?,
+     ~prefetch: [#intent | #render | #none]=?,
+     ~to: string,
+     ~reloadDocument: bool=?,
+@@ -53,9 +73,23 @@ module Link = {
+   ) => React.element = "Link"
+ }
+ 
++module NavLink = {
++  @module("remix") @react.component
++  external make: (
++    ~className: string=?,
++    ~prefetch: [#intent | #render | #none]=?,
++    ~to: string,
++    ~reloadDocument: bool=?,
++    ~replace: bool=?,
++    ~state: 'a=?,
++    ~children: React.element,
++  ) => React.element = "NavLink"
++}
++
  module Form = {
    @module("remix") @react.component
    external make: (
@@ -445,7 +555,7 @@ index b320b86..36e405a 100644
      ~method: [#get | #post | #put | #patch | #delete]=?,
      ~action: string=?,
      ~encType: [#"application/x-www-form-urlencoded" | #"multipart/form-data"]=?,
-@@ -65,6 +85,52 @@ module Form = {
+@@ -65,6 +99,58 @@ module Form = {
    ) => React.element = "Form"
  }
  
@@ -474,7 +584,7 @@ index b320b86..36e405a 100644
 +  @send external submit: 'target => unit = "submit"
 +  @send
 +  external submitWithOptions: ('target, ~options: CreateFetcherSubmitOptions.t) => unit = "submit"
-+  @send external load: (~hreft: string) => unit = "load"
++  @send external load: (t, ~href: string) => unit = "load"
 +
 +  @get external state: t => 'state = "state"
 +  @get external _type: t => 'a = "type"
@@ -495,19 +605,29 @@ index b320b86..36e405a 100644
 +  }
 +}
 +
++module Location = {
++  type t
++
++  @get external state: t => 'state = "state"
++}
++
  @module("remix") external json: {..} => Webapi.Fetch.Response.t = "json"
  
  @module("remix") external redirect: string => Webapi.Fetch.Response.t = "redirect"
-@@ -73,6 +139,8 @@ module Form = {
+@@ -73,6 +159,12 @@ module Form = {
  
  @module("remix") external useLoaderData: unit => 'a = "useLoaderData"
  
 +@module("remix") external useFetcher: unit => Fetcher.t = "useFetcher"
 +
++@module("remix") external useLocation: unit => Location.t = "useLocation"
++
++@module("remix") external useOutletContext: unit => 'a = "useOutletContext"
++
  module Cookie = {
    type t
  
-@@ -109,3 +177,17 @@ module CreateCookieOptions = {
+@@ -109,3 +201,17 @@ module CreateCookieOptions = {
  @module("remix") external createCookie: string => Cookie.t = "createCookie"
  @module("remix")
  external createCookieWithOptions: (string, CreateCookieOptions.t) => Cookie.t = "createCookie"
