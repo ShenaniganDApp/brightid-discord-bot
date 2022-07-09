@@ -1,3 +1,11 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+
+        /* color: transparent;
+        background: linear-gradient(to left, #3164FA, #2482FB, #179DFD, #0CB7FE, #00D1FF, #3164FA);
+        background-size: 1000px 100%;
+        animation: bg 25s linear infinite;
+        background-clip: text;
+        -webkit-background-clip: text; */
