@@ -1,12 +1,13 @@
 let clientID = Remix.process["env"]["DISCORD_CLIENT_ID"]
 let clientSecret = Remix.process["env"]["DISCORD_CLIENT_SECRET"]
 let baseUrl = Remix.process["env"]["BASE_URL"]
+let uuidNamespace = Remix.process["env"]["UUID_NAMESPACE"]
 
 let cookieOptions = Remix.CreateCookieOptions.make(
   ~sameSite=#lax,
   ~path="/",
   ~httpOnly=true,
-  ~secrets=["s3cr3t"],
+  ~secrets=[uuidNamespace],
   ~secure=Remix.process["env"]["NODE_ENV"] === "production",
   (),
 )
@@ -26,8 +27,7 @@ let discordStrategy = RemixAuth.DiscordStrategy.CreateDiscordStategyOptions.make
   ~callbackURL=baseUrl ++ "/auth/discord/callback",
   ~scope=["identify", "guilds", "guilds.join"],
   (),
-)->RemixAuth.DiscordStrategy.make(({accessToken, extraParams, profile}) => {
-  Js.log2("extraParams: ", extraParams)
+)->RemixAuth.DiscordStrategy.make(({accessToken, profile}) => {
   {"accessToken": accessToken, "profile": profile}->Promise.resolve
 })
 

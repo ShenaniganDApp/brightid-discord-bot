@@ -3,7 +3,6 @@
 @react.component
 let default = () => {
   let context = useOutletContext()
-  Js.log2("context: ", context)
   let sign = Wagmi.useSignMessage({
     "message": `I am the owner of and would like to use its sponsorhips in
     X`,

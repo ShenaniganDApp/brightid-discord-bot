@@ -5,7 +5,6 @@ import {
   apiProvider,
   configureChains,
   getDefaultWallets,
-  darkTheme,
 } from '@rainbow-me/rainbowkit';
 import { chain, createClient } from 'wagmi'`)
 
@@ -14,9 +13,8 @@ module WagmiProvider = {
   external make: (~client: 'a, ~children: React.element) => React.element = "WagmiProvider"
 }
 
-module RainbowKitProvider = {
-  @react.component @module("@rainbow-me/rainbowkit")
-  external make: (~chains: 'a, ~children: React.element) => React.element = "RainbowKitProvider"
+module LodashMerge = {
+  @module("lodash.merge") external merge: ('a, 'b) => 'a = "default"
 }
 
 let meta = () =>
@@ -72,114 +70,68 @@ let wagmiClient = %raw(`createClient({
   provider:chainConfig.provider,
   })`)
 
-let authenticator: RemixAuth.Authenticator.t = %raw(`require( "~/auth.server").auth`)
-let fetchBotGuilds = %raw(`require( "~/bot.server").fetchBotGuilds`)
+// let authenticator: RemixAuth.Authenticator.t = %raw(`require( "~/auth.server").auth`)
 
-type loaderData = {user: option<RemixAuth.User.t>, guilds: option<array<Types.guild>>}
+// type loaderData = Js.Nullable.t<RemixAuth.User.t>
+let authenticator: RemixAuth.Authenticator.t = %raw(`require( "~/auth.server").auth`)
+
+let fetchBotGuilds: (
+  ~after: int=?,
+  ~allGuilds: array<Types.guild>=?,
+  ~retry: int=?,
+  unit,
+) => Js.Promise.t<array<Types.guild>> = %raw(`require( "~/bot.server").fetchBotGuilds`)
+
+let fetchUserGuilds: RemixAuth.User.t => Promise.t<
+  Js.Array2.t<Types.guild>,
+> = %raw(`require( "~/bot.server").fetchUserGuilds`)
+
+type loaderData = {user: Js.Nullable.t<RemixAuth.User.t>, guilds: array<Types.guild>}
 
 let loader: Remix.loaderFunction<loaderData> = ({request}) => {
   open Promise
-  open Webapi.Fetch
-
-  let fetchGuilds = (user: RemixAuth.User.t) => {
-    let headers = HeadersInit.make({
-      "Authorization": `Bearer ${user->RemixAuth.User.getAccessToken}`,
-    })
-    let init = RequestInit.make(~method_=Get, ~headers, ())
-    "https://discord.com/api/users/@me/guilds"->Request.makeWithInit(init)->fetchWithRequest
-  }
 
   authenticator
   ->RemixAuth.Authenticator.isAuthenticated(request)
   ->then(user => {
     switch user->Js.Nullable.toOption {
-    | None => {user: None, guilds: None}->resolve
-    | Some(user) =>
-      user
-      ->fetchGuilds
-      ->then(userRes => userRes->Response.json)
-      ->then(userJson => {
-        fetchBotGuilds()->then(botRes => {
-          botRes
-          ->Response.json
-          ->then(botJson => {
-            let botGuilds =
-              botJson
-              ->Js.Json.decodeArray
-              ->Belt.Option.map(guilds =>
-                guilds->Js.Array2.map(guild => {
-                  let guild = guild->Js.Json.decodeObject->Belt.Option.getUnsafe
-
-                  (
-                    {
-                      id: guild
-                      ->Js.Dict.get("id")
-                      ->Belt.Option.flatMap(Js.Json.decodeString)
-                      ->Belt.Option.getExn,
-                      name: guild
-                      ->Js.Dict.get("name")
-                      ->Belt.Option.flatMap(Js.Json.decodeString)
-                      ->Belt.Option.getExn,
-                      // icon: guild
-                      // ->Js.Dict.get("icon")
-                      // ->Belt.Option.flatMap(Js.Nullable.toOption)
-                      // ->Belt.Option.flatMap(Js.Json.decodeNumber)
-                      // ->Belt.Option.getExn,
-                      permissions: guild
-                      ->Js.Dict.get("permissions")
-                      ->Belt.Option.flatMap(Js.Json.decodeNumber)
-                      ->Belt.Option.getExn,
-                    }: Types.guild
-                  )
-                })
-              )
-              ->Belt.Option.getUnsafe
-
-            let userGuilds =
-              userJson
-              ->Js.Json.decodeArray
-              ->Belt.Option.map(guilds =>
-                guilds->Js.Array2.map(guild => {
-                  let guild = guild->Js.Json.decodeObject->Belt.Option.getUnsafe
-
-                  (
-                    {
-                      id: guild
-                      ->Js.Dict.get("id")
-                      ->Belt.Option.flatMap(Js.Json.decodeString)
-                      ->Belt.Option.getExn,
-                      name: guild
-                      ->Js.Dict.get("name")
-                      ->Belt.Option.flatMap(Js.Json.decodeString)
-                      ->Belt.Option.getExn,
-                      // icon: guild
-                      // ->Js.Dict.get("icon")
-                      // ->Belt.Option.flatMap(Js.Nullable.toOption)
-                      // ->Belt.Option.flatMap(Js.Json.decodeNumber)
-                      // ->Belt.Option.getExn,
-                      permissions: guild
-                      ->Js.Dict.get("permissions")
-                      ->Belt.Option.flatMap(Js.Json.decodeNumber)
-                      ->Belt.Option.getExn,
-                    }: Types.guild
-                  )
-                })
-              )
-              ->Belt.Option.getUnsafe
-            let guilds =
-              userGuilds->Js.Array2.filter(userGuild =>
-                botGuilds->Js.Array2.findIndex(botGuild => botGuild.id === userGuild.id) !== -1
-              )
-            {user: Some(user), guilds: Some(guilds)}->resolve
-          })
+    | None => {user: user, guilds: []}->resolve
+    | Some(existingUser) =>
+      existingUser
+      ->fetchUserGuilds
+      ->then(userGuilds => {
+        fetchBotGuilds()->then(botGuilds => {
+          let guilds =
+            userGuilds->Js.Array2.filter(userGuild =>
+              botGuilds->Js.Array2.findIndex(botGuild => botGuild.id === userGuild.id) !== -1
+            )
+          {user: user, guilds: guilds}->resolve
         })
       })
     }
   })
 }
 
+// let loader: Remix.loaderFunction<loaderData> = ({request}) => {
+//   open Promise
+
+//   authenticator
+//   ->RemixAuth.Authenticator.isAuthenticated(request)
+//   ->then(user => {
+//     user->resolve
+//   })
+// }
+
+let myTheme = LodashMerge.merge(
+  RainbowKit.Themes.darkTheme(),
+  {"colors": {"accentColor": "#ed7a5c"}},
+)
+
+let unstable_shouldReload = () => false
+
 @react.component
 let default = () => {
+  open RainbowKit
   let {user, guilds} = Remix.useLoaderData()
   let (toggled, setToggled) = React.useState(_ => false)
 
@@ -194,13 +146,13 @@ let default = () => {
       <Remix.Meta />
       <Remix.Links />
     </head>
-    <body>
+    <body className="h-screen w-screen bg-dark">
       <WagmiProvider client={wagmiClient}>
-        <RainbowKitProvider chains={chainConfig["chains"]}>
-          <main className="flex h-screen bg-gradient-to-tl from-brightid to-transparent">
+        <RainbowKitProvider chains={chainConfig["chains"]} theme={myTheme}>
+          <div className="flex h-screen w-screen">
             <Sidebar toggled handleToggleSidebar user guilds />
             <Remix.Outlet context={{"handleToggleSidebar": handleToggleSidebar}} />
-          </main>
+          </div>
         </RainbowKitProvider>
       </WagmiProvider>
       <Remix.ScrollRestoration />
