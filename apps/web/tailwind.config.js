@@ -9,7 +9,7 @@ module.exports = {
     },
     extend: {
       backgroundImage: {
-        discordLogo: "url('~/assets/discord_logo.png')",
+        discordLogo: "url('/assets/discord_logo.png')",
       },
       colors: {
         primary: {
@@ -19,6 +19,10 @@ module.exports = {
         dark: '#333333',
         brightid: '#ed7a5c',
         disabled: '#fff0ed',
+        discord: '#5865f2',
+      },
+      animation: {
+        'text-scroll': 'bg 25s linear infinite',
       },
     },
   },

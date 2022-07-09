@@ -1,6 +1,9 @@
 module User = {
   type t
+  type profile
   @get external getAccessToken: t => string = "accessToken"
+  @get external getProfile: t => profile = "profile"
+  @get external getId: profile => string = "id"
 }
 
 module DiscordStrategy = {
