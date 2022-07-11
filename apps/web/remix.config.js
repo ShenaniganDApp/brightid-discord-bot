@@ -17,6 +17,7 @@ module.exports = {
   routes(defineRoutes) {
     return defineRoutes(route => {
       registerRoutes(route)
+      route('/Root_FetchGuilds', './res-routes/Root_FetchGuilds.js')
     })
   },
 }

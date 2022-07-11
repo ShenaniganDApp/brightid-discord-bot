@@ -19,7 +19,7 @@ let sessionStorage =
   ->Remix.CreateCookieSessionStorageOptions.make(~cookie=_)
   ->Remix.createCookieSessionStorageWithOptions(~options=_)
 
-let auth = sessionStorage->RemixAuth.Authenticator.make
+let authenticator = sessionStorage->RemixAuth.Authenticator.make
 
 let discordStrategy = RemixAuth.DiscordStrategy.CreateDiscordStategyOptions.make(
   ~clientID,
@@ -31,4 +31,4 @@ let discordStrategy = RemixAuth.DiscordStrategy.CreateDiscordStategyOptions.make
   {"accessToken": accessToken, "profile": profile}->Promise.resolve
 })
 
-auth->RemixAuth.Authenticator.use(discordStrategy)
+authenticator->RemixAuth.Authenticator.use(discordStrategy)
