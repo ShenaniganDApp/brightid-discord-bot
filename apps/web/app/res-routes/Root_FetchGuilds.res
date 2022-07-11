@@ -1,26 +1,18 @@
-let authenticator: RemixAuth.Authenticator.t = %raw(`require( "~/auth.server").auth`)
-
-let fetchBotGuilds: (
-  ~after: int=?,
-  ~allGuilds: array<Types.guild>=?,
-  ~retry: int=?,
-  unit,
-) => Js.Promise.t<array<Types.guild>> = %raw(`require( "~/bot.server").fetchBotGuilds`)
-
-let fetchUserGuilds: RemixAuth.User.t => Promise.t<
-  Js.Array2.t<Types.guild>,
-> = %raw(`require( "~/bot.server").fetchUserGuilds`)
-
-type loaderData = {user: option<RemixAuth.User.t>, guilds: option<array<Types.guild>>}
+type loaderData = {
+  user: Js.Nullable.t<RemixAuth.User.t>,
+  guilds: array<Types.oauthGuild>,
+  rateLimited: bool,
+}
 
 let loader: Remix.loaderFunction<loaderData> = ({request}) => {
+  open DiscordServer
   open Promise
 
-  authenticator
+  AuthServer.authenticator
   ->RemixAuth.Authenticator.isAuthenticated(request)
   ->then(user => {
     switch user->Js.Nullable.toOption {
-    | None => {user: None, guilds: None}->resolve
+    | None => {user: Js.Nullable.null, guilds: [], rateLimited: false}->resolve
     | Some(user) =>
       user
       ->fetchUserGuilds
@@ -30,9 +22,15 @@ let loader: Remix.loaderFunction<loaderData> = ({request}) => {
             userGuilds->Js.Array2.filter(userGuild =>
               botGuilds->Js.Array2.findIndex(botGuild => botGuild.id === userGuild.id) !== -1
             )
-          {user: Some(user), guilds: Some(guilds)}->resolve
+          {user: Js.Nullable.null, guilds: guilds, rateLimited: false}->resolve
         })
       })
+    }
+  })
+  ->catch(error => {
+    switch error {
+    | DiscordRateLimited => {user: Js.Nullable.null, guilds: [], rateLimited: true}->resolve
+    | _ => {user: Js.Nullable.null, guilds: [], rateLimited: false}->resolve
     }
   })
 }
