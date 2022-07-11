@@ -1,12 +1,12 @@
-%%raw(`import rainbowKit from '@rainbow-me/rainbowkit/styles.css'`)
-%%raw(`import proSidebar from 'react-pro-sidebar/dist/css/styles.css'`)
+%%raw(`import rainbowKit from "@rainbow-me/rainbowkit/styles.css"`)
+%%raw(`import proSidebar from "react-pro-sidebar/dist/css/styles.css"`)
 %%raw(`
 import {
   apiProvider,
   configureChains,
   getDefaultWallets,
-} from '@rainbow-me/rainbowkit';
-import { chain, createClient } from 'wagmi'`)
+} from "@rainbow-me/rainbowkit";
+import { chain, createClient } from "wagmi"`)
 
 module WagmiProvider = {
   @react.component @module("wagmi")
@@ -60,7 +60,7 @@ let chainConfig = %raw(`configureChains(
 )`)
 
 let defaultWallets = %raw(`getDefaultWallets({
-  appName: 'Bright ID Unique Bot',
+  appName: "Bright ID Unique Bot",
   chains:chainConfig.chains,
 })`)
 
@@ -70,57 +70,24 @@ let wagmiClient = %raw(`createClient({
   provider:chainConfig.provider,
   })`)
 
-// let authenticator: RemixAuth.Authenticator.t = %raw(`require( "~/auth.server").auth`)
-
-// type loaderData = Js.Nullable.t<RemixAuth.User.t>
-let authenticator: RemixAuth.Authenticator.t = %raw(`require( "~/auth.server").auth`)
-
-let fetchBotGuilds: (
-  ~after: int=?,
-  ~allGuilds: array<Types.guild>=?,
-  ~retry: int=?,
-  unit,
-) => Js.Promise.t<array<Types.guild>> = %raw(`require( "~/bot.server").fetchBotGuilds`)
-
-let fetchUserGuilds: RemixAuth.User.t => Promise.t<
-  Js.Array2.t<Types.guild>,
-> = %raw(`require( "~/bot.server").fetchUserGuilds`)
-
-type loaderData = {user: Js.Nullable.t<RemixAuth.User.t>, guilds: array<Types.guild>}
+type loaderData = {user: Js.Nullable.t<RemixAuth.User.t>, rateLimited: bool}
 
 let loader: Remix.loaderFunction<loaderData> = ({request}) => {
+  open DiscordServer
   open Promise
 
-  authenticator
+  AuthServer.authenticator
   ->RemixAuth.Authenticator.isAuthenticated(request)
   ->then(user => {
-    switch user->Js.Nullable.toOption {
-    | None => {user: user, guilds: []}->resolve
-    | Some(existingUser) =>
-      existingUser
-      ->fetchUserGuilds
-      ->then(userGuilds => {
-        fetchBotGuilds()->then(botGuilds => {
-          let guilds =
-            userGuilds->Js.Array2.filter(userGuild =>
-              botGuilds->Js.Array2.findIndex(botGuild => botGuild.id === userGuild.id) !== -1
-            )
-          {user: user, guilds: guilds}->resolve
-        })
-      })
+    {user: user, rateLimited: false}->resolve
+  })
+  ->catch(error => {
+    switch error {
+    | DiscordRateLimited => {user: Js.Nullable.null, rateLimited: true}->resolve
+    | _ => {user: Js.Nullable.null, rateLimited: false}->resolve
     }
   })
 }
-
-// let loader: Remix.loaderFunction<loaderData> = ({request}) => {
-//   open Promise
-
-//   authenticator
-//   ->RemixAuth.Authenticator.isAuthenticated(request)
-//   ->then(user => {
-//     user->resolve
-//   })
-// }
 
 let myTheme = LodashMerge.merge(
   RainbowKit.Themes.darkTheme(),
@@ -132,7 +99,7 @@ let unstable_shouldReload = () => false
 @react.component
 let default = () => {
   open RainbowKit
-  let {user, guilds} = Remix.useLoaderData()
+  let {user, rateLimited} = Remix.useLoaderData()
   let (toggled, setToggled) = React.useState(_ => false)
 
   let handleToggleSidebar = value => {
@@ -150,8 +117,10 @@ let default = () => {
       <WagmiProvider client={wagmiClient}>
         <RainbowKitProvider chains={chainConfig["chains"]} theme={myTheme}>
           <div className="flex h-screen w-screen">
-            <Sidebar toggled handleToggleSidebar user guilds />
-            <Remix.Outlet context={{"handleToggleSidebar": handleToggleSidebar}} />
+            <Sidebar toggled handleToggleSidebar user />
+            <Remix.Outlet
+              context={{"handleToggleSidebar": handleToggleSidebar, "rateLimited": rateLimited}}
+            />
           </div>
         </RainbowKitProvider>
       </WagmiProvider>

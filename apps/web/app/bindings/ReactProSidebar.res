@@ -16,7 +16,11 @@ module Menu = {
 }
 module MenuItem = {
   @react.component @module("react-pro-sidebar")
-  external make: (~children: React.element=?, ~icon: React.element=?) => React.element = "MenuItem"
+  external make: (
+    ~children: React.element=?,
+    ~className: string=?,
+    ~icon: React.element=?,
+  ) => React.element = "MenuItem"
 }
 module SidebarHeader = {
   @react.component @module("react-pro-sidebar")
