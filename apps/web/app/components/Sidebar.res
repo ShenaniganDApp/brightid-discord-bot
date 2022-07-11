@@ -7,88 +7,82 @@ module ConnectButton = {
   ) => 'b = "ConnectButton"
 }
 
-//  <img src={"/assets/brightid_logo.png"}/>
 @react.component
-let make = (~toggled, ~handleToggleSidebar, ~user, ~guilds) => {
+let make = (~toggled, ~handleToggleSidebar, ~user) => {
   open ReactProSidebar
 
-  // let fetcher = Remix.useFetcher()
+  let fetcher = Remix.useFetcher()
 
-  let icon = ({id, icon}: Types.guild) => {
+  let icon = ({id, icon}: Types.oauthGuild) => {
     switch icon {
     | None => "/assets/brightid_logo_white.png"
     | Some(icon) => `https://cdn.discordapp.com/icons/${id}/${icon}.png`
     }
   }
+  let fetchGuilds = () => {
+    if fetcher->Remix.Fetcher._type === "init" {
+      fetcher->Remix.Fetcher.load(~href=`/Root_FetchGuilds`)
+    }
+  }
 
-  // React.useEffect1(() => {
-  // let fetchGuilds = () => {
-  //   open Remix
-  //   if fetcher->Fetcher._type === "init" {
-  //     fetcher->Fetcher.load(~href=`/fetchGuilds`)
-  //   }
-  //   Js.log2("type", fetcher->Remix.Fetcher._type)
-  // }
-  //   None
-  // }, [fetcher])
-
-  // let sidebarElements = {
-  //   switch user->Js.Nullable.toOption {
-  //   | None => <> </>
-  //   | Some(_) =>
-  //     switch fetcher->Remix.Fetcher._type {
-  //     | "done" =>
-  //       switch fetcher->Remix.Fetcher.data->Js.Nullable.toOption {
-  //       | None => <p className="text-white"> {"No Guilds"->React.string} </p>
-  //       | Some(guilds) =>
-  //         switch guilds->Belt.Array.length {
-  //         | 0 => <p className="text-white"> {"No Guilds"->React.string} </p>
-  //         | _ =>
-  //           guilds
-  //           ->Belt.Array.mapWithIndex((i, guild: Types.guild) => {
-  //             <Menu iconShape="square" key={i->Belt.Int.toString}>
-  //               <MenuItem
-  //                 icon={<img className="rounded-lg border-1 border-white" src={guild->icon} />}>
-  //                 <Remix.Link
-  //                   className="font-semibold text-xl" to={`/guilds/${guild.id}`} prefetch={#intent}>
-  //                   {guild.name->React.string}
-  //                 </Remix.Link>
-  //               </MenuItem>
-  //             </Menu>
-  //           })
-  //           ->React.array
-  //         }
-  //       }
-  //     | _ =>
-  //       <button onClick={_ => fetchGuilds()} className="text-white">
-  //         {"Loading Guilds"->React.string}
-  //       </button>
-  //     }
-  //   }
-  // }
+  React.useEffect1(() => {
+    open Remix
+    if fetcher->Fetcher._type === "init" {
+      fetcher->Fetcher.load(~href=`/Root_FetchGuilds`)
+    }
+    None
+  }, [fetcher])
 
   let sidebarElements = {
     switch user->Js.Nullable.toOption {
-    | None => <div> {"Login to load Guilds"->React.string} </div>
+    | None => <> </>
     | Some(_) =>
-      switch guilds {
-      | [] => <p className="text-white"> {"No Guilds"->React.string} </p>
-      | _ =>
-        guilds
-        ->Belt.Array.mapWithIndex((i, guild: Types.guild) => {
+      switch fetcher->Remix.Fetcher._type {
+      | "done" =>
+        switch fetcher->Remix.Fetcher.data->Js.Nullable.toOption {
+        | None => <p className="text-white"> {"No Guilds"->React.string} </p>
+        | Some(data) =>
+          switch data["guilds"]->Belt.Array.length {
+          | 0 => <p className="text-white"> {"No Guilds"->React.string} </p>
+          | _ =>
+            data["guilds"]
+            ->Belt.Array.mapWithIndex((i, guild: Types.oauthGuild) => {
+              <Menu iconShape="square" key={i->Belt.Int.toString}>
+                <MenuItem
+                  className="bg-extraDark"
+                  icon={<img
+                    className=" bg-extraDark rounded-lg border-1 border-white" src={guild->icon}
+                  />}>
+                  <Remix.Link
+                    className="font-semibold text-xl" to={`/guilds/${guild.id}`} prefetch={#intent}>
+                    {guild.name->React.string}
+                  </Remix.Link>
+                </MenuItem>
+              </Menu>
+            })
+            ->React.array
+          }
+        }
+      | "normalLoad" =>
+        Belt.Array.range(0, 4)
+        ->Belt.Array.map(i => {
           <Menu iconShape="square" key={i->Belt.Int.toString}>
             <MenuItem
+              className="flex animate-pulse flex-row h-full bg-extraDark "
               icon={<img
-                className="rounded-lg border-1 border-white bg-transparent" src={guild->icon}
+                className=" bg-extraDark  rounded-lg" src="/assets/brightid_logo_white.png"
               />}>
-              <Remix.Link
-                className="font-semibold text-xl" to={`/guilds/${guild.id}`} prefetch={#intent}>
-                {guild.name->React.string}
-              </Remix.Link>
+              <div className="flex flex-col space-y-3">
+                <div className="w-36 bg-gray-300 h-6 rounded-md " />
+              </div>
             </MenuItem>
           </Menu>
         })
         ->React.array
+      | _ =>
+        <div onClick={_ => fetchGuilds()} className="text-white">
+          {"Load Guilds"->React.string}
+        </div>
       }
     }
   }
@@ -98,7 +92,7 @@ let make = (~toggled, ~handleToggleSidebar, ~user, ~guilds) => {
       <ConnectButton />
     </SidebarHeader>
     <SidebarContent className="no-scrollbar"> {sidebarElements} </SidebarContent>
-    <SidebarFooter className="bottom-0 sticky bg-dark">
+    <SidebarFooter className="bg-extraDark bottom-0 sticky bg-dark">
       <Remix.Link to={""}>
         <MenuItem> <img src={"/assets/brightid_reversed.svg"} /> </MenuItem>
       </Remix.Link>

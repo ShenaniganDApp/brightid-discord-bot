@@ -17,6 +17,7 @@ module.exports = {
           500: '#00c4fd',
         },
         dark: '#333333',
+        extraDark: '#1d1d1d',
         brightid: '#ed7a5c',
         disabled: '#fff0ed',
         discord: '#5865f2',

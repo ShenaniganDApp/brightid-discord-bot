@@ -14,8 +14,6 @@ module QRCode = {
   @module("qrcode") external toCanvas: (Canvas.t, string) => Promise.t<unit> = "toCanvas"
 }
 
-let authenticator: RemixAuth.Authenticator.t = %raw(`require( "~/auth.server").auth`)
-
 type loaderData = {user: Js.Nullable.t<RemixAuth.User.t>, verificationCount: Js.Nullable.t<float>}
 
 let brightIdVerificationEndpoint = "https://app.brightid.org/node/v5/verifications/Discord"
@@ -23,7 +21,7 @@ let brightIdVerificationEndpoint = "https://app.brightid.org/node/v5/verificatio
 let loader: Remix.loaderFunction<loaderData> = ({request}) => {
   open Webapi.Fetch
 
-  authenticator
+  AuthServer.authenticator
   ->RemixAuth.Authenticator.isAuthenticated(request)
   ->then(user => {
     let init = RequestInit.make(~method_=Get, ())
@@ -100,7 +98,7 @@ let default = () => {
             <div className="text-3xl font-bold text-white"> {"Sponsorships"->React.string} </div>
             <div
               className="text-3xl font-semibold text-transparent bg-clip-text bg-gradient-to-l from-brightid to-white">
-              {verificationCount->React.string}
+              {"0"->React.string}
             </div>
           </div>
         </section>
