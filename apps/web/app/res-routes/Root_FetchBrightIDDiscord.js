@@ -14,21 +14,22 @@ var context = "Discord";
 var brightIdVerificationEndpoint = "https://app.brightid.org/node/v5/verifications/Discord";
 
 function loader(param) {
+  var request = param.request;
   var uuidNamespace = process.env.UUID_NAMESPACE;
-  return AuthServer.authenticator.isAuthenticated(param.request).then(function (user) {
-              if (user == null) {
-                return Promise.resolve({
-                            user: null,
-                            verificationCount: null,
-                            verifyStatus: /* NotVerified */2
-                          });
-              }
-              var init = Webapi__Fetch.RequestInit.make(/* Get */0, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined)(undefined);
-              return fetch(new Request(brightIdVerificationEndpoint, init)).then(function (res) {
-                            return res.json();
-                          }).then(function (json) {
-                          var data = Belt_Option.getExn(Js_dict.get(Js_json.decodeObject(json), "data"));
-                          var verificationCount = Js_null_undefined.fromOption(Belt_Option.flatMap(Js_dict.get(Js_json.decodeObject(data), "count"), Js_json.decodeNumber));
+  var init = Webapi__Fetch.RequestInit.make(/* Get */0, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined)(undefined);
+  return fetch(new Request(brightIdVerificationEndpoint, init)).then(function (res) {
+                return res.json();
+              }).then(function (json) {
+              var data = Belt_Option.getExn(Js_dict.get(Js_json.decodeObject(json), "data"));
+              var verificationCount = Js_null_undefined.fromOption(Belt_Option.flatMap(Js_dict.get(Js_json.decodeObject(data), "count"), Js_json.decodeNumber));
+              return AuthServer.authenticator.isAuthenticated(request).then(function (user) {
+                          if (user == null) {
+                            return Promise.resolve({
+                                        user: null,
+                                        verificationCount: verificationCount,
+                                        verifyStatus: /* NotVerified */2
+                                      });
+                          }
                           var userId = user.profile.id;
                           var contextId = Uuid.v5(userId, uuidNamespace);
                           return Brightid_sdk.verifyContextId(context, contextId, undefined).then(function (json) {
