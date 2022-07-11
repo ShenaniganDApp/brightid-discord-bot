@@ -1,5 +1,3 @@
-open Promise
-
 module Canvas = {
   type t
   @module("canvas") @scope("default")
@@ -22,7 +20,6 @@ let default = () => {
     if fetcher->Fetcher._type === "init" {
       fetcher->Fetcher.load(~href=`/Root_FetchBrightIDDiscord`)
     }
-    Js.log2("fetcher->Fetcher._type: ", fetcher->Fetcher.data)
     None
   }, [fetcher])
 
@@ -49,23 +46,43 @@ let default = () => {
     | Some(data) =>
       switch data["user"]->Js.Nullable.toOption {
       | None => <DiscordButton label="Login to Discord" />
-      | Some(_) => <>
-          <div className="flex flex-row w-full justify-center gap-2">
-            <p className="text-2xl md:text-3xl font-semibold text-white">
-              {"Link  "->React.string}
-            </p>
-            <p className=" text-2xl md:text-3xl font-semibold text-brightid stroke-black stroke-1">
-              {"BrightID "->React.string}
-            </p>
-            <p className="text-2xl md:text-3xl font-semibold text-white">
-              {" to Discord"->React.string}
-            </p>
-          </div>
-          <div
-            className="px-8 py-4 bg-white border-brightid border-4 text-dark text-2xl font-semibold rounded-xl shadow-lg">
-            {"Link to Discord"->React.string}
-          </div>
-        </>
+      | Some(_) =>
+        switch data["verifyStatus"] {
+        | Types.Unique =>
+          <p className="text-2xl md:text-3xl font-semibold text-white">
+            {"Congrats on being Verified with BrightID"->React.string}
+          </p>
+        | Types.NotVerified =>
+          <p className="text-2xl md:text-3xl font-semibold text-white">
+            {"You are not Verified"->React.string}
+          </p>
+        | Types.NotSponsored =>
+          <p className="text-2xl md:text-3xl font-semibold text-white">
+            {"You are not Sponsored"->React.string}
+          </p>
+        | Types.NotLinked => <>
+            <div className="flex flex-row w-full justify-center gap-2">
+              <p className="text-2xl md:text-3xl font-semibold text-white">
+                {"Link  "->React.string}
+              </p>
+              <p
+                className=" text-2xl md:text-3xl font-semibold text-brightid stroke-black stroke-1">
+                {"BrightID "->React.string}
+              </p>
+              <p className="text-2xl md:text-3xl font-semibold text-white">
+                {" to Discord"->React.string}
+              </p>
+            </div>
+            <div
+              className="px-8 py-4 bg-white border-brightid border-4 text-dark text-2xl font-semibold rounded-xl shadow-lg">
+              {"Link to Discord"->React.string}
+            </div>
+          </>
+        | Types.Unknown =>
+          <p className="text-2xl md:text-3xl font-semibold text-white">
+            {"Something went wrong checking your BrightId status"->React.string}
+          </p>
+        }
       }
     }
   | "normalLoad" =>
