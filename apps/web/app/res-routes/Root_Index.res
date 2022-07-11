@@ -1,7 +1,5 @@
 open Promise
 
-@module("remix") external useOutletContext: unit => 'a = "useOutletContext"
-
 module Canvas = {
   type t
   @module("canvas") @scope("default")
@@ -14,65 +12,68 @@ module QRCode = {
   @module("qrcode") external toCanvas: (Canvas.t, string) => Promise.t<unit> = "toCanvas"
 }
 
-type loaderData = {user: Js.Nullable.t<RemixAuth.User.t>, verificationCount: Js.Nullable.t<float>}
-
-let brightIdVerificationEndpoint = "https://app.brightid.org/node/v5/verifications/Discord"
-
-let loader: Remix.loaderFunction<loaderData> = ({request}) => {
-  open Webapi.Fetch
-
-  AuthServer.authenticator
-  ->RemixAuth.Authenticator.isAuthenticated(request)
-  ->then(user => {
-    let init = RequestInit.make(~method_=Get, ())
-
-    brightIdVerificationEndpoint
-    ->Request.makeWithInit(init)
-    ->fetchWithRequest
-    ->then(res => res->Response.json)
-    ->then(json => {
-      let data =
-        json->Js.Json.decodeObject->Belt.Option.getUnsafe->Js.Dict.get("data")->Belt.Option.getExn
-      let verificationCount =
-        data
-        ->Js.Json.decodeObject
-        ->Belt.Option.getUnsafe
-        ->Js.Dict.get("count")
-        ->Belt.Option.flatMap(Js.Json.decodeNumber)
-        ->Js.Nullable.fromOption
-
-      {user: user, verificationCount: verificationCount}->resolve
-    })
-  })
-}
-
 @react.component
 let default = () => {
-  let context = useOutletContext()
-  let {user, verificationCount} = Remix.useLoaderData()
-  let verificationCount = switch verificationCount->Js.Nullable.toOption {
-  | None => "N/A"
-  | Some(count) => count->Belt.Float.toString
+  let context = Remix.useOutletContext()
+  let fetcher = Remix.useFetcher()
+
+  React.useEffect1(() => {
+    open Remix
+    if fetcher->Fetcher._type === "init" {
+      fetcher->Fetcher.load(~href=`/Root_FetchBrightIDDiscord`)
+    }
+    Js.log2("fetcher->Fetcher._type: ", fetcher->Fetcher.data)
+    None
+  }, [fetcher])
+
+  let verificationCount = switch fetcher->Remix.Fetcher._type {
+  | "done" =>
+    switch fetcher->Remix.Fetcher.data->Js.Nullable.toOption {
+    | None => <p className="text-white"> {"N/A"->React.string} </p>
+    | Some(data) =>
+      <p
+        className="text-3xl font-semibold text-transparent bg-clip-text bg-gradient-to-l from-brightid to-white">
+        {data["verificationCount"]->Belt.Int.toString->React.string}
+      </p>
+    }
+  | "normalLoad" =>
+    <div className=" animate-pulse  "> <div className="h-8 bg-gray-300 w-8 rounded-md " /> </div>
+  | _ =>
+    <div className=" animate-pulse  "> <div className="h-8 bg-gray-300 w-8 rounded-md " /> </div>
   }
 
-  let linkBrightId = switch user->Js.Nullable.toOption {
-  | None => <DiscordButton label="Login to Discord" />
-  | Some(_) => <>
-      <div className="flex flex-row w-full justify-center gap-2">
-        <p className="text-2xl md:text-3xl font-semibold text-white"> {"Link  "->React.string} </p>
-        <p className=" text-2xl md:text-3xl font-semibold text-brightid stroke-black stroke-1">
-          {"BrightID "->React.string}
-        </p>
-        <p className="text-2xl md:text-3xl font-semibold text-white">
-          {" to Discord"->React.string}
-        </p>
-      </div>
-      <div
-        className="px-8 py-4 bg-white border-brightid border-4 text-dark text-2xl font-semibold rounded-xl shadow-lg">
-        {"Link to Discord"->React.string}
-      </div>
-    </>
+  let linkBrightId = switch fetcher->Remix.Fetcher._type {
+  | "done" =>
+    switch fetcher->Remix.Fetcher.data->Js.Nullable.toOption {
+    | None => <DiscordButton label="Login to Discord" />
+    | Some(data) =>
+      switch data["user"]->Js.Nullable.toOption {
+      | None => <DiscordButton label="Login to Discord" />
+      | Some(_) => <>
+          <div className="flex flex-row w-full justify-center gap-2">
+            <p className="text-2xl md:text-3xl font-semibold text-white">
+              {"Link  "->React.string}
+            </p>
+            <p className=" text-2xl md:text-3xl font-semibold text-brightid stroke-black stroke-1">
+              {"BrightID "->React.string}
+            </p>
+            <p className="text-2xl md:text-3xl font-semibold text-white">
+              {" to Discord"->React.string}
+            </p>
+          </div>
+          <div
+            className="px-8 py-4 bg-white border-brightid border-4 text-dark text-2xl font-semibold rounded-xl shadow-lg">
+            {"Link to Discord"->React.string}
+          </div>
+        </>
+      }
+    }
+  | "normalLoad" =>
+    <div className=" animate-pulse  "> <div className="h-24 bg-gray-300 w-52 rounded-md " /> </div>
+  | _ =>
+    <div className=" animate-pulse  "> <div className="h-24 bg-gray-300 w-52 rounded-md " /> </div>
   }
+
   <div className="flex flex-col flex-1">
     <header className="flex flex-row justify-between md:justify-end m-4">
       <SidebarToggle handleToggleSidebar={context["handleToggleSidebar"]} /> <InviteButton />
@@ -88,10 +89,7 @@ let default = () => {
           <div
             className="flex flex-col  rounded-xl justify-around items-center text-center h-32 w-60 md:h-48 m-2">
             <div className="text-3xl font-bold text-white"> {"Verifications"->React.string} </div>
-            <div
-              className="text-3xl font-semibold text-transparent bg-clip-text bg-gradient-to-l from-brightid to-white">
-              {verificationCount->React.string}
-            </div>
+            {verificationCount}
           </div>
           <div
             className="flex flex-col rounded-xl justify-around items-center text-center h-32 w-60 md:h-48 m-2">
