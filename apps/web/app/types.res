@@ -19,3 +19,5 @@ type role = {
   name: string,
   permissions: float,
 }
+
+type verifyStatus = Unknown | NotLinked | NotVerified | NotSponsored | Unique
