@@ -4,9 +4,7 @@ node_modules
 /build
 /public/build
 .env
-
-/app/**/*.jsx
-/app/**/*.js
+s
 /lib/
 .bsb.lock
 .merlin
