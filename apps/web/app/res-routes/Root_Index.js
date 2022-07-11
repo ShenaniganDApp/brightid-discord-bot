@@ -17,7 +17,6 @@ function Root_Index$default(Props) {
           if (fetcher.type === "init") {
             fetcher.load("/Root_FetchBrightIDDiscord");
           }
-          console.log("fetcher->Fetcher._type: ", fetcher.data);
           
         }), [fetcher]);
   var match = fetcher.type;
@@ -56,19 +55,49 @@ function Root_Index$default(Props) {
               });
         } else {
           var match$2 = data$1.user;
-          linkBrightId = (match$2 == null) ? React.createElement(DiscordButton.make, {
+          if (match$2 == null) {
+            linkBrightId = React.createElement(DiscordButton.make, {
                   label: "Login to Discord"
-                }) : React.createElement(React.Fragment, undefined, React.createElement("div", {
-                      className: "flex flex-row w-full justify-center gap-2"
-                    }, React.createElement("p", {
-                          className: "text-2xl md:text-3xl font-semibold text-white"
-                        }, "Link  "), React.createElement("p", {
-                          className: " text-2xl md:text-3xl font-semibold text-brightid stroke-black stroke-1"
-                        }, "BrightID "), React.createElement("p", {
-                          className: "text-2xl md:text-3xl font-semibold text-white"
-                        }, " to Discord")), React.createElement("div", {
-                      className: "px-8 py-4 bg-white border-brightid border-4 text-dark text-2xl font-semibold rounded-xl shadow-lg"
-                    }, "Link to Discord"));
+                });
+          } else {
+            var match$3 = data$1.verifyStatus;
+            switch (match$3) {
+              case /* Unknown */0 :
+                  linkBrightId = React.createElement("p", {
+                        className: "text-2xl md:text-3xl font-semibold text-white"
+                      }, "Something went wrong checking your BrightId status");
+                  break;
+              case /* NotLinked */1 :
+                  linkBrightId = React.createElement(React.Fragment, undefined, React.createElement("div", {
+                            className: "flex flex-row w-full justify-center gap-2"
+                          }, React.createElement("p", {
+                                className: "text-2xl md:text-3xl font-semibold text-white"
+                              }, "Link  "), React.createElement("p", {
+                                className: " text-2xl md:text-3xl font-semibold text-brightid stroke-black stroke-1"
+                              }, "BrightID "), React.createElement("p", {
+                                className: "text-2xl md:text-3xl font-semibold text-white"
+                              }, " to Discord")), React.createElement("div", {
+                            className: "px-8 py-4 bg-white border-brightid border-4 text-dark text-2xl font-semibold rounded-xl shadow-lg"
+                          }, "Link to Discord"));
+                  break;
+              case /* NotVerified */2 :
+                  linkBrightId = React.createElement("p", {
+                        className: "text-2xl md:text-3xl font-semibold text-white"
+                      }, "You are not Verified");
+                  break;
+              case /* NotSponsored */3 :
+                  linkBrightId = React.createElement("p", {
+                        className: "text-2xl md:text-3xl font-semibold text-white"
+                      }, "You are not Sponsored");
+                  break;
+              case /* Unique */4 :
+                  linkBrightId = React.createElement("p", {
+                        className: "text-2xl md:text-3xl font-semibold text-white"
+                      }, "Congrats on being Verified with BrightID");
+                  break;
+              
+            }
+          }
         }
         break;
     case "normalLoad" :
