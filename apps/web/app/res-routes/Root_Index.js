@@ -2,56 +2,89 @@
 
 import * as React from "react";
 import * as Remix from "remix";
-import * as Js_dict from "../../../../node_modules/rescript/lib/es6/js_dict.js";
-import * as Js_json from "../../../../node_modules/rescript/lib/es6/js_json.js";
-import * as AuthServer from "../AuthServer.js";
-import * as Belt_Option from "../../../../node_modules/rescript/lib/es6/belt_Option.js";
 import * as InviteButton from "../components/InviteButton.js";
 import * as DiscordButton from "../components/DiscordButton.js";
 import * as SidebarToggle from "../components/SidebarToggle.js";
-import * as Webapi__Fetch from "../../../../node_modules/rescript-webapi/src/Webapi/Webapi__Fetch.js";
-import * as Js_null_undefined from "../../../../node_modules/rescript/lib/es6/js_null_undefined.js";
 
 var Canvas = {};
 
 var QRCode = {};
 
-var brightIdVerificationEndpoint = "https://app.brightid.org/node/v5/verifications/Discord";
-
-function loader(param) {
-  return AuthServer.authenticator.isAuthenticated(param.request).then(function (user) {
-              var init = Webapi__Fetch.RequestInit.make(/* Get */0, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined)(undefined);
-              return fetch(new Request(brightIdVerificationEndpoint, init)).then(function (res) {
-                            return res.json();
-                          }).then(function (json) {
-                          var data = Belt_Option.getExn(Js_dict.get(Js_json.decodeObject(json), "data"));
-                          var verificationCount = Js_null_undefined.fromOption(Belt_Option.flatMap(Js_dict.get(Js_json.decodeObject(data), "count"), Js_json.decodeNumber));
-                          return Promise.resolve({
-                                      user: user,
-                                      verificationCount: verificationCount
-                                    });
-                        });
-            });
-}
-
 function Root_Index$default(Props) {
   var context = Remix.useOutletContext();
-  var match = Remix.useLoaderData();
-  var verificationCount = match.verificationCount;
-  var verificationCount$1 = (verificationCount == null) ? "N/A" : String(verificationCount);
-  var linkBrightId = (match.user == null) ? React.createElement(DiscordButton.make, {
-          label: "Login to Discord"
-        }) : React.createElement(React.Fragment, undefined, React.createElement("div", {
-              className: "flex flex-row w-full justify-center gap-2"
-            }, React.createElement("p", {
-                  className: "text-2xl md:text-3xl font-semibold text-white"
-                }, "Link  "), React.createElement("p", {
-                  className: " text-2xl md:text-3xl font-semibold text-brightid stroke-black stroke-1"
-                }, "BrightID "), React.createElement("p", {
-                  className: "text-2xl md:text-3xl font-semibold text-white"
-                }, " to Discord")), React.createElement("div", {
-              className: "px-8 py-4 bg-white border-brightid border-4 text-dark text-2xl font-semibold rounded-xl shadow-lg"
-            }, "Link to Discord"));
+  var fetcher = Remix.useFetcher();
+  React.useEffect((function () {
+          if (fetcher.type === "init") {
+            fetcher.load("/Root_FetchBrightIDDiscord");
+          }
+          console.log("fetcher->Fetcher._type: ", fetcher.data);
+          
+        }), [fetcher]);
+  var match = fetcher.type;
+  var verificationCount;
+  switch (match) {
+    case "done" :
+        var data = fetcher.data;
+        verificationCount = (data == null) ? React.createElement("p", {
+                className: "text-white"
+              }, "N/A") : React.createElement("p", {
+                className: "text-3xl font-semibold text-transparent bg-clip-text bg-gradient-to-l from-brightid to-white"
+              }, String(data.verificationCount));
+        break;
+    case "normalLoad" :
+        verificationCount = React.createElement("div", {
+              className: " animate-pulse  "
+            }, React.createElement("div", {
+                  className: "h-8 bg-gray-300 w-8 rounded-md "
+                }));
+        break;
+    default:
+      verificationCount = React.createElement("div", {
+            className: " animate-pulse  "
+          }, React.createElement("div", {
+                className: "h-8 bg-gray-300 w-8 rounded-md "
+              }));
+  }
+  var match$1 = fetcher.type;
+  var linkBrightId;
+  switch (match$1) {
+    case "done" :
+        var data$1 = fetcher.data;
+        if (data$1 == null) {
+          linkBrightId = React.createElement(DiscordButton.make, {
+                label: "Login to Discord"
+              });
+        } else {
+          var match$2 = data$1.user;
+          linkBrightId = (match$2 == null) ? React.createElement(DiscordButton.make, {
+                  label: "Login to Discord"
+                }) : React.createElement(React.Fragment, undefined, React.createElement("div", {
+                      className: "flex flex-row w-full justify-center gap-2"
+                    }, React.createElement("p", {
+                          className: "text-2xl md:text-3xl font-semibold text-white"
+                        }, "Link  "), React.createElement("p", {
+                          className: " text-2xl md:text-3xl font-semibold text-brightid stroke-black stroke-1"
+                        }, "BrightID "), React.createElement("p", {
+                          className: "text-2xl md:text-3xl font-semibold text-white"
+                        }, " to Discord")), React.createElement("div", {
+                      className: "px-8 py-4 bg-white border-brightid border-4 text-dark text-2xl font-semibold rounded-xl shadow-lg"
+                    }, "Link to Discord"));
+        }
+        break;
+    case "normalLoad" :
+        linkBrightId = React.createElement("div", {
+              className: " animate-pulse  "
+            }, React.createElement("div", {
+                  className: "h-24 bg-gray-300 w-52 rounded-md "
+                }));
+        break;
+    default:
+      linkBrightId = React.createElement("div", {
+            className: " animate-pulse  "
+          }, React.createElement("div", {
+                className: "h-24 bg-gray-300 w-52 rounded-md "
+              }));
+  }
   return React.createElement("div", {
               className: "flex flex-col flex-1"
             }, React.createElement("header", {
@@ -70,9 +103,7 @@ function Root_Index$default(Props) {
                               className: "flex flex-col  rounded-xl justify-around items-center text-center h-32 w-60 md:h-48 m-2"
                             }, React.createElement("div", {
                                   className: "text-3xl font-bold text-white"
-                                }, "Verifications"), React.createElement("div", {
-                                  className: "text-3xl font-semibold text-transparent bg-clip-text bg-gradient-to-l from-brightid to-white"
-                                }, verificationCount$1)), React.createElement("div", {
+                                }, "Verifications"), verificationCount), React.createElement("div", {
                               className: "flex flex-col rounded-xl justify-around items-center text-center h-32 w-60 md:h-48 m-2"
                             }, React.createElement("div", {
                                   className: "text-3xl font-bold text-white"
@@ -88,8 +119,6 @@ var $$default = Root_Index$default;
 export {
   Canvas ,
   QRCode ,
-  brightIdVerificationEndpoint ,
-  loader ,
   $$default ,
   $$default as default,
   

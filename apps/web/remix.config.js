@@ -18,6 +18,10 @@ module.exports = {
     return defineRoutes(route => {
       registerRoutes(route)
       route('/Root_FetchGuilds', './res-routes/Root_FetchGuilds.js')
+      route(
+        '/Root_FetchBrightIDDiscord',
+        './res-routes/Root_FetchBrightIDDiscord.js',
+      )
     })
   },
 }
