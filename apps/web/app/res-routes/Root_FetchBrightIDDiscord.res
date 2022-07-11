@@ -14,39 +14,34 @@ let loader: Remix.loaderFunction<loaderData> = ({request}) => {
   open Webapi.Fetch
 
   let uuidNamespace = Remix.process["env"]["UUID_NAMESPACE"]
+  let init = RequestInit.make(~method_=Get, ())
 
-  AuthServer.authenticator
-  ->RemixAuth.Authenticator.isAuthenticated(request)
-  ->then(user => {
-    switch user->Js.Nullable.toOption {
-    | None =>
-      {
-        user: Js.Nullable.null,
-        verificationCount: Js.Nullable.null,
-        verifyStatus: NotVerified,
-      }->resolve
-    | Some(existingUser) => {
-        let init = RequestInit.make(~method_=Get, ())
+  brightIdVerificationEndpoint
+  ->Request.makeWithInit(init)
+  ->fetchWithRequest
+  ->then(res => res->Response.json)
+  ->then(json => {
+    let data =
+      json->Js.Json.decodeObject->Belt.Option.getUnsafe->Js.Dict.get("data")->Belt.Option.getExn
+    let verificationCount =
+      data
+      ->Js.Json.decodeObject
+      ->Belt.Option.getUnsafe
+      ->Js.Dict.get("count")
+      ->Belt.Option.flatMap(Js.Json.decodeNumber)
+      ->Js.Nullable.fromOption
 
-        brightIdVerificationEndpoint
-        ->Request.makeWithInit(init)
-        ->fetchWithRequest
-        ->then(res => res->Response.json)
-        ->then(json => {
-          let data =
-            json
-            ->Js.Json.decodeObject
-            ->Belt.Option.getUnsafe
-            ->Js.Dict.get("data")
-            ->Belt.Option.getExn
-          let verificationCount =
-            data
-            ->Js.Json.decodeObject
-            ->Belt.Option.getUnsafe
-            ->Js.Dict.get("count")
-            ->Belt.Option.flatMap(Js.Json.decodeNumber)
-            ->Js.Nullable.fromOption
-
+    AuthServer.authenticator
+    ->RemixAuth.Authenticator.isAuthenticated(request)
+    ->then(user => {
+      switch user->Js.Nullable.toOption {
+      | None =>
+        {
+          user: Js.Nullable.null,
+          verificationCount: verificationCount,
+          verifyStatus: NotVerified,
+        }->resolve
+      | Some(existingUser) => {
           let userId = existingUser->RemixAuth.User.getProfile->RemixAuth.User.getId
           let contextId = userId->UUID.v5(uuidNamespace)
           BrightId.verifyContextId(~context, ~contextId, ())->then(json => {
@@ -86,8 +81,8 @@ let loader: Remix.loaderFunction<loaderData> = ({request}) => {
             }
             {user: user, verificationCount: verificationCount, verifyStatus: verifyStatus}->resolve
           })
-        })
+        }
       }
-    }
+    })
   })
 }
