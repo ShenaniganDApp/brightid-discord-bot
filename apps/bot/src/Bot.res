@@ -97,6 +97,7 @@ let onInteraction = (interaction: Interaction.t) => {
         ->ignore
       }
     }
+
   | (_, _) => Js.Console.error("Bot.res: Unknown interaction")
   }
 }
@@ -114,7 +115,7 @@ client->Client.on(#guildCreate(guild => guild->onGuildCreate))
 client->Client.on(#interactionCreate(interaction => interaction->onInteraction))
 
 switch config {
-| Ok(config) => client->Client.login(config["discordApiToken"])
+| Ok(config) => client->Client.login(config["discordApiToken"])->ignore
 | Error(err) => Js.log(err)
 }
 
