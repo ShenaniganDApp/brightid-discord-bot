@@ -16,7 +16,7 @@
     "dotenv": "^16.0.1",
     "find-up": "^6.3.0",
     "node-fetch": "^3.2.8",
-    "rescript-discordjs": "/Users/vic__gi/Documents/rescript-discordjs"
+    "rescript-discordjs": "https://github.com/youngkidwarrior/rescript-discordjs.git#v13"
   },
   "devDependencies": {
     "rescript": "^9.1.4"
