@@ -15,7 +15,7 @@
   "scripts": {
     "bot": "yarn workspace bot",
     "web": "yarn workspace web",
-    "scripts": "yarn workspace scripts",
+    "utils": "yarn workspace utils",
     "postinstall": "yarn patch-package"
   },
   "workspaces": [
