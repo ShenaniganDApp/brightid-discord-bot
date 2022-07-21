@@ -1,17 +1,17 @@
 {
-  "name": "scripts",
+  "name": "utils",
   "version": "0.0.0",
   "description": "Script for the BrightID Unique Bot",
-  "main": "index.js",
   "author": "Victor Ginelli (@youngkidwarrior)",
   "license": "MIT",
   "private": true,
   "type": "module",
   "scripts": {
     "re:build": "rescript",
-    "re:start": "rescript build -w"
+    "re:start": "rescript build -w -with-deps"
   },
   "dependencies": {
+    "@glennsl/rescript-json-combinators": "^1.0.0",
     "@ryyppy/rescript-promise": "^2.1.0",
     "dotenv": "^16.0.1",
     "find-up": "^6.3.0",

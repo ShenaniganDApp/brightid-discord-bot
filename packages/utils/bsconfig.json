@@ -13,5 +13,10 @@
     }
   ],
   "suffix": ".mjs",
-  "bs-dependencies": ["rescript-discordjs", "@ryyppy/rescript-promise"]
+  "bs-dependencies": [
+    "rescript-discordjs",
+    "@ryyppy/rescript-promise",
+    "@glennsl/rescript-json-combinators"
+  ],
+  "bsc-flags": ["-open JsonCombinators"]
 }
