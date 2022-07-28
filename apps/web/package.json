@@ -42,7 +42,6 @@
     "@remix-run/dev": "^1.1.1",
     "autoprefixer": "^10.4.7",
     "postcss": "^8.4.14",
-    "rescript": "^9.1.4",
     "tailwindcss": "^3.0.24"
   },
   "engines": {

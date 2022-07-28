@@ -10,19 +10,26 @@ module NodeFetchPolyfill = {
 
 module Response = {
   type t<'data>
+
+  exception PatchError
   @send external json: t<'data> => Promise.t<'data> = "json"
+  @get external status: t<'data> => int = "status"
 }
 
 Env.createEnv()
 
 let envConfig = Env.getConfig()
 
+@raises(Env.EnvError)
 let envConfig = switch envConfig {
 | Ok(config) => config
 | Error(err) => err->Env.EnvError->raise
 }
 
+@raises(Env.EnvError)
 let githubAccessToken = envConfig["githubAccessToken"]
+
+@raises(Env.EnvError)
 let gistId = envConfig["gistId"]
 
 let options: Client.clientOptions = {
@@ -31,85 +38,182 @@ let options: Client.clientOptions = {
 
 let client = Client.createDiscordClient(~options)
 
-module ReadGist = {
-  type t = {name: string, role: string, inviteLink: option<string>}
+module GithubGist = {
+  type t = {files: Js.Dict.t<{"content": string}>}
+}
 
+module Decode = {
+  open GithubGist
+  open Json.Decode
+
+  let content = field =>
+    {
+      "content": field.required(. "content", string),
+    }
+
+  let files = field => {
+    files: content->object->dict->field.required(. "files", _),
+  }
+
+  let gist = files->object
+}
+
+module ReadGist = {
   @val @scope("globalThis")
   external fetch: (string, 'params) => Promise.t<Response.t<Js.Json.t>> = "fetch"
 
-  let make = () => {
+  @raises([Json.Decode.DecodeError, Not_found, Env.EnvError])
+  let content = (~token, ~id, ~name, ~decoder) => {
     let params = {
-      "Authorization": `Bearer ${githubAccessToken}`,
+      "Authorization": `Bearer ${token}`,
     }
 
-    `https://api.github.com/gists/${gistId}`
+    `https://api.github.com/gists/${id}`
     ->fetch(params)
     ->then(res => res->Response.json)
-    ->then(data => {
-      let files =
-        data->Js.Json.decodeObject->Belt.Option.getExn->Js.Dict.get("files")->Belt.Option.getExn
+    ->then(data =>
+      switch data->Json.decode(Decode.gist) {
+      | Ok(gist) => {
+          let json = gist.files->Js.Dict.get(name)->Belt.Option.getExn
+          let content = json["content"]->Json.parseExn->Json.decode(decoder)
+          switch content {
+          | Ok(content) => content->resolve
+          | Error(err) => err->Json.Decode.DecodeError->raise
+          }
+        }
 
-      let guildData =
-        files
-        ->Js.Json.decodeObject
-        ->Belt.Option.getExn
-        ->Js.Dict.get("guildData.json")
-        ->Belt.Option.getExn
+      | Error(err) => err->Json.Decode.DecodeError->reject
+      }
+    )
+  }
+}
 
-      let content =
-        guildData
-        ->Js.Json.decodeObject
-        ->Belt.Option.getExn
-        ->Js.Dict.get("content")
-        ->Belt.Option.getExn
-        ->Js.Json.decodeString
-        ->Belt.Option.getExn
-        ->Js.Json.parseExn
-        ->Js.Json.decodeObject
-        ->Belt.Option.getExn
+module EditGist = {
+  @val @scope("globalThis")
+  external fetch: (string, 'params) => Promise.t<Response.t<Js.Json.t>> = "fetch"
 
-      content->resolve
+  type config<'a> = {
+    id: string,
+    name: string,
+    token: string,
+    decoder: Json.Decode.t<'a>,
+  }
+  let config = (~id, ~name, ~token, ~decoder) => {
+    id,
+    name,
+    token,
+    decoder,
+  }
+
+  let updateEntry = (~config, ~key, ~entry) => {
+    let {id, name, token, decoder} = config
+    ReadGist.content(~token, ~id, ~name, ~decoder)
+    ->then(content => {
+      let prev = content->Js.Dict.get(key)->Belt.Option.getExn
+      let new = prev->Js.Obj.assign(entry)
+      content->Js.Dict.set(key, new)
+      let content = content->Js.Json.stringifyAny
+      let files = Js.Dict.empty()
+      files->Js.Dict.set(name, {"content": content})
+      let body = {
+        "gist_id": gistId,
+        "description": "Update guilds",
+        "files": files,
+      }
+
+      let params = {
+        "method": "PATCH",
+        "headers": {
+          "Authorization": `token ${token}`,
+          "Accept": "application/vnd.github+json",
+        },
+        "body": body->Js.Json.stringifyAny,
+      }
+
+      `https://api.github.com/gists/${gistId}`
+      ->fetch(params)
+      ->then(res => {
+        switch res->Response.status {
+        | 200 => Ok(200)->resolve
+        | status => {
+            res
+            ->Response.json
+            ->then(
+              json => {
+                Js.log2(status, json->Json.stringify)
+                resolve()
+              },
+            )
+            ->ignore
+            Error(Response.PatchError)->resolve
+          }
+        }
+      })
+    })
+    ->catch(e => {
+      Js.log2("e: ", e)
+      resolve(Error(e))
+    })
+
+  }
+
+  let updateAllEntries = (~config, ~entries) => {
+    let {id, name, token, decoder} = config
+    ReadGist.content(~token, ~id, ~name, ~decoder)
+    ->then(content => {
+      let entries = entries->Js.Dict.fromList
+      let keys = entries->Js.Dict.keys
+      keys->Belt.Array.forEach(key => {
+        let prev = content->Js.Dict.get(key)->Belt.Option.getExn
+        let entry = entries->Js.Dict.get(key)->Belt.Option.getExn
+        let new = prev->Js.Obj.assign(entry)
+        content->Js.Dict.set(key, new)
+      })
+      let content = content->Js.Json.stringifyAny
+      let files = Js.Dict.empty()
+      files->Js.Dict.set(name, {"content": content})
+      let body = {
+        "gist_id": gistId,
+        "description": "Update guilds",
+        "files": files,
+      }
+
+      let params = {
+        "method": "PATCH",
+        "headers": {
+          "Authorization": `token ${token}`,
+          "Accept": "application/vnd.github+json",
+        },
+        "body": body->Js.Json.stringifyAny,
+      }
+
+      `https://api.github.com/gists/${gistId}`
+      ->fetch(params)
+      ->then(res => {
+        switch res->Response.status {
+        | 200 => Ok(200)->resolve
+        | status => {
+            res
+            ->Response.json
+            ->then(
+              json => {
+                Js.log2(status, json->Json.stringify)
+                resolve()
+              },
+            )
+            ->ignore
+            Error(Response.PatchError)->resolve
+          }
+        }
+      })
+    })
+    ->catch(e => {
+      Js.log2("e: ", e)
+      resolve(Error(e))
     })
   }
 }
 
-type brightIdGuild = {"name": string, "role": string, "inviteLink": Js.Nullable.t<string>}
-
-type brightIdGuildWithRoleId = {...brightIdGuild, "roleId": string}
-
-client
-->Client.login(envConfig["discordApiToken"])
-->then(_ => {
-  let guildManager = client->Client.getGuildManager
-  ReadGist.make()
-  ->then(guildData => {
-    let guildIds = guildData->Js.Dict.keys
-
-    Js.log2("guildIds: ", guildIds)
-
-    let roles = guildIds->Belt.Array.map(
-      guildId => {
-        let roleName =
-          guildData
-          ->Js.Dict.get(guildId)
-          ->Belt.Option.getExn
-          ->Js.Json.decodeObject
-          ->Belt.Option.getExn
-          ->Js.Dict.get("role")
-          ->Belt.Option.getExn
-          ->Js.Json.decodeString
-          ->Belt.Option.getExn
-
-        let guilds = guildManager->GuildManager.getCache
-        let guild = guilds->Collection.get(guildId)->Js.Nullable.toOption->Belt.Option.getExn
-        let guildRoleManager = guild->Guild.getGuildRoleManager
-        let roles = guildRoleManager->RoleManager.getCache
-        roles
-        ->Collection.find(r => r->Role.getName == roleName)
-        ->Js.Nullable.toOption
-        ->Belt.Option.getExn
-      },
-    )
 
     let newGist = Js.Dict.empty()
     roles->Belt.Array.forEach(
@@ -122,7 +226,7 @@ client
           ->Js.Json.decodeObject
           ->Belt.Option.getExn
         let brightIdGuildWithRoleId = (
-          {
+  {
             "name": brightIdGuild
             ->Js.Dict.get("name")
             ->Belt.Option.flatMap(Js.Json.decodeString)
@@ -137,17 +241,17 @@ client
             ->Belt.Option.flatMap(Js.Json.decodeString)
             ->Js.Nullable.fromOption,
           }: brightIdGuildWithRoleId
-        )
+)
 
         newGist->Js.Dict.set(roleGuildId, brightIdGuildWithRoleId)
       },
-    )
+  )
 
-    resolve()
-  })
-  ->catch(e => {
-    Js.log(e)
-    resolve()
+  resolve()
+})
+->catch(e => {
+  Js.log(e)
+  resolve()
   })
 })
 ->ignore

@@ -2,20 +2,26 @@
 
 import * as Env from "./Env.mjs";
 import * as Js_dict from "rescript/lib/es6/js_dict.js";
-import * as Js_json from "rescript/lib/es6/js_json.js";
 import * as $$Promise from "@ryyppy/rescript-promise/src/Promise.mjs";
 import * as Belt_Array from "rescript/lib/es6/belt_Array.js";
 import * as DiscordJs from "discord.js";
 import NodeFetch from "node-fetch";
 import * as Belt_Option from "rescript/lib/es6/belt_Option.js";
-import * as Caml_option from "rescript/lib/es6/caml_option.js";
-import * as Js_null_undefined from "rescript/lib/es6/js_null_undefined.js";
+import * as Belt_MapString from "rescript/lib/es6/belt_MapString.js";
+import * as Caml_exceptions from "rescript/lib/es6/caml_exceptions.js";
+import * as Caml_js_exceptions from "rescript/lib/es6/caml_js_exceptions.js";
+import * as Json$JsonCombinators from "@glennsl/rescript-json-combinators/src/Json.mjs";
+import * as Json_Decode$JsonCombinators from "@glennsl/rescript-json-combinators/src/Json_Decode.mjs";
 
 globalThis.fetch = NodeFetch;
 
 var NodeFetchPolyfill = {};
 
-var $$Response = {};
+var PatchError = /* @__PURE__ */Caml_exceptions.create("Gist.Response.PatchError");
+
+var $$Response = {
+  PatchError: PatchError
+};
 
 Env.createEnv(undefined);
 
@@ -46,57 +52,238 @@ var options = {
 
 var client = new DiscordJs.Client(options);
 
-function make(param) {
+var GithubGist = {};
+
+function content(field) {
+  return {
+          content: field.required("content", Json_Decode$JsonCombinators.string)
+        };
+}
+
+function files(field) {
+  var __x = Json_Decode$JsonCombinators.dict(Json_Decode$JsonCombinators.object(content));
+  return {
+          files: field.required("files", __x)
+        };
+}
+
+var gist = Json_Decode$JsonCombinators.object(files);
+
+var Decode = {
+  content: content,
+  files: files,
+  gist: gist
+};
+
+function content$1(token, id, name, decoder) {
   var params = {
-    Authorization: "Bearer " + githubAccessToken
+    Authorization: "Bearer " + token + ""
   };
-  return globalThis.fetch("https://api.github.com/gists/" + gistId, params).then(function (res) {
+  return globalThis.fetch("https://api.github.com/gists/" + id + "", params).then(function (res) {
                 return res.json();
               }).then(function (data) {
-              var files = Belt_Option.getExn(Js_dict.get(Belt_Option.getExn(Js_json.decodeObject(data)), "files"));
-              var guildData = Belt_Option.getExn(Js_dict.get(Belt_Option.getExn(Js_json.decodeObject(files)), "guildData.json"));
-              return Promise.resolve(Belt_Option.getExn(Js_json.decodeObject(JSON.parse(Belt_Option.getExn(Js_json.decodeString(Belt_Option.getExn(Js_dict.get(Belt_Option.getExn(Js_json.decodeObject(guildData)), "content"))))))));
+              var gist$1 = Json$JsonCombinators.decode(data, gist);
+              if (gist$1.TAG !== /* Ok */0) {
+                return Promise.reject({
+                            RE_EXN_ID: Json_Decode$JsonCombinators.DecodeError,
+                            _1: gist$1._0
+                          });
+              }
+              var json = Belt_Option.getExn(Js_dict.get(gist$1._0.files, name));
+              var content = Json$JsonCombinators.decode(Json$JsonCombinators.parseExn(json.content), decoder);
+              if (content.TAG === /* Ok */0) {
+                return Promise.resolve(content._0);
+              }
+              throw {
+                    RE_EXN_ID: Json_Decode$JsonCombinators.DecodeError,
+                    _1: content._0,
+                    Error: new Error()
+                  };
             });
 }
 
 var ReadGist = {
-  make: make
+  content: content$1
 };
 
-client.login(envConfig$1.discordApiToken).then(function (param) {
-      var guildManager = client.guilds;
-      return $$Promise.$$catch(make(undefined).then(function (guildData) {
-                      var guildIds = Object.keys(guildData);
-                      console.log("guildIds: ", guildIds);
-                      var roles = Belt_Array.map(guildIds, (function (guildId) {
-                              var roleName = Belt_Option.getExn(Js_json.decodeString(Belt_Option.getExn(Js_dict.get(Belt_Option.getExn(Js_json.decodeObject(Belt_Option.getExn(Js_dict.get(guildData, guildId)))), "role"))));
-                              var guilds = guildManager.cache;
-                              var guild = Belt_Option.getExn(Caml_option.nullable_to_opt(guilds.get(guildId)));
-                              var guildRoleManager = guild.roles;
-                              var roles = guildRoleManager.cache;
-                              return Belt_Option.getExn(Caml_option.nullable_to_opt(roles.find(function (r) {
-                                                  return r.name === roleName;
-                                                })));
-                            }));
-                      var newGist = {};
-                      Belt_Array.forEach(roles, (function (role) {
-                              var roleGuildId = role.guild.id;
-                              var brightIdGuild = Belt_Option.getExn(Js_json.decodeObject(Belt_Option.getExn(Js_dict.get(guildData, roleGuildId))));
-                              var brightIdGuildWithRoleId = {
-                                name: Belt_Option.getExn(Belt_Option.flatMap(Js_dict.get(brightIdGuild, "name"), Js_json.decodeString)),
-                                role: Belt_Option.getExn(Belt_Option.flatMap(Js_dict.get(brightIdGuild, "role"), Js_json.decodeString)),
-                                roleId: role.id,
-                                inviteLink: Js_null_undefined.fromOption(Belt_Option.flatMap(Js_dict.get(brightIdGuild, "inviteLink"), Js_json.decodeString))
-                              };
-                              newGist[roleGuildId] = brightIdGuildWithRoleId;
-                              
-                            }));
-                      return Promise.resolve(undefined);
-                    }), (function (e) {
-                    console.log(e);
-                    return Promise.resolve(undefined);
-                  }));
+function config(id, name, token, decoder) {
+  return {
+          id: id,
+          name: name,
+          token: token,
+          decoder: decoder
+        };
+}
+
+function updateEntry(config, key, entry) {
+  var token = config.token;
+  var name = config.name;
+  return $$Promise.$$catch(content$1(token, config.id, name, config.decoder).then(function (content) {
+                  var prev = Belt_Option.getExn(Js_dict.get(content, key));
+                  var $$new = Object.assign(prev, entry);
+                  content[key] = $$new;
+                  var content$1 = JSON.stringify(content);
+                  var files = {};
+                  files[name] = {
+                    content: content$1
+                  };
+                  var body = {
+                    gist_id: gistId,
+                    description: "Update guilds",
+                    files: files
+                  };
+                  var params = {
+                    method: "PATCH",
+                    headers: {
+                      Authorization: "token " + token + "",
+                      Accept: "application/vnd.github+json"
+                    },
+                    body: JSON.stringify(body)
+                  };
+                  return globalThis.fetch("https://api.github.com/gists/" + gistId + "", params).then(function (res) {
+                              var status = res.status;
+                              if (status !== 200) {
+                                res.json().then(function (json) {
+                                      console.log(status, JSON.stringify(json));
+                                      return Promise.resolve(undefined);
+                                    });
+                                return Promise.resolve({
+                                            TAG: /* Error */1,
+                                            _0: {
+                                              RE_EXN_ID: PatchError
+                                            }
+                                          });
+                              } else {
+                                return Promise.resolve({
+                                            TAG: /* Ok */0,
+                                            _0: 200
+                                          });
+                              }
+                            });
+                }), (function (e) {
+                console.log("e: ", e);
+                return Promise.resolve({
+                            TAG: /* Error */1,
+                            _0: e
+                          });
+              }));
+}
+
+function updateAllEntries(config, entries) {
+  var token = config.token;
+  var name = config.name;
+  return $$Promise.$$catch(content$1(token, config.id, name, config.decoder).then(function (content) {
+                  var entries$1 = Js_dict.fromList(entries);
+                  var keys = Object.keys(entries$1);
+                  Belt_Array.forEach(keys, (function (key) {
+                          var prev = Belt_Option.getExn(Js_dict.get(content, key));
+                          var entry = Belt_Option.getExn(Js_dict.get(entries$1, key));
+                          var $$new = Object.assign(prev, entry);
+                          content[key] = $$new;
+                        }));
+                  var content$1 = JSON.stringify(content);
+                  var files = {};
+                  files[name] = {
+                    content: content$1
+                  };
+                  var body = {
+                    gist_id: gistId,
+                    description: "Update guilds",
+                    files: files
+                  };
+                  var params = {
+                    method: "PATCH",
+                    headers: {
+                      Authorization: "token " + token + "",
+                      Accept: "application/vnd.github+json"
+                    },
+                    body: JSON.stringify(body)
+                  };
+                  return globalThis.fetch("https://api.github.com/gists/" + gistId + "", params).then(function (res) {
+                              var status = res.status;
+                              if (status !== 200) {
+                                res.json().then(function (json) {
+                                      console.log(status, JSON.stringify(json));
+                                      return Promise.resolve(undefined);
+                                    });
+                                return Promise.resolve({
+                                            TAG: /* Error */1,
+                                            _0: {
+                                              RE_EXN_ID: PatchError
+                                            }
+                                          });
+                              } else {
+                                return Promise.resolve({
+                                            TAG: /* Ok */0,
+                                            _0: 200
+                                          });
+                              }
+                            });
+                }), (function (e) {
+                console.log("e: ", e);
+                return Promise.resolve({
+                            TAG: /* Error */1,
+                            _0: e
+                          });
+              }));
+}
+
+var EditGist = {
+  config: config,
+  updateEntry: updateEntry,
+  updateAllEntries: updateAllEntries
+};
+
+function decodeMap(decode) {
+  return function (json) {
+    if (typeof json !== "object" || Array.isArray(json) || json === null) {
+      Json_Decode$JsonCombinators.$$Error.expected("object", json);
+    }
+    try {
+      return Belt_MapString.map(json, decode);
+    }
+    catch (raw_msg){
+      var msg = Caml_js_exceptions.internalToOCamlException(raw_msg);
+      if (msg.RE_EXN_ID === Json_Decode$JsonCombinators.DecodeError) {
+        throw {
+              RE_EXN_ID: Json_Decode$JsonCombinators.DecodeError,
+              _1: "" + msg._1 + "\n\tin dict'",
+              Error: new Error()
+            };
+      }
+      throw msg;
+    }
+  };
+}
+
+var guild = Json_Decode$JsonCombinators.object(function (field) {
+      return {
+              role: field.required("role", Json_Decode$JsonCombinators.string),
+              name: field.required("name", Json_Decode$JsonCombinators.string),
+              inviteLink: field.optional("inviteLink", Json_Decode$JsonCombinators.string)
+            };
     });
+
+var brightIdGuilds = Json_Decode$JsonCombinators.dict(guild);
+
+$$Promise.$$catch(client.login(envConfig$1.discordApiToken).then(function (param) {
+          var config$1 = config(gistId, "guildData.json", githubAccessToken, brightIdGuilds);
+          updateAllEntries(config$1, {
+                  hd: [
+                    "946228460580372500",
+                    {
+                      roleId: "x"
+                    }
+                  ],
+                  tl: /* [] */0
+                }).then(function (param) {
+                return Promise.resolve((console.log("done"), undefined));
+              });
+          return Promise.resolve(undefined);
+        }), (function (e) {
+        console.log(e);
+        return Promise.resolve(undefined);
+      }));
 
 export {
   NodeFetchPolyfill ,
@@ -106,7 +293,12 @@ export {
   gistId ,
   options ,
   client ,
+  GithubGist ,
+  Decode ,
   ReadGist ,
-  
+  EditGist ,
+  decodeMap ,
+  guild ,
+  brightIdGuilds ,
 }
 /*  Not a pure module */

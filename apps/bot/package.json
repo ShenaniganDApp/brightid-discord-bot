@@ -16,9 +16,7 @@
   "author": "youngkidwarrior",
   "license": "GPL-3.0-or-later",
   "devDependencies": {
-    "nodemon": "^2.0.4",
-    "prettier": "^2.1.2",
-    "rescript": "^9.1.4"
+    "prettier": "^2.1.2"
   },
   "dependencies": {
     "@discordjs/builders": "^0.13.0",

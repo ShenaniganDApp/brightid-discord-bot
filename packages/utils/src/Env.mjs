@@ -16,7 +16,6 @@ function createEnv(param) {
   Dotenv.config({
         path: path
       });
-  
 }
 
 function env(name) {
@@ -72,6 +71,5 @@ export {
   createEnv ,
   env ,
   getConfig ,
-  
 }
 /* nodeEnv Not a pure module */
