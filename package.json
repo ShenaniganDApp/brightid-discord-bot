@@ -2,7 +2,8 @@
   "name": "root",
   "private": true,
   "devDependencies": {
-    "patch-package": "^6.4.7"
+    "patch-package": "^6.4.7",
+    "rescript": "^10.0.0-rc.1"
   },
   "dependencies": {
     "brightid_sdk": "^1.0.1",

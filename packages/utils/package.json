@@ -18,7 +18,5 @@
     "node-fetch": "^3.2.8",
     "rescript-discordjs": "https://github.com/youngkidwarrior/rescript-discordjs.git#v13"
   },
-  "devDependencies": {
-    "rescript": "^9.1.4"
-  }
+  "devDependencies": {}
 }

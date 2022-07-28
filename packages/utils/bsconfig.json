@@ -1,5 +1,5 @@
 {
-  "name": "scripts",
+  "name": "utils",
   "sources": [
     {
       "dir": "src",
@@ -18,5 +18,6 @@
     "@ryyppy/rescript-promise",
     "@glennsl/rescript-json-combinators"
   ],
-  "bsc-flags": ["-open JsonCombinators"]
+  "bsc-flags": ["-open JsonCombinators"],
+  "reanalyze": { "analysis": ["dce", "exception"] }
 }
