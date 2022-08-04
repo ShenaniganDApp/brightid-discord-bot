@@ -1,4 +1,3 @@
-open Discord
 open Promise
 
 module NodeFetchPolyfill = {
@@ -30,14 +29,6 @@ let envConfig = switch envConfig {
 let githubAccessToken = envConfig["githubAccessToken"]
 
 @raises(Env.EnvError)
-let gistId = envConfig["gistId"]
-
-let options: Client.clientOptions = {
-  intents: ["GUILDS", "GUILD_MESSAGES"],
-}
-
-let client = Client.createDiscordClient(~options)
-
 module GithubGist = {
   type t = {files: Js.Dict.t<{"content": string}>}
 }
@@ -88,7 +79,9 @@ module ReadGist = {
   }
 }
 
-module EditGist = {
+module UpdateGist = {
+  exception UpdateGistError(exn)
+
   @val @scope("globalThis")
   external fetch: (string, 'params) => Promise.t<Response.t<Js.Json.t>> = "fetch"
 
@@ -116,7 +109,7 @@ module EditGist = {
       let files = Js.Dict.empty()
       files->Js.Dict.set(name, {"content": content})
       let body = {
-        "gist_id": gistId,
+        "gist_id": id,
         "description": "Update guilds",
         "files": files,
       }
@@ -130,7 +123,7 @@ module EditGist = {
         "body": body->Js.Json.stringifyAny,
       }
 
-      `https://api.github.com/gists/${gistId}`
+      `https://api.github.com/gists/${id}`
       ->fetch(params)
       ->then(res => {
         switch res->Response.status {
@@ -154,7 +147,6 @@ module EditGist = {
       Js.log2("e: ", e)
       resolve(Error(e))
     })
-
   }
 
   let updateAllEntries = (~config, ~entries) => {
@@ -173,8 +165,8 @@ module EditGist = {
       let files = Js.Dict.empty()
       files->Js.Dict.set(name, {"content": content})
       let body = {
-        "gist_id": gistId,
-        "description": "Update guilds",
+        "gist_id": id,
+        "description": "Update gist",
         "files": files,
       }
 
@@ -187,7 +179,7 @@ module EditGist = {
         "body": body->Js.Json.stringifyAny,
       }
 
-      `https://api.github.com/gists/${gistId}`
+      `https://api.github.com/gists/${id}`
       ->fetch(params)
       ->then(res => {
         switch res->Response.status {
@@ -213,45 +205,3 @@ module EditGist = {
     })
   }
 }
-
-
-    let newGist = Js.Dict.empty()
-    roles->Belt.Array.forEach(
-      role => {
-        let roleGuildId = role->Role.getGuild->Guild.getGuildId
-        let brightIdGuild =
-          guildData
-          ->Js.Dict.get(roleGuildId)
-          ->Belt.Option.getExn
-          ->Js.Json.decodeObject
-          ->Belt.Option.getExn
-        let brightIdGuildWithRoleId = (
-  {
-            "name": brightIdGuild
-            ->Js.Dict.get("name")
-            ->Belt.Option.flatMap(Js.Json.decodeString)
-            ->Belt.Option.getExn,
-            "role": brightIdGuild
-            ->Js.Dict.get("role")
-            ->Belt.Option.flatMap(Js.Json.decodeString)
-            ->Belt.Option.getExn,
-            "roleId": role->Role.getRoleId,
-            "inviteLink": brightIdGuild
-            ->Js.Dict.get("inviteLink")
-            ->Belt.Option.flatMap(Js.Json.decodeString)
-            ->Js.Nullable.fromOption,
-          }: brightIdGuildWithRoleId
-)
-
-        newGist->Js.Dict.set(roleGuildId, brightIdGuildWithRoleId)
-      },
-  )
-
-  resolve()
-})
-->catch(e => {
-  Js.log(e)
-  resolve()
-  })
-})
-->ignore
