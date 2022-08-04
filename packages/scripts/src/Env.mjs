@@ -6,7 +6,7 @@ import * as FindUp from "find-up";
 import * as Process from "process";
 import * as Caml_exceptions from "rescript/lib/es6/caml_exceptions.js";
 
-var EnvError = /* @__PURE__ */Caml_exceptions.create("Env-Utils.EnvError");
+var EnvError = /* @__PURE__ */Caml_exceptions.create("Env.EnvError");
 
 var nodeEnv = Process.env;
 
