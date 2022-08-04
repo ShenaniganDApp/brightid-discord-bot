@@ -5,6 +5,5 @@ var contextId = "Discord";
 
 export {
   contextId ,
-  
 }
 /* No side effect */

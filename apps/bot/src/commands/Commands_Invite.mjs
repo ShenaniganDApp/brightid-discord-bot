@@ -38,7 +38,7 @@ function execute(interaction) {
                         inviteLink: inviteLink
                       });
                   interaction.editReply({
-                        content: "Successfully update server invite link to " + inviteLink,
+                        content: "Successfully update server invite link to " + inviteLink + "",
                         ephemeral: true
                       });
                   tmp = Promise.resolve(undefined);
@@ -89,6 +89,5 @@ export {
   urlRe ,
   execute ,
   data ,
-  
 }
 /* data Not a pure module */

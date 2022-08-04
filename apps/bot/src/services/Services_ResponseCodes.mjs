@@ -26,6 +26,5 @@ export {
   contextidNotFound ,
   canNotBeVerified ,
   notSponsored ,
-  
 }
 /* No side effect */

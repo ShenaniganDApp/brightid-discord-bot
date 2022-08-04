@@ -8,6 +8,5 @@ var RainbowKitProvider = {};
 export {
   Themes ,
   RainbowKitProvider ,
-  
 }
 /* No side effect */

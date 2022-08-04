@@ -47,7 +47,7 @@ function Sidebar(Props) {
                                         children: React.createElement(Remix.Link, {
                                               className: "font-semibold text-xl",
                                               prefetch: "intent",
-                                              to: "/guilds/" + guild.id,
+                                              to: "/guilds/" + guild.id + "",
                                               children: guild.name
                                             }),
                                         className: "bg-extraDark",
@@ -127,6 +127,5 @@ var make = Sidebar;
 export {
   ConnectButton ,
   make ,
-  
 }
 /* react Not a pure module */

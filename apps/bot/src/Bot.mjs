@@ -73,7 +73,6 @@ function onGuildCreate(guild) {
         }).then(function (param) {
         return updateGistOnGuildCreate(guild);
       });
-  
 }
 
 function onInteraction(interaction) {
@@ -91,7 +90,7 @@ function onInteraction(interaction) {
       console.error("Bot.res: Command not found");
     } else {
       Curry._1(command.execute, interaction).then(function (param) {
-            return Promise.resolve((console.log("Successfully served the command " + commandName + " for " + user.username), undefined));
+            return Promise.resolve((console.log("Successfully served the command " + commandName + " for " + user.username + ""), undefined));
           });
     }
     return ;
@@ -103,18 +102,16 @@ function onInteraction(interaction) {
       console.error("Bot.res: Button not found");
     } else {
       Curry._1(button.execute, interaction).then(function (param) {
-            return Promise.resolve((console.log("Successfully served button press \"" + buttonCustomId + "\" for " + user.username), undefined));
+            return Promise.resolve((console.log("Successfully served button press \"" + buttonCustomId + "\" for " + user.username + ""), undefined));
           });
     }
     return ;
   }
   console.error("Bot.res: Unknown interaction");
-  
 }
 
 client.on("ready", (function (param) {
         console.log("Logged In");
-        
       }));
 
 client.on("guildCreate", onGuildCreate);
@@ -138,6 +135,5 @@ export {
   updateGistOnGuildCreate ,
   onGuildCreate ,
   onInteraction ,
-  
 }
 /*  Not a pure module */

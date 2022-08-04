@@ -123,9 +123,9 @@ function Root$default(Props) {
       });
   var setToggled = match$1[1];
   var handleToggleSidebar = function (value) {
-    return Curry._1(setToggled, (function (_prev) {
-                  return value;
-                }));
+    Curry._1(setToggled, (function (_prev) {
+            return value;
+          }));
   };
   return React.createElement("html", undefined, React.createElement("head", undefined, React.createElement("meta", {
                       charSet: "utf-8"
@@ -171,6 +171,5 @@ export {
   unstable_shouldReload ,
   $$default ,
   $$default as default,
-  
 }
 /*  Not a pure module */

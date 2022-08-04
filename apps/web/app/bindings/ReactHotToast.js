@@ -5,6 +5,5 @@ var Toaster = {};
 
 export {
   Toaster ,
-  
 }
 /* No side effect */

@@ -6,13 +6,13 @@ var nodeUrl = "http:%2f%2fnode.brightid.org";
 
 var brightIdEndpointv5 = "https://app.brightid.org/node/v5";
 
-var brightIdVerificationEndpoint = brightIdEndpointv5 + "/verifications";
+var brightIdVerificationEndpoint = "" + brightIdEndpointv5 + "/verifications";
 
-var brightIdSubscriptionEndpoint = brightIdEndpointv5 + "/operations";
+var brightIdSubscriptionEndpoint = "" + brightIdEndpointv5 + "/operations";
 
-var brightIdAppDeeplink = "brightid://link-verification/" + nodeUrl + "/" + Constants.contextId;
+var brightIdAppDeeplink = "brightid://link-verification/" + nodeUrl + "/" + Constants.contextId + "";
 
-var brightIdLinkVerificationEndpoint = "https://app.brightid.org/link-verification/" + nodeUrl + "/" + Constants.contextId;
+var brightIdLinkVerificationEndpoint = "https://app.brightid.org/link-verification/" + nodeUrl + "/" + Constants.contextId + "";
 
 export {
   nodeUrl ,
@@ -21,6 +21,5 @@ export {
   brightIdSubscriptionEndpoint ,
   brightIdAppDeeplink ,
   brightIdLinkVerificationEndpoint ,
-  
 }
 /* No side effect */

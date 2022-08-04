@@ -150,6 +150,5 @@ export {
   QRCode ,
   $$default ,
   $$default as default,
-  
 }
 /* react Not a pure module */

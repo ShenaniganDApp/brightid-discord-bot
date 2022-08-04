@@ -12,6 +12,5 @@ function loader(param) {
 
 export {
   loader ,
-  
 }
 /* AuthServer Not a pure module */

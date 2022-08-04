@@ -75,7 +75,7 @@ function execute(interaction) {
                                           } else if (verificationInfo.userVerified) {
                                             verifyMember(guildRole, member).then(function (param) {
                                                   return interaction.editReply({
-                                                              content: "Hey, I recognize you! I just gave you the `" + guildRole.name + "` role. You are now BrightID verified in " + guild.name + " server!"
+                                                              content: "Hey, I recognize you! I just gave you the \`" + guildRole.name + "\` role. You are now BrightID verified in " + guild.name + " server!"
                                                             });
                                                 });
                                             return Promise.resolve(undefined);
@@ -119,6 +119,5 @@ export {
   noMultipleAccounts ,
   execute ,
   customId ,
-  
 }
 /* ../updateOrReadGist.mjs Not a pure module */
