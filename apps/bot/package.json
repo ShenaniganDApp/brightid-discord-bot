@@ -1,5 +1,5 @@
 {
-  "name": "bot",
+  "name": "@brightidbot/bot",
   "version": "1.0.0",
   "description": "Bot to assign bright-id verified role",
   "type": "module",
@@ -8,7 +8,7 @@
     "test": "npx jest",
     "start": "node src/Bot.mjs",
     "dev": "concurrently  \"yarn re:start\" \"yarn start\" ",
-    "re:build": "rescript",
+    "re:build": "rescript build -with-deps",
     "re:start": "rescript build -w -with-deps",
     "prettify": "prettier . --write",
     "deploy-commands": "node src/DeployCommands.mjs"

@@ -1,13 +1,13 @@
 {
-  "name": "utils",
-  "version": "0.0.0",
+  "name": "@brightidbot/utils",
+  "version": "0.0.1",
   "description": "Script for the BrightID Unique Bot",
   "author": "Victor Ginelli (@youngkidwarrior)",
   "license": "MIT",
   "private": true,
   "type": "module",
   "scripts": {
-    "re:build": "rescript",
+    "re:build": "rescript build -with-deps",
     "re:start": "rescript build -w -with-deps"
   },
   "dependencies": {
