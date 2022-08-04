@@ -65,7 +65,6 @@ $$Promise.$$catch(rest.put(applicationGuildCommands, {
             body: commands
           }).then(function (param) {
           console.log("Successfully registered application commands.");
-          
         }), (function (e) {
         if (e.RE_EXN_ID === DeployCommandsError) {
           console.error("Deploy Commands Error:" + e._1);
@@ -97,6 +96,5 @@ export {
   commands ,
   rest ,
   applicationGuildCommands ,
-  
 }
 /*  Not a pure module */

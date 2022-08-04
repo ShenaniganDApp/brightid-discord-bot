@@ -22,6 +22,5 @@ export {
   ResponseInit ,
   $$default ,
   $$default as default,
-  
 }
 /* react Not a pure module */

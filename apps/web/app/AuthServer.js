@@ -56,6 +56,5 @@ export {
   sessionStorage ,
   authenticator ,
   discordStrategy ,
-  
 }
 /* clientID Not a pure module */

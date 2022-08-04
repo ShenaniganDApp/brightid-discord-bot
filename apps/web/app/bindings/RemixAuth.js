@@ -18,6 +18,5 @@ export {
   DiscordStrategy ,
   CreateAuthenticateOptions ,
   Authenticator ,
-  
 }
 /* No side effect */

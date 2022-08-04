@@ -77,10 +77,10 @@ function fetchBotGuilds(afterOpt, allGuildsOpt, param) {
   var after = afterOpt !== undefined ? afterOpt : 0;
   var allGuilds = allGuildsOpt !== undefined ? allGuildsOpt : [];
   var headers = {
-    Authorization: "Bot " + botToken
+    Authorization: "Bot " + botToken + ""
   };
   var init = Webapi__Fetch.RequestInit.make(/* Get */0, Caml_option.some(headers), undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined)(undefined);
-  return $$Promise.$$catch(fetch(new Request("https://discord.com/api/users/@me/guilds?after=" + String(after), init)).then(function (res) {
+  return $$Promise.$$catch(fetch(new Request("https://discord.com/api/users/@me/guilds?after=" + String(after) + "", init)).then(function (res) {
                     return res.json();
                   }).then(function (json) {
                   if (Js_json.test(json, /* Array */3)) {
@@ -118,7 +118,7 @@ function fetchBotGuilds(afterOpt, allGuildsOpt, param) {
 
 function fetchUserGuilds(user) {
   var headers = {
-    Authorization: "Bearer " + user.accessToken
+    Authorization: "Bearer " + user.accessToken + ""
   };
   var init = Webapi__Fetch.RequestInit.make(/* Get */0, Caml_option.some(headers), undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined)(undefined);
   return $$Promise.$$catch(fetch(new Request("https://discord.com/api/users/@me/guilds", init)).then(function (res) {
@@ -152,10 +152,10 @@ function fetchUserGuilds(user) {
 
 function fetchGuildFromId(guildId) {
   var headers = {
-    Authorization: "Bot " + botToken
+    Authorization: "Bot " + botToken + ""
   };
   var init = Webapi__Fetch.RequestInit.make(/* Get */0, Caml_option.some(headers), undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined)(undefined);
-  return fetch(new Request("https://discord.com/api/guilds/" + guildId, init)).then(function (res) {
+  return fetch(new Request("https://discord.com/api/guilds/" + guildId + "", init)).then(function (res) {
                 return res.json();
               }).then(function (json) {
               return Promise.resolve(Js_null_undefined.fromOption(mapGuildRecord(Js_json.decodeObject(json))));
@@ -164,10 +164,10 @@ function fetchGuildFromId(guildId) {
 
 function fetchGuildMemberFromId(guildId, userId) {
   var headers = {
-    Authorization: "Bot " + botToken
+    Authorization: "Bot " + botToken + ""
   };
   var init = Webapi__Fetch.RequestInit.make(/* Get */0, Caml_option.some(headers), undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined)(undefined);
-  return fetch(new Request("https://discord.com/api/guilds/" + guildId + "/members/" + userId, init)).then(function (res) {
+  return fetch(new Request("https://discord.com/api/guilds/" + guildId + "/members/" + userId + "", init)).then(function (res) {
                 return res.json();
               }).then(function (json) {
               return Promise.resolve(Js_null_undefined.fromOption(mapGuildMemberRecord(Js_json.decodeObject(json))));
@@ -176,7 +176,7 @@ function fetchGuildMemberFromId(guildId, userId) {
 
 function fetchGuildRoles(guildId) {
   var headers = {
-    Authorization: "Bot " + botToken
+    Authorization: "Bot " + botToken + ""
   };
   var init = Webapi__Fetch.RequestInit.make(/* Get */0, Caml_option.some(headers), undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined)(undefined);
   return $$Promise.$$catch(fetch(new Request("https://discord.com/api/guilds/" + guildId + "/roles", init)).then(function (res) {
@@ -232,6 +232,5 @@ export {
   fetchGuildMemberFromId ,
   fetchGuildRoles ,
   memberIsAdmin ,
-  
 }
 /* botToken Not a pure module */

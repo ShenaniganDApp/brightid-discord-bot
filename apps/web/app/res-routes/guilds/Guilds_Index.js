@@ -83,6 +83,5 @@ export {
   loader ,
   $$default ,
   $$default as default,
-  
 }
 /* react Not a pure module */

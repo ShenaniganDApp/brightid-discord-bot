@@ -14,6 +14,5 @@ function action(param) {
 export {
   loader ,
   action ,
-  
 }
 /* remix Not a pure module */

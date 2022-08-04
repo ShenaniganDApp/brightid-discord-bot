@@ -20,6 +20,5 @@ export {
   SidebarHeader ,
   SidebarContent ,
   SidebarFooter ,
-  
 }
 /* No side effect */

@@ -12,7 +12,7 @@ function Guilds_Sponsorships$default(Props) {
         message: "I am the owner of and would like to use its sponsorhips in\n    X"
       });
   var handleSign = function (param) {
-    return Curry._1(sign.signMessage, undefined);
+    Curry._1(sign.signMessage, undefined);
   };
   return React.createElement("div", {
               className: "p-4 h-full w-full"
@@ -35,6 +35,5 @@ var $$default = Guilds_Sponsorships$default;
 export {
   $$default ,
   $$default as default,
-  
 }
 /* react Not a pure module */

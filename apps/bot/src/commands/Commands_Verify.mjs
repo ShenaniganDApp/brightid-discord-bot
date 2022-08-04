@@ -48,7 +48,7 @@ function addVerifiedRole(member, role, reason) {
   var guildMemberRoleManager = member.roles;
   var guild = member.guild;
   guildMemberRoleManager.add(role, reason);
-  var partial_arg = "I recognize you! You're now a verified user in " + guild.name;
+  var partial_arg = "I recognize you! You're now a verified user in " + guild.name + "";
   return function (param) {
     return member.send(partial_arg, param);
   };
@@ -178,15 +178,15 @@ function execute(interaction) {
                               var guildData = Js_dict.get(guilds, guildId);
                               if (guildData !== undefined) {
                                 var guildRole = getRolebyRoleName(guildRoleManager, guildData.role);
-                                var deepLink = Endpoints.brightIdAppDeeplink + "/" + id;
-                                var verifyUrl = Endpoints.brightIdLinkVerificationEndpoint + "/" + id;
+                                var deepLink = "" + Endpoints.brightIdAppDeeplink + "/" + id + "";
+                                var verifyUrl = "" + Endpoints.brightIdLinkVerificationEndpoint + "/" + id + "";
                                 return fetchVerifications(undefined).then(function (data) {
                                               return isIdInVerifications(data, id);
                                             }).then(function (idExists) {
                                             if (idExists) {
                                               guildMemberRoleManager.add(guildRole, "");
                                               interaction.editReply({
-                                                    content: "Hey, I recognize you! I just gave you the `" + guildRole.name + "` role. You are now BrightID verified in " + guild.name + " server!",
+                                                    content: "Hey, I recognize you! I just gave you the \`" + guildRole.name + "\` role. You are now BrightID verified in " + guild.name + " server!",
                                                     ephemeral: true
                                                   });
                                               return Promise.resolve(undefined);
@@ -250,6 +250,5 @@ export {
   makeVerifyActionRow ,
   execute ,
   data ,
-  
 }
 /*  Not a pure module */

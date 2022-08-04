@@ -68,7 +68,7 @@ function execute(interaction) {
                                                   });
                                       }).then(function (param) {
                                       interaction.editReply({
-                                            content: "Succesfully updated `" + previousRole + "` role to `" + role + "`"
+                                            content: "Succesfully updated \`" + previousRole + "\` role to \`" + role + "\`"
                                           });
                                       return Promise.resolve(undefined);
                                     });
@@ -78,7 +78,7 @@ function execute(interaction) {
                             });
                         return Promise.reject({
                                     RE_EXN_ID: RoleHandlerError,
-                                    _1: "Commands_Role: Guild does not exist with the guildID: " + guildId
+                                    _1: "Commands_Role: Guild does not exist with the guildID: " + guildId + ""
                                   });
                       });
                 }
@@ -121,6 +121,5 @@ export {
   getRolebyRoleName ,
   execute ,
   data ,
-  
 }
 /* data Not a pure module */

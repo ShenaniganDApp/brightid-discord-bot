@@ -32,15 +32,14 @@ function getGuildDataFromGist(guilds, guildId, interaction) {
 
 function generateEmbed(guilds, interaction, offset) {
   var current = Belt_Array.slice(guilds, offset, offset + 10 | 0);
-  var embedTitle = "Showing guilds " + (offset + 1 | 0).toString() + "-" + (offset + current.length | 0).toString() + " out of " + guilds.length.toString();
+  var embedTitle = "Showing guilds " + (offset + 1 | 0).toString() + "-" + (offset + current.length | 0).toString() + " out of " + guilds.length.toString() + "";
   var embed = new DiscordJs.MessageEmbed().setTitle(embedTitle);
   return UpdateOrReadGistMjs.readGist().then(function (guilds) {
               Belt_Array.forEach(current, (function (g) {
                       var guildData = getGuildDataFromGist(guilds, g.id, interaction);
                       var inviteLink = guildData.inviteLink;
-                      var guildLink = (inviteLink == null) ? "No Invite Link Available" : "**Invite:** " + inviteLink;
+                      var guildLink = (inviteLink == null) ? "No Invite Link Available" : "**Invite:** " + inviteLink + "";
                       embed.addField(g.name, guildLink, false);
-                      
                     }));
               return Promise.resolve(embed);
             });
@@ -134,6 +133,5 @@ export {
   generateEmbed ,
   execute ,
   data ,
-  
 }
 /* data Not a pure module */

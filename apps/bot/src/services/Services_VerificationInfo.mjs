@@ -49,7 +49,7 @@ var defaultVerification = {
 function fetchVerificationInfo(retryOpt, id) {
   var retry = retryOpt !== undefined ? retryOpt : 5;
   var uuid = Uuid.v5(id, uuidNAMESPACE);
-  var endpoint = Endpoints.brightIdVerificationEndpoint + "/" + Constants.contextId + "/" + uuid + "?timestamp=seconds";
+  var endpoint = "" + Endpoints.brightIdVerificationEndpoint + "/" + Constants.contextId + "/" + uuid + "?timestamp=seconds";
   var params = {
     method: "GET",
     headers: {
@@ -66,26 +66,16 @@ function fetchVerificationInfo(retryOpt, id) {
                     var match = res.code;
                     var match$1 = res.errorMessage;
                     var match$2 = res.errorNum;
-                    if (match == null) {
-                      return Promise.reject({
-                                  RE_EXN_ID: VerificationInfoError,
-                                  _1: "No code or errorMessage"
-                                });
-                    } else if (match$1 == null) {
-                      return Promise.reject({
-                                  RE_EXN_ID: VerificationInfoError,
-                                  _1: "No code or errorMessage"
-                                });
-                    } else if (match$2 == null) {
-                      return Promise.reject({
-                                  RE_EXN_ID: VerificationInfoError,
-                                  _1: "No code or errorMessage"
-                                });
-                    } else {
+                    if (!(match == null) && !(match$1 == null) && !(match$2 == null)) {
                       return Promise.reject({
                                   RE_EXN_ID: FetchVerificationInfoError,
                                   error: match$1,
                                   fetching: false
+                                });
+                    } else {
+                      return Promise.reject({
+                                  RE_EXN_ID: VerificationInfoError,
+                                  _1: "No code or errorMessage"
                                 });
                     }
                   }
@@ -115,7 +105,7 @@ function fetchVerificationInfo(retryOpt, id) {
                 if (e.RE_EXN_ID === VerificationInfoError) {
                   console.error(e._1);
                 } else if (e.RE_EXN_ID === FetchVerificationInfoError) {
-                  console.error("Fetch Verification Info Error: " + e.error);
+                  console.error("Fetch Verification Info Error: " + e.error + "");
                 } else if (e.RE_EXN_ID === $$Promise.JsError) {
                   var msg = e._1.message;
                   if (msg !== undefined) {
@@ -167,6 +157,5 @@ export {
   defaultVerification ,
   fetchVerificationInfo ,
   getBrightIdVerification ,
-  
 }
 /*  Not a pure module */

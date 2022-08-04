@@ -62,6 +62,5 @@ export {
   context ,
   brightIdVerificationEndpoint ,
   loader ,
-  
 }
 /* uuid Not a pure module */
