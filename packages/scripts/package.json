@@ -1,0 +1,20 @@
+{
+  "name": "@brightidbot/scripts",
+  "version": "0.0.0",
+  "description": "Scripts for the BrightID bot",
+  "license": "MIT",
+  "type": "module",
+  "private": true,
+  "dependencies": {
+    "@brightidbot/utils": "~0.0.1",
+    "@glennsl/rescript-json-combinators": "^1.0.0",
+    "@ryyppy/rescript-promise": "^2.1.0",
+    "dotenv": "^16.0.1",
+    "find-up": "^6.3.0",
+    "rescript-discordjs": "https://github.com/youngkidwarrior/rescript-discordjs.git#v13"
+  },
+  "scripts": {
+    "re:build": "rescript",
+    "re:start": "rescript build -w -with-deps"
+  }
+}

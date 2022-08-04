@@ -1,6 +1,5 @@
 {
-  "name": "@brightidbot/utils",
-  "namespace":"Utils",
+  "name": "scripts",
   "sources": [
     {
       "dir": "src",
@@ -17,8 +16,9 @@
   "bs-dependencies": [
     "rescript-discordjs",
     "@ryyppy/rescript-promise",
+    "@brightidbot/utils",
     "@glennsl/rescript-json-combinators"
   ],
-  "bsc-flags": ["-open JsonCombinators"],
-  "reanalyze": { "analysis": ["dce", "exception"] }
+  "pinned-dependencies": ["@brightidbot/utils"],
+  "bsc-flags": ["-open JsonCombinators"]
 }
