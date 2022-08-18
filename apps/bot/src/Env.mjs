@@ -37,17 +37,29 @@ function getConfig(param) {
   var match = env("DISCORD_API_TOKEN");
   var match$1 = env("DISCORD_CLIENT_ID");
   var match$2 = env("UUID_NAMESPACE");
+  var match$3 = env("GIST_ID");
+  var match$4 = env("GITHUB_ACCESS_TOKEN");
   if (match.TAG === /* Ok */0) {
     if (match$1.TAG === /* Ok */0) {
       if (match$2.TAG === /* Ok */0) {
-        return {
-                TAG: /* Ok */0,
-                _0: {
-                  discordApiToken: match._0,
-                  discordClientId: match$1._0,
-                  uuidNamespace: match$2._0
-                }
-              };
+        if (match$3.TAG === /* Ok */0) {
+          if (match$4.TAG === /* Ok */0) {
+            return {
+                    TAG: /* Ok */0,
+                    _0: {
+                      discordApiToken: match._0,
+                      discordClientId: match$1._0,
+                      uuidNamespace: match$2._0,
+                      gistId: match$3._0,
+                      githubAccessToken: match$4._0
+                    }
+                  };
+          } else {
+            return match$4;
+          }
+        } else {
+          return match$3;
+        }
       } else {
         return match$2;
       }

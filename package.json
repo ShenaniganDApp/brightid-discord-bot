@@ -19,7 +19,7 @@
     "utils": "yarn workspace @brightidbot/utils",
     "scripts": "yarn workspace @brightidbot/scripts",
     "postinstall": "yarn patch-package",
-    "re:build": "yarn bot re:build && yarn web re:build && yarn utils re:build && yarn scripts re:build"
+    "re:build": "yarn utils re:build && yarn bot re:build && yarn web re:build && yarn scripts re:build"
   },
   "workspaces": [
     "apps/*",

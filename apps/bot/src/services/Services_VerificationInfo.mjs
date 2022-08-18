@@ -49,7 +49,7 @@ var defaultVerification = {
 function fetchVerificationInfo(retryOpt, id) {
   var retry = retryOpt !== undefined ? retryOpt : 5;
   var uuid = Uuid.v5(id, uuidNAMESPACE);
-  var endpoint = "" + Endpoints.brightIdVerificationEndpoint + "/" + Constants.contextId + "/" + uuid + "?timestamp=seconds";
+  var endpoint = "" + Endpoints.brightIdVerificationEndpoint + "/" + Constants.context + "/" + uuid + "?timestamp=seconds";
   var params = {
     method: "GET",
     headers: {
@@ -125,7 +125,7 @@ function getBrightIdVerification(member) {
   return fetchVerificationInfo(undefined, id);
 }
 
-var contextId = Constants.contextId;
+var context = Constants.context;
 
 var brightIdVerificationEndpoint = Endpoints.brightIdVerificationEndpoint;
 
@@ -147,7 +147,7 @@ export {
   config ,
   uuidNAMESPACE ,
   $$Response ,
-  contextId ,
+  context ,
   brightIdVerificationEndpoint ,
   notFoundCode ,
   errorCode ,

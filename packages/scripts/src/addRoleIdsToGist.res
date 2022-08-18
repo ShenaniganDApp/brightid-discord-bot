@@ -35,6 +35,7 @@ let guild = Json.Decode.object(field =>
     "role": field.optional(. "role", Json.Decode.string),
     "name": field.optional(. "name", Json.Decode.string),
     "inviteLink": field.optional(. "inviteLink", Json.Decode.string),
+    "roleId": field.optional(. "roleId", Json.Decode.string),
   }
 )
 
@@ -44,19 +45,16 @@ Client.login(client, discordBotToken)
 ->then(_ => {
   open Utils
 
-  Gist.ReadGist.content(
-    ~token=githubAccessToken,
-    ~id,
-    ~name="guildData.json",
-    ~decoder=brightIdGuilds,
-  )
-  ->then(data => {
-    let guildIds = data->Js.Dict.keys
+  let config = Gist.makeGistConfig(~token=githubAccessToken, ~id, ~name="guildData.json")
+
+  Gist.ReadGist.content(~config, ~decoder=brightIdGuilds)
+  ->then(content => {
+    let guildIds = content->Js.Dict.keys
     let roleIdEntries =
       guildIds
       ->Belt.Array.map(
         guildId => {
-          let brightIdGuild = data->Js.Dict.get(guildId)->Belt.Option.getExn
+          let brightIdGuild = content->Js.Dict.get(guildId)->Belt.Option.getExn
 
           let guildManager = client->Client.getGuildManager
           let guilds = guildManager->GuildManager.getCache
@@ -90,13 +88,7 @@ Client.login(client, discordBotToken)
       )
       ->Belt.List.fromArray
 
-    let config = Gist.UpdateGist.config(
-      ~token=githubAccessToken,
-      ~id,
-      ~name="guildData.json",
-      ~decoder=brightIdGuilds,
-    )
-    Gist.UpdateGist.updateAllEntries(~config, ~entries=roleIdEntries)->then(
+    Gist.UpdateGist.updateAllEntries(~content, ~entries=roleIdEntries, ~config)->then(
       result => {
         switch result {
         | Ok(result) => Js.log(j`$result: Succesfully updated gist with id: ${id}`)->resolve

@@ -1,1 +1,1 @@
-let contextId = "Discord"
+let context = "Discord"

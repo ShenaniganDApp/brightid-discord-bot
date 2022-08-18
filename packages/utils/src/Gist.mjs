@@ -61,11 +61,20 @@ var Decode = {
   gist: gist
 };
 
-function content$1(token, id, name, decoder) {
+function makeGistConfig(id, name, token) {
+  return {
+          id: id,
+          name: name,
+          token: token
+        };
+}
+
+function content$1(config, decoder) {
+  var name = config.name;
   var params = {
-    Authorization: "Bearer " + token + ""
+    Authorization: "Bearer " + config.token + ""
   };
-  return globalThis.fetch("https://api.github.com/gists/" + id + "", params).then(function (res) {
+  return globalThis.fetch("https://api.github.com/gists/" + config.id + "", params).then(function (res) {
                 return res.json();
               }).then(function (data) {
               var gist$1 = Json$JsonCombinators.decode(data, gist);
@@ -94,61 +103,48 @@ var ReadGist = {
 
 var UpdateGistError = /* @__PURE__ */Caml_exceptions.create("Gist-Utils.UpdateGist.UpdateGistError");
 
-function config(id, name, token, decoder) {
-  return {
-          id: id,
-          name: name,
-          token: token,
-          decoder: decoder
-        };
-}
-
-function updateEntry(config, key, entry) {
-  var token = config.token;
-  var name = config.name;
+function updateEntry(content, key, entry, config) {
   var id = config.id;
-  return $$Promise.$$catch(content$1(token, id, name, config.decoder).then(function (content) {
-                  var prev = Belt_Option.getExn(Js_dict.get(content, key));
-                  var $$new = Object.assign(prev, entry);
-                  content[key] = $$new;
-                  var content$1 = JSON.stringify(content);
-                  var files = {};
-                  files[name] = {
-                    content: content$1
-                  };
-                  var body = {
-                    gist_id: id,
-                    description: "Update guilds",
-                    files: files
-                  };
-                  var params = {
-                    method: "PATCH",
-                    headers: {
-                      Authorization: "token " + token + "",
-                      Accept: "application/vnd.github+json"
-                    },
-                    body: JSON.stringify(body)
-                  };
-                  return globalThis.fetch("https://api.github.com/gists/" + id + "", params).then(function (res) {
-                              var status = res.status;
-                              if (status !== 200) {
-                                res.json().then(function (json) {
-                                      console.log(status, JSON.stringify(json));
-                                      return Promise.resolve(undefined);
-                                    });
-                                return Promise.resolve({
-                                            TAG: /* Error */1,
-                                            _0: {
-                                              RE_EXN_ID: PatchError
-                                            }
-                                          });
-                              } else {
-                                return Promise.resolve({
-                                            TAG: /* Ok */0,
-                                            _0: 200
-                                          });
-                              }
-                            });
+  var prev = Belt_Option.getExn(Js_dict.get(content, key));
+  var $$new = Object.assign(prev, entry);
+  content[key] = $$new;
+  var content$1 = JSON.stringify(content);
+  var files = {};
+  files[config.name] = {
+    content: content$1
+  };
+  var body = {
+    gist_id: id,
+    description: "Update gist entry with key: " + key + "",
+    files: files
+  };
+  var params = {
+    method: "PATCH",
+    headers: {
+      Authorization: "token " + config.token + "",
+      Accept: "application/vnd.github+json"
+    },
+    body: JSON.stringify(body)
+  };
+  return $$Promise.$$catch(globalThis.fetch("https://api.github.com/gists/" + id + "", params).then(function (res) {
+                  var status = res.status;
+                  if (status !== 200) {
+                    res.json().then(function (json) {
+                          console.log(status, JSON.stringify(json));
+                          return Promise.resolve(undefined);
+                        });
+                    return Promise.resolve({
+                                TAG: /* Error */1,
+                                _0: {
+                                  RE_EXN_ID: PatchError
+                                }
+                              });
+                  } else {
+                    return Promise.resolve({
+                                TAG: /* Ok */0,
+                                _0: 200
+                              });
+                  }
                 }), (function (e) {
                 console.log("e: ", e);
                 return Promise.resolve({
@@ -158,57 +154,104 @@ function updateEntry(config, key, entry) {
               }));
 }
 
-function updateAllEntries(config, entries) {
-  var token = config.token;
-  var name = config.name;
+function removeEntry(content, key, config) {
   var id = config.id;
-  return $$Promise.$$catch(content$1(token, id, name, config.decoder).then(function (content) {
-                  var entries$1 = Js_dict.fromList(entries);
-                  var keys = Object.keys(entries$1);
-                  Belt_Array.forEach(keys, (function (key) {
-                          var prev = Belt_Option.getExn(Js_dict.get(content, key));
-                          var entry = Belt_Option.getExn(Js_dict.get(entries$1, key));
-                          var $$new = Object.assign(prev, entry);
-                          content[key] = $$new;
-                        }));
-                  var content$1 = JSON.stringify(content);
-                  var files = {};
-                  files[name] = {
-                    content: content$1
-                  };
-                  var body = {
-                    gist_id: id,
-                    description: "Update gist",
-                    files: files
-                  };
-                  var params = {
-                    method: "PATCH",
-                    headers: {
-                      Authorization: "token " + token + "",
-                      Accept: "application/vnd.github+json"
-                    },
-                    body: JSON.stringify(body)
-                  };
-                  return globalThis.fetch("https://api.github.com/gists/" + id + "", params).then(function (res) {
-                              var status = res.status;
-                              if (status !== 200) {
-                                res.json().then(function (json) {
-                                      console.log(status, JSON.stringify(json));
-                                      return Promise.resolve(undefined);
-                                    });
-                                return Promise.resolve({
-                                            TAG: /* Error */1,
-                                            _0: {
-                                              RE_EXN_ID: PatchError
-                                            }
-                                          });
-                              } else {
-                                return Promise.resolve({
-                                            TAG: /* Ok */0,
-                                            _0: 200
-                                          });
-                              }
-                            });
+  var entries = Belt_Array.keep(Js_dict.entries(content), (function (param) {
+          return key !== param[0];
+        }));
+  var content$1 = JSON.stringify(Js_dict.fromArray(entries));
+  var files = {};
+  files[config.name] = {
+    content: content$1
+  };
+  var body = {
+    gist_id: id,
+    description: "Remove entry with id : " + key + "",
+    files: files
+  };
+  var params = {
+    method: "PATCH",
+    headers: {
+      Authorization: "token " + config.token + "",
+      Accept: "application/vnd.github+json"
+    },
+    body: JSON.stringify(body)
+  };
+  return $$Promise.$$catch(globalThis.fetch("https://api.github.com/gists/" + id + "", params).then(function (res) {
+                  var status = res.status;
+                  if (status !== 200) {
+                    res.json().then(function (json) {
+                          console.log(status, JSON.stringify(json));
+                          return Promise.resolve(undefined);
+                        });
+                    return Promise.resolve({
+                                TAG: /* Error */1,
+                                _0: {
+                                  RE_EXN_ID: PatchError
+                                }
+                              });
+                  } else {
+                    return Promise.resolve({
+                                TAG: /* Ok */0,
+                                _0: 200
+                              });
+                  }
+                }), (function (e) {
+                console.log("e: ", e);
+                return Promise.resolve({
+                            TAG: /* Error */1,
+                            _0: e
+                          });
+              }));
+}
+
+function updateAllEntries(content, entries, config) {
+  var id = config.id;
+  var entries$1 = Js_dict.fromList(entries);
+  var keys = Object.keys(entries$1);
+  Belt_Array.forEach(keys, (function (key) {
+          var prev = Belt_Option.getExn(Js_dict.get(content, key));
+          var entry = Belt_Option.getExn(Js_dict.get(entries$1, key));
+          var $$new = Object.assign(prev, entry);
+          content[key] = $$new;
+        }));
+  var content$1 = JSON.stringify(content);
+  var files = {};
+  files[config.name] = {
+    content: content$1
+  };
+  var body = {
+    gist_id: id,
+    description: "Update gist",
+    files: files
+  };
+  var params = {
+    method: "PATCH",
+    headers: {
+      Authorization: "token " + config.token + "",
+      Accept: "application/vnd.github+json"
+    },
+    body: JSON.stringify(body)
+  };
+  return $$Promise.$$catch(globalThis.fetch("https://api.github.com/gists/" + id + "", params).then(function (res) {
+                  var status = res.status;
+                  if (status !== 200) {
+                    res.json().then(function (json) {
+                          console.log(status, JSON.stringify(json));
+                          return Promise.resolve(undefined);
+                        });
+                    return Promise.resolve({
+                                TAG: /* Error */1,
+                                _0: {
+                                  RE_EXN_ID: PatchError
+                                }
+                              });
+                  } else {
+                    return Promise.resolve({
+                                TAG: /* Ok */0,
+                                _0: 200
+                              });
+                  }
                 }), (function (e) {
                 console.log("e: ", e);
                 return Promise.resolve({
@@ -220,8 +263,8 @@ function updateAllEntries(config, entries) {
 
 var UpdateGist = {
   UpdateGistError: UpdateGistError,
-  config: config,
   updateEntry: updateEntry,
+  removeEntry: removeEntry,
   updateAllEntries: updateAllEntries
 };
 
@@ -232,6 +275,7 @@ export {
   githubAccessToken ,
   GithubGist ,
   Decode ,
+  makeGistConfig ,
   ReadGist ,
   UpdateGist ,
 }

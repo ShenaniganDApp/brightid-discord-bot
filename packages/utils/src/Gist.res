@@ -49,12 +49,25 @@ module Decode = {
   let gist = files->object
 }
 
+type gistConfig<'a> = {
+  id: string,
+  name: string,
+  token: string,
+}
+
+let makeGistConfig = (~id, ~name, ~token) => {
+  id,
+  name,
+  token,
+}
 module ReadGist = {
   @val @scope("globalThis")
   external fetch: (string, 'params) => Promise.t<Response.t<Js.Json.t>> = "fetch"
 
   @raises([Json.Decode.DecodeError, Not_found, Env.EnvError])
-  let content = (~token, ~id, ~name, ~decoder) => {
+  let content = (~config, ~decoder) => {
+    let {id, name, token} = config
+
     let params = {
       "Authorization": `Bearer ${token}`,
     }
@@ -85,63 +98,45 @@ module UpdateGist = {
   @val @scope("globalThis")
   external fetch: (string, 'params) => Promise.t<Response.t<Js.Json.t>> = "fetch"
 
-  type config<'a> = {
-    id: string,
-    name: string,
-    token: string,
-    decoder: Json.Decode.t<'a>,
-  }
-  let config = (~id, ~name, ~token, ~decoder) => {
-    id,
-    name,
-    token,
-    decoder,
-  }
+  let updateEntry = (~content, ~key, ~entry, ~config) => {
+    let {id, name, token} = config
+    let prev = content->Js.Dict.get(key)->Belt.Option.getExn
+    let new = prev->Js.Obj.assign(entry)
+    content->Js.Dict.set(key, new)
+    let content = content->Js.Json.stringifyAny
+    let files = Js.Dict.empty()
+    files->Js.Dict.set(name, {"content": content})
+    let body = {
+      "gist_id": id,
+      "description": `Update gist entry with key: ${key}`,
+      "files": files,
+    }
 
-  let updateEntry = (~config, ~key, ~entry) => {
-    let {id, name, token, decoder} = config
-    ReadGist.content(~token, ~id, ~name, ~decoder)
-    ->then(content => {
-      let prev = content->Js.Dict.get(key)->Belt.Option.getExn
-      let new = prev->Js.Obj.assign(entry)
-      content->Js.Dict.set(key, new)
-      let content = content->Js.Json.stringifyAny
-      let files = Js.Dict.empty()
-      files->Js.Dict.set(name, {"content": content})
-      let body = {
-        "gist_id": id,
-        "description": "Update guilds",
-        "files": files,
-      }
+    let params = {
+      "method": "PATCH",
+      "headers": {
+        "Authorization": `token ${token}`,
+        "Accept": "application/vnd.github+json",
+      },
+      "body": body->Js.Json.stringifyAny,
+    }
 
-      let params = {
-        "method": "PATCH",
-        "headers": {
-          "Authorization": `token ${token}`,
-          "Accept": "application/vnd.github+json",
-        },
-        "body": body->Js.Json.stringifyAny,
-      }
-
-      `https://api.github.com/gists/${id}`
-      ->fetch(params)
-      ->then(res => {
-        switch res->Response.status {
-        | 200 => Ok(200)->resolve
-        | status => {
-            res
-            ->Response.json
-            ->then(
-              json => {
-                Js.log2(status, json->Json.stringify)
-                resolve()
-              },
-            )
-            ->ignore
-            Error(Response.PatchError)->resolve
-          }
+    `https://api.github.com/gists/${id}`
+    ->fetch(params)
+    ->then(res => {
+      switch res->Response.status {
+      | 200 => Ok(200)->resolve
+      | status => {
+          res
+          ->Response.json
+          ->then(json => {
+            Js.log2(status, json->Json.stringify)
+            resolve()
+          })
+          ->ignore
+          Error(Response.PatchError)->resolve
         }
-      })
+      }
     })
     ->catch(e => {
       Js.log2("e: ", e)
@@ -149,55 +144,96 @@ module UpdateGist = {
     })
   }
 
-  let updateAllEntries = (~config, ~entries) => {
-    let {id, name, token, decoder} = config
-    ReadGist.content(~token, ~id, ~name, ~decoder)
-    ->then(content => {
-      let entries = entries->Js.Dict.fromList
-      let keys = entries->Js.Dict.keys
-      keys->Belt.Array.forEach(key => {
-        let prev = content->Js.Dict.get(key)->Belt.Option.getExn
-        let entry = entries->Js.Dict.get(key)->Belt.Option.getExn
-        let new = prev->Js.Obj.assign(entry)
-        content->Js.Dict.set(key, new)
-      })
-      let content = content->Js.Json.stringifyAny
-      let files = Js.Dict.empty()
-      files->Js.Dict.set(name, {"content": content})
-      let body = {
-        "gist_id": id,
-        "description": "Update gist",
-        "files": files,
-      }
+  let removeEntry = (~content, ~key, ~config) => {
+    let {id, name, token} = config
 
-      let params = {
-        "method": "PATCH",
-        "headers": {
-          "Authorization": `token ${token}`,
-          "Accept": "application/vnd.github+json",
-        },
-        "body": body->Js.Json.stringifyAny,
-      }
+    let entries = content->Js.Dict.entries->Belt.Array.keep(((k, _)) => key !== k)
+    let content = entries->Js.Dict.fromArray->Js.Json.stringifyAny
+    let files = Js.Dict.empty()
+    files->Js.Dict.set(name, {"content": content})
+    let body = {
+      "gist_id": id,
+      "description": `Remove entry with id : ${key}`,
+      "files": files,
+    }
 
-      `https://api.github.com/gists/${id}`
-      ->fetch(params)
-      ->then(res => {
-        switch res->Response.status {
-        | 200 => Ok(200)->resolve
-        | status => {
-            res
-            ->Response.json
-            ->then(
-              json => {
-                Js.log2(status, json->Json.stringify)
-                resolve()
-              },
-            )
-            ->ignore
-            Error(Response.PatchError)->resolve
-          }
+    let params = {
+      "method": "PATCH",
+      "headers": {
+        "Authorization": `token ${token}`,
+        "Accept": "application/vnd.github+json",
+      },
+      "body": body->Js.Json.stringifyAny,
+    }
+
+    `https://api.github.com/gists/${id}`
+    ->fetch(params)
+    ->then(res => {
+      switch res->Response.status {
+      | 200 => Ok(200)->resolve
+      | status => {
+          res
+          ->Response.json
+          ->then(json => {
+            Js.log2(status, json->Json.stringify)
+            resolve()
+          })
+          ->ignore
+          Error(Response.PatchError)->resolve
         }
-      })
+      }
+    })
+    ->catch(e => {
+      Js.log2("e: ", e)
+      resolve(Error(e))
+    })
+  }
+
+  let updateAllEntries = (~content, ~entries, ~config) => {
+    let {id, name, token} = config
+
+    let entries = entries->Js.Dict.fromList
+    let keys = entries->Js.Dict.keys
+    keys->Belt.Array.forEach(key => {
+      let prev = content->Js.Dict.get(key)->Belt.Option.getExn
+      let entry = entries->Js.Dict.get(key)->Belt.Option.getExn
+      let new = prev->Js.Obj.assign(entry)
+      content->Js.Dict.set(key, new)
+    })
+    let content = content->Js.Json.stringifyAny
+    let files = Js.Dict.empty()
+    files->Js.Dict.set(name, {"content": content})
+    let body = {
+      "gist_id": id,
+      "description": "Update gist",
+      "files": files,
+    }
+
+    let params = {
+      "method": "PATCH",
+      "headers": {
+        "Authorization": `token ${token}`,
+        "Accept": "application/vnd.github+json",
+      },
+      "body": body->Js.Json.stringifyAny,
+    }
+
+    `https://api.github.com/gists/${id}`
+    ->fetch(params)
+    ->then(res => {
+      switch res->Response.status {
+      | 200 => Ok(200)->resolve
+      | status => {
+          res
+          ->Response.json
+          ->then(json => {
+            Js.log2(status, json->Json.stringify)
+            resolve()
+          })
+          ->ignore
+          Error(Response.PatchError)->resolve
+        }
+      }
     })
     ->catch(e => {
       Js.log2("e: ", e)
