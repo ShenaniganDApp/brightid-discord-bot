@@ -49,7 +49,7 @@ type response = {
 @module("node-fetch")
 external fetch: (string, 'params) => Promise.t<Response.t<response>> = "default"
 
-let {contextId} = module(Constants)
+let {context} = module(Constants)
 let {brightIdVerificationEndpoint} = module(Endpoints)
 
 let {notFoundCode, errorCode, canNotBeVerified} = module(Services_ResponseCodes)
@@ -77,7 +77,7 @@ let defaultVerification = {
 
 let rec fetchVerificationInfo = (~retry=5, id): Promise.t<verification> => {
   let uuid = id->UUID.v5(uuidNAMESPACE)
-  let endpoint = `${brightIdVerificationEndpoint}/${contextId}/${uuid}?timestamp=seconds`
+  let endpoint = `${brightIdVerificationEndpoint}/${context}/${uuid}?timestamp=seconds`
 
   let params = {
     "method": "GET",
@@ -102,7 +102,7 @@ let rec fetchVerificationInfo = (~retry=5, id): Promise.t<verification> => {
         {
           authorExist: true,
           authorUnique: unique,
-          timestamp: timestamp,
+          timestamp,
           userAddresses: contextIds,
           userVerified: true,
           fetching: false,
@@ -130,23 +130,22 @@ let rec fetchVerificationInfo = (~retry=5, id): Promise.t<verification> => {
     let retry = retry - 1
     switch retry {
     | 0 => {
-      switch e {
-      | VerificationInfoError(msg) => Js.Console.error(msg)
-      | FetchVerificationInfoError({error}) =>
-        Js.Console.error(`Fetch Verification Info Error: ${error}`)
-      | JsError(obj) =>
-        switch Js.Exn.message(obj) {
-        | Some(msg) => Js.Console.error(msg)
-        | None => Js.Console.error("Must be some non-error value")
+        switch e {
+        | VerificationInfoError(msg) => Js.Console.error(msg)
+        | FetchVerificationInfoError({error}) =>
+          Js.Console.error(`Fetch Verification Info Error: ${error}`)
+        | JsError(obj) =>
+          switch Js.Exn.message(obj) {
+          | Some(msg) => Js.Console.error(msg)
+          | None => Js.Console.error("Must be some non-error value")
+          }
+        | _ => Js.Console.error("Some unknown error")
         }
-      | _ => Js.Console.error("Some unknown error")
+        defaultVerification->resolve
       }
-      defaultVerification->resolve
-    }
+
     | _ => fetchVerificationInfo(~retry, id)
     }
-
-
   })
 }
 

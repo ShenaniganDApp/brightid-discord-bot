@@ -2,6 +2,9 @@
 
 import * as Env from "./Env.mjs";
 import * as Curry from "rescript/lib/es6/curry.js";
+import * as Js_dict from "rescript/lib/es6/js_dict.js";
+import * as $$Promise from "@ryyppy/rescript-promise/src/Promise.mjs";
+import * as Gist$Utils from "@brightidbot/utils/src/Gist.mjs";
 import * as DiscordJs from "discord.js";
 import * as Commands_Help from "./commands/Commands_Help.mjs";
 import * as Commands_Role from "./commands/Commands_Role.mjs";
@@ -11,8 +14,11 @@ import * as Caml_exceptions from "rescript/lib/es6/caml_exceptions.js";
 import * as Commands_Invite from "./commands/Commands_Invite.mjs";
 import * as Commands_Verify from "./commands/Commands_Verify.mjs";
 import * as UpdateOrReadGistMjs from "./updateOrReadGist.mjs";
+import * as Json_Decode$JsonCombinators from "@glennsl/rescript-json-combinators/src/Json_Decode.mjs";
 
 var RequestHandlerError = /* @__PURE__ */Caml_exceptions.create("Bot.RequestHandlerError");
+
+var GuildNotInGist = /* @__PURE__ */Caml_exceptions.create("Bot.GuildNotInGist");
 
 function updateGist(prim0, prim1) {
   return UpdateOrReadGistMjs.updateGist(prim0, prim1);
@@ -20,7 +26,19 @@ function updateGist(prim0, prim1) {
 
 Env.createEnv(undefined);
 
-var config = Env.getConfig(undefined);
+var envConfig = Env.getConfig(undefined);
+
+var envConfig$1;
+
+if (envConfig.TAG === /* Ok */0) {
+  envConfig$1 = envConfig._0;
+} else {
+  throw {
+        RE_EXN_ID: Env.EnvError,
+        _1: envConfig._0,
+        Error: new Error()
+      };
+}
 
 var options = {
   intents: [
@@ -57,10 +75,23 @@ buttons.set(Buttons_Verify.customId, {
       execute: Buttons_Verify.execute
     });
 
-function updateGistOnGuildCreate(guild) {
-  return UpdateOrReadGistMjs.updateGist(guild.id, {
+var guild = Json_Decode$JsonCombinators.object(function (field) {
+      return {
+              role: field.optional("role", Json_Decode$JsonCombinators.string),
+              name: field.optional("name", Json_Decode$JsonCombinators.string),
+              inviteLink: field.optional("inviteLink", Json_Decode$JsonCombinators.string),
+              roleId: field.optional("roleId", Json_Decode$JsonCombinators.string)
+            };
+    });
+
+var brightIdGuilds = Json_Decode$JsonCombinators.dict(guild);
+
+function updateGistOnGuildCreate(guild, roleId) {
+  var guildId = guild.id;
+  return UpdateOrReadGistMjs.updateGist(guildId, {
               name: guild.name,
-              role: "Verified"
+              role: "Verified",
+              roleId: roleId
             });
 }
 
@@ -70,8 +101,8 @@ function onGuildCreate(guild) {
           name: "Verified",
           color: "ORANGE",
           reason: "Create a role to mark verified users with BrightID"
-        }).then(function (param) {
-        return updateGistOnGuildCreate(guild);
+        }).then(function (role) {
+        return updateGistOnGuildCreate(guild, role.id);
       });
 }
 
@@ -110,6 +141,24 @@ function onInteraction(interaction) {
   console.error("Bot.res: Unknown interaction");
 }
 
+function onGuildDelete(guild) {
+  var config = Gist$Utils.makeGistConfig(Gist$Utils.envConfig.gistId, "guildData.json", Gist$Utils.githubAccessToken);
+  var guildId = guild.id;
+  $$Promise.$$catch(Gist$Utils.ReadGist.content(config, brightIdGuilds).then(function (content) {
+            var brightIdGuild = Js_dict.get(content, guildId);
+            if (brightIdGuild === undefined) {
+              return Promise.resolve((console.log("No role to delete for guild " + guildId + ""), undefined));
+            }
+            var __x = guild.id;
+            return Gist$Utils.UpdateGist.removeEntry(content, __x, config).then(function (param) {
+                        return Promise.resolve(undefined);
+                      });
+          }), (function (err) {
+          console.error(err);
+          return Promise.resolve(undefined);
+        }));
+}
+
 client.on("ready", (function (param) {
         console.log("Logged In");
       }));
@@ -118,22 +167,24 @@ client.on("guildCreate", onGuildCreate);
 
 client.on("interactionCreate", onInteraction);
 
-if (config.TAG === /* Ok */0) {
-  client.login(config._0.discordApiToken);
-} else {
-  console.log(config._0);
-}
+client.on("guildDelete", onGuildDelete);
+
+client.login(envConfig$1.discordApiToken);
 
 export {
   RequestHandlerError ,
+  GuildNotInGist ,
   updateGist ,
-  config ,
+  envConfig$1 as envConfig,
   options ,
   client ,
   commands ,
   buttons ,
+  guild ,
+  brightIdGuilds ,
   updateGistOnGuildCreate ,
   onGuildCreate ,
   onInteraction ,
+  onGuildDelete ,
 }
 /*  Not a pure module */

@@ -20,16 +20,32 @@ let env = name =>
   }
 
 let getConfig = () =>
-  switch (env("DISCORD_API_TOKEN"), env("DISCORD_CLIENT_ID"), env("UUID_NAMESPACE")) {
+  switch (
+    env("DISCORD_API_TOKEN"),
+    env("DISCORD_CLIENT_ID"),
+    env("UUID_NAMESPACE"),
+    env("GIST_ID"),
+    env("GITHUB_ACCESS_TOKEN"),
+  ) {
   // Got all vars
-  | (Ok(discordApiToken), Ok(discordClientId), Ok(uuidNamespace)) =>
+  | (
+      Ok(discordApiToken),
+      Ok(discordClientId),
+      Ok(uuidNamespace),
+      Ok(gistId),
+      Ok(githubAccessToken),
+    ) =>
     Ok({
       "discordApiToken": discordApiToken,
       "discordClientId": discordClientId,
       "uuidNamespace": uuidNamespace,
+      "gistId": gistId,
+      "githubAccessToken": githubAccessToken,
     })
   // Did not get one or more vars, return the first error
-  | (Error(_) as err, _, _)
-  | (_, Error(_) as err, _)
-  | (_, _, Error(_) as err) => err
+  | (Error(_) as err, _, _, _, _)
+  | (_, Error(_) as err, _, _, _)
+  | (_, _, Error(_) as err, _, _)
+  | (_, _, _, Error(_) as err, _)
+  | (_, _, _, _, Error(_) as err) => err
   }

@@ -2,6 +2,7 @@ open Discord
 open Promise
 
 exception RequestHandlerError({date: float, message: string})
+exception GuildNotInGist(string)
 
 module type Command = {
   let data: SlashCommandBuilder.t
@@ -19,7 +20,12 @@ external updateGist: (string, 'a) => Js.Promise.t<unit> = "updateGist"
 
 Env.createEnv()
 
-let config = Env.getConfig()
+let envConfig = Env.getConfig()
+
+let envConfig = switch envConfig {
+| Ok(envConfig) => envConfig
+| Error(err) => err->Env.EnvError->raise
+}
 
 let options: Client.clientOptions = {
   intents: ["GUILDS", "GUILD_MESSAGES"],
@@ -41,8 +47,37 @@ commands
 
 buttons->Collection.set(Buttons_Verify.customId, module(Buttons_Verify))->ignore
 
-let updateGistOnGuildCreate = (guild: Guild.t) =>
-  guild->Guild.getGuildId->updateGist({"name": guild->Guild.getGuildName, "role": "Verified"})
+// @TODO: these blocks should go in a shared package
+// @TODO this should be a record
+type brightIdGuild = {
+  "role": string,
+  "name": string,
+  "inviteLink": option<string>,
+  "roleId": string,
+}
+
+type brightIdGuilds = Js.Dict.t<brightIdGuild>
+
+let guild = Json.Decode.object(field =>
+  {
+    "role": field.optional(. "role", Json.Decode.string),
+    "name": field.optional(. "name", Json.Decode.string),
+    "inviteLink": field.optional(. "inviteLink", Json.Decode.string),
+    "roleId": field.optional(. "roleId", Json.Decode.string),
+  }
+)
+
+let brightIdGuilds = guild->Json.Decode.dict
+
+let updateGistOnGuildCreate = (guild: Guild.t, roleId) => {
+  let guildId = guild->Guild.getGuildId
+
+  guildId->updateGist({
+    "name": guild->Guild.getGuildName,
+    "role": "Verified",
+    "roleId": roleId,
+  })
+}
 
 let onGuildCreate = guild => {
   let roleManager = guild->Guild.getGuildRoleManager
@@ -53,8 +88,8 @@ let onGuildCreate = guild => {
     color: "ORANGE",
     reason: "Create a role to mark verified users with BrightID",
   })
-  ->then(_ => {
-    guild->updateGistOnGuildCreate
+  ->then(role => {
+    guild->updateGistOnGuildCreate(role->Role.getRoleId)
   })
   ->ignore
 }
@@ -102,6 +137,36 @@ let onInteraction = (interaction: Interaction.t) => {
   }
 }
 
+let onGuildDelete = guild => {
+  open! Utils.Gist
+  let config = makeGistConfig(
+    ~id=envConfig["gistId"],
+    ~name="guildData.json",
+    ~token=githubAccessToken,
+  )
+
+  let guildId = guild->Guild.getGuildId
+
+  ReadGist.content(~config, ~decoder=brightIdGuilds)
+  ->then(content => {
+    let brightIdGuild = content->Js.Dict.get(guildId)
+    switch brightIdGuild {
+    | Some(_) =>
+      guild
+      ->Guild.getGuildId
+      ->UpdateGist.removeEntry(~content, ~key=_, ~config)
+      ->then(_ => resolve())
+
+    | None => Js.log(`No role to delete for guild ${guildId}`)->resolve
+    }
+  })
+  ->catch(err => {
+    Js.Console.error(err)
+    resolve()
+  })
+  ->ignore
+}
+
 client->Client.on(
   #ready(
     () => {
@@ -114,10 +179,9 @@ client->Client.on(#guildCreate(guild => guild->onGuildCreate))
 
 client->Client.on(#interactionCreate(interaction => interaction->onInteraction))
 
-switch config {
-| Ok(config) => client->Client.login(config["discordApiToken"])->ignore
-| Error(err) => Js.log(err)
-}
+client->Client.on(#guildDelete(guild => guild->onGuildDelete))
+
+client->Client.login(envConfig["discordApiToken"])->ignore
 
 // @module
 // external parseWhitelistedChannels: unit => <string> = "./parser/whitelistedChannels"

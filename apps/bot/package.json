@@ -19,8 +19,10 @@
     "prettier": "^2.1.2"
   },
   "dependencies": {
+    "@brightidbot/utils": "./packages/utils",
     "@discordjs/builders": "^0.13.0",
     "@discordjs/rest": "^0.4.1",
+    "@glennsl/rescript-json-combinators": "^1.0.0",
     "@ryyppy/rescript-promise": "^2.1.0",
     "discord-api-types": "^0.32.0",
     "discord.js": "^13.7.0",

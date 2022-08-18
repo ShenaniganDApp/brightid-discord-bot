@@ -10,11 +10,14 @@ var brightIdVerificationEndpoint = "" + brightIdEndpointv5 + "/verifications";
 
 var brightIdSubscriptionEndpoint = "" + brightIdEndpointv5 + "/operations";
 
-var brightIdAppDeeplink = "brightid://link-verification/" + nodeUrl + "/" + Constants.contextId + "";
+var brightIdAppDeeplink = "brightid://link-verification/" + nodeUrl + "/" + Constants.context + "";
 
-var brightIdLinkVerificationEndpoint = "https://app.brightid.org/link-verification/" + nodeUrl + "/" + Constants.contextId + "";
+var brightIdLinkVerificationEndpoint = "https://app.brightid.org/link-verification/" + nodeUrl + "/" + Constants.context + "";
+
+var context = Constants.context;
 
 export {
+  context ,
   nodeUrl ,
   brightIdEndpointv5 ,
   brightIdVerificationEndpoint ,

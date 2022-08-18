@@ -45,17 +45,19 @@ var guild = Json_Decode$JsonCombinators.object(function (field) {
       return {
               role: field.optional("role", Json_Decode$JsonCombinators.string),
               name: field.optional("name", Json_Decode$JsonCombinators.string),
-              inviteLink: field.optional("inviteLink", Json_Decode$JsonCombinators.string)
+              inviteLink: field.optional("inviteLink", Json_Decode$JsonCombinators.string),
+              roleId: field.optional("roleId", Json_Decode$JsonCombinators.string)
             };
     });
 
 var brightIdGuilds = Json_Decode$JsonCombinators.dict(guild);
 
 client.login(discordBotToken).then(function (param) {
-      return $$Promise.$$catch(Gist$Utils.ReadGist.content(githubAccessToken, id, "guildData.json", brightIdGuilds).then(function (data) {
-                      var guildIds = Object.keys(data);
+      var config = Gist$Utils.makeGistConfig(id, "guildData.json", githubAccessToken);
+      return $$Promise.$$catch(Gist$Utils.ReadGist.content(config, brightIdGuilds).then(function (content) {
+                      var guildIds = Object.keys(content);
                       var roleIdEntries = Belt_List.fromArray(Belt_Array.keepMap(Belt_Array.map(guildIds, (function (guildId) {
-                                      var brightIdGuild = Belt_Option.getExn(Js_dict.get(data, guildId));
+                                      var brightIdGuild = Belt_Option.getExn(Js_dict.get(content, guildId));
                                       var guildManager = client.guilds;
                                       var guilds = guildManager.cache;
                                       var guild = guilds.get(guildId);
@@ -83,8 +85,7 @@ client.login(discordBotToken).then(function (param) {
                                   }
                                   
                                 })));
-                      var config = Gist$Utils.UpdateGist.config(id, "guildData.json", githubAccessToken, brightIdGuilds);
-                      return Gist$Utils.UpdateGist.updateAllEntries(config, roleIdEntries).then(function (result) {
+                      return Gist$Utils.UpdateGist.updateAllEntries(content, roleIdEntries, config).then(function (result) {
                                   if (result.TAG === /* Ok */0) {
                                     return Promise.resolve((console.log("" + result._0 + ": Succesfully updated gist with id: " + id + ""), undefined));
                                   }
