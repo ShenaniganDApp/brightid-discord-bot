@@ -2,6 +2,7 @@
 
 import * as Env from "../Env.mjs";
 import * as Uuid from "uuid";
+import * as Decode from "../bindings/Decode.mjs";
 import * as Canvas from "canvas";
 import * as Qrcode from "qrcode";
 import * as Js_dict from "rescript/lib/es6/js_dict.js";
@@ -10,7 +11,6 @@ import * as Constants from "../Constants.mjs";
 import * as Endpoints from "../Endpoints.mjs";
 import * as Gist$Utils from "@brightidbot/utils/src/Gist.mjs";
 import * as DiscordJs from "discord.js";
-import NodeFetch from "node-fetch";
 import * as Belt_Option from "rescript/lib/es6/belt_Option.js";
 import * as Caml_option from "rescript/lib/es6/caml_option.js";
 import * as Caml_exceptions from "rescript/lib/es6/caml_exceptions.js";
@@ -22,67 +22,9 @@ var VerifyHandlerError = /* @__PURE__ */Caml_exceptions.create("Commands_Verify.
 
 var BrightIdError = /* @__PURE__ */Caml_exceptions.create("Commands_Verify.BrightIdError");
 
-globalThis.fetch = NodeFetch;
-
-var NodeFetchPolyfill = {};
-
-var UUID = {};
-
 var Canvas$1 = {};
 
 var QRCode = {};
-
-var $$Response = {};
-
-var guild = Json_Decode$JsonCombinators.object(function (field) {
-      return {
-              role: field.optional("role", Json_Decode$JsonCombinators.string),
-              name: field.optional("name", Json_Decode$JsonCombinators.string),
-              inviteLink: field.optional("inviteLink", Json_Decode$JsonCombinators.string),
-              roleId: field.optional("roleId", Json_Decode$JsonCombinators.string)
-            };
-    });
-
-var brightIdGuilds = Json_Decode$JsonCombinators.dict(guild);
-
-function contextId(field) {
-  return {
-          unique: field.required("unique", Json_Decode$JsonCombinators.bool),
-          app: field.required("app", Json_Decode$JsonCombinators.string),
-          context: field.required("context", Json_Decode$JsonCombinators.string),
-          contextIds: field.required("contextIds", Json_Decode$JsonCombinators.array(Json_Decode$JsonCombinators.string)),
-          timestamp: field.required("timestamp", Json_Decode$JsonCombinators.$$int)
-        };
-}
-
-function data(field) {
-  var __x = Json_Decode$JsonCombinators.object(contextId);
-  return {
-          data: field.required("data", __x)
-        };
-}
-
-var brightIdObject = Json_Decode$JsonCombinators.object(data);
-
-function error(field) {
-  return {
-          error: field.required("error", Json_Decode$JsonCombinators.bool),
-          errorNum: field.required("errorNum", Json_Decode$JsonCombinators.$$int),
-          errorMessage: field.required("errorMessage", Json_Decode$JsonCombinators.string),
-          code: field.required("code", Json_Decode$JsonCombinators.$$int)
-        };
-}
-
-var error$1 = Json_Decode$JsonCombinators.object(error);
-
-var Decode = {
-  guild: guild,
-  brightIdGuilds: brightIdGuilds,
-  contextId: contextId,
-  data: data,
-  brightIdObject: brightIdObject,
-  error: error$1
-};
 
 Env.createEnv(undefined);
 
@@ -123,8 +65,8 @@ function fetchVerifications(uuid) {
   return globalThis.fetch(endpoint, params).then(function (res) {
                 return res.json();
               }).then(function (json) {
-              var match = Json$JsonCombinators.decode(json, brightIdObject);
-              var match$1 = Json$JsonCombinators.decode(json, error$1);
+              var match = Json$JsonCombinators.decode(json, Decode.BrightId.data);
+              var match$1 = Json$JsonCombinators.decode(json, Decode.BrightId.error);
               if (match.TAG === /* Ok */0) {
                 return Promise.resolve(match._0.data);
               } else if (match$1.TAG === /* Ok */0) {
@@ -239,8 +181,8 @@ function execute(interaction) {
   return interaction.deferReply({
                 ephemeral: true
               }).then(function (param) {
-              var __x = Gist$Utils.makeGistConfig(config$1.gistId, "guildData.json", config$1.githubAccessToken);
-              return $$Promise.$$catch(Gist$Utils.ReadGist.content(__x, brightIdGuilds).then(function (guilds) {
+              var config$2 = Gist$Utils.makeGistConfig(config$1.gistId, "guildData.json", config$1.githubAccessToken);
+              return $$Promise.$$catch(Gist$Utils.ReadGist.content(config$2, Decode.Gist.brightIdGuilds).then(function (guilds) {
                               var guildId = guild.id;
                               var guildData = Js_dict.get(guilds, guildId);
                               if (guildData !== undefined) {
@@ -271,13 +213,11 @@ function execute(interaction) {
                                           _1: "Guild does not exist"
                                         });
                             }), (function (e) {
-                            if (e.RE_EXN_ID === VerifyHandlerError) {
-                              console.error(e._1);
-                            } else if (e.RE_EXN_ID === BrightIdError) {
+                            if (e.RE_EXN_ID === BrightIdError) {
                               var error = e._1;
                               handleUnverifiedGuildMember(error.errorNum, interaction, uuid);
                               console.error(error.errorMessage);
-                            } else if (e.RE_EXN_ID === Json_Decode$JsonCombinators.DecodeError) {
+                            } else if (e.RE_EXN_ID === VerifyHandlerError || e.RE_EXN_ID === Json_Decode$JsonCombinators.DecodeError) {
                               console.error(e._1);
                             } else if (e.RE_EXN_ID === $$Promise.JsError) {
                               var msg = e._1.message;
@@ -294,23 +234,25 @@ function execute(interaction) {
             });
 }
 
-var data$1 = new Builders.SlashCommandBuilder().setName("verify").setDescription("Sends a BrightID QR code for users to connect with their BrightId");
+var data = new Builders.SlashCommandBuilder().setName("verify").setDescription("Sends a BrightID QR code for users to connect with their BrightId");
 
 var brightIdVerificationEndpoint = Endpoints.brightIdVerificationEndpoint;
+
+var brightIdAppDeeplink = Endpoints.brightIdAppDeeplink;
+
+var brightIdLinkVerificationEndpoint = Endpoints.brightIdLinkVerificationEndpoint;
 
 var context = Constants.context;
 
 export {
   brightIdVerificationEndpoint ,
+  brightIdAppDeeplink ,
+  brightIdLinkVerificationEndpoint ,
   context ,
   VerifyHandlerError ,
   BrightIdError ,
-  NodeFetchPolyfill ,
-  UUID ,
   Canvas$1 as Canvas,
   QRCode ,
-  $$Response ,
-  Decode ,
   config$1 as config,
   addVerifiedRole ,
   fetchVerifications ,
@@ -320,6 +262,6 @@ export {
   makeVerifyActionRow ,
   handleUnverifiedGuildMember ,
   execute ,
-  data$1 as data,
+  data ,
 }
 /*  Not a pure module */
