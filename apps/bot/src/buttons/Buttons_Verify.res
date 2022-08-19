@@ -75,34 +75,40 @@ let execute = interaction => {
         ->getRolebyRoleName(guildRoleManager, _)
       member
       ->Services_VerificationInfo.getBrightIdVerification
-      ->then(verificationInfo => {
-        verificationInfo.userAddresses->Belt.Array.length > 1
-          ? member->noMultipleAccounts
-          : verificationInfo.userVerified
-          ? {
-            guildRole
-            ->verifyMember(member)
-            ->then(_ => {
-              interaction->Interaction.editReply(
-                ~options={
-                  "content": `Hey, I recognize you! I just gave you the \`${guildRole->Role.getName}\` role. You are now BrightID verified in ${guild->Guild.getGuildName} server!`,
+      ->then(
+        verificationInfo => {
+          verificationInfo.userAddresses->Belt.Array.length > 1
+            ? member->noMultipleAccounts
+            : verificationInfo.userVerified
+            ? {
+              guildRole
+              ->verifyMember(member)
+              ->then(
+                _ => {
+                  interaction->Interaction.editReply(
+                    ~options={
+                      "content": `Hey, I recognize you! I just gave you the \`${guildRole->Role.getName}\` role. You are now BrightID verified in ${guild->Guild.getGuildName} server!`,
+                    },
+                    (),
+                  )
                 },
-                (),
-              )
-            })
-            ->ignore
-            resolve()
-          }
-          : {
-              interaction
-              ->Interaction.editReply(
-                ~options={"content": "You are not properly verified with BrightID"},
-                (),
               )
               ->ignore
-              MeHandlerError(`Member ${member->GuildMember.getDisplayName} is not verified`)->reject
+              resolve()
             }
-      })
+            : {
+                interaction
+                ->Interaction.editReply(
+                  ~options={"content": "You are not properly verified with BrightID"},
+                  (),
+                )
+                ->ignore
+                MeHandlerError(
+                  `Member ${member->GuildMember.getDisplayName} is not verified`,
+                )->reject
+              }
+        },
+      )
     })
   })
   ->catch(e => {

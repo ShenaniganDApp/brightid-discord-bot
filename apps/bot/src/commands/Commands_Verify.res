@@ -215,40 +215,44 @@ let execute = (interaction: Interaction.t) => {
           let verifyUrl = `${brightIdLinkVerificationEndpoint}/${id}`
           fetchVerifications()
           ->then(data => isIdInVerifications(data, id))
-          ->then(idExists => {
-            idExists
-              ? {
+          ->then(
+            idExists => {
+              idExists
+                ? {
                     guildMemberRoleManager->GuildMemberRoleManager.add(guildRole, ())->ignore
-                  interaction
-                  ->Interaction.editReply(
-                    ~options={
-                      "content": `Hey, I recognize you! I just gave you the \`${guildRole->Role.getName}\` role. You are now BrightID verified in ${guild->Guild.getGuildName} server!`,
-                      "ephemeral": true,
+                    interaction
+                    ->Interaction.editReply(
+                      ~options={
+                        "content": `Hey, I recognize you! I just gave you the \`${guildRole->Role.getName}\` role. You are now BrightID verified in ${guild->Guild.getGuildName} server!`,
+                        "ephemeral": true,
+                      },
+                      (),
+                    )
+                    ->ignore
+                    resolve()
+                  }
+                : deepLink
+                  ->createMessageAttachmentFromUri
+                  ->then(
+                    attachment => {
+                      let embed = verifyUrl->makeEmbed
+                      let row = verifyUrl->makeVerifyActionRow
+                      interaction
+                      ->Interaction.editReply(
+                        ~options={
+                          "embeds": [embed],
+                          "files": [attachment],
+                          "ephemeral": true,
+                          "components": [row],
+                        },
+                        (),
+                      )
+                      ->ignore
+                      resolve()
                     },
-                    (),
                   )
-                  ->ignore
-                  resolve()
-                }
-              : deepLink
-                ->createMessageAttachmentFromUri
-                ->then(attachment => {
-                  let embed = verifyUrl->makeEmbed
-                  let row = verifyUrl->makeVerifyActionRow
-                  interaction
-                  ->Interaction.editReply(
-                    ~options={
-                      "embeds": [embed],
-                      "files": [attachment],
-                      "ephemeral": true,
-                      "components": [row],
-                    },
-                    (),
-                  )
-                  ->ignore
-                  resolve()
-                })
-          })
+            },
+          )
         }
       }
     })
