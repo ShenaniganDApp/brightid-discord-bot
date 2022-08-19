@@ -6,15 +6,25 @@ import * as Canvas from "canvas";
 import * as Qrcode from "qrcode";
 import * as Js_dict from "rescript/lib/es6/js_dict.js";
 import * as $$Promise from "@ryyppy/rescript-promise/src/Promise.mjs";
+import * as Constants from "../Constants.mjs";
 import * as Endpoints from "../Endpoints.mjs";
-import * as Belt_Array from "rescript/lib/es6/belt_Array.js";
+import * as Gist$Utils from "@brightidbot/utils/src/Gist.mjs";
 import * as DiscordJs from "discord.js";
 import NodeFetch from "node-fetch";
+import * as Belt_Option from "rescript/lib/es6/belt_Option.js";
+import * as Caml_option from "rescript/lib/es6/caml_option.js";
 import * as Caml_exceptions from "rescript/lib/es6/caml_exceptions.js";
 import * as Builders from "@discordjs/builders";
-import * as UpdateOrReadGistMjs from "../updateOrReadGist.mjs";
+import * as Json$JsonCombinators from "@glennsl/rescript-json-combinators/src/Json.mjs";
+import * as Json_Decode$JsonCombinators from "@glennsl/rescript-json-combinators/src/Json_Decode.mjs";
 
 var VerifyHandlerError = /* @__PURE__ */Caml_exceptions.create("Commands_Verify.VerifyHandlerError");
+
+var BrightIdError = /* @__PURE__ */Caml_exceptions.create("Commands_Verify.BrightIdError");
+
+globalThis.fetch = NodeFetch;
+
+var NodeFetchPolyfill = {};
 
 var UUID = {};
 
@@ -24,21 +34,67 @@ var QRCode = {};
 
 var $$Response = {};
 
-function readGist(prim) {
-  return UpdateOrReadGistMjs.readGist();
+var guild = Json_Decode$JsonCombinators.object(function (field) {
+      return {
+              role: field.optional("role", Json_Decode$JsonCombinators.string),
+              name: field.optional("name", Json_Decode$JsonCombinators.string),
+              inviteLink: field.optional("inviteLink", Json_Decode$JsonCombinators.string),
+              roleId: field.optional("roleId", Json_Decode$JsonCombinators.string)
+            };
+    });
+
+var brightIdGuilds = Json_Decode$JsonCombinators.dict(guild);
+
+function contextId(field) {
+  return {
+          unique: field.required("unique", Json_Decode$JsonCombinators.bool),
+          app: field.required("app", Json_Decode$JsonCombinators.string),
+          context: field.required("context", Json_Decode$JsonCombinators.string),
+          contextIds: field.required("contextIds", Json_Decode$JsonCombinators.array(Json_Decode$JsonCombinators.string)),
+          timestamp: field.required("timestamp", Json_Decode$JsonCombinators.$$int)
+        };
 }
+
+function data(field) {
+  var __x = Json_Decode$JsonCombinators.object(contextId);
+  return {
+          data: field.required("data", __x)
+        };
+}
+
+var brightIdObject = Json_Decode$JsonCombinators.object(data);
+
+function error(field) {
+  return {
+          error: field.required("error", Json_Decode$JsonCombinators.bool),
+          errorNum: field.required("errorNum", Json_Decode$JsonCombinators.$$int),
+          errorMessage: field.required("errorMessage", Json_Decode$JsonCombinators.string),
+          code: field.required("code", Json_Decode$JsonCombinators.$$int)
+        };
+}
+
+var error$1 = Json_Decode$JsonCombinators.object(error);
+
+var Decode = {
+  guild: guild,
+  brightIdGuilds: brightIdGuilds,
+  contextId: contextId,
+  data: data,
+  brightIdObject: brightIdObject,
+  error: error$1
+};
 
 Env.createEnv(undefined);
 
 var config = Env.getConfig(undefined);
 
-var uuidNAMESPACE;
+var config$1;
 
 if (config.TAG === /* Ok */0) {
-  uuidNAMESPACE = config._0.uuidNamespace;
+  config$1 = config._0;
 } else {
   throw {
-        RE_EXN_ID: VerifyHandlerError,
+        RE_EXN_ID: Env.EnvError,
         _1: config._0,
         Error: new Error()
       };
@@ -54,36 +110,8 @@ function addVerifiedRole(member, role, reason) {
   };
 }
 
-function isIdInVerifications(data, id) {
-  var match = data.error;
-  if (match == null) {
-    var contextIds = data.contextIds;
-    if (contextIds == null) {
-      return Promise.reject({
-                  RE_EXN_ID: VerifyHandlerError,
-                  _1: "Didn't return contextIds"
-                });
-    } else {
-      return Promise.resolve(Belt_Array.some(contextIds, (function (contextId) {
-                        return id === contextId;
-                      })));
-    }
-  }
-  var msg = data.errorMessage;
-  if (msg == null) {
-    return Promise.reject({
-                RE_EXN_ID: VerifyHandlerError,
-                _1: "No error message"
-              });
-  } else {
-    return Promise.reject({
-                RE_EXN_ID: VerifyHandlerError,
-                _1: msg
-              });
-  }
-}
-
-function fetchVerifications(param) {
+function fetchVerifications(uuid) {
+  var endpoint = "" + Endpoints.brightIdVerificationEndpoint + "/" + Constants.context + "/" + uuid + "?timestamp=seconds";
   var params = {
     method: "GET",
     headers: {
@@ -92,17 +120,23 @@ function fetchVerifications(param) {
     },
     timeout: 60000
   };
-  return NodeFetch("https://app.brightid.org/node/v5/verifications/Discord", params).then(function (res) {
+  return globalThis.fetch(endpoint, params).then(function (res) {
                 return res.json();
-              }).then(function (res) {
-              var data = res.data;
-              if (data == null) {
+              }).then(function (json) {
+              var match = Json$JsonCombinators.decode(json, brightIdObject);
+              var match$1 = Json$JsonCombinators.decode(json, error$1);
+              if (match.TAG === /* Ok */0) {
+                return Promise.resolve(match._0.data);
+              } else if (match$1.TAG === /* Ok */0) {
                 return Promise.reject({
-                            RE_EXN_ID: VerifyHandlerError,
-                            _1: "No data"
+                            RE_EXN_ID: BrightIdError,
+                            _1: match$1._0
                           });
               } else {
-                return Promise.resolve(data);
+                return Promise.reject({
+                            RE_EXN_ID: Json_Decode$JsonCombinators.DecodeError,
+                            _1: match._0
+                          });
               }
             });
 }
@@ -140,16 +174,14 @@ function createMessageAttachmentFromUri(uri) {
             });
 }
 
-function getRolebyRoleName(guildRoleManager, roleName) {
-  var guildRole = guildRoleManager.cache.find(function (role) {
-        return role.name === roleName;
-      });
+function getRolebyRoleId(guildRoleManager, roleId) {
+  var guildRole = guildRoleManager.cache.get(roleId);
   if (!(guildRole == null)) {
     return guildRole;
   }
   throw {
         RE_EXN_ID: VerifyHandlerError,
-        _1: "Could not find a role with the name " + roleName,
+        _1: "Could not find a role with the id " + roleId,
         Error: new Error()
       };
 }
@@ -163,27 +195,59 @@ function makeVerifyActionRow(verifyUrl) {
             ]);
 }
 
+function handleUnverifiedGuildMember(errorNum, interaction, uuid) {
+  var deepLink = "" + Endpoints.brightIdAppDeeplink + "/" + uuid + "";
+  var verifyUrl = "" + Endpoints.brightIdLinkVerificationEndpoint + "/" + uuid + "";
+  switch (errorNum) {
+    case 2 :
+        return createMessageAttachmentFromUri(deepLink).then(function (attachment) {
+                    var embed = makeEmbed(verifyUrl);
+                    var row = makeVerifyActionRow(verifyUrl);
+                    interaction.editReply({
+                          embeds: [embed],
+                          files: [attachment],
+                          ephemeral: true,
+                          components: [row]
+                        });
+                    return Promise.resolve(undefined);
+                  });
+    case 3 :
+        interaction.editReply({
+              content: "I haven't seen you at a Bright ID Connection Party yet, so your brightid is not verified. You can join a party in any timezone at https://meet.brightid.org"
+            });
+        return Promise.resolve(undefined);
+    case 4 :
+        interaction.editReply({
+              content: "Whoops! You haven't received a sponsor. There are plenty of apps with free sponsors, such as the [EIDI Faucet](https://idchain.one/begin/). \n\n See all the apps available at https://apps.brightid.org"
+            });
+        return Promise.resolve(undefined);
+    default:
+      interaction.editReply({
+            content: "Something unexpected happened. Please try again later."
+          });
+      return Promise.resolve(undefined);
+  }
+}
+
 function execute(interaction) {
   var guild = interaction.guild;
   var member = interaction.member;
   var guildRoleManager = guild.roles;
   var guildMemberRoleManager = member.roles;
   var memberId = member.id;
-  var id = Uuid.v5(memberId, uuidNAMESPACE);
+  var uuid = Uuid.v5(memberId, config$1.uuidNamespace);
   return interaction.deferReply({
                 ephemeral: true
               }).then(function (param) {
-              return $$Promise.$$catch(UpdateOrReadGistMjs.readGist().then(function (guilds) {
+              var __x = Gist$Utils.makeGistConfig(config$1.gistId, "guildData.json", config$1.githubAccessToken);
+              return $$Promise.$$catch(Gist$Utils.ReadGist.content(__x, brightIdGuilds).then(function (guilds) {
                               var guildId = guild.id;
                               var guildData = Js_dict.get(guilds, guildId);
                               if (guildData !== undefined) {
-                                var guildRole = getRolebyRoleName(guildRoleManager, guildData.role);
-                                var deepLink = "" + Endpoints.brightIdAppDeeplink + "/" + id + "";
-                                var verifyUrl = "" + Endpoints.brightIdLinkVerificationEndpoint + "/" + id + "";
-                                return fetchVerifications(undefined).then(function (data) {
-                                              return isIdInVerifications(data, id);
-                                            }).then(function (idExists) {
-                                            if (idExists) {
+                                var roleId = Belt_Option.getExn(Caml_option.valFromOption(guildData).roleId);
+                                var guildRole = getRolebyRoleId(guildRoleManager, roleId);
+                                return fetchVerifications(uuid).then(function (contextId) {
+                                            if (contextId.unique) {
                                               guildMemberRoleManager.add(guildRole, undefined);
                                               interaction.editReply({
                                                     content: "Hey, I recognize you! I just gave you the \`" + guildRole.name + "\` role. You are now BrightID verified in " + guild.name + " server!",
@@ -191,17 +255,11 @@ function execute(interaction) {
                                                   });
                                               return Promise.resolve(undefined);
                                             } else {
-                                              return createMessageAttachmentFromUri(deepLink).then(function (attachment) {
-                                                          var embed = makeEmbed(verifyUrl);
-                                                          var row = makeVerifyActionRow(verifyUrl);
-                                                          interaction.editReply({
-                                                                embeds: [embed],
-                                                                files: [attachment],
-                                                                ephemeral: true,
-                                                                components: [row]
-                                                              });
-                                                          return Promise.resolve(undefined);
-                                                        });
+                                              interaction.editReply({
+                                                    content: "Hey, I recognize you, but your account seems to be linked to a sybil attack. You are not properly BrightID verified. If this is a mistake, contact one of the support channels",
+                                                    ephemeral: true
+                                                  });
+                                              return Promise.resolve(undefined);
                                             }
                                           });
                               }
@@ -214,6 +272,12 @@ function execute(interaction) {
                                         });
                             }), (function (e) {
                             if (e.RE_EXN_ID === VerifyHandlerError) {
+                              console.error(e._1);
+                            } else if (e.RE_EXN_ID === BrightIdError) {
+                              var error = e._1;
+                              handleUnverifiedGuildMember(error.errorNum, interaction, uuid);
+                              console.error(error.errorMessage);
+                            } else if (e.RE_EXN_ID === Json_Decode$JsonCombinators.DecodeError) {
                               console.error(e._1);
                             } else if (e.RE_EXN_ID === $$Promise.JsError) {
                               var msg = e._1.message;
@@ -230,25 +294,32 @@ function execute(interaction) {
             });
 }
 
-var data = new Builders.SlashCommandBuilder().setName("verify").setDescription("Sends a BrightID QR code for users to connect with their BrightId");
+var data$1 = new Builders.SlashCommandBuilder().setName("verify").setDescription("Sends a BrightID QR code for users to connect with their BrightId");
+
+var brightIdVerificationEndpoint = Endpoints.brightIdVerificationEndpoint;
+
+var context = Constants.context;
 
 export {
+  brightIdVerificationEndpoint ,
+  context ,
   VerifyHandlerError ,
+  BrightIdError ,
+  NodeFetchPolyfill ,
   UUID ,
   Canvas$1 as Canvas,
   QRCode ,
   $$Response ,
-  readGist ,
-  config ,
-  uuidNAMESPACE ,
+  Decode ,
+  config$1 as config,
   addVerifiedRole ,
-  isIdInVerifications ,
   fetchVerifications ,
   makeEmbed ,
   createMessageAttachmentFromUri ,
-  getRolebyRoleName ,
+  getRolebyRoleId ,
   makeVerifyActionRow ,
+  handleUnverifiedGuildMember ,
   execute ,
-  data ,
+  data$1 as data,
 }
 /*  Not a pure module */

@@ -16,6 +16,13 @@ type brightContextId = {
 }
 type brightIdContextIdRes = {data: brightContextId}
 
+type brightIdError = {
+  error: bool,
+  errorNum: int,
+  errorMessage: string,
+  code: int,
+}
+
 // @TODO: these blocks should go in a shared package
 // @TODO this should be a record
 type brightIdGuild = {
@@ -23,13 +30,6 @@ type brightIdGuild = {
   "name": string,
   "inviteLink": option<string>,
   "roleId": string,
-}
-
-type brightIdError = {
-  error: bool,
-  errorNum: int,
-  errorMessage: string,
-  code: int,
 }
 
 type brightIdGuilds = Js.Dict.t<brightIdGuild>
