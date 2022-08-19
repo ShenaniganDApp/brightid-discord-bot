@@ -1,7 +1,50 @@
 open Promise
 open Endpoints
 open Discord
+
+let {brightIdVerificationEndpoint} = module(Endpoints)
+let {context} = module(Constants)
+
+type brightIdGuild = {
+  "role": string,
+  "name": string,
+  "inviteLink": option<string>,
+  "roleId": string,
+}
+
+type brightIdGuilds = Js.Dict.t<brightIdGuild>
+
+type brightContextId = {
+  unique: bool,
+  app: string,
+  context: string,
+  contextIds: array<string>,
+  timestamp: int,
+}
+type brightIdContextIdRes = {data: brightContextId}
+
+type brightIdError = {
+  error: bool,
+  errorNum: int,
+  errorMessage: string,
+  code: int,
+}
+
+type gistConfig<'a> = {
+  id: string,
+  name: string,
+  token: string,
+}
+
 exception VerifyHandlerError(string)
+exception BrightIdError(brightIdError)
+
+module NodeFetchPolyfill = {
+  type t
+  @module("node-fetch") external fetch: t = "default"
+  @val external globalThis: 'a = "globalThis"
+  globalThis["fetch"] = fetch
+}
 
 module UUID = {
   type t = string
@@ -23,36 +66,59 @@ module QRCode = {
 
 module Response = {
   type t<'data>
+
   @send external json: t<'data> => Promise.t<'data> = "json"
-}
-type response = {
-  "data": Js.Nullable.t<{
-    "count": Js.Nullable.t<int>,
-    "contextIds": Js.Nullable.t<array<string>>,
-    "error": Js.Nullable.t<bool>,
-    "errorMessage": Js.Nullable.t<string>,
-  }>,
+  @get external status: t<'data> => int = "status"
 }
 
-type brightIdGuildData = {
-  name: string,
-  role: string,
-  inviteLink: Js.Nullable.t<string>,
+module Decode = {
+  open Json.Decode
+
+  let guild = Json.Decode.object(field =>
+    {
+      "role": field.optional(. "role", Json.Decode.string),
+      "name": field.optional(. "name", Json.Decode.string),
+      "inviteLink": field.optional(. "inviteLink", Json.Decode.string),
+      "roleId": field.optional(. "roleId", Json.Decode.string),
+    }
+  )
+
+  let brightIdGuilds = guild->Json.Decode.dict
+
+  let contextId = field => {
+    unique: field.required(. "unique", bool),
+    app: field.required(. "app", string),
+    context: field.required(. "context", string),
+    contextIds: field.required(. "contextIds", array(string)),
+    timestamp: field.required(. "timestamp", int),
+  }
+
+  let data = field => {
+    data: contextId->object->field.required(. "data", _),
+  }
+
+  let brightIdObject = data->object
+
+  let error = field => {
+    error: field.required(. "error", bool),
+    errorNum: field.required(. "errorNum", int),
+    errorMessage: field.required(. "errorMessage", string),
+    code: field.required(. "code", int),
+  }
+
+  let error = error->object
 }
 
-@module("../updateOrReadGist.mjs")
-external readGist: unit => Promise.t<Js.Dict.t<brightIdGuildData>> = "readGist"
-
-@module("node-fetch")
-external fetch: (string, 'params) => Promise.t<Response.t<response>> = "default"
+@val @scope("globalThis")
+external fetch: (string, 'params) => Promise.t<Response.t<Js.Json.t>> = "fetch"
 
 Env.createEnv()
 
 let config = Env.getConfig()
 
-let uuidNAMESPACE = switch config {
-| Ok(config) => config["uuidNamespace"]
-| Error(err) => err->VerifyHandlerError->raise
+let config = switch config {
+| Ok(config) => config
+| Error(err) => err->Env.EnvError->raise
 }
 
 let addVerifiedRole = (member, role, reason) => {
@@ -64,25 +130,8 @@ let addVerifiedRole = (member, role, reason) => {
   )
 }
 
-let isIdInVerifications = (data, id) => {
-  switch Js.Nullable.toOption(data["error"]) {
-  | Some(_) =>
-    switch Js.Nullable.toOption(data["errorMessage"]) {
-    | None => reject(VerifyHandlerError("No error message"))
-    | Some(msg) => reject(VerifyHandlerError(msg))
-    }
-  | None =>
-    switch Js.Nullable.toOption(data["contextIds"]) {
-    | None => reject(VerifyHandlerError("Didn't return contextIds"))
-    | Some(contextIds) => {
-        let exists = contextIds->Belt.Array.some(contextId => id === contextId)
-        exists->resolve
-      }
-    }
-  }
-}
-
-let fetchVerifications = () => {
+let fetchVerifications = uuid => {
+  let endpoint = `${brightIdVerificationEndpoint}/${context}/${uuid}?timestamp=seconds`
   let params = {
     "method": "GET",
     "headers": {
@@ -91,15 +140,16 @@ let fetchVerifications = () => {
     },
     "timeout": 60000,
   }
-  "https://app.brightid.org/node/v5/verifications/Discord"
+  endpoint
   ->fetch(params)
   ->then(res => res->Response.json)
-  ->then(res =>
-    switch Js.Nullable.toOption(res["data"]) {
-    | Some(data) => data->resolve
-    | None => VerifyHandlerError("No data")->reject
+  ->then(json => {
+    switch (json->Json.decode(Decode.brightIdObject), json->Json.decode(Decode.error)) {
+    | (Ok({data}), _) => data->resolve
+    | (_, Ok(error)) => error->BrightIdError->reject
+    | (Error(err), _) => err->Json.Decode.DecodeError->reject
     }
-  )
+  })
 }
 
 let makeEmbed = verifyUrl => {
@@ -156,16 +206,13 @@ let createMessageAttachmentFromUri = uri => {
   })
 }
 
-let getRolebyRoleName = (guildRoleManager, roleName) => {
+let getRolebyRoleId = (guildRoleManager, roleId) => {
   let guildRole =
-    guildRoleManager
-    ->RoleManager.getCache
-    ->Collection.find(role => role->Role.getName === roleName)
-    ->Js.Nullable.toOption
+    guildRoleManager->RoleManager.getCache->Collection.get(roleId)->Js.Nullable.toOption
 
   switch guildRole {
   | Some(guildRole) => guildRole
-  | None => VerifyHandlerError("Could not find a role with the name " ++ roleName)->raise
+  | None => VerifyHandlerError("Could not find a role with the id " ++ roleId)->raise
   }
 }
 
@@ -184,17 +231,82 @@ let makeVerifyActionRow = verifyUrl => {
   MessageActionRow.make()->MessageActionRow.addComponents([mobileButton, roleButton])
 }
 
+let handleUnverifiedGuildMember = (errorNum, interaction, uuid) => {
+  let deepLink = `${brightIdAppDeeplink}/${uuid}`
+  let verifyUrl = `${brightIdLinkVerificationEndpoint}/${uuid}`
+  switch errorNum {
+  | 2 =>
+    deepLink
+    ->createMessageAttachmentFromUri
+    ->then(attachment => {
+      let embed = verifyUrl->makeEmbed
+      let row = verifyUrl->makeVerifyActionRow
+      interaction
+      ->Interaction.editReply(
+        ~options={
+          "embeds": [embed],
+          "files": [attachment],
+          "ephemeral": true,
+          "components": [row],
+        },
+        (),
+      )
+      ->ignore
+      resolve()
+    })
+  | 3 =>
+    interaction
+    ->Interaction.editReply(
+      ~options={
+        "content": "I haven't seen you at a Bright ID Connection Party yet, so your brightid is not verified. You can join a party in any timezone at https://meet.brightid.org",
+      },
+      (),
+    )
+    ->ignore
+    resolve()
+  | 4 =>
+    interaction
+    ->Interaction.editReply(
+      ~options={
+        "content": "Whoops! You haven't received a sponsor. There are plenty of apps with free sponsors, such as the [EIDI Faucet](https://idchain.one/begin/). \n\n See all the apps available at https://apps.brightid.org",
+      },
+      (),
+    )
+    ->ignore
+    resolve()
+
+  | _ =>
+    interaction
+    ->Interaction.editReply(
+      ~options={
+        "content": "Something unexpected happened. Please try again later.",
+      },
+      (),
+    )
+    ->ignore
+    resolve()
+  }
+}
+
 let execute = (interaction: Interaction.t) => {
+  open Utils
+  open Decode
+
   let guild = interaction->Interaction.getGuild
   let member = interaction->Interaction.getGuildMember
   let guildRoleManager = guild->Guild.getGuildRoleManager
   let guildMemberRoleManager = member->GuildMember.getGuildMemberRoleManager
   let memberId = member->GuildMember.getGuildMemberId
-  let id = memberId->UUID.v5(uuidNAMESPACE)
+  let uuid = memberId->UUID.v5(config["uuidNamespace"])
   interaction
   ->Interaction.deferReply(~options={"ephemeral": true}, ())
   ->then(_ => {
-    readGist()
+    Gist.makeGistConfig(
+      ~id=config["gistId"],
+      ~name="guildData.json",
+      ~token=config["githubAccessToken"],
+    )
+    ->Gist.ReadGist.content(~config=_, ~decoder=brightIdGuilds)
     ->then(guilds => {
       let guildId = guild->Guild.getGuildId
       let guildData = guilds->Js.Dict.get(guildId)
@@ -210,47 +322,38 @@ let execute = (interaction: Interaction.t) => {
         ->ignore
         VerifyHandlerError("Guild does not exist")->reject
       | Some(guildData) => {
-          let guildRole = guildRoleManager->getRolebyRoleName(guildData.role)
-          let deepLink = `${brightIdAppDeeplink}/${id}`
-          let verifyUrl = `${brightIdLinkVerificationEndpoint}/${id}`
-          fetchVerifications()
-          ->then(data => isIdInVerifications(data, id))
+          let roleId = guildData["roleId"]->Belt.Option.getExn
+          let guildRole = guildRoleManager->getRolebyRoleId(roleId)
+          uuid
+          ->fetchVerifications
           ->then(
-            idExists => {
-              idExists
-                ? {
-                    guildMemberRoleManager->GuildMemberRoleManager.add(guildRole, ())->ignore
-                    interaction
-                    ->Interaction.editReply(
-                      ~options={
-                        "content": `Hey, I recognize you! I just gave you the \`${guildRole->Role.getName}\` role. You are now BrightID verified in ${guild->Guild.getGuildName} server!`,
-                        "ephemeral": true,
-                      },
-                      (),
-                    )
-                    ->ignore
-                    resolve()
-                  }
-                : deepLink
-                  ->createMessageAttachmentFromUri
-                  ->then(
-                    attachment => {
-                      let embed = verifyUrl->makeEmbed
-                      let row = verifyUrl->makeVerifyActionRow
-                      interaction
-                      ->Interaction.editReply(
-                        ~options={
-                          "embeds": [embed],
-                          "files": [attachment],
-                          "ephemeral": true,
-                          "components": [row],
-                        },
-                        (),
-                      )
-                      ->ignore
-                      resolve()
-                    },
-                  )
+            contextId => {
+              switch contextId.unique {
+              | true =>
+                guildMemberRoleManager->GuildMemberRoleManager.add(guildRole, ())->ignore
+                interaction
+                ->Interaction.editReply(
+                  ~options={
+                    "content": `Hey, I recognize you! I just gave you the \`${guildRole->Role.getName}\` role. You are now BrightID verified in ${guild->Guild.getGuildName} server!`,
+                    "ephemeral": true,
+                  },
+                  (),
+                )
+                ->ignore
+                resolve()
+
+              | false =>
+                interaction
+                ->Interaction.editReply(
+                  ~options={
+                    "content": `Hey, I recognize you, but your account seems to be linked to a sybil attack. You are not properly BrightID verified. If this is a mistake, contact one of the support channels`,
+                    "ephemeral": true,
+                  },
+                  (),
+                )
+                ->ignore
+                resolve()
+              }
             },
           )
         }
@@ -259,6 +362,10 @@ let execute = (interaction: Interaction.t) => {
     ->catch(e => {
       switch e {
       | VerifyHandlerError(msg) => Js.Console.error(msg)
+      | BrightIdError(error) =>
+        error.errorNum->handleUnverifiedGuildMember(interaction, uuid)->ignore
+        Js.Console.error(error.errorMessage)
+      | Json.Decode.DecodeError(msg) => Js.Console.error(msg)
       | JsError(obj) =>
         switch Js.Exn.message(obj) {
         | Some(msg) => Js.Console.error(msg)
