@@ -1,5 +1,7 @@
 open Discord
 open Promise
+open NodeFetch
+open BrightId
 
 let {brightIdVerificationEndpoint} = module(Endpoints)
 let {context} = module(Constants)
@@ -7,38 +9,6 @@ let {context} = module(Constants)
 exception RequestHandlerError({date: float, message: string})
 exception GuildNotInGist(string)
 
-type brightContextId = {
-  unique: bool,
-  app: string,
-  context: string,
-  contextIds: array<string>,
-  timestamp: int,
-}
-type brightIdContextIdRes = {data: brightContextId}
-
-type brightIdError = {
-  error: bool,
-  errorNum: int,
-  errorMessage: string,
-  code: int,
-}
-
-// @TODO: these blocks should go in a shared package
-// @TODO this should be a record
-type brightIdGuild = {
-  "role": string,
-  "name": string,
-  "inviteLink": option<string>,
-  "roleId": string,
-}
-
-type brightIdGuilds = Js.Dict.t<brightIdGuild>
-module NodeFetchPolyfill = {
-  type t
-  @module("node-fetch") external fetch: t = "default"
-  @val external globalThis: 'a = "globalThis"
-  globalThis["fetch"] = fetch
-}
 module type Command = {
   let data: SlashCommandBuilder.t
   let execute: Interaction.t => Js.Promise.t<unit>
@@ -48,59 +18,11 @@ module type Button = {
   let execute: Interaction.t => Js.Promise.t<unit>
 }
 
-module Response = {
-  type t<'data>
-
-  @send external json: t<'data> => Promise.t<'data> = "json"
-  @get external status: t<'data> => int = "status"
-}
-
-module UUID = {
-  type t = string
-  type name = UUIDName(string)
-  @module("uuid") external v5: (string, string) => t = "v5"
-}
-
-module Decode = {
-  open Json.Decode
-
-  let contextId = field => {
-    unique: field.required(. "unique", bool),
-    app: field.required(. "app", string),
-    context: field.required(. "context", string),
-    contextIds: field.required(. "contextIds", array(string)),
-    timestamp: field.required(. "timestamp", int),
-  }
-
-  let data = field => {
-    data: contextId->object->field.required(. "data", _),
-  }
-
-  let brightIdObject = data->object
-
-  let error = field => {
-    error: field.required(. "error", bool),
-    errorNum: field.required(. "errorNum", int),
-    errorMessage: field.required(. "errorMessage", string),
-    code: field.required(. "code", int),
-  }
-
-  let error = error->object
-}
-
-type gistConfig<'a> = {
-  id: string,
-  name: string,
-  token: string,
-}
-
 @val @scope("globalThis")
 external fetch: (string, 'params) => Promise.t<Response.t<Js.Json.t>> = "fetch"
 
 @module("./updateOrReadGist.mjs")
 external updateGist: (string, 'a) => Js.Promise.t<unit> = "updateGist"
-
-@val @module("discord.js") external user: 'a = "Client"
 
 Env.createEnv()
 
@@ -130,17 +52,6 @@ commands
 ->ignore
 
 buttons->Collection.set(Buttons_Verify.customId, module(Buttons_Verify))->ignore
-
-let guild = Json.Decode.object(field =>
-  {
-    "role": field.optional(. "role", Json.Decode.string),
-    "name": field.optional(. "name", Json.Decode.string),
-    "inviteLink": field.optional(. "inviteLink", Json.Decode.string),
-    "roleId": field.optional(. "roleId", Json.Decode.string),
-  }
-)
-
-let brightIdGuilds = guild->Json.Decode.dict
 
 let updateGistOnGuildCreate = (guild: Guild.t, roleId) => {
   let guildId = guild->Guild.getGuildId
@@ -211,24 +122,19 @@ let onInteraction = (interaction: Interaction.t) => {
 }
 
 let onGuildDelete = guild => {
-  open! Utils.Gist
-  let config = makeGistConfig(
+  open Utils
+  let config = Gist.makeGistConfig(
     ~id=envConfig["gistId"],
     ~name="guildData.json",
     ~token=envConfig["githubAccessToken"],
   )
-
   let guildId = guild->Guild.getGuildId
 
-  ReadGist.content(~config, ~decoder=brightIdGuilds)
+  Gist.ReadGist.content(~config, ~decoder=Decode.Gist.brightIdGuilds)
   ->then(content => {
     let brightIdGuild = content->Js.Dict.get(guildId)
     switch brightIdGuild {
-    | Some(_) =>
-      guild
-      ->Guild.getGuildId
-      ->UpdateGist.removeEntry(~content, ~key=_, ~config)
-      ->then(_ => resolve())
+    | Some(_) => Gist.UpdateGist.removeEntry(~content, ~key=guildId, ~config)->then(_ => resolve())
 
     | None => Js.log(`No role to delete for guild ${guildId}`)->resolve
     }
@@ -259,7 +165,7 @@ let onGuildMemberAdd = guildMember => {
   ->fetch(params)
   ->then(res => res->Response.json)
   ->then(json => {
-    switch (json->Json.decode(Decode.brightIdObject), json->Json.decode(Decode.error)) {
+    switch (json->Json.decode(Decode.BrightId.data), json->Json.decode(Decode.BrightId.error)) {
     | (Ok({data}), _) =>
       switch data.unique {
       | true =>
@@ -268,7 +174,7 @@ let onGuildMemberAdd = guildMember => {
           ~name="guildData.json",
           ~token=envConfig["githubAccessToken"],
         )
-        ->Gist.ReadGist.content(~config=_, ~decoder=brightIdGuilds)
+        ->Gist.ReadGist.content(~config=_, ~decoder=Decode.Gist.brightIdGuilds)
         ->then(content => {
           let guild = guildMember->GuildMember.getGuild
           let guildId = guild->Guild.getGuildId

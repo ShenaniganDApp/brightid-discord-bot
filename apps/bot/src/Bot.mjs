@@ -3,13 +3,13 @@
 import * as Env from "./Env.mjs";
 import * as Uuid from "uuid";
 import * as Curry from "rescript/lib/es6/curry.js";
+import * as Decode from "./bindings/Decode.mjs";
 import * as Js_dict from "rescript/lib/es6/js_dict.js";
 import * as $$Promise from "@ryyppy/rescript-promise/src/Promise.mjs";
 import * as Constants from "./Constants.mjs";
 import * as Endpoints from "./Endpoints.mjs";
 import * as Gist$Utils from "@brightidbot/utils/src/Gist.mjs";
 import * as DiscordJs from "discord.js";
-import NodeFetch from "node-fetch";
 import * as Belt_Option from "rescript/lib/es6/belt_Option.js";
 import * as Caml_option from "rescript/lib/es6/caml_option.js";
 import * as Commands_Help from "./commands/Commands_Help.mjs";
@@ -26,51 +26,6 @@ import * as Json_Decode$JsonCombinators from "@glennsl/rescript-json-combinators
 var RequestHandlerError = /* @__PURE__ */Caml_exceptions.create("Bot.RequestHandlerError");
 
 var GuildNotInGist = /* @__PURE__ */Caml_exceptions.create("Bot.GuildNotInGist");
-
-globalThis.fetch = NodeFetch;
-
-var NodeFetchPolyfill = {};
-
-var $$Response = {};
-
-var UUID = {};
-
-function contextId(field) {
-  return {
-          unique: field.required("unique", Json_Decode$JsonCombinators.bool),
-          app: field.required("app", Json_Decode$JsonCombinators.string),
-          context: field.required("context", Json_Decode$JsonCombinators.string),
-          contextIds: field.required("contextIds", Json_Decode$JsonCombinators.array(Json_Decode$JsonCombinators.string)),
-          timestamp: field.required("timestamp", Json_Decode$JsonCombinators.$$int)
-        };
-}
-
-function data(field) {
-  var __x = Json_Decode$JsonCombinators.object(contextId);
-  return {
-          data: field.required("data", __x)
-        };
-}
-
-var brightIdObject = Json_Decode$JsonCombinators.object(data);
-
-function error(field) {
-  return {
-          error: field.required("error", Json_Decode$JsonCombinators.bool),
-          errorNum: field.required("errorNum", Json_Decode$JsonCombinators.$$int),
-          errorMessage: field.required("errorMessage", Json_Decode$JsonCombinators.string),
-          code: field.required("code", Json_Decode$JsonCombinators.$$int)
-        };
-}
-
-var error$1 = Json_Decode$JsonCombinators.object(error);
-
-var Decode = {
-  contextId: contextId,
-  data: data,
-  brightIdObject: brightIdObject,
-  error: error$1
-};
 
 function updateGist(prim0, prim1) {
   return UpdateOrReadGistMjs.updateGist(prim0, prim1);
@@ -128,17 +83,6 @@ buttons.set(Buttons_Verify.customId, {
       execute: Buttons_Verify.execute
     });
 
-var guild = Json_Decode$JsonCombinators.object(function (field) {
-      return {
-              role: field.optional("role", Json_Decode$JsonCombinators.string),
-              name: field.optional("name", Json_Decode$JsonCombinators.string),
-              inviteLink: field.optional("inviteLink", Json_Decode$JsonCombinators.string),
-              roleId: field.optional("roleId", Json_Decode$JsonCombinators.string)
-            };
-    });
-
-var brightIdGuilds = Json_Decode$JsonCombinators.dict(guild);
-
 function updateGistOnGuildCreate(guild, roleId) {
   var guildId = guild.id;
   return UpdateOrReadGistMjs.updateGist(guildId, {
@@ -195,17 +139,17 @@ function onInteraction(interaction) {
 }
 
 function onGuildDelete(guild) {
-  var config = Gist$Utils.makeGistConfig(Gist$Utils.envConfig.gistId, "guildData.json", Gist$Utils.envConfig.githubAccessToken);
+  var config = Gist$Utils.makeGistConfig(envConfig$1.gistId, "guildData.json", envConfig$1.githubAccessToken);
   var guildId = guild.id;
-  $$Promise.$$catch(Gist$Utils.ReadGist.content(config, brightIdGuilds).then(function (content) {
+  $$Promise.$$catch(Gist$Utils.ReadGist.content(config, Decode.Gist.brightIdGuilds).then(function (content) {
             var brightIdGuild = Js_dict.get(content, guildId);
-            if (brightIdGuild === undefined) {
+            if (brightIdGuild !== undefined) {
+              return Gist$Utils.UpdateGist.removeEntry(content, guildId, config).then(function (param) {
+                          return Promise.resolve(undefined);
+                        });
+            } else {
               return Promise.resolve((console.log("No role to delete for guild " + guildId + ""), undefined));
             }
-            var __x = guild.id;
-            return Gist$Utils.UpdateGist.removeEntry(content, __x, config).then(function (param) {
-                        return Promise.resolve(undefined);
-                      });
           }), (function (err) {
           console.error(err);
           return Promise.resolve(undefined);
@@ -226,8 +170,8 @@ function onGuildMemberAdd(guildMember) {
   $$Promise.$$catch(globalThis.fetch(endpoint, params).then(function (res) {
               return res.json();
             }).then(function (json) {
-            var match = Json$JsonCombinators.decode(json, brightIdObject);
-            var match$1 = Json$JsonCombinators.decode(json, error$1);
+            var match = Json$JsonCombinators.decode(json, Decode.BrightId.data);
+            var match$1 = Json$JsonCombinators.decode(json, Decode.BrightId.error);
             if (match.TAG !== /* Ok */0) {
               if (match$1.TAG === /* Ok */0) {
                 return Promise.resolve((console.log(match$1._0.errorMessage), undefined));
@@ -242,7 +186,7 @@ function onGuildMemberAdd(guildMember) {
               return Promise.resolve((console.log("User " + guildMember.displayName + " is not unique"), undefined));
             }
             var __x = Gist$Utils.makeGistConfig(envConfig$1.gistId, "guildData.json", envConfig$1.githubAccessToken);
-            return Gist$Utils.ReadGist.content(__x, brightIdGuilds).then(function (content) {
+            return Gist$Utils.ReadGist.content(__x, Decode.Gist.brightIdGuilds).then(function (content) {
                         var guild = guildMember.guild;
                         var guildId = guild.id;
                         var brightIdGuild = Belt_Option.getExn(Js_dict.get(content, guildId));
@@ -281,18 +225,12 @@ export {
   context ,
   RequestHandlerError ,
   GuildNotInGist ,
-  NodeFetchPolyfill ,
-  $$Response ,
-  UUID ,
-  Decode ,
   updateGist ,
   envConfig$1 as envConfig,
   options ,
   client ,
   commands ,
   buttons ,
-  guild ,
-  brightIdGuilds ,
   updateGistOnGuildCreate ,
   onGuildCreate ,
   onInteraction ,
