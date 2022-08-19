@@ -1,56 +1,15 @@
 open Promise
-open Endpoints
 open Discord
+open BrightId
+open NodeFetch
 
-let {brightIdVerificationEndpoint} = module(Endpoints)
+let {brightIdVerificationEndpoint, brightIdAppDeeplink, brightIdLinkVerificationEndpoint} = module(
+  Endpoints
+)
 let {context} = module(Constants)
-
-type brightIdGuild = {
-  "role": string,
-  "name": string,
-  "inviteLink": option<string>,
-  "roleId": string,
-}
-
-type brightIdGuilds = Js.Dict.t<brightIdGuild>
-
-type brightContextId = {
-  unique: bool,
-  app: string,
-  context: string,
-  contextIds: array<string>,
-  timestamp: int,
-}
-type brightIdContextIdRes = {data: brightContextId}
-
-type brightIdError = {
-  error: bool,
-  errorNum: int,
-  errorMessage: string,
-  code: int,
-}
-
-type gistConfig<'a> = {
-  id: string,
-  name: string,
-  token: string,
-}
 
 exception VerifyHandlerError(string)
 exception BrightIdError(brightIdError)
-
-module NodeFetchPolyfill = {
-  type t
-  @module("node-fetch") external fetch: t = "default"
-  @val external globalThis: 'a = "globalThis"
-  globalThis["fetch"] = fetch
-}
-
-module UUID = {
-  type t = string
-  type name = UUIDName(string)
-  @module("uuid") external v5: (string, string) => t = "v5"
-}
 
 module Canvas = {
   type t
@@ -62,51 +21,6 @@ module Canvas = {
 module QRCode = {
   type t
   @module("qrcode") external toCanvas: (Canvas.t, string) => Promise.t<unit> = "toCanvas"
-}
-
-module Response = {
-  type t<'data>
-
-  @send external json: t<'data> => Promise.t<'data> = "json"
-  @get external status: t<'data> => int = "status"
-}
-
-module Decode = {
-  open Json.Decode
-
-  let guild = Json.Decode.object(field =>
-    {
-      "role": field.optional(. "role", Json.Decode.string),
-      "name": field.optional(. "name", Json.Decode.string),
-      "inviteLink": field.optional(. "inviteLink", Json.Decode.string),
-      "roleId": field.optional(. "roleId", Json.Decode.string),
-    }
-  )
-
-  let brightIdGuilds = guild->Json.Decode.dict
-
-  let contextId = field => {
-    unique: field.required(. "unique", bool),
-    app: field.required(. "app", string),
-    context: field.required(. "context", string),
-    contextIds: field.required(. "contextIds", array(string)),
-    timestamp: field.required(. "timestamp", int),
-  }
-
-  let data = field => {
-    data: contextId->object->field.required(. "data", _),
-  }
-
-  let brightIdObject = data->object
-
-  let error = field => {
-    error: field.required(. "error", bool),
-    errorNum: field.required(. "errorNum", int),
-    errorMessage: field.required(. "errorMessage", string),
-    code: field.required(. "code", int),
-  }
-
-  let error = error->object
 }
 
 @val @scope("globalThis")
@@ -144,7 +58,7 @@ let fetchVerifications = uuid => {
   ->fetch(params)
   ->then(res => res->Response.json)
   ->then(json => {
-    switch (json->Json.decode(Decode.brightIdObject), json->Json.decode(Decode.error)) {
+    switch (json->Json.decode(Decode.BrightId.data), json->Json.decode(Decode.BrightId.error)) {
     | (Ok({data}), _) => data->resolve
     | (_, Ok(error)) => error->BrightIdError->reject
     | (Error(err), _) => err->Json.Decode.DecodeError->reject
@@ -290,7 +204,6 @@ let handleUnverifiedGuildMember = (errorNum, interaction, uuid) => {
 
 let execute = (interaction: Interaction.t) => {
   open Utils
-  open Decode
 
   let guild = interaction->Interaction.getGuild
   let member = interaction->Interaction.getGuildMember
@@ -301,12 +214,12 @@ let execute = (interaction: Interaction.t) => {
   interaction
   ->Interaction.deferReply(~options={"ephemeral": true}, ())
   ->then(_ => {
-    Gist.makeGistConfig(
+    let config = Gist.makeGistConfig(
       ~id=config["gistId"],
       ~name="guildData.json",
       ~token=config["githubAccessToken"],
     )
-    ->Gist.ReadGist.content(~config=_, ~decoder=brightIdGuilds)
+    Gist.ReadGist.content(~config, ~decoder=Decode.Gist.brightIdGuilds)
     ->then(guilds => {
       let guildId = guild->Guild.getGuildId
       let guildData = guilds->Js.Dict.get(guildId)
@@ -361,10 +274,10 @@ let execute = (interaction: Interaction.t) => {
     })
     ->catch(e => {
       switch e {
-      | VerifyHandlerError(msg) => Js.Console.error(msg)
       | BrightIdError(error) =>
         error.errorNum->handleUnverifiedGuildMember(interaction, uuid)->ignore
         Js.Console.error(error.errorMessage)
+      | VerifyHandlerError(msg) => Js.Console.error(msg)
       | Json.Decode.DecodeError(msg) => Js.Console.error(msg)
       | JsError(obj) =>
         switch Js.Exn.message(obj) {
