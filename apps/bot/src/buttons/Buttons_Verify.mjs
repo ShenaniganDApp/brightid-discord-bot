@@ -48,7 +48,7 @@ function getGuildDataFromGist(guilds, guildId, interaction) {
 
 function verifyMember(guildRole, member) {
   var guildMemberRoleManager = member.roles;
-  return guildMemberRoleManager.add(guildRole, "Add BrightId Verified role");
+  return guildMemberRoleManager.add(guildRole, undefined);
 }
 
 function noMultipleAccounts(member) {

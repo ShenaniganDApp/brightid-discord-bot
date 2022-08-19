@@ -47,7 +47,7 @@ if (config.TAG === /* Ok */0) {
 function addVerifiedRole(member, role, reason) {
   var guildMemberRoleManager = member.roles;
   var guild = member.guild;
-  guildMemberRoleManager.add(role, reason);
+  guildMemberRoleManager.add(role, undefined);
   var partial_arg = "I recognize you! You're now a verified user in " + guild.name + "";
   return function (param) {
     return member.send(partial_arg, param);
@@ -184,7 +184,7 @@ function execute(interaction) {
                                               return isIdInVerifications(data, id);
                                             }).then(function (idExists) {
                                             if (idExists) {
-                                              guildMemberRoleManager.add(guildRole, "");
+                                              guildMemberRoleManager.add(guildRole, undefined);
                                               interaction.editReply({
                                                     content: "Hey, I recognize you! I just gave you the \`" + guildRole.name + "\` role. You are now BrightID verified in " + guild.name + " server!",
                                                     ephemeral: true

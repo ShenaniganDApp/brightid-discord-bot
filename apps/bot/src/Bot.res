@@ -1,9 +1,44 @@
 open Discord
 open Promise
 
+let {brightIdVerificationEndpoint} = module(Endpoints)
+let {context} = module(Constants)
+
 exception RequestHandlerError({date: float, message: string})
 exception GuildNotInGist(string)
 
+type brightContextId = {
+  unique: bool,
+  app: string,
+  context: string,
+  contextIds: array<string>,
+  timestamp: int,
+}
+type brightIdContextIdRes = {data: brightContextId}
+
+// @TODO: these blocks should go in a shared package
+// @TODO this should be a record
+type brightIdGuild = {
+  "role": string,
+  "name": string,
+  "inviteLink": option<string>,
+  "roleId": string,
+}
+
+type brightIdError = {
+  error: bool,
+  errorNum: int,
+  errorMessage: string,
+  code: int,
+}
+
+type brightIdGuilds = Js.Dict.t<brightIdGuild>
+module NodeFetchPolyfill = {
+  type t
+  @module("node-fetch") external fetch: t = "default"
+  @val external globalThis: 'a = "globalThis"
+  globalThis["fetch"] = fetch
+}
 module type Command = {
   let data: SlashCommandBuilder.t
   let execute: Interaction.t => Js.Promise.t<unit>
@@ -12,6 +47,55 @@ module type Button = {
   let customId: string
   let execute: Interaction.t => Js.Promise.t<unit>
 }
+
+module Response = {
+  type t<'data>
+
+  @send external json: t<'data> => Promise.t<'data> = "json"
+  @get external status: t<'data> => int = "status"
+}
+
+module UUID = {
+  type t = string
+  type name = UUIDName(string)
+  @module("uuid") external v5: (string, string) => t = "v5"
+}
+
+module Decode = {
+  open Json.Decode
+
+  let contextId = field => {
+    unique: field.required(. "unique", bool),
+    app: field.required(. "app", string),
+    context: field.required(. "context", string),
+    contextIds: field.required(. "contextIds", array(string)),
+    timestamp: field.required(. "timestamp", int),
+  }
+
+  let data = field => {
+    data: contextId->object->field.required(. "data", _),
+  }
+
+  let brightIdObject = data->object
+
+  let error = field => {
+    error: field.required(. "error", bool),
+    errorNum: field.required(. "errorNum", int),
+    errorMessage: field.required(. "errorMessage", string),
+    code: field.required(. "code", int),
+  }
+
+  let error = error->object
+}
+
+type gistConfig<'a> = {
+  id: string,
+  name: string,
+  token: string,
+}
+
+@val @scope("globalThis")
+external fetch: (string, 'params) => Promise.t<Response.t<Js.Json.t>> = "fetch"
 
 @module("./updateOrReadGist.mjs")
 external updateGist: (string, 'a) => Js.Promise.t<unit> = "updateGist"
@@ -28,7 +112,7 @@ let envConfig = switch envConfig {
 }
 
 let options: Client.clientOptions = {
-  intents: ["GUILDS", "GUILD_MESSAGES"],
+  intents: ["GUILDS", "GUILD_MESSAGES", "GUILD_MEMBERS"],
 }
 
 let client = Client.createDiscordClient(~options)
@@ -46,17 +130,6 @@ commands
 ->ignore
 
 buttons->Collection.set(Buttons_Verify.customId, module(Buttons_Verify))->ignore
-
-// @TODO: these blocks should go in a shared package
-// @TODO this should be a record
-type brightIdGuild = {
-  "role": string,
-  "name": string,
-  "inviteLink": option<string>,
-  "roleId": string,
-}
-
-type brightIdGuilds = Js.Dict.t<brightIdGuild>
 
 let guild = Json.Decode.object(field =>
   {
@@ -142,7 +215,7 @@ let onGuildDelete = guild => {
   let config = makeGistConfig(
     ~id=envConfig["gistId"],
     ~name="guildData.json",
-    ~token=githubAccessToken,
+    ~token=envConfig["githubAccessToken"],
   )
 
   let guildId = guild->Guild.getGuildId
@@ -167,6 +240,71 @@ let onGuildDelete = guild => {
   ->ignore
 }
 
+let onGuildMemberAdd = guildMember => {
+  open Utils
+
+  let requestTimeout = 60000
+  let uuid = guildMember->GuildMember.getGuildMemberId->UUID.v5(envConfig["uuidNamespace"])
+  let endpoint = `${brightIdVerificationEndpoint}/${context}/${uuid}?timestamp=seconds`
+
+  let params = {
+    "method": "GET",
+    "headers": {
+      "Accept": "application/json",
+      "Content-Type": "application/json",
+    },
+    "timestamp": requestTimeout,
+  }
+  endpoint
+  ->fetch(params)
+  ->then(res => res->Response.json)
+  ->then(json => {
+    switch (json->Json.decode(Decode.brightIdObject), json->Json.decode(Decode.error)) {
+    | (Ok({data}), _) =>
+      switch data.unique {
+      | true =>
+        Gist.makeGistConfig(
+          ~id=envConfig["gistId"],
+          ~name="guildData.json",
+          ~token=envConfig["githubAccessToken"],
+        )
+        ->Gist.ReadGist.content(~config=_, ~decoder=brightIdGuilds)
+        ->then(content => {
+          let guild = guildMember->GuildMember.getGuild
+          let guildId = guild->Guild.getGuildId
+          let brightIdGuild = content->Js.Dict.get(guildId)->Belt.Option.getExn
+          let roleId = brightIdGuild["roleId"]->Belt.Option.getExn
+
+          let role =
+            guild
+            ->Guild.getGuildRoleManager
+            ->RoleManager.getCache
+            ->Collection.get(roleId)
+            ->Js.Nullable.toOption
+            ->Belt.Option.getExn
+
+          let guildMemberRoleManager = guildMember->GuildMember.getGuildMemberRoleManager
+          guildMemberRoleManager
+          ->GuildMemberRoleManager.add(role, ~reason="User is already verified by BrightID", ())
+          ->ignore
+          resolve()
+        })
+
+      | false => Js.log(`User ${guildMember->GuildMember.getDisplayName} is not unique`)->resolve
+      }
+
+    | (_, Ok(error)) => Js.log(error.errorMessage)->resolve
+
+    | (Error(err), _) => err->Json.Decode.DecodeError->reject
+    }
+  })
+  ->catch(err => {
+    Js.Console.error(err)
+    resolve()
+  })
+  ->ignore
+}
+
 client->Client.on(
   #ready(
     () => {
@@ -181,19 +319,6 @@ client->Client.on(#interactionCreate(interaction => interaction->onInteraction))
 
 client->Client.on(#guildDelete(guild => guild->onGuildDelete))
 
+client->Client.on(#guildMemberAdd(member => member->onGuildMemberAdd))
+
 client->Client.login(envConfig["discordApiToken"])->ignore
-
-// @module
-// external parseWhitelistedChannels: unit => <string> = "./parser/whitelistedChannels"
-
-// let checkWhitelistedChannel = (message: Message.t) => {
-//   let channel = message->Message.getMessageChannel
-//   let whitelistedChannels = parseWhitelistedChannels()
-//   let messageWhitelisted =
-//     whitelistedChannels->Js.Array2.reduce(
-//       (whitelisted, name) =>
-//         name === channel->Channel.getChannelName || name === "*" || whitelisted,
-//       false,
-//     )
-//   !messageWhitelisted && whitelistedChannels->Belt.Array.length > 0
-// }
