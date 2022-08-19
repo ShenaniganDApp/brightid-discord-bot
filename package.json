@@ -2,8 +2,7 @@
   "name": "root",
   "private": true,
   "devDependencies": {
-    "patch-package": "^6.4.7",
-    "rescript": "^10.0.0-rc.1"
+    "patch-package": "^6.4.7"
   },
   "dependencies": {
     "brightid_sdk": "^1.0.1",
@@ -11,7 +10,8 @@
     "concurrently": "^7.1.0",
     "dotenv": "^8.2.0",
     "find-up": "^6.3.0",
-    "uuid": "^8.3.0"
+    "uuid": "^8.3.0",
+    "rescript": "^10.0.0-rc.1"
   },
   "scripts": {
     "bot": "yarn workspace @brightidbot/bot",

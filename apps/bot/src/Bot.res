@@ -142,7 +142,7 @@ let onGuildDelete = guild => {
   let config = makeGistConfig(
     ~id=envConfig["gistId"],
     ~name="guildData.json",
-    ~token=githubAccessToken,
+    ~token=envConfig["githubAccessToken"],
   )
 
   let guildId = guild->Guild.getGuildId

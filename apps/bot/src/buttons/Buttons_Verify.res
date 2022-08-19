@@ -43,7 +43,7 @@ let getGuildDataFromGist = (guilds, guildId, interaction) => {
 
 let verifyMember = (guildRole, member) => {
   let guildMemberRoleManager = member->GuildMember.getGuildMemberRoleManager
-  guildMemberRoleManager->GuildMemberRoleManager.add(guildRole, "Add BrightId Verified role")
+  guildMemberRoleManager->GuildMemberRoleManager.add(guildRole, ())
 }
 
 let noMultipleAccounts = member => {

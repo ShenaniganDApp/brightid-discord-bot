@@ -7,7 +7,6 @@
     "build": "yarn build:css && remix build",
     "build:css": "tailwindcss -m -i ./styles/app.css -o app/styles/app.css",
     "dev": "concurrently \"npm run dev:css\" \"rescript build -w -with-deps\" \"remix dev\"",
-    "postinstall": "remix setup node",
     "dev:css": "tailwindcss -w -i ./styles/app.css -o app/styles/app.css",
     "re:start": "rescript build -w",
     "re:build": "rescript build -with-deps"

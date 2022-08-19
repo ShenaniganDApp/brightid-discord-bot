@@ -14,7 +14,7 @@
     "rescript-discordjs": "https://github.com/youngkidwarrior/rescript-discordjs.git#v13"
   },
   "scripts": {
-    "re:build": "rescript",
+    "re:build": "rescript build -with-deps",
     "re:start": "rescript build -w -with-deps"
   }
 }

@@ -218,7 +218,7 @@ let execute = (interaction: Interaction.t) => {
           ->then(idExists => {
             idExists
               ? {
-                  guildMemberRoleManager->GuildMemberRoleManager.add(guildRole, "")->ignore
+                    guildMemberRoleManager->GuildMemberRoleManager.add(guildRole, ())->ignore
                   interaction
                   ->Interaction.editReply(
                     ~options={
