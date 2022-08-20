@@ -55,9 +55,7 @@ var rest = new Rest.REST({
         version: 9
       }).setToken(token);
 
-var applicationGuildCommands = V9.Routes.applicationCommands(clientId);
-
-$$Promise.$$catch(rest.put(applicationGuildCommands, {
+$$Promise.$$catch(rest.put(V9.Routes.applicationCommands(clientId), {
             body: commands
           }).then(function (param) {
           console.log("Successfully registered application commands.");
@@ -90,6 +88,5 @@ export {
   guildCommand ,
   commands ,
   rest ,
-  applicationGuildCommands ,
 }
 /*  Not a pure module */
