@@ -3,7 +3,6 @@
 import * as Env from "./Env.mjs";
 import * as $$Promise from "@ryyppy/rescript-promise/src/Promise.mjs";
 import * as Commands_Help from "./commands/Commands_Help.mjs";
-import * as Commands_Role from "./commands/Commands_Role.mjs";
 import * as Commands_Guild from "./commands/Commands_Guild.mjs";
 import * as Rest from "@discordjs/rest";
 import * as Caml_exceptions from "rescript/lib/es6/caml_exceptions.js";
@@ -41,8 +40,6 @@ var helpCommand = Commands_Help.data.toJSON();
 
 var verifyCommand = Commands_Verify.data.toJSON();
 
-var roleCommand = Commands_Role.data.toJSON();
-
 var inviteCommand = Commands_Invite.data.toJSON();
 
 var guildCommand = Commands_Guild.data.toJSON();
@@ -50,7 +47,6 @@ var guildCommand = Commands_Guild.data.toJSON();
 var commands = [
   helpCommand,
   verifyCommand,
-  roleCommand,
   inviteCommand,
   guildCommand
 ];
@@ -90,7 +86,6 @@ export {
   clientId ,
   helpCommand ,
   verifyCommand ,
-  roleCommand ,
   inviteCommand ,
   guildCommand ,
   commands ,

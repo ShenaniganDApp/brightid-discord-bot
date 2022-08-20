@@ -13,7 +13,6 @@ import * as DiscordJs from "discord.js";
 import * as Belt_Option from "rescript/lib/es6/belt_Option.js";
 import * as Caml_option from "rescript/lib/es6/caml_option.js";
 import * as Commands_Help from "./commands/Commands_Help.mjs";
-import * as Commands_Role from "./commands/Commands_Role.mjs";
 import * as Buttons_Verify from "./buttons/Buttons_Verify.mjs";
 import * as Commands_Guild from "./commands/Commands_Guild.mjs";
 import * as Caml_exceptions from "rescript/lib/es6/caml_exceptions.js";
@@ -62,14 +61,11 @@ var commands = new DiscordJs.Collection();
 var buttons = new DiscordJs.Collection();
 
 commands.set(Commands_Help.data.name, {
-              data: Commands_Help.data,
-              execute: Commands_Help.execute
-            }).set(Commands_Verify.data.name, {
-            data: Commands_Verify.data,
-            execute: Commands_Verify.execute
-          }).set(Commands_Role.data.name, {
-          data: Commands_Role.data,
-          execute: Commands_Role.execute
+            data: Commands_Help.data,
+            execute: Commands_Help.execute
+          }).set(Commands_Verify.data.name, {
+          data: Commands_Verify.data,
+          execute: Commands_Verify.execute
         }).set(Commands_Invite.data.name, {
         data: Commands_Invite.data,
         execute: Commands_Invite.execute

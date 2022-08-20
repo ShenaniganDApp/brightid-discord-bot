@@ -52,7 +52,7 @@ function addVerifiedRole(member, role, reason) {
   };
 }
 
-function fetchVerifications(uuid) {
+function fetchVerification(uuid) {
   var endpoint = "" + Endpoints.brightIdVerificationEndpoint + "/" + Constants.context + "/" + uuid + "?timestamp=seconds";
   var params = {
     method: "GET",
@@ -188,7 +188,7 @@ function execute(interaction) {
                               if (guildData !== undefined) {
                                 var roleId = Belt_Option.getExn(Caml_option.valFromOption(guildData).roleId);
                                 var guildRole = getRolebyRoleId(guildRoleManager, roleId);
-                                return fetchVerifications(uuid).then(function (contextId) {
+                                return fetchVerification(uuid).then(function (contextId) {
                                             if (contextId.unique) {
                                               guildMemberRoleManager.add(guildRole, undefined);
                                               interaction.editReply({
@@ -255,7 +255,7 @@ export {
   QRCode ,
   config$1 as config,
   addVerifiedRole ,
-  fetchVerifications ,
+  fetchVerification ,
   makeEmbed ,
   createMessageAttachmentFromUri ,
   getRolebyRoleId ,
