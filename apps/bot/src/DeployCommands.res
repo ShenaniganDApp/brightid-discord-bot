@@ -8,12 +8,17 @@ module Rest = {
   @send external setToken: (t, string) => t = "setToken"
   @send
   external put: (t, string, {"body": array<SlashCommandBuilder.json>}) => Js.Promise.t<unit> = "put"
+  @send
+  external delete: (t, string) => Js.Promise.t<unit> = "delete"
 }
 
 module Routes = {
   type t
   @module("discord-api-types/v9") @scope("Routes")
   external applicationCommands: (~clientId: string) => string = "applicationCommands"
+  @module("discord-api-types/v9") @scope("Routes")
+  external applicationCommand: (~clientId: string, ~commandId: string) => string =
+    "applicationCommand"
 }
 
 Env.createEnv()
@@ -37,10 +42,8 @@ let commands = [helpCommand, verifyCommand, inviteCommand, guildCommand]
 
 let rest = Rest.make({"version": 9})->Rest.setToken(token)
 
-let applicationGuildCommands = Routes.applicationCommands(~clientId)
-
 rest
-->Rest.put(applicationGuildCommands, {"body": commands})
+->Rest.put(Routes.applicationCommands(~clientId), {"body": commands})
 ->thenResolve(() => Js.log("Successfully registered application commands."))
 ->catch(e => {
   switch e {
@@ -55,3 +58,15 @@ rest
   resolve()
 })
 ->ignore
+
+// delete role command
+// rest
+// ->Rest.delete(Routes.applicationCommand(~clientId, ~commandId="1010421714498359306"))
+// ->then(_ => {
+//   Js.log("Successfully deleted role command.")->resolve
+// })
+// ->catch(e => {
+//   Js.log(e)
+//   resolve()
+// })
+// ->ignore
