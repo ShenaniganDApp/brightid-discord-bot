@@ -1615,19 +1615,19 @@
     ws "^7.4.5"
     xdm "^2.0.0"
 
-"@remix-run/express@1.5.0":
-  version "1.5.0"
-  resolved "https://registry.yarnpkg.com/@remix-run/express/-/express-1.5.0.tgz#e2dbedde8cb8beccb8f94709dc8e130c3efd7ef3"
-  integrity sha512-bRBD1RM0DPa8juY6R/wywKk9ixWE1xcVxKPx7pqtlwZMDDhZBr1sDr1J8PLQquBoe+De+WWdNa+f6a7K5R0Xsg==
+"@remix-run/express@1.6.8":
+  version "1.6.8"
+  resolved "https://registry.yarnpkg.com/@remix-run/express/-/express-1.6.8.tgz#06ce62293cefe6dc29beb3f70336328908d0fe60"
+  integrity sha512-u8w6m8GCtMMRTFaiOblAZgbPMc15YDR66b2p07hquxUGk0W4TZUvan1nD6exzanWXCgY87CcXGabadTWjZGYig==
   dependencies:
-    "@remix-run/node" "1.5.0"
+    "@remix-run/node" "1.6.8"
 
-"@remix-run/node@1.5.0":
-  version "1.5.0"
-  resolved "https://registry.yarnpkg.com/@remix-run/node/-/node-1.5.0.tgz#c46aec22cccb7f087aab2de43c103f6a239f9b69"
-  integrity sha512-qa1aWgI25Vnm4RglJ7+BXZaMGIaJhq3B6BBKqrkgfTqYn1ErG5f+GBNHGaae9DtMkEhX61t3IHTdTz0KmIxPRA==
+"@remix-run/node@1.6.8":
+  version "1.6.8"
+  resolved "https://registry.yarnpkg.com/@remix-run/node/-/node-1.6.8.tgz#f27a2b051cc461eee51a0f420cdd1f4a14886167"
+  integrity sha512-+iq3l+VRlRWWZW9viNFKf1VGQeNUHdddH2Fvfd5DQ3p+/5A/0lVW87h99mn8UU6Qv6k27XOS1UcdRBgMfQNa8w==
   dependencies:
-    "@remix-run/server-runtime" "1.5.0"
+    "@remix-run/server-runtime" "1.6.8"
     "@remix-run/web-fetch" "^4.1.3"
     "@remix-run/web-file" "^3.0.2"
     "@remix-run/web-stream" "^1.0.3"
@@ -1656,18 +1656,25 @@
     express "^4.17.1"
     morgan "^1.10.0"
 
-"@remix-run/server-runtime@1.5.0":
-  version "1.5.0"
-  resolved "https://registry.yarnpkg.com/@remix-run/server-runtime/-/server-runtime-1.5.0.tgz#c2e017dfd5459e234a281cf3b481bcd7e1b8c098"
-  integrity sha512-7hYjMwNuF/0PhgYY0kVbWBrXXjm3hd6Hw1JtL+zVixiVydauE9awmkejF7r0J2cOz0TJL3oZITx30LayfbiuHA==
+"@remix-run/server-runtime@1.6.8":
+  version "1.6.8"
+  resolved "https://registry.yarnpkg.com/@remix-run/server-runtime/-/server-runtime-1.6.8.tgz#4f6a947bfe0955756ec06b030301398944a87367"
+  integrity sha512-GLegRhNshF8fGRXzDNBxVfE66j1hj3IDH4CF4pWssBzzwIpV1peRw/dBunAu/l4KtpYfaLG6kcz6LPch4pBB9Q==
   dependencies:
     "@types/cookie" "^0.4.0"
     "@web3-storage/multipart-parser" "^1.0.0"
     cookie "^0.4.1"
-    jsesc "^3.0.1"
+    jsesc "3.0.2"
     react-router-dom "^6.2.2"
     set-cookie-parser "^2.4.8"
     source-map "^0.7.3"
+
+"@remix-run/vercel@^1.6.0":
+  version "1.6.8"
+  resolved "https://registry.yarnpkg.com/@remix-run/vercel/-/vercel-1.6.8.tgz#ac42501d90adc60d78799504ddb732d53ec16897"
+  integrity sha512-jqPmVSseE60qZPO7cYf1jgHX1IiRqZqNVlHBXlZ8gS7sGoBzvYwzyYHGBDZzY44cgYow1rvPftIKuIf8lRhrUA==
+  dependencies:
+    "@remix-run/node" "1.6.8"
 
 "@remix-run/web-blob@^3.0.3", "@remix-run/web-blob@^3.0.4":
   version "3.0.4"
@@ -7243,9 +7250,10 @@ require-main-filename@^2.0.0:
   resolved "https://registry.yarnpkg.com/require-main-filename/-/require-main-filename-2.0.0.tgz#d0b329ecc7cc0f61649f62215be69af54aa8989b"
   integrity sha512-NKN5kMDylKuldxYLSUfrbo5Tuzh4hd+2E8NPPX02mZtn1VuREQToYe/ZdlJy+J3uCpfaiGF05e7B8W0iXbQHmg==
 
-"rescript-discordjs@https://github.com/youngkidwarrior/rescript-discordjs.git#v13":
+rescript-discordjs@^0.2.0:
   version "0.2.0"
-  resolved "https://github.com/youngkidwarrior/rescript-discordjs.git#4f91289ff6e5fe84c7c95226ea74050d25948249"
+  resolved "https://registry.yarnpkg.com/rescript-discordjs/-/rescript-discordjs-0.2.0.tgz#418767fb0f4183a43fec023dcaedff95a65ace0e"
+  integrity sha512-Rv26XE0bZKd04CD5fsvWyZQL685NYJN8NiEeUOLl2yaYHucgL0m4pJED6wO1Zb0DuMprTL7oRShaHwQLM9sMvQ==
   dependencies:
     discord.js "^13.8.1"
     rescript "*"
