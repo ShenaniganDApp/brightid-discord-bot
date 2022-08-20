@@ -44,7 +44,7 @@ let addVerifiedRole = (member, role, reason) => {
   )
 }
 
-let fetchVerifications = uuid => {
+let fetchVerification = uuid => {
   let endpoint = `${brightIdVerificationEndpoint}/${context}/${uuid}?timestamp=seconds`
   let params = {
     "method": "GET",
@@ -238,7 +238,7 @@ let execute = (interaction: Interaction.t) => {
           let roleId = guildData["roleId"]->Belt.Option.getExn
           let guildRole = guildRoleManager->getRolebyRoleId(roleId)
           uuid
-          ->fetchVerifications
+          ->fetchVerification
           ->then(
             contextId => {
               switch contextId.unique {
