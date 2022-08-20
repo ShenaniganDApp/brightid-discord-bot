@@ -2,53 +2,49 @@
 
 import * as Env from "../Env.mjs";
 import * as Uuid from "uuid";
+import * as Decode from "../bindings/Decode.mjs";
 import * as $$Promise from "@ryyppy/rescript-promise/src/Promise.mjs";
 import * as Constants from "../Constants.mjs";
 import * as Endpoints from "../Endpoints.mjs";
 import NodeFetch from "node-fetch";
 import * as Caml_exceptions from "rescript/lib/es6/caml_exceptions.js";
+import * as Json$JsonCombinators from "@glennsl/rescript-json-combinators/src/Json.mjs";
 import * as Services_ResponseCodes from "./Services_ResponseCodes.mjs";
+import * as Json_Decode$JsonCombinators from "@glennsl/rescript-json-combinators/src/Json_Decode.mjs";
 
-var VerificationInfoError = /* @__PURE__ */Caml_exceptions.create("Services_VerificationInfo.VerificationInfoError");
+var BrightIdError = /* @__PURE__ */Caml_exceptions.create("Services_VerificationInfo.BrightIdError");
 
-var FetchVerificationInfoError = /* @__PURE__ */Caml_exceptions.create("Services_VerificationInfo.FetchVerificationInfoError");
+var defaultVerification_contextIds = [];
+
+var defaultVerification = {
+  unique: false,
+  app: "",
+  context: "Discord",
+  contextIds: defaultVerification_contextIds,
+  timestamp: 0
+};
 
 var UUID = {};
-
-var BrightID = {};
 
 Env.createEnv(undefined);
 
 var config = Env.getConfig(undefined);
 
-var uuidNAMESPACE;
+var config$1;
 
 if (config.TAG === /* Ok */0) {
-  uuidNAMESPACE = config._0.uuidNamespace;
+  config$1 = config._0;
 } else {
   throw {
-        RE_EXN_ID: VerificationInfoError,
+        RE_EXN_ID: Env.EnvError,
         _1: config._0,
         Error: new Error()
       };
 }
 
-var $$Response = {};
-
-var defaultVerification_userAddresses = [];
-
-var defaultVerification = {
-  authorExist: false,
-  authorUnique: false,
-  timestamp: 0,
-  userAddresses: defaultVerification_userAddresses,
-  userVerified: false,
-  fetching: false
-};
-
 function fetchVerificationInfo(retryOpt, id) {
   var retry = retryOpt !== undefined ? retryOpt : 5;
-  var uuid = Uuid.v5(id, uuidNAMESPACE);
+  var uuid = Uuid.v5(id, config$1.uuidNamespace);
   var endpoint = "" + Endpoints.brightIdVerificationEndpoint + "/" + Constants.context + "/" + uuid + "?timestamp=seconds";
   var params = {
     method: "GET",
@@ -60,41 +56,23 @@ function fetchVerificationInfo(retryOpt, id) {
   };
   return $$Promise.$$catch(NodeFetch(endpoint, params).then(function (prim) {
                     return prim.json();
-                  }).then(function (res) {
-                  var data = res.data;
-                  if (data == null) {
-                    var match = res.code;
-                    var match$1 = res.errorMessage;
-                    var match$2 = res.errorNum;
-                    if (!(match == null) && !(match$1 == null) && !(match$2 == null)) {
-                      return Promise.reject({
-                                  RE_EXN_ID: FetchVerificationInfoError,
-                                  error: match$1,
-                                  fetching: false
-                                });
-                    } else {
-                      return Promise.reject({
-                                  RE_EXN_ID: VerificationInfoError,
-                                  _1: "No code or errorMessage"
-                                });
-                    }
-                  }
-                  var match$3 = data.unique;
-                  var match$4 = data.timestamp;
-                  var match$5 = data.contextIds;
-                  if (!(match$3 == null) && !(match$4 == null) && !(match$5 == null)) {
+                  }).then(function (json) {
+                  var match = Json$JsonCombinators.decode(json, Decode.BrightId.data);
+                  var match$1 = Json$JsonCombinators.decode(json, Decode.BrightId.error);
+                  if (match.TAG === /* Ok */0) {
                     return Promise.resolve({
-                                authorExist: true,
-                                authorUnique: match$3,
-                                timestamp: match$4,
-                                userAddresses: match$5,
-                                userVerified: true,
-                                fetching: false
+                                TAG: /* VerificationInfo */0,
+                                _0: match._0.data
+                              });
+                  } else if (match$1.TAG === /* Ok */0) {
+                    return Promise.reject({
+                                RE_EXN_ID: BrightIdError,
+                                _1: match$1._0
                               });
                   } else {
                     return Promise.reject({
-                                RE_EXN_ID: VerificationInfoError,
-                                _1: "Necessary Verification Info missing after successful fetch "
+                                RE_EXN_ID: Json_Decode$JsonCombinators.DecodeError,
+                                _1: match._0
                               });
                   }
                 }), (function (e) {
@@ -102,21 +80,19 @@ function fetchVerificationInfo(retryOpt, id) {
                 if (retry$1 !== 0) {
                   return fetchVerificationInfo(retry$1, id);
                 }
-                if (e.RE_EXN_ID === VerificationInfoError) {
-                  console.error(e._1);
-                } else if (e.RE_EXN_ID === FetchVerificationInfoError) {
-                  console.error("Fetch Verification Info Error: " + e.error + "");
-                } else if (e.RE_EXN_ID === $$Promise.JsError) {
-                  var msg = e._1.message;
-                  if (msg !== undefined) {
-                    console.error(msg);
-                  } else {
-                    console.error("Must be some non-error value");
-                  }
-                } else {
-                  console.error("Some unknown error");
+                if (e.RE_EXN_ID === BrightIdError) {
+                  return Promise.resolve({
+                              TAG: /* BrightIdError */1,
+                              _0: e._1
+                            });
                 }
-                return Promise.resolve(defaultVerification);
+                if (e.RE_EXN_ID === $$Promise.JsError) {
+                  return Promise.resolve({
+                              TAG: /* JsError */2,
+                              _0: e._1
+                            });
+                }
+                throw e;
               }));
 }
 
@@ -140,13 +116,10 @@ var verificationPollingEvery = 3000;
 var requestTimeout = 60000;
 
 export {
-  VerificationInfoError ,
-  FetchVerificationInfoError ,
+  BrightIdError ,
+  defaultVerification ,
   UUID ,
-  BrightID ,
-  config ,
-  uuidNAMESPACE ,
-  $$Response ,
+  config$1 as config,
   context ,
   brightIdVerificationEndpoint ,
   notFoundCode ,
@@ -154,7 +127,6 @@ export {
   canNotBeVerified ,
   verificationPollingEvery ,
   requestTimeout ,
-  defaultVerification ,
   fetchVerificationInfo ,
   getBrightIdVerification ,
 }
