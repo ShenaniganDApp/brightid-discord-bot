@@ -1,11 +1,11 @@
-type brightContextId = {
+type brightIdContextId = {
   unique: bool,
   app: string,
   context: string,
   contextIds: array<string>,
   timestamp: int,
 }
-type brightIdContextIdRes = {data: brightContextId}
+type brightIdContextIdRes = {data: brightIdContextId}
 
 type brightIdError = {
   error: bool,
