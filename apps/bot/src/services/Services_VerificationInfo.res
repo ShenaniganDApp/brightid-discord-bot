@@ -1,22 +1,25 @@
 open Promise
+open NodeFetch
+open BrightId
 
 //@TODO move all top level exceptions to a new file
-exception VerificationInfoError(string)
-exception FetchVerificationInfoError({error: string, fetching: bool})
+exception BrightIdError(brightIdError)
+
+type verificationInfo =
+  VerificationInfo(brightIdContextId) | BrightIdError(brightIdError) | JsError(Js.Exn.t)
+
+let defaultVerification = {
+  unique: false,
+  app: "",
+  context: "Discord",
+  contextIds: [],
+  timestamp: 0,
+}
 
 module UUID = {
   type t = string
   type name = UUIDName(string)
   @module("uuid") external v5: (string, string) => t = "v5"
-}
-module BrightID = {
-  @module("brightid_sdk")
-  external verifyContextId: (
-    ~context: string,
-    ~contextId: string,
-    ~nodeUrl: string=?,
-    unit,
-  ) => Js.Promise.t<'a> = "verifyContextId"
 }
 
 //@TODO I shouldnt have to keep importing this
@@ -24,30 +27,13 @@ Env.createEnv()
 
 let config = Env.getConfig()
 
-let uuidNAMESPACE = switch config {
-| Ok(config) => config["uuidNamespace"]
-| Error(err) => err->VerificationInfoError->raise
-}
-
-module Response = {
-  type t<'data>
-  @send external json: t<'data> => Promise.t<'data> = "json"
-}
-
-type response = {
-  "data": Js.Nullable.t<{
-    "unique": Js.Nullable.t<bool>,
-    "timestamp": Js.Nullable.t<int>,
-    "contextIds": Js.Nullable.t<array<string>>,
-  }>,
-  "error": Js.Nullable.t<bool>,
-  "errorNum": Js.Nullable.t<int>,
-  "errorMessage": Js.Nullable.t<string>,
-  "code": Js.Nullable.t<int>,
+let config = switch config {
+| Ok(config) => config
+| Error(err) => err->Env.EnvError->raise
 }
 
 @module("node-fetch")
-external fetch: (string, 'params) => Promise.t<Response.t<response>> = "default"
+external fetch: (string, 'params) => Promise.t<Response.t<Js.Json.t>> = "default"
 
 let {context} = module(Constants)
 let {brightIdVerificationEndpoint} = module(Endpoints)
@@ -57,26 +43,8 @@ let {notFoundCode, errorCode, canNotBeVerified} = module(Services_ResponseCodes)
 let verificationPollingEvery = 3000
 let requestTimeout = 60000
 
-type verification = {
-  authorExist: bool,
-  authorUnique: bool,
-  timestamp: int,
-  userAddresses: array<string>,
-  userVerified: bool,
-  fetching: bool,
-}
-
-let defaultVerification = {
-  authorExist: false,
-  authorUnique: false,
-  timestamp: 0,
-  userAddresses: [],
-  userVerified: false,
-  fetching: false,
-}
-
-let rec fetchVerificationInfo = (~retry=5, id): Promise.t<verification> => {
-  let uuid = id->UUID.v5(uuidNAMESPACE)
+let rec fetchVerificationInfo = (~retry=5, id): Promise.t<verificationInfo> => {
+  let uuid = id->UUID.v5(config["uuidNamespace"])
   let endpoint = `${brightIdVerificationEndpoint}/${context}/${uuid}?timestamp=seconds`
 
   let params = {
@@ -90,58 +58,21 @@ let rec fetchVerificationInfo = (~retry=5, id): Promise.t<verification> => {
   endpoint
   ->fetch(params)
   ->then(Response.json)
-  ->then(res => {
-    switch Js.Nullable.toOption(res["data"]) {
-    | Some(data) =>
-      switch (
-        data["unique"]->Js.Nullable.toOption,
-        data["timestamp"]->Js.Nullable.toOption,
-        data["contextIds"]->Js.Nullable.toOption,
-      ) {
-      | (Some(unique), Some(timestamp), Some(contextIds)) =>
-        {
-          authorExist: true,
-          authorUnique: unique,
-          timestamp,
-          userAddresses: contextIds,
-          userVerified: true,
-          fetching: false,
-        }->resolve
-
-      | _ =>
-        VerificationInfoError("Necessary Verification Info missing after successful fetch ")->reject
-      }
-    | None =>
-      switch (
-        res["code"]->Js.Nullable.toOption,
-        res["errorMessage"]->Js.Nullable.toOption,
-        res["errorNum"]->Js.Nullable.toOption,
-      ) {
-      | (Some(_), Some(errorMessage), Some(_)) =>
-        FetchVerificationInfoError({
-          error: errorMessage,
-          fetching: false,
-        })->reject
-      | _ => VerificationInfoError(`No code or errorMessage`)->reject
-      }
+  ->then(json => {
+    switch (json->Json.decode(Decode.BrightId.data), json->Json.decode(Decode.BrightId.error)) {
+    | (Ok({data}), _) => VerificationInfo(data)->resolve
+    | (_, Ok(error)) => error->BrightIdError->reject
+    | (Error(err), _) => err->Json.Decode.DecodeError->reject
     }
   })
   ->catch(e => {
     let retry = retry - 1
     switch retry {
-    | 0 => {
-        switch e {
-        | VerificationInfoError(msg) => Js.Console.error(msg)
-        | FetchVerificationInfoError({error}) =>
-          Js.Console.error(`Fetch Verification Info Error: ${error}`)
-        | JsError(obj) =>
-          switch Js.Exn.message(obj) {
-          | Some(msg) => Js.Console.error(msg)
-          | None => Js.Console.error("Must be some non-error value")
-          }
-        | _ => Js.Console.error("Some unknown error")
-        }
-        defaultVerification->resolve
+    | 0 =>
+      switch e {
+      | BrightIdError(error) => BrightIdError(error)->resolve
+      | JsError(obj) => JsError(obj)->resolve
+      | _ => e->raise
       }
 
     | _ => fetchVerificationInfo(~retry, id)
