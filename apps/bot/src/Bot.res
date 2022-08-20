@@ -46,7 +46,6 @@ let buttons: Collection.t<string, module(Button)> = Collection.make()
 commands
 ->Collection.set(Commands_Help.data->SlashCommandBuilder.getCommandName, module(Commands_Help))
 ->Collection.set(Commands_Verify.data->SlashCommandBuilder.getCommandName, module(Commands_Verify))
-->Collection.set(Commands_Role.data->SlashCommandBuilder.getCommandName, module(Commands_Role))
 ->Collection.set(Commands_Invite.data->SlashCommandBuilder.getCommandName, module(Commands_Invite))
 ->Collection.set(Commands_Guild.data->SlashCommandBuilder.getCommandName, module(Commands_Guild))
 ->ignore
