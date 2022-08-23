@@ -65,7 +65,7 @@ let handleUnverifiedGuildMember = (errorNum, interaction) => {
     interaction
     ->Interaction.followUp(
       ~options={
-        "content": "Please scan the QR code in the BrightID mobile app",
+        "content": "Please scan the above QR code in the BrightID mobile app",
       },
       (),
     )

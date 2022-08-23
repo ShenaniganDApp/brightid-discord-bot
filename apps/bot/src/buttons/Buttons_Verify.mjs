@@ -74,7 +74,7 @@ function handleUnverifiedGuildMember(errorNum, interaction) {
   switch (errorNum) {
     case 2 :
         interaction.followUp({
-              content: "Please scan the QR code in the BrightID mobile app"
+              content: "Please scan the above QR code in the BrightID mobile app"
             });
         return Promise.resolve(undefined);
     case 3 :

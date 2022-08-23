@@ -179,16 +179,33 @@ let handleUnverifiedGuildMember = (errorNum, interaction, uuid) => {
     ->ignore
     resolve()
   | 4 =>
-    interaction
-    ->Interaction.editReply(
-      ~options={
-        "content": "Whoops! You haven't received a sponsor. There are plenty of apps with free sponsors, such as the [EIDI Faucet](https://idchain.one/begin/). \n\n See all the apps available at https://apps.brightid.org",
-      },
-      (),
-    )
-    ->ignore
-    resolve()
-
+    deepLink
+    ->createMessageAttachmentFromUri
+    ->then(attachment => {
+      let embed = verifyUrl->makeEmbed
+      let row = verifyUrl->makeVerifyActionRow
+      interaction
+      ->Interaction.editReply(
+        ~options={
+          "embeds": [embed],
+          "files": [attachment],
+          "ephemeral": true,
+          "components": [row],
+        },
+        (),
+      )
+      ->then(_ => {
+        interaction
+        ->Interaction.followUp(
+          ~options={
+            "content": "Whoops! You haven't received a sponsor. There are plenty of apps with free sponsors, such as the [EIDI Faucet](https://idchain.one/begin/). \n\n See all the apps available at https://apps.brightid.org \n\n Then scan the QR code above in the BrightID mobile app.",
+          },
+          (),
+        )
+        ->ignore
+        resolve()
+      })
+    })
   | _ =>
     interaction
     ->Interaction.editReply(
