@@ -58,13 +58,13 @@ let rec fetchVerificationInfo = (~retry=5, id): Promise.t<verificationInfo> => {
   endpoint
   ->fetch(params)
   ->then(Response.json)
-  ->then(json => {
+  ->then(json =>
     switch (json->Json.decode(Decode.BrightId.data), json->Json.decode(Decode.BrightId.error)) {
     | (Ok({data}), _) => VerificationInfo(data)->resolve
     | (_, Ok(error)) => error->BrightIdError->reject
     | (Error(err), _) => err->Json.Decode.DecodeError->reject
     }
-  })
+  )
   ->catch(e => {
     let retry = retry - 1
     switch retry {
@@ -80,7 +80,7 @@ let rec fetchVerificationInfo = (~retry=5, id): Promise.t<verificationInfo> => {
   })
 }
 
-let getBrightIdVerification = (member: Discord.GuildMember.t) => {
+let getBrightIdVerification = member => {
   let id = member->Discord.GuildMember.getGuildMemberId
   id->fetchVerificationInfo
 }
