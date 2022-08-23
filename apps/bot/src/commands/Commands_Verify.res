@@ -28,22 +28,15 @@ external fetch: (string, 'params) => Promise.t<Response.t<Js.Json.t>> = "fetch"
 
 Env.createEnv()
 
-let config = Env.getConfig()
-
-let config = switch config {
+let config = switch Env.getConfig() {
 | Ok(config) => config
 | Error(err) => err->Env.EnvError->raise
 }
 
-let addVerifiedRole = (member, role, reason) => {
+let addRoleToMember = (guildRole, member) => {
   let guildMemberRoleManager = member->GuildMember.getGuildMemberRoleManager
-  let guild = member->GuildMember.getGuild
-  guildMemberRoleManager->GuildMemberRoleManager.add(role, reason)->ignore
-  member->GuildMember.send(
-    `I recognize you! You're now a verified user in ${guild->Guild.getGuildName}`,
-  )
+  guildMemberRoleManager->GuildMemberRoleManager.add(guildRole, ())
 }
-
 let fetchVerification = uuid => {
   let endpoint = `${brightIdVerificationEndpoint}/${context}/${uuid}?timestamp=seconds`
   let params = {
@@ -155,67 +148,45 @@ let handleUnverifiedGuildMember = (errorNum, interaction, uuid) => {
     ->then(attachment => {
       let embed = verifyUrl->makeEmbed
       let row = verifyUrl->makeVerifyActionRow
-      interaction
-      ->Interaction.editReply(
-        ~options={
-          "embeds": [embed],
-          "files": [attachment],
-          "ephemeral": true,
-          "components": [row],
-        },
-        (),
-      )
-      ->ignore
-      resolve()
+      let options = {
+        "embeds": [embed],
+        "files": [attachment],
+        "ephemeral": true,
+        "components": [row],
+      }
+      interaction->Interaction.editReply(~options, ())->then(_ => resolve())
     })
   | 3 =>
-    interaction
-    ->Interaction.editReply(
-      ~options={
-        "content": "I haven't seen you at a Bright ID Connection Party yet, so your brightid is not verified. You can join a party in any timezone at https://meet.brightid.org",
-      },
-      (),
-    )
-    ->ignore
-    resolve()
+    let options = {
+      "content": "I haven't seen you at a Bright ID Connection Party yet, so your brightid is not verified. You can join a party in any timezone at https://meet.brightid.org",
+    }
+    interaction->Interaction.editReply(~options, ())->then(_ => resolve())
   | 4 =>
     deepLink
     ->createMessageAttachmentFromUri
     ->then(attachment => {
       let embed = verifyUrl->makeEmbed
       let row = verifyUrl->makeVerifyActionRow
+      let options = {
+        "embeds": [embed],
+        "files": [attachment],
+        "ephemeral": true,
+        "components": [row],
+      }
       interaction
-      ->Interaction.editReply(
-        ~options={
-          "embeds": [embed],
-          "files": [attachment],
-          "ephemeral": true,
-          "components": [row],
-        },
-        (),
-      )
+      ->Interaction.editReply(~options, ())
       ->then(_ => {
-        interaction
-        ->Interaction.followUp(
-          ~options={
-            "content": "Whoops! You haven't received a sponsor. There are plenty of apps with free sponsors, such as the [EIDI Faucet](https://idchain.one/begin/). \n\n See all the apps available at https://apps.brightid.org \n\n Then scan the QR code above in the BrightID mobile app.",
-          },
-          (),
-        )
-        ->ignore
-        resolve()
+        let options = {
+          "content": "Whoops! You haven't received a sponsor. There are plenty of apps with free sponsors, such as the [EIDI Faucet](https://idchain.one/begin/). \n\n See all the apps available at https://apps.brightid.org \n\n Then scan the QR code above in the BrightID mobile app.",
+        }
+        interaction->Interaction.followUp(~options, ())->then(_ => resolve())
       })
     })
   | _ =>
-    interaction
-    ->Interaction.editReply(
-      ~options={
-        "content": "Something unexpected happened. Please try again later.",
-      },
-      (),
-    )
-    ->ignore
-    resolve()
+    let options = {
+      "content": "Something unexpected happened. Please try again later.",
+    }
+    interaction->Interaction.editReply(~options, ())->then(_ => resolve())
   }
 }
 
@@ -225,7 +196,6 @@ let execute = (interaction: Interaction.t) => {
   let guild = interaction->Interaction.getGuild
   let member = interaction->Interaction.getGuildMember
   let guildRoleManager = guild->Guild.getGuildRoleManager
-  let guildMemberRoleManager = member->GuildMember.getGuildMemberRoleManager
   let memberId = member->GuildMember.getGuildMemberId
   let uuid = memberId->UUID.v5(config["uuidNamespace"])
   interaction
@@ -242,49 +212,42 @@ let execute = (interaction: Interaction.t) => {
       let guildData = guilds->Js.Dict.get(guildId)
       switch guildData {
       | None =>
+        let options = {
+          "content": "Hi, sorry about that. I couldn't retrieve the data for this server from BrightId",
+        }
         interaction
-        ->Interaction.editReply(
-          ~options={
-            "content": "Hi, sorry about that. I couldn't retrieve the data for this server from BrightId",
-          },
-          (),
+        ->Interaction.editReply(~options, ())
+        ->then(
+          _ => VerifyHandlerError(`Guild Id ${guildId} could not be found in the gist`)->reject,
         )
-        ->ignore
-        VerifyHandlerError("Guild does not exist")->reject
+
       | Some(guildData) => {
           let roleId = guildData["roleId"]->Belt.Option.getExn
           let guildRole = guildRoleManager->getRolebyRoleId(roleId)
           uuid
           ->fetchVerification
           ->then(
-            contextId => {
+            contextId =>
               switch contextId.unique {
               | true =>
-                guildMemberRoleManager->GuildMemberRoleManager.add(guildRole, ())->ignore
-                interaction
-                ->Interaction.editReply(
-                  ~options={
-                    "content": `Hey, I recognize you! I just gave you the \`${guildRole->Role.getName}\` role. You are now BrightID verified in ${guild->Guild.getGuildName} server!`,
-                    "ephemeral": true,
+                guildRole
+                ->addRoleToMember(member)
+                ->then(
+                  _ => {
+                    let options = {
+                      "content": `Hey, I recognize you! I just gave you the \`${guildRole->Role.getName}\` role. You are now BrightID verified in ${guild->Guild.getGuildName} server!`,
+                      "ephemeral": true,
+                    }
+                    interaction->Interaction.editReply(~options, ())->then(_ => resolve())
                   },
-                  (),
                 )
-                ->ignore
-                resolve()
-
               | false =>
-                interaction
-                ->Interaction.editReply(
-                  ~options={
-                    "content": `Hey, I recognize you, but your account seems to be linked to a sybil attack. You are not properly BrightID verified. If this is a mistake, contact one of the support channels`,
-                    "ephemeral": true,
-                  },
-                  (),
-                )
-                ->ignore
-                resolve()
-              }
-            },
+                let options = {
+                  "content": `Hey, I recognize you, but your account seems to be linked to a sybil attack. You are not properly BrightID verified. If this is a mistake, contact one of the support channels`,
+                  "ephemeral": true,
+                }
+                interaction->Interaction.editReply(~options, ())->then(_ => resolve())
+              },
           )
         }
       }
@@ -292,18 +255,18 @@ let execute = (interaction: Interaction.t) => {
     ->catch(e => {
       switch e {
       | BrightIdError(error) =>
-        error.errorNum->handleUnverifiedGuildMember(interaction, uuid)->ignore
-        Js.Console.error(error.errorMessage)
-      | VerifyHandlerError(msg) => Js.Console.error(msg)
-      | Json.Decode.DecodeError(msg) => Js.Console.error(msg)
+        error.errorNum
+        ->handleUnverifiedGuildMember(interaction, uuid)
+        ->then(_ => Js.Console.error(error.errorMessage)->resolve)
+      | VerifyHandlerError(msg) => Js.Console.error(msg)->resolve
+      | Json.Decode.DecodeError(msg) => Js.Console.error(msg)->resolve
       | JsError(obj) =>
         switch Js.Exn.message(obj) {
-        | Some(msg) => Js.Console.error(msg)
-        | None => Js.Console.error("Verify Handler: Unknown error")
+        | Some(msg) => Js.Console.error(msg)->resolve
+        | None => Js.Console.error("Verify Handler: Unknown error")->resolve
         }
-      | _ => Js.Console.error("Verify Handler: Unknown error")
+      | _ => Js.Console.error("Verify Handler: Unknown error")->resolve
       }
-      resolve()
     })
   })
 }
