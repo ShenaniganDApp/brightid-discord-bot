@@ -66,7 +66,7 @@ function noMultipleContextIds(member) {
   member.send("You are currently limited to one Discord account with BrightID. If there has been a mistake, message the BrightID team on Discord https://discord.gg/N4ZbNjP", undefined);
   return Promise.reject({
               RE_EXN_ID: ButtonVerifyHandlerError,
-              _1: "Verification Info can not be retrieved from more than one Discord account."
+              _1: "" + member.displayName + ": Verification Info can not be retrieved from more than one Discord account."
             });
 }
 
@@ -110,11 +110,11 @@ function execute(interaction) {
                               return Services_VerificationInfo.getBrightIdVerification(member).then(function (verificationInfo) {
                                           switch (verificationInfo.TAG | 0) {
                                             case /* VerificationInfo */0 :
-                                                var verificationInfo$1 = verificationInfo._0;
-                                                var contextIdsLength = verificationInfo$1.contextIds.length;
-                                                var match = verificationInfo$1.unique;
+                                                var match = verificationInfo._0;
+                                                var unique = match.unique;
+                                                var contextIdsLength = match.contextIds.length;
                                                 if (contextIdsLength !== 0) {
-                                                  if (contextIdsLength === 1 && match) {
+                                                  if (contextIdsLength === 1 && unique) {
                                                     return addRoleToMember(guildRole, member).then(function (param) {
                                                                   var options = {
                                                                     content: "Hey, I recognize you! I just gave you the \`" + guildRole.name + "\` role. You are now BrightID verified in " + guild.name + " server!"
@@ -133,7 +133,7 @@ function execute(interaction) {
                                                               return Promise.resolve(undefined);
                                                             });
                                                 }
-                                                if (match) {
+                                                if (unique) {
                                                   return noMultipleContextIds(member);
                                                 }
                                                 var options$1 = {
@@ -142,7 +142,7 @@ function execute(interaction) {
                                                 return interaction.followUp(options$1).then(function (param) {
                                                             return Promise.reject({
                                                                         RE_EXN_ID: ButtonVerifyHandlerError,
-                                                                        _1: "Member " + member.displayName + " is not unique"
+                                                                        _1: "" + member.displayName + " is not unique"
                                                                       });
                                                           });
                                                 break;

@@ -234,9 +234,10 @@ function execute(interaction) {
                                         });
                             }), (function (e) {
                             if (e.RE_EXN_ID === BrightIdError) {
-                              var error = e._1;
-                              return handleUnverifiedGuildMember(error.errorNum, interaction, uuid).then(function (param) {
-                                          return Promise.resolve((console.error(error.errorMessage), undefined));
+                              var match = e._1;
+                              var errorMessage = match.errorMessage;
+                              return handleUnverifiedGuildMember(match.errorNum, interaction, uuid).then(function (param) {
+                                          return Promise.resolve((console.error("" + member.displayName + ": " + errorMessage + ""), undefined));
                                         });
                             }
                             if (e.RE_EXN_ID === VerifyHandlerError) {
