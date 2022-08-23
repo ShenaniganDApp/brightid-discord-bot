@@ -254,10 +254,12 @@ let execute = (interaction: Interaction.t) => {
     })
     ->catch(e => {
       switch e {
-      | BrightIdError(error) =>
-        error.errorNum
+      | BrightIdError({errorNum, errorMessage}) =>
+        errorNum
         ->handleUnverifiedGuildMember(interaction, uuid)
-        ->then(_ => Js.Console.error(error.errorMessage)->resolve)
+        ->then(
+          _ => Js.Console.error(`${member->GuildMember.getDisplayName}: ${errorMessage}`)->resolve,
+        )
       | VerifyHandlerError(msg) => Js.Console.error(msg)->resolve
       | Json.Decode.DecodeError(msg) => Js.Console.error(msg)->resolve
       | JsError(obj) =>
