@@ -53,7 +53,7 @@ let noMultipleContextIds = member => {
   )
   ->ignore
   ButtonVerifyHandlerError(
-    "Verification Info can not be retrieved from more than one Discord account.",
+    `${member->GuildMember.getDisplayName}: Verification Info can not be retrieved from more than one Discord account.`,
   )->reject
 }
 
@@ -134,9 +134,9 @@ let execute = interaction => {
             }
             interaction->Interaction.followUp(~options, ())->then(_ => JsError(obj)->reject)
           | BrightIdError({errorNum}) => errorNum->handleUnverifiedGuildMember(interaction)
-          | VerificationInfo(verificationInfo) =>
-            let contextIdsLength = verificationInfo.contextIds->Belt.Array.length
-            switch (contextIdsLength, verificationInfo.unique) {
+          | VerificationInfo({contextIds, unique}) =>
+            let contextIdsLength = contextIds->Belt.Array.length
+            switch (contextIdsLength, unique) {
             | (1, true) =>
               guildRole
               ->addRoleToMember(member)
@@ -163,7 +163,7 @@ let execute = interaction => {
               ->then(
                 _ =>
                   ButtonVerifyHandlerError(
-                    `Member ${member->GuildMember.getDisplayName} is not unique`,
+                    `${member->GuildMember.getDisplayName} is not unique`,
                   )->reject,
               )
             | (_, _) => member->noMultipleContextIds
