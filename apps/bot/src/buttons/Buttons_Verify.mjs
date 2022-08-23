@@ -62,36 +62,53 @@ function addRoleToMember(guildRole, member) {
   return guildMemberRoleManager.add(guildRole, undefined);
 }
 
-function noMultipleContextIds(member) {
-  member.send("You are currently limited to one Discord account with BrightID. If there has been a mistake, message the BrightID team on Discord https://discord.gg/N4ZbNjP", undefined);
-  return Promise.reject({
-              RE_EXN_ID: ButtonVerifyHandlerError,
-              _1: "" + member.displayName + ": Verification Info can not be retrieved from more than one Discord account."
+function noMultipleContextIds(member, interaction) {
+  var options = {
+    content: "Please scan the above QR code in the BrightID mobile app",
+    ephemeral: true
+  };
+  return interaction.followUp(options).then(function (param) {
+              return Promise.reject({
+                          RE_EXN_ID: ButtonVerifyHandlerError,
+                          _1: "" + member.displayName + ": Verification Info can not be retrieved from more than one Discord account."
+                        });
             });
 }
 
 function handleUnverifiedGuildMember(errorNum, interaction) {
   switch (errorNum) {
     case 2 :
-        interaction.followUp({
-              content: "Please scan the above QR code in the BrightID mobile app"
-            });
-        return Promise.resolve(undefined);
+        var options = {
+          content: "Please scan the above QR code in the BrightID mobile app",
+          ephemeral: true
+        };
+        return interaction.followUp(options).then(function (param) {
+                    return Promise.resolve(undefined);
+                  });
     case 3 :
-        interaction.followUp({
-              content: "I haven't seen you at a Bright ID Connection Party yet, so your brightid is not verified. You can join a party in any timezone at https://meet.brightid.org"
-            });
-        return Promise.resolve(undefined);
+        var options$1 = {
+          content: "I haven't seen you at a Bright ID Connection Party yet, so your brightid is not verified. You can join a party in any timezone at https://meet.brightid.org",
+          ephemeral: true
+        };
+        return interaction.followUp(options$1).then(function (param) {
+                    return Promise.resolve(undefined);
+                  });
     case 4 :
-        interaction.followUp({
-              content: "Whoops! You haven't received a sponsor. There are plenty of apps with free sponsors, such as the [EIDI Faucet](https://idchain.one/begin/). \n\n See all the apps available at https://apps.brightid.org"
-            });
-        return Promise.resolve(undefined);
+        var options$2 = {
+          content: "Whoops! You haven't received a sponsor. There are plenty of apps with free sponsors, such as the [EIDI Faucet](https://idchain.one/begin/). \n\n See all the apps available at https://apps.brightid.org",
+          ephemeral: true
+        };
+        return interaction.followUp(options$2).then(function (param) {
+                    return Promise.resolve(undefined);
+                  });
     default:
-      interaction.followUp({
-            content: "Something unexpected happened. Please try again later."
-          });
-      return Promise.resolve(undefined);
+      var options$3 = {
+        content: "Something unexpected happened. Please try again later.",
+        ephemeral: true
+      };
+      return interaction.followUp(options$3).then(function (param) {
+                  return Promise.resolve(undefined);
+                });
   }
 }
 
@@ -117,7 +134,8 @@ function execute(interaction) {
                                                   if (contextIdsLength === 1 && unique) {
                                                     return addRoleToMember(guildRole, member).then(function (param) {
                                                                   var options = {
-                                                                    content: "Hey, I recognize you! I just gave you the \`" + guildRole.name + "\` role. You are now BrightID verified in " + guild.name + " server!"
+                                                                    content: "Hey, I recognize you! I just gave you the \`" + guildRole.name + "\` role. You are now BrightID verified in " + guild.name + " server!",
+                                                                    ephemeral: true
                                                                   };
                                                                   return interaction.followUp(options);
                                                                 }).then(function (param) {
@@ -127,17 +145,19 @@ function execute(interaction) {
                                                   
                                                 } else {
                                                   var options = {
-                                                    content: "The brightid has not been linked to Discord. That means the qr code hast not been properly scanned!"
+                                                    content: "The brightid has not been linked to Discord. That means the qr code hast not been properly scanned!",
+                                                    ephemeral: true
                                                   };
                                                   return interaction.followUp(options).then(function (param) {
                                                               return Promise.resolve(undefined);
                                                             });
                                                 }
                                                 if (unique) {
-                                                  return noMultipleContextIds(member);
+                                                  return noMultipleContextIds(member, interaction);
                                                 }
                                                 var options$1 = {
-                                                  content: "Hey, I recognize you, but your account seems to be linked to a sybil attack. You are not properly BrightID verified. If this is a mistake, contact one of the support channels"
+                                                  content: "Hey, I recognize you, but your account seems to be linked to a sybil attack. You are not properly BrightID verified. If this is a mistake, contact one of the support channels",
+                                                  ephemeral: true
                                                 };
                                                 return interaction.followUp(options$1).then(function (param) {
                                                             return Promise.reject({
@@ -151,7 +171,8 @@ function execute(interaction) {
                                             case /* JsError */2 :
                                                 var obj = verificationInfo._0;
                                                 var options$2 = {
-                                                  content: "Something unexpected happened. Try again later"
+                                                  content: "Something unexpected happened. Try again later",
+                                                  ephemeral: true
                                                 };
                                                 return interaction.followUp(options$2).then(function (param) {
                                                             return Promise.reject({

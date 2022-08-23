@@ -152,7 +152,8 @@ function handleUnverifiedGuildMember(errorNum, interaction, uuid) {
                   });
     case 3 :
         var options = {
-          content: "I haven't seen you at a Bright ID Connection Party yet, so your brightid is not verified. You can join a party in any timezone at https://meet.brightid.org"
+          content: "I haven't seen you at a Bright ID Connection Party yet, so your brightid is not verified. You can join a party in any timezone at https://meet.brightid.org",
+          ephemeral: true
         };
         return interaction.editReply(options).then(function (param) {
                     return Promise.resolve(undefined);
@@ -169,7 +170,8 @@ function handleUnverifiedGuildMember(errorNum, interaction, uuid) {
                     };
                     return interaction.editReply(options).then(function (param) {
                                 var options = {
-                                  content: "Whoops! You haven't received a sponsor. There are plenty of apps with free sponsors, such as the [EIDI Faucet](https://idchain.one/begin/). \n\n See all the apps available at https://apps.brightid.org \n\n Then scan the QR code above in the BrightID mobile app."
+                                  content: "Whoops! You haven't received a sponsor. There are plenty of apps with free sponsors, such as the [EIDI Faucet](https://idchain.one/begin/). \n\n See all the apps available at https://apps.brightid.org \n\n Then scan the QR code above in the BrightID mobile app.",
+                                  ephemeral: true
                                 };
                                 return interaction.followUp(options).then(function (param) {
                                             return Promise.resolve(undefined);
@@ -178,7 +180,8 @@ function handleUnverifiedGuildMember(errorNum, interaction, uuid) {
                   });
     default:
       var options$1 = {
-        content: "Something unexpected happened. Please try again later."
+        content: "Something unexpected happened. Please try again later.",
+        ephemeral: true
       };
       return interaction.editReply(options$1).then(function (param) {
                   return Promise.resolve(undefined);

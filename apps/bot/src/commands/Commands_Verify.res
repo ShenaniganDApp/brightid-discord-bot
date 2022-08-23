@@ -159,6 +159,7 @@ let handleUnverifiedGuildMember = (errorNum, interaction, uuid) => {
   | 3 =>
     let options = {
       "content": "I haven't seen you at a Bright ID Connection Party yet, so your brightid is not verified. You can join a party in any timezone at https://meet.brightid.org",
+      "ephemeral": true,
     }
     interaction->Interaction.editReply(~options, ())->then(_ => resolve())
   | 4 =>
@@ -178,6 +179,7 @@ let handleUnverifiedGuildMember = (errorNum, interaction, uuid) => {
       ->then(_ => {
         let options = {
           "content": "Whoops! You haven't received a sponsor. There are plenty of apps with free sponsors, such as the [EIDI Faucet](https://idchain.one/begin/). \n\n See all the apps available at https://apps.brightid.org \n\n Then scan the QR code above in the BrightID mobile app.",
+          "ephemeral": true,
         }
         interaction->Interaction.followUp(~options, ())->then(_ => resolve())
       })
@@ -185,6 +187,7 @@ let handleUnverifiedGuildMember = (errorNum, interaction, uuid) => {
   | _ =>
     let options = {
       "content": "Something unexpected happened. Please try again later.",
+      "ephemeral": true,
     }
     interaction->Interaction.editReply(~options, ())->then(_ => resolve())
   }

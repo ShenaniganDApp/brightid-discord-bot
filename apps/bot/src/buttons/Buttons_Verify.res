@@ -45,61 +45,47 @@ let addRoleToMember = (guildRole, member) => {
   guildMemberRoleManager->GuildMemberRoleManager.add(guildRole, ())
 }
 
-let noMultipleContextIds = member => {
-  member
-  ->GuildMember.send(
-    "You are currently limited to one Discord account with BrightID. If there has been a mistake, message the BrightID team on Discord https://discord.gg/N4ZbNjP",
-    (),
+let noMultipleContextIds = (member, interaction) => {
+  let options = {
+    "content": "Please scan the above QR code in the BrightID mobile app",
+    "ephemeral": true,
+  }
+  interaction
+  ->Interaction.followUp(~options, ())
+  ->then(_ =>
+    ButtonVerifyHandlerError(
+      `${member->GuildMember.getDisplayName}: Verification Info can not be retrieved from more than one Discord account.`,
+    )->reject
   )
-  ->ignore
-  ButtonVerifyHandlerError(
-    `${member->GuildMember.getDisplayName}: Verification Info can not be retrieved from more than one Discord account.`,
-  )->reject
 }
 
 let handleUnverifiedGuildMember = (errorNum, interaction) => {
   switch errorNum {
   | 2 =>
-    interaction
-    ->Interaction.followUp(
-      ~options={
-        "content": "Please scan the above QR code in the BrightID mobile app",
-      },
-      (),
-    )
-    ->ignore
-    resolve()
-  | 3 =>
-    interaction
-    ->Interaction.followUp(
-      ~options={
-        "content": "I haven't seen you at a Bright ID Connection Party yet, so your brightid is not verified. You can join a party in any timezone at https://meet.brightid.org",
-      },
-      (),
-    )
-    ->ignore
-    resolve()
-  | 4 =>
-    interaction
-    ->Interaction.followUp(
-      ~options={
-        "content": "Whoops! You haven't received a sponsor. There are plenty of apps with free sponsors, such as the [EIDI Faucet](https://idchain.one/begin/). \n\n See all the apps available at https://apps.brightid.org",
-      },
-      (),
-    )
-    ->ignore
-    resolve()
+    let options = {
+      "content": "Please scan the above QR code in the BrightID mobile app",
+      "ephemeral": true,
+    }
+    interaction->Interaction.followUp(~options, ())->then(_ => resolve())
 
+  | 3 =>
+    let options = {
+      "content": "I haven't seen you at a Bright ID Connection Party yet, so your brightid is not verified. You can join a party in any timezone at https://meet.brightid.org",
+      "ephemeral": true,
+    }
+    interaction->Interaction.followUp(~options, ())->then(_ => resolve())
+  | 4 =>
+    let options = {
+      "content": "Whoops! You haven't received a sponsor. There are plenty of apps with free sponsors, such as the [EIDI Faucet](https://idchain.one/begin/). \n\n See all the apps available at https://apps.brightid.org",
+      "ephemeral": true,
+    }
+    interaction->Interaction.followUp(~options, ())->then(_ => resolve())
   | _ =>
-    interaction
-    ->Interaction.followUp(
-      ~options={
-        "content": "Something unexpected happened. Please try again later.",
-      },
-      (),
-    )
-    ->ignore
-    resolve()
+    let options = {
+      "content": "Something unexpected happened. Please try again later.",
+      "ephemeral": true,
+    }
+    interaction->Interaction.followUp(~options, ())->then(_ => resolve())
   }
 }
 
@@ -131,6 +117,7 @@ let execute = interaction => {
           | JsError(obj) =>
             let options = {
               "content": "Something unexpected happened. Try again later",
+              "ephemeral": true,
             }
             interaction->Interaction.followUp(~options, ())->then(_ => JsError(obj)->reject)
           | BrightIdError({errorNum}) => errorNum->handleUnverifiedGuildMember(interaction)
@@ -144,6 +131,7 @@ let execute = interaction => {
                 _ => {
                   let options = {
                     "content": `Hey, I recognize you! I just gave you the \`${guildRole->Role.getName}\` role. You are now BrightID verified in ${guild->Guild.getGuildName} server!`,
+                    "ephemeral": true,
                   }
                   interaction->Interaction.followUp(~options, ())
                 },
@@ -152,11 +140,13 @@ let execute = interaction => {
             | (0, _) =>
               let options = {
                 "content": `The brightid has not been linked to Discord. That means the qr code hast not been properly scanned!`,
+                "ephemeral": true,
               }
               interaction->Interaction.followUp(~options, ())->then(_ => resolve())
             | (_, false) =>
               let options = {
                 "content": "Hey, I recognize you, but your account seems to be linked to a sybil attack. You are not properly BrightID verified. If this is a mistake, contact one of the support channels",
+                "ephemeral": true,
               }
               interaction
               ->Interaction.followUp(~options, ())
@@ -166,7 +156,7 @@ let execute = interaction => {
                     `${member->GuildMember.getDisplayName} is not unique`,
                   )->reject,
               )
-            | (_, _) => member->noMultipleContextIds
+            | (_, _) => member->noMultipleContextIds(interaction)
             }
           }
         },
