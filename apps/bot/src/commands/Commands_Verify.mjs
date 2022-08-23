@@ -159,10 +159,21 @@ function handleUnverifiedGuildMember(errorNum, interaction, uuid) {
             });
         return Promise.resolve(undefined);
     case 4 :
-        interaction.editReply({
-              content: "Whoops! You haven't received a sponsor. There are plenty of apps with free sponsors, such as the [EIDI Faucet](https://idchain.one/begin/). \n\n See all the apps available at https://apps.brightid.org"
-            });
-        return Promise.resolve(undefined);
+        return createMessageAttachmentFromUri(deepLink).then(function (attachment) {
+                    var embed = makeEmbed(verifyUrl);
+                    var row = makeVerifyActionRow(verifyUrl);
+                    return interaction.editReply({
+                                  embeds: [embed],
+                                  files: [attachment],
+                                  ephemeral: true,
+                                  components: [row]
+                                }).then(function (param) {
+                                interaction.followUp({
+                                      content: "Whoops! You haven't received a sponsor. There are plenty of apps with free sponsors, such as the [EIDI Faucet](https://idchain.one/begin/). \n\n See all the apps available at https://apps.brightid.org \n\n Then scan the QR code above in the BrightID mobile app."
+                                    });
+                                return Promise.resolve(undefined);
+                              });
+                  });
     default:
       interaction.editReply({
             content: "Something unexpected happened. Please try again later."
