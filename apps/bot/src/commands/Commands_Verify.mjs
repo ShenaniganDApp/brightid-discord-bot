@@ -42,14 +42,9 @@ if (config.TAG === /* Ok */0) {
       };
 }
 
-function addVerifiedRole(member, role, reason) {
+function addRoleToMember(guildRole, member) {
   var guildMemberRoleManager = member.roles;
-  var guild = member.guild;
-  guildMemberRoleManager.add(role, undefined);
-  var partial_arg = "I recognize you! You're now a verified user in " + guild.name + "";
-  return function (param) {
-    return member.send(partial_arg, param);
-  };
+  return guildMemberRoleManager.add(guildRole, undefined);
 }
 
 function fetchVerification(uuid) {
@@ -145,40 +140,49 @@ function handleUnverifiedGuildMember(errorNum, interaction, uuid) {
         return createMessageAttachmentFromUri(deepLink).then(function (attachment) {
                     var embed = makeEmbed(verifyUrl);
                     var row = makeVerifyActionRow(verifyUrl);
-                    interaction.editReply({
-                          embeds: [embed],
-                          files: [attachment],
-                          ephemeral: true,
-                          components: [row]
-                        });
-                    return Promise.resolve(undefined);
+                    var options = {
+                      embeds: [embed],
+                      files: [attachment],
+                      ephemeral: true,
+                      components: [row]
+                    };
+                    return interaction.editReply(options).then(function (param) {
+                                return Promise.resolve(undefined);
+                              });
                   });
     case 3 :
-        interaction.editReply({
-              content: "I haven't seen you at a Bright ID Connection Party yet, so your brightid is not verified. You can join a party in any timezone at https://meet.brightid.org"
-            });
-        return Promise.resolve(undefined);
+        var options = {
+          content: "I haven't seen you at a Bright ID Connection Party yet, so your brightid is not verified. You can join a party in any timezone at https://meet.brightid.org"
+        };
+        return interaction.editReply(options).then(function (param) {
+                    return Promise.resolve(undefined);
+                  });
     case 4 :
         return createMessageAttachmentFromUri(deepLink).then(function (attachment) {
                     var embed = makeEmbed(verifyUrl);
                     var row = makeVerifyActionRow(verifyUrl);
-                    return interaction.editReply({
-                                  embeds: [embed],
-                                  files: [attachment],
-                                  ephemeral: true,
-                                  components: [row]
-                                }).then(function (param) {
-                                interaction.followUp({
-                                      content: "Whoops! You haven't received a sponsor. There are plenty of apps with free sponsors, such as the [EIDI Faucet](https://idchain.one/begin/). \n\n See all the apps available at https://apps.brightid.org \n\n Then scan the QR code above in the BrightID mobile app."
-                                    });
-                                return Promise.resolve(undefined);
+                    var options = {
+                      embeds: [embed],
+                      files: [attachment],
+                      ephemeral: true,
+                      components: [row]
+                    };
+                    return interaction.editReply(options).then(function (param) {
+                                var options = {
+                                  content: "Whoops! You haven't received a sponsor. There are plenty of apps with free sponsors, such as the [EIDI Faucet](https://idchain.one/begin/). \n\n See all the apps available at https://apps.brightid.org \n\n Then scan the QR code above in the BrightID mobile app."
+                                };
+                                return interaction.followUp(options).then(function (param) {
+                                            return Promise.resolve(undefined);
+                                          });
                               });
                   });
     default:
-      interaction.editReply({
-            content: "Something unexpected happened. Please try again later."
-          });
-      return Promise.resolve(undefined);
+      var options$1 = {
+        content: "Something unexpected happened. Please try again later."
+      };
+      return interaction.editReply(options$1).then(function (param) {
+                  return Promise.resolve(undefined);
+                });
   }
 }
 
@@ -186,7 +190,6 @@ function execute(interaction) {
   var guild = interaction.guild;
   var member = interaction.member;
   var guildRoleManager = guild.roles;
-  var guildMemberRoleManager = member.roles;
   var memberId = member.id;
   var uuid = Uuid.v5(memberId, config$1.uuidNamespace);
   return interaction.deferReply({
@@ -201,46 +204,56 @@ function execute(interaction) {
                                 var guildRole = getRolebyRoleId(guildRoleManager, roleId);
                                 return fetchVerification(uuid).then(function (contextId) {
                                             if (contextId.unique) {
-                                              guildMemberRoleManager.add(guildRole, undefined);
-                                              interaction.editReply({
-                                                    content: "Hey, I recognize you! I just gave you the \`" + guildRole.name + "\` role. You are now BrightID verified in " + guild.name + " server!",
-                                                    ephemeral: true
-                                                  });
-                                              return Promise.resolve(undefined);
-                                            } else {
-                                              interaction.editReply({
-                                                    content: "Hey, I recognize you, but your account seems to be linked to a sybil attack. You are not properly BrightID verified. If this is a mistake, contact one of the support channels",
-                                                    ephemeral: true
-                                                  });
-                                              return Promise.resolve(undefined);
+                                              return addRoleToMember(guildRole, member).then(function (param) {
+                                                          var options = {
+                                                            content: "Hey, I recognize you! I just gave you the \`" + guildRole.name + "\` role. You are now BrightID verified in " + guild.name + " server!",
+                                                            ephemeral: true
+                                                          };
+                                                          return interaction.editReply(options).then(function (param) {
+                                                                      return Promise.resolve(undefined);
+                                                                    });
+                                                        });
                                             }
+                                            var options = {
+                                              content: "Hey, I recognize you, but your account seems to be linked to a sybil attack. You are not properly BrightID verified. If this is a mistake, contact one of the support channels",
+                                              ephemeral: true
+                                            };
+                                            return interaction.editReply(options).then(function (param) {
+                                                        return Promise.resolve(undefined);
+                                                      });
                                           });
                               }
-                              interaction.editReply({
-                                    content: "Hi, sorry about that. I couldn't retrieve the data for this server from BrightId"
-                                  });
-                              return Promise.reject({
-                                          RE_EXN_ID: VerifyHandlerError,
-                                          _1: "Guild does not exist"
+                              var options = {
+                                content: "Hi, sorry about that. I couldn't retrieve the data for this server from BrightId"
+                              };
+                              return interaction.editReply(options).then(function (param) {
+                                          return Promise.reject({
+                                                      RE_EXN_ID: VerifyHandlerError,
+                                                      _1: "Guild Id " + guildId + " could not be found in the gist"
+                                                    });
                                         });
                             }), (function (e) {
                             if (e.RE_EXN_ID === BrightIdError) {
                               var error = e._1;
-                              handleUnverifiedGuildMember(error.errorNum, interaction, uuid);
-                              console.error(error.errorMessage);
-                            } else if (e.RE_EXN_ID === VerifyHandlerError || e.RE_EXN_ID === Json_Decode$JsonCombinators.DecodeError) {
-                              console.error(e._1);
-                            } else if (e.RE_EXN_ID === $$Promise.JsError) {
-                              var msg = e._1.message;
-                              if (msg !== undefined) {
-                                console.error(msg);
-                              } else {
-                                console.error("Verify Handler: Unknown error");
-                              }
-                            } else {
-                              console.error("Verify Handler: Unknown error");
+                              return handleUnverifiedGuildMember(error.errorNum, interaction, uuid).then(function (param) {
+                                          return Promise.resolve((console.error(error.errorMessage), undefined));
+                                        });
                             }
-                            return Promise.resolve(undefined);
+                            if (e.RE_EXN_ID === VerifyHandlerError) {
+                              return Promise.resolve((console.error(e._1), undefined));
+                            }
+                            if (e.RE_EXN_ID === Json_Decode$JsonCombinators.DecodeError) {
+                              return Promise.resolve((console.error(e._1), undefined));
+                            }
+                            if (e.RE_EXN_ID !== $$Promise.JsError) {
+                              return Promise.resolve((console.error("Verify Handler: Unknown error"), undefined));
+                            }
+                            var msg = e._1.message;
+                            if (msg !== undefined) {
+                              return Promise.resolve((console.error(msg), undefined));
+                            } else {
+                              return Promise.resolve((console.error("Verify Handler: Unknown error"), undefined));
+                            }
                           }));
             });
 }
@@ -265,7 +278,7 @@ export {
   Canvas$1 as Canvas,
   QRCode ,
   config$1 as config,
-  addVerifiedRole ,
+  addRoleToMember ,
   fetchVerification ,
   makeEmbed ,
   createMessageAttachmentFromUri ,
