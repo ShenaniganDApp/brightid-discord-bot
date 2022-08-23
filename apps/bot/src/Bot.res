@@ -210,6 +210,37 @@ let onGuildMemberAdd = guildMember => {
   ->ignore
 }
 
+let onRoleUpdate = role => {
+  open Utils
+  let guildId = role->Role.getGuild->Guild.getGuildId
+  let config = Gist.makeGistConfig(
+    ~id=envConfig["gistId"],
+    ~name="guildData.json",
+    ~token=envConfig["githubAccessToken"],
+  )
+  Gist.ReadGist.content(~config, ~decoder=Decode.Gist.brightIdGuilds)
+  ->then(guilds => {
+    let brightIdGuild = guilds->Js.Dict.get(guildId)->Belt.Option.getExn
+    let roleId = brightIdGuild["roleId"]->Belt.Option.getExn
+    let isVerifiedRole = role->Role.getRoleId === roleId
+    switch isVerifiedRole {
+    | true =>
+      let roleName = role->Role.getName
+      let entry = {
+        "inviteLink": brightIdGuild["inviteLink"],
+        "name": brightIdGuild["name"],
+        "role": Some(roleName),
+        "roleId": brightIdGuild["roleId"],
+      }
+      Gist.UpdateGist.updateEntry(~content=guilds, ~entry, ~key=guildId, ~config)->then(_ =>
+        resolve()
+      )
+    | false => resolve()
+    }
+  })
+  ->ignore
+}
+
 client->Client.on(
   #ready(
     () => {
@@ -225,5 +256,7 @@ client->Client.on(#interactionCreate(interaction => interaction->onInteraction))
 client->Client.on(#guildDelete(guild => guild->onGuildDelete))
 
 client->Client.on(#guildMemberAdd(member => member->onGuildMemberAdd))
+
+client->Client.on(#roleUpdate((~oldRole as _, ~newRole) => newRole->onRoleUpdate))
 
 client->Client.login(envConfig["discordApiToken"])->ignore
