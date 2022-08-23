@@ -7258,6 +7258,14 @@ rescript-discordjs@^0.2.0:
     discord.js "^13.8.1"
     rescript "*"
 
+rescript-discordjs@^0.2.1:
+  version "0.2.1"
+  resolved "https://registry.yarnpkg.com/rescript-discordjs/-/rescript-discordjs-0.2.1.tgz#e8028bddfb50df6184e5bbac60c9ecbbab050906"
+  integrity sha512-97vjehYUvlSfiArMMBGWp2A7MA6HGvccmFOfFt2Dcjc5ne8DOVpyshludy9WUded4VskXFIYMXkPKDOe9L9G4A==
+  dependencies:
+    discord.js "^13.8.1"
+    rescript "*"
+
 rescript-remix@^0.2.1:
   version "0.2.1"
   resolved "https://registry.yarnpkg.com/rescript-remix/-/rescript-remix-0.2.1.tgz#a9b48f64e24547e8400abb9b43a02e10a562e500"
