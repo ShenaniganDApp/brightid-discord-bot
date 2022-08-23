@@ -10,9 +10,7 @@ exception ButtonVerifyHandlerError(string)
 
 Env.createEnv()
 
-let config = Env.getConfig()
-
-let config = switch config {
+let config = switch Env.getConfig() {
 | Ok(config) => config
 | Error(err) => err->Env.EnvError->raise
 }
@@ -42,12 +40,12 @@ let getGuildDataFromGist = (guilds, guildId, interaction) => {
   }
 }
 
-let verifyMember = (guildRole, member) => {
+let addRoleToMember = (guildRole, member) => {
   let guildMemberRoleManager = member->GuildMember.getGuildMemberRoleManager
   guildMemberRoleManager->GuildMemberRoleManager.add(guildRole, ())
 }
 
-let noMultipleAccounts = member => {
+let noMultipleContextIds = member => {
   member
   ->GuildMember.send(
     "You are currently limited to one Discord account with BrightID. If there has been a mistake, message the BrightID team on Discord https://discord.gg/N4ZbNjP",
@@ -107,19 +105,21 @@ let handleUnverifiedGuildMember = (errorNum, interaction) => {
 
 let execute = interaction => {
   open Utils
-  let config = Gist.makeGistConfig(
-    ~id=config["gistId"],
-    ~name="guildData.json",
-    ~token=config["githubAccessToken"],
-  )
+
   let guild = interaction->Interaction.getGuild
   let member = interaction->Interaction.getGuildMember
   let guildRoleManager = guild->Guild.getGuildRoleManager
 
   let guildId = guild->Guild.getGuildId
+
   interaction
   ->Interaction.deferReply(~options={"ephemeral": true}, ())
   ->then(_ => {
+    let config = Gist.makeGistConfig(
+      ~id=config["gistId"],
+      ~name="guildData.json",
+      ~token=config["githubAccessToken"],
+    )
     Gist.ReadGist.content(~config, ~decoder=Decode.Gist.brightIdGuilds)->then(guilds => {
       let guildData = guilds->getGuildDataFromGist(guildId, interaction)
       let guildRole = guildData["roleId"]->Belt.Option.getExn->getRolebyRoleId(guildRoleManager, _)
@@ -128,55 +128,45 @@ let execute = interaction => {
       ->then(
         verificationInfo => {
           switch verificationInfo {
-          | JsError(obj) => {
-              interaction
-              ->Interaction.followUp(
-                ~options={
-                  "content": "Something unexpected happened. Try again later",
-                },
-                (),
-              )
-              ->ignore
-              JsError(obj)->reject
+          | JsError(obj) =>
+            let options = {
+              "content": "Something unexpected happened. Try again later",
             }
-
+            interaction->Interaction.followUp(~options, ())->then(_ => JsError(obj)->reject)
           | BrightIdError({errorNum}) => errorNum->handleUnverifiedGuildMember(interaction)
           | VerificationInfo(verificationInfo) =>
-            switch verificationInfo.contextIds->Belt.Array.length > 1 {
-            | true => member->noMultipleAccounts
-            | false =>
-              switch verificationInfo.unique {
-              | true => {
-                  guildRole
-                  ->verifyMember(member)
-                  ->then(
-                    _ => {
-                      interaction->Interaction.editReply(
-                        ~options={
-                          "content": `Hey, I recognize you! I just gave you the \`${guildRole->Role.getName}\` role. You are now BrightID verified in ${guild->Guild.getGuildName} server!`,
-                        },
-                        (),
-                      )
-                    },
-                  )
-                  ->ignore
-                  resolve()
-                }
-
-              | false => {
-                  interaction
-                  ->Interaction.editReply(
-                    ~options={
-                      "content": "Hey, I recognize you, but your account seems to be linked to a sybil attack. You are not properly BrightID verified. If this is a mistake, contact one of the support channels",
-                    },
-                    (),
-                  )
-                  ->ignore
+            let contextIdsLength = verificationInfo.contextIds->Belt.Array.length
+            switch (contextIdsLength, verificationInfo.unique) {
+            | (1, true) =>
+              guildRole
+              ->addRoleToMember(member)
+              ->then(
+                _ => {
+                  let options = {
+                    "content": `Hey, I recognize you! I just gave you the \`${guildRole->Role.getName}\` role. You are now BrightID verified in ${guild->Guild.getGuildName} server!`,
+                  }
+                  interaction->Interaction.followUp(~options, ())
+                },
+              )
+              ->then(_ => resolve())
+            | (0, _) =>
+              let options = {
+                "content": `The brightid has not been linked to Discord. That means the qr code hast not been properly scanned!`,
+              }
+              interaction->Interaction.followUp(~options, ())->then(_ => resolve())
+            | (_, false) =>
+              let options = {
+                "content": "Hey, I recognize you, but your account seems to be linked to a sybil attack. You are not properly BrightID verified. If this is a mistake, contact one of the support channels",
+              }
+              interaction
+              ->Interaction.followUp(~options, ())
+              ->then(
+                _ =>
                   ButtonVerifyHandlerError(
                     `Member ${member->GuildMember.getDisplayName} is not unique`,
-                  )->reject
-                }
-              }
+                  )->reject,
+              )
+            | (_, _) => member->noMultipleContextIds
             }
           }
         },

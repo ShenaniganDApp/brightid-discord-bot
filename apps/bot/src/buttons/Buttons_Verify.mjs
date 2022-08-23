@@ -57,12 +57,12 @@ function getGuildDataFromGist(guilds, guildId, interaction) {
       };
 }
 
-function verifyMember(guildRole, member) {
+function addRoleToMember(guildRole, member) {
   var guildMemberRoleManager = member.roles;
   return guildMemberRoleManager.add(guildRole, undefined);
 }
 
-function noMultipleAccounts(member) {
+function noMultipleContextIds(member) {
   member.send("You are currently limited to one Discord account with BrightID. If there has been a mistake, message the BrightID team on Discord https://discord.gg/N4ZbNjP", undefined);
   return Promise.reject({
               RE_EXN_ID: ButtonVerifyHandlerError,
@@ -96,7 +96,6 @@ function handleUnverifiedGuildMember(errorNum, interaction) {
 }
 
 function execute(interaction) {
-  var config$2 = Gist$Utils.makeGistConfig(config$1.gistId, "guildData.json", config$1.githubAccessToken);
   var guild = interaction.guild;
   var member = interaction.member;
   var guildRoleManager = guild.roles;
@@ -104,6 +103,7 @@ function execute(interaction) {
   return $$Promise.$$catch(interaction.deferReply({
                     ephemeral: true
                   }).then(function (param) {
+                  var config$2 = Gist$Utils.makeGistConfig(config$1.gistId, "guildData.json", config$1.githubAccessToken);
                   return Gist$Utils.ReadGist.content(config$2, Decode.Gist.brightIdGuilds).then(function (guilds) {
                               var guildData = getGuildDataFromGist(guilds, guildId, interaction);
                               var guildRole = getRolebyRoleId(guildRoleManager, Belt_Option.getExn(guildData.roleId));
@@ -111,33 +111,53 @@ function execute(interaction) {
                                           switch (verificationInfo.TAG | 0) {
                                             case /* VerificationInfo */0 :
                                                 var verificationInfo$1 = verificationInfo._0;
-                                                if (verificationInfo$1.contextIds.length > 1) {
-                                                  return noMultipleAccounts(member);
-                                                } else if (verificationInfo$1.unique) {
-                                                  verifyMember(guildRole, member).then(function (param) {
-                                                        return interaction.editReply({
+                                                var contextIdsLength = verificationInfo$1.contextIds.length;
+                                                var match = verificationInfo$1.unique;
+                                                if (contextIdsLength !== 0) {
+                                                  if (contextIdsLength === 1 && match) {
+                                                    return addRoleToMember(guildRole, member).then(function (param) {
+                                                                  var options = {
                                                                     content: "Hey, I recognize you! I just gave you the \`" + guildRole.name + "\` role. You are now BrightID verified in " + guild.name + " server!"
-                                                                  });
-                                                      });
-                                                  return Promise.resolve(undefined);
+                                                                  };
+                                                                  return interaction.followUp(options);
+                                                                }).then(function (param) {
+                                                                return Promise.resolve(undefined);
+                                                              });
+                                                  }
+                                                  
                                                 } else {
-                                                  interaction.editReply({
-                                                        content: "Hey, I recognize you, but your account seems to be linked to a sybil attack. You are not properly BrightID verified. If this is a mistake, contact one of the support channels"
-                                                      });
-                                                  return Promise.reject({
-                                                              RE_EXN_ID: ButtonVerifyHandlerError,
-                                                              _1: "Member " + member.displayName + " is not unique"
+                                                  var options = {
+                                                    content: "The brightid has not been linked to Discord. That means the qr code hast not been properly scanned!"
+                                                  };
+                                                  return interaction.followUp(options).then(function (param) {
+                                                              return Promise.resolve(undefined);
                                                             });
                                                 }
+                                                if (match) {
+                                                  return noMultipleContextIds(member);
+                                                }
+                                                var options$1 = {
+                                                  content: "Hey, I recognize you, but your account seems to be linked to a sybil attack. You are not properly BrightID verified. If this is a mistake, contact one of the support channels"
+                                                };
+                                                return interaction.followUp(options$1).then(function (param) {
+                                                            return Promise.reject({
+                                                                        RE_EXN_ID: ButtonVerifyHandlerError,
+                                                                        _1: "Member " + member.displayName + " is not unique"
+                                                                      });
+                                                          });
+                                                break;
                                             case /* BrightIdError */1 :
                                                 return handleUnverifiedGuildMember(verificationInfo._0.errorNum, interaction);
                                             case /* JsError */2 :
-                                                interaction.followUp({
-                                                      content: "Something unexpected happened. Try again later"
-                                                    });
-                                                return Promise.reject({
-                                                            RE_EXN_ID: $$Promise.JsError,
-                                                            _1: verificationInfo._0
+                                                var obj = verificationInfo._0;
+                                                var options$2 = {
+                                                  content: "Something unexpected happened. Try again later"
+                                                };
+                                                return interaction.followUp(options$2).then(function (param) {
+                                                            return Promise.reject({
+                                                                        RE_EXN_ID: $$Promise.JsError,
+                                                                        _1: obj
+                                                                      });
                                                           });
                                             
                                           }
@@ -179,8 +199,8 @@ export {
   config$1 as config,
   getRolebyRoleId ,
   getGuildDataFromGist ,
-  verifyMember ,
-  noMultipleAccounts ,
+  addRoleToMember ,
+  noMultipleContextIds ,
   handleUnverifiedGuildMember ,
   execute ,
   customId ,
