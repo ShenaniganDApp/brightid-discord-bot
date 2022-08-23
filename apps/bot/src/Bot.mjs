@@ -198,6 +198,29 @@ function onGuildMemberAdd(guildMember) {
         }));
 }
 
+function onRoleUpdate(role) {
+  var guildId = role.guild.id;
+  var config = Gist$Utils.makeGistConfig(envConfig$1.gistId, "guildData.json", envConfig$1.githubAccessToken);
+  Gist$Utils.ReadGist.content(config, Decode.Gist.brightIdGuilds).then(function (guilds) {
+        var brightIdGuild = Belt_Option.getExn(Js_dict.get(guilds, guildId));
+        var roleId = Belt_Option.getExn(brightIdGuild.roleId);
+        var isVerifiedRole = role.id === roleId;
+        if (!isVerifiedRole) {
+          return Promise.resolve(undefined);
+        }
+        var roleName = role.name;
+        var entry = {
+          inviteLink: brightIdGuild.inviteLink,
+          name: brightIdGuild.name,
+          role: roleName,
+          roleId: brightIdGuild.roleId
+        };
+        return Gist$Utils.UpdateGist.updateEntry(guilds, guildId, entry, config).then(function (param) {
+                    return Promise.resolve(undefined);
+                  });
+      });
+}
+
 client.on("ready", (function (param) {
         console.log("Logged In");
       }));
@@ -209,6 +232,10 @@ client.on("interactionCreate", onInteraction);
 client.on("guildDelete", onGuildDelete);
 
 client.on("guildMemberAdd", onGuildMemberAdd);
+
+client.on("roleUpdate", (function (param, newRole) {
+        onRoleUpdate(newRole);
+      }));
 
 client.login(envConfig$1.discordApiToken);
 
@@ -232,5 +259,6 @@ export {
   onInteraction ,
   onGuildDelete ,
   onGuildMemberAdd ,
+  onRoleUpdate ,
 }
 /*  Not a pure module */
