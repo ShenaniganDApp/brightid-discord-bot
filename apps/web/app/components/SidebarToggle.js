@@ -4,8 +4,6 @@ import * as Curry from "../../../../node_modules/rescript/lib/es6/curry.js";
 import * as React from "react";
 import * as Fa from "react-icons/fa";
 
-var FaBars = {};
-
 function SidebarToggle(Props) {
   var handleToggleSidebar = Props.handleToggleSidebar;
   return React.createElement("div", {
@@ -21,7 +19,6 @@ function SidebarToggle(Props) {
 var make = SidebarToggle;
 
 export {
-  FaBars ,
   make ,
 }
 /* react Not a pure module */
