@@ -70,8 +70,7 @@ module Authenticator = {
     t,
     string,
     Webapi.Fetch.Request.t,
-    ~options: CreateAuthenticateOptions.t=?,
-    unit,
+    ~options: CreateAuthenticateOptions.t,
   ) => Js.Promise.t<User.t> = "authenticate"
   @send
   external isAuthenticated: (t, Webapi.Fetch.Request.t) => Js.Promise.t<Js.Nullable.t<User.t>> =
@@ -82,4 +81,7 @@ module Authenticator = {
     Webapi.Fetch.Request.t,
     ~options: CreateAuthenticateOptions.t,
   ) => Js.Promise.t<Js.Nullable.t<User.t>> = "isAuthenticated"
+
+  @send
+  external logout: (t, Webapi.Fetch.Request.t, ~options: 'option) => Js.Promise.t<unit> = "logout"
 }

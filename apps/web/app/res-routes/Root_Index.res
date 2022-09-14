@@ -34,18 +34,22 @@ let default = () => {
       </p>
     }
   | "normalLoad" =>
-    <div className=" animate-pulse  "> <div className="h-8 bg-gray-300 w-8 rounded-md " /> </div>
+    <div className=" animate-pulse  ">
+      <div className="h-8 bg-gray-300 w-8 rounded-md " />
+    </div>
   | _ =>
-    <div className=" animate-pulse  "> <div className="h-8 bg-gray-300 w-8 rounded-md " /> </div>
+    <div className=" animate-pulse  ">
+      <div className="h-8 bg-gray-300 w-8 rounded-md " />
+    </div>
   }
 
   let linkBrightId = switch fetcher->Remix.Fetcher._type {
   | "done" =>
     switch fetcher->Remix.Fetcher.data->Js.Nullable.toOption {
-    | None => <DiscordButton label="Login to Discord" />
+    | None => <DiscordLoginButton label="Login to Discord" />
     | Some(data) =>
       switch data["user"]->Js.Nullable.toOption {
-      | None => <DiscordButton label="Login to Discord" />
+      | None => <DiscordLoginButton label="Login to Discord" />
       | Some(_) =>
         switch data["verifyStatus"] {
         | Types.Unique =>
@@ -60,7 +64,8 @@ let default = () => {
           <p className="text-2xl md:text-3xl font-semibold text-white">
             {"You are not Sponsored"->React.string}
           </p>
-        | Types.NotLinked => <>
+        | Types.NotLinked =>
+          <>
             <div className="flex flex-row w-full justify-center gap-2">
               <p className="text-2xl md:text-3xl font-semibold text-white">
                 {"Link  "->React.string}
@@ -86,14 +91,19 @@ let default = () => {
       }
     }
   | "normalLoad" =>
-    <div className=" animate-pulse  "> <div className="h-24 bg-gray-300 w-52 rounded-md " /> </div>
+    <div className=" animate-pulse  ">
+      <div className="h-24 bg-gray-300 w-52 rounded-md " />
+    </div>
   | _ =>
-    <div className=" animate-pulse  "> <div className="h-24 bg-gray-300 w-52 rounded-md " /> </div>
+    <div className=" animate-pulse  ">
+      <div className="h-24 bg-gray-300 w-52 rounded-md " />
+    </div>
   }
 
   <div className="flex flex-col flex-1">
     <header className="flex flex-row justify-between md:justify-end m-4">
-      <SidebarToggle handleToggleSidebar={context["handleToggleSidebar"]} /> <InviteButton />
+      <SidebarToggle handleToggleSidebar={context["handleToggleSidebar"]} />
+      <InviteButton />
     </header>
     <div className="flex flex-1 w-full justify-center ">
       <div className="flex flex-1 flex-col  justify-around items-center text-center">

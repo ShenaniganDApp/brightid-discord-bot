@@ -3,7 +3,7 @@
 import * as React from "react";
 import * as Remix from "remix";
 
-function DiscordButton(Props) {
+function DiscordLoginButton(Props) {
   var label = Props.label;
   return React.createElement(Remix.Form, {
               children: React.createElement("button", {
@@ -14,7 +14,7 @@ function DiscordButton(Props) {
             });
 }
 
-var make = DiscordButton;
+var make = DiscordLoginButton;
 
 export {
   make ,

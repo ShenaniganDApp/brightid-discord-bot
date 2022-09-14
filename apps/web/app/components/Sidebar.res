@@ -47,7 +47,7 @@ let make = (~toggled, ~handleToggleSidebar, ~user) => {
           | _ =>
             data["guilds"]
             ->Belt.Array.mapWithIndex((i, guild: Types.oauthGuild) => {
-              <Menu iconShape="square" key={i->Belt.Int.toString}>
+              <Menu iconShape="square" key={(i + 1)->Belt.Int.toString}>
                 <MenuItem
                   className="bg-extraDark"
                   icon={<img
@@ -63,10 +63,10 @@ let make = (~toggled, ~handleToggleSidebar, ~user) => {
             ->React.array
           }
         }
-      | "normalLoad" =>
+      | _ =>
         Belt.Array.range(0, 4)
         ->Belt.Array.map(i => {
-          <Menu iconShape="square" key={i->Belt.Int.toString}>
+          <Menu iconShape="square" key={(i + 1)->Belt.Int.toString}>
             <MenuItem
               className="flex animate-pulse flex-row h-full bg-extraDark "
               icon={<img
@@ -79,10 +79,6 @@ let make = (~toggled, ~handleToggleSidebar, ~user) => {
           </Menu>
         })
         ->React.array
-      | _ =>
-        <div onClick={_ => fetchGuilds()} className="text-white">
-          {"Load Guilds"->React.string}
-        </div>
       }
     }
   }
@@ -91,10 +87,19 @@ let make = (~toggled, ~handleToggleSidebar, ~user) => {
     <SidebarHeader className="p-4 flex justify-center items-center top-0 sticky bg-dark z-10 ">
       <ConnectButton />
     </SidebarHeader>
-    <SidebarContent className="no-scrollbar"> {sidebarElements} </SidebarContent>
+    <SidebarContent className="no-scrollbar">
+      <Menu iconShape="square" key={0->Belt.Int.toString}>
+        <MenuItem>
+          <DiscordLogoutButton label="Logout of Discord" />
+        </MenuItem>
+      </Menu>
+      {sidebarElements}
+    </SidebarContent>
     <SidebarFooter className="bg-extraDark bottom-0 sticky bg-dark">
       <Remix.Link to={""}>
-        <MenuItem> <img src={"/assets/brightid_reversed.svg"} /> </MenuItem>
+        <MenuItem>
+          <img src={"/assets/brightid_reversed.svg"} />
+        </MenuItem>
       </Remix.Link>
     </SidebarFooter>
   </ProSidebar>

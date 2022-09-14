@@ -13,7 +13,7 @@ module.exports = {
   devServerPort: 8002,
   ignoredRouteFiles: ['.*', '*.res'],
   transpileModules: ['rescript', 'rescript-webapi'],
-  serverDependenciesToBundle: ['@rainbow-me/rainbowkit, react'],
+  serverDependenciesToBundle: ['@rainbow-me/rainbowkit'],
   routes(defineRoutes) {
     return defineRoutes(route => {
       registerRoutes(route)
