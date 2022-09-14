@@ -79,7 +79,7 @@ let loader: Remix.loaderFunction<loaderData> = ({request}) => {
   AuthServer.authenticator
   ->RemixAuth.Authenticator.isAuthenticated(request)
   ->then(user => {
-    {user: user, rateLimited: false}->resolve
+    {user, rateLimited: false}->resolve
   })
   ->catch(error => {
     switch error {

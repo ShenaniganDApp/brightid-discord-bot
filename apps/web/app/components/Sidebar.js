@@ -4,6 +4,7 @@ import * as React from "react";
 import * as Remix from "remix";
 import * as Belt_Array from "../../../../node_modules/rescript/lib/es6/belt_Array.js";
 import * as ReactProSidebar from "react-pro-sidebar";
+import * as DiscordLogoutButton from "./DiscordLogoutButton.js";
 import * as Rainbowkit from "@rainbow-me/rainbowkit";
 
 var ConnectButton = {};
@@ -32,69 +33,55 @@ function Sidebar(Props) {
     sidebarElements = React.createElement(React.Fragment, undefined);
   } else {
     var match = fetcher.type;
-    switch (match) {
-      case "done" :
-          var data = fetcher.data;
-          if (data == null) {
-            sidebarElements = React.createElement("p", {
-                  className: "text-white"
-                }, "No Guilds");
-          } else {
-            var match$1 = data.guilds.length;
-            sidebarElements = match$1 !== 0 ? Belt_Array.mapWithIndex(data.guilds, (function (i, guild) {
-                      return React.createElement(ReactProSidebar.Menu, {
-                                  children: React.createElement(ReactProSidebar.MenuItem, {
-                                        children: React.createElement(Remix.Link, {
-                                              className: "font-semibold text-xl",
-                                              prefetch: "intent",
-                                              to: "/guilds/" + guild.id + "",
-                                              children: guild.name
-                                            }),
-                                        className: "bg-extraDark",
-                                        icon: React.createElement("img", {
-                                              className: " bg-extraDark rounded-lg border-1 border-white",
-                                              src: icon(guild)
-                                            })
-                                      }),
-                                  iconShape: "square",
-                                  key: String(i)
-                                });
-                    })) : React.createElement("p", {
-                    className: "text-white"
-                  }, "No Guilds");
-          }
-          break;
-      case "normalLoad" :
-          sidebarElements = Belt_Array.map(Belt_Array.range(0, 4), (function (i) {
+    if (match === "done") {
+      var data = fetcher.data;
+      if (data == null) {
+        sidebarElements = React.createElement("p", {
+              className: "text-white"
+            }, "No Guilds");
+      } else {
+        var match$1 = data.guilds.length;
+        sidebarElements = match$1 !== 0 ? Belt_Array.mapWithIndex(data.guilds, (function (i, guild) {
                   return React.createElement(ReactProSidebar.Menu, {
                               children: React.createElement(ReactProSidebar.MenuItem, {
-                                    children: React.createElement("div", {
-                                          className: "flex flex-col space-y-3"
-                                        }, React.createElement("div", {
-                                              className: "w-36 bg-gray-300 h-6 rounded-md "
-                                            })),
-                                    className: "flex animate-pulse flex-row h-full bg-extraDark ",
+                                    children: React.createElement(Remix.Link, {
+                                          className: "font-semibold text-xl",
+                                          prefetch: "intent",
+                                          to: "/guilds/" + guild.id + "",
+                                          children: guild.name
+                                        }),
+                                    className: "bg-extraDark",
                                     icon: React.createElement("img", {
-                                          className: " bg-extraDark  rounded-lg",
-                                          src: "/assets/brightid_logo_white.png"
+                                          className: " bg-extraDark rounded-lg border-1 border-white",
+                                          src: icon(guild)
                                         })
                                   }),
                               iconShape: "square",
-                              key: String(i)
+                              key: String(i + 1 | 0)
                             });
-                }));
-          break;
-      default:
-        sidebarElements = React.createElement("div", {
-              className: "text-white",
-              onClick: (function (param) {
-                  if (fetcher.type === "init") {
-                    fetcher.load("/Root_FetchGuilds");
-                    return ;
-                  }
-                  
-                })
-            }, "Load Guilds");
+                })) : React.createElement("p", {
+                className: "text-white"
+              }, "No Guilds");
+      }
+    } else {
+      sidebarElements = Belt_Array.map(Belt_Array.range(0, 4), (function (i) {
+              return React.createElement(ReactProSidebar.Menu, {
+                          children: React.createElement(ReactProSidebar.MenuItem, {
+                                children: React.createElement("div", {
+                                      className: "flex flex-col space-y-3"
+                                    }, React.createElement("div", {
+                                          className: "w-36 bg-gray-300 h-6 rounded-md "
+                                        })),
+                                className: "flex animate-pulse flex-row h-full bg-extraDark ",
+                                icon: React.createElement("img", {
+                                      className: " bg-extraDark  rounded-lg",
+                                      src: "/assets/brightid_logo_white.png"
+                                    })
+                              }),
+                          iconShape: "square",
+                          key: String(i + 1 | 0)
+                        });
+            }));
     }
   }
   return React.createElement(ReactProSidebar.ProSidebar, {
@@ -107,9 +94,17 @@ function Sidebar(Props) {
                   children: React.createElement(Rainbowkit.ConnectButton, {}),
                   className: "p-4 flex justify-center items-center top-0 sticky bg-dark z-10 "
                 }), React.createElement(ReactProSidebar.SidebarContent, {
-                  children: sidebarElements,
+                  children: null,
                   className: "no-scrollbar"
-                }), React.createElement(ReactProSidebar.SidebarFooter, {
+                }, React.createElement(ReactProSidebar.Menu, {
+                      children: React.createElement(ReactProSidebar.MenuItem, {
+                            children: React.createElement(DiscordLogoutButton.make, {
+                                  label: "Logout of Discord"
+                                })
+                          }),
+                      iconShape: "square",
+                      key: String(0)
+                    }), sidebarElements), React.createElement(ReactProSidebar.SidebarFooter, {
                   children: React.createElement(Remix.Link, {
                         to: "",
                         children: React.createElement(ReactProSidebar.MenuItem, {

@@ -17,13 +17,16 @@ let loader: Remix.loaderFunction<loaderData> = ({request}) => {
       user
       ->fetchUserGuilds
       ->then(userGuilds => {
-        fetchBotGuilds()->then(botGuilds => {
-          let guilds =
-            userGuilds->Js.Array2.filter(userGuild =>
-              botGuilds->Js.Array2.findIndex(botGuild => botGuild.id === userGuild.id) !== -1
-            )
-          {user: Js.Nullable.null, guilds: guilds, rateLimited: false}->resolve
-        })
+        fetchBotGuilds()->then(
+          botGuilds => {
+            let guilds =
+              userGuilds->Js.Array2.filter(
+                userGuild =>
+                  botGuilds->Js.Array2.findIndex(botGuild => botGuild.id === userGuild.id) !== -1,
+              )
+            {user: Js.Nullable.null, guilds, rateLimited: false}->resolve
+          },
+        )
       })
     }
   })

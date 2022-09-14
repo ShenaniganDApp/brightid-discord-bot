@@ -137,6 +137,7 @@ let rec fetchBotGuilds = (~after=0, ~allGuilds=[], ()): Promise.t<array<Types.oa
         )
         sleep(retry_after)->then(_ => fetchBotGuilds(~after, ~allGuilds, ()))
       }
+
     | true => {
         let guilds = json->Js.Json.decodeArray->mapGuildOauthRecord->Belt.Option.getUnsafe
         switch guilds->Belt.Array.length <= 1 {
