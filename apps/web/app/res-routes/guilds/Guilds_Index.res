@@ -3,11 +3,13 @@ type loaderData = {
   isAdmin: bool,
 }
 
+type params = {guildId: string}
+
 let loader: Remix.loaderFunction<loaderData> = ({request, params}) => {
   open DiscordServer
   open Promise
 
-  let guildId = params->Js.Dict.get("guildId")->Belt.Option.getExn
+  let guildId = params->Js.Dict.get("guildId")->Belt.Option.getWithDefault("")
   AuthServer.authenticator
   ->RemixAuth.Authenticator.isAuthenticated(request)
   ->then(user => {
@@ -43,27 +45,19 @@ let loader: Remix.loaderFunction<loaderData> = ({request, params}) => {
 
 let default = () => {
   open Remix
+  let {guildId} = useParams()
   let context = useOutletContext()
   let {guild, isAdmin} = useLoaderData()
-
-  let icon = ({id, icon}: Types.guild) => {
-    switch icon {
-    | None => "/assets/brightid_logo_white.png"
-    | Some(icon) => `https://cdn.discordapp.com/icons/${id}/${icon}.png`
-    }
-  }
 
   let guildDisplay = switch guild->Js.Nullable.toOption {
   | None => <div> {"That Discord Server does not exist"->React.string} </div>
   | Some(guild) =>
-    <div className="flex flex-col">
-      <div className="flex gap-2">
-        <img className="rounded-full h-10" src={guild->icon} />
-        <p className="text-3xl font-bold text-white"> {guild.name->React.string} </p>
+    <div className="flex flex-col items-center">
+      <div className="flex gap-4 w-full justify-start items-center">
+        <img className="rounded-full h-24" src={guild->Helpers_Guild.iconUri} />
+        <p className="text-4xl font-bold text-white"> {guild.name->React.string} </p>
       </div>
-      <div className="flex-row">
-        <div> {"Verified Users"->React.string} </div> <div> {"Sponsored Users"->React.string} </div>
-      </div>
+      <div className="flex-row" />
     </div>
   }
 
@@ -75,12 +69,14 @@ let default = () => {
     )
   }
 
-  <div className="p-4">
+  <div className="flex-1 p-4">
     <ReactHotToast.Toaster />
-    <div className="flex">
-      <SidebarToggle handleToggleSidebar={context["handleToggleSidebar"]} />
+    <div className="flex flex-col">
+      <header className="flex flex-row justify-between md:justify-end m-4">
+        <SidebarToggle handleToggleSidebar={context["handleToggleSidebar"]} />
+        {isAdmin ? <AdminButton guildId={guildId} /> : <> </>}
+      </header>
       {guildDisplay}
-      {isAdmin ? <div> {"You are an admin"->React.string} </div> : <> </>}
     </div>
   </div>
 }

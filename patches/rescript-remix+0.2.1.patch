@@ -91,7 +91,7 @@ index 0000000..f147240
 +}
 +/* No side effect */
 diff --git a/node_modules/rescript-remix/src/Remix.res b/node_modules/rescript-remix/src/Remix.res
-index b320b86..cc06645 100644
+index b320b86..24658eb 100644
 --- a/node_modules/rescript-remix/src/Remix.res
 +++ b/node_modules/rescript-remix/src/Remix.res
 @@ -5,6 +5,25 @@ module RemixBrowser = {
@@ -128,7 +128,7 @@ index b320b86..cc06645 100644
      ~prefetch: [#intent | #render | #none]=?,
      ~to: string,
      ~reloadDocument: bool=?,
-@@ -53,9 +73,23 @@ module Link = {
+@@ -53,9 +73,24 @@ module Link = {
    ) => React.element = "Link"
  }
  
@@ -148,11 +148,12 @@ index b320b86..cc06645 100644
  module Form = {
    @module("remix") @react.component
    external make: (
++    ~className: string=?,
 +    ~children: React.element,
      ~method: [#get | #post | #put | #patch | #delete]=?,
      ~action: string=?,
      ~encType: [#"application/x-www-form-urlencoded" | #"multipart/form-data"]=?,
-@@ -65,6 +99,58 @@ module Form = {
+@@ -65,6 +100,58 @@ module Form = {
    ) => React.element = "Form"
  }
  
@@ -211,7 +212,7 @@ index b320b86..cc06645 100644
  @module("remix") external json: {..} => Webapi.Fetch.Response.t = "json"
  
  @module("remix") external redirect: string => Webapi.Fetch.Response.t = "redirect"
-@@ -73,6 +159,12 @@ module Form = {
+@@ -73,6 +160,14 @@ module Form = {
  
  @module("remix") external useLoaderData: unit => 'a = "useLoaderData"
  
@@ -221,10 +222,12 @@ index b320b86..cc06645 100644
 +
 +@module("remix") external useOutletContext: unit => 'a = "useOutletContext"
 +
++@module("remix") external useParams: unit => 'a = "useParams"
++
  module Cookie = {
    type t
  
-@@ -109,3 +201,17 @@ module CreateCookieOptions = {
+@@ -109,3 +204,17 @@ module CreateCookieOptions = {
  @module("remix") external createCookie: string => Cookie.t = "createCookie"
  @module("remix")
  external createCookieWithOptions: (string, CreateCookieOptions.t) => Cookie.t = "createCookie"
