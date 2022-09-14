@@ -20,4 +20,11 @@ type role = {
   permissions: float,
 }
 
+type brightIdGuildData = {
+  name: Js.Nullable.t<string>,
+  role: Js.Nullable.t<string>,
+  inviteLink: Js.Nullable.t<string>,
+  sponsorshipAddress: Js.Nullable.t<string>,
+}
+
 type verifyStatus = Unknown | NotLinked | NotVerified | NotSponsored | Unique
