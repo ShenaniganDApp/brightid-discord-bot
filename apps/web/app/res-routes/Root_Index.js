@@ -3,8 +3,8 @@
 import * as React from "react";
 import * as Remix from "remix";
 import * as InviteButton from "../components/InviteButton.js";
-import * as DiscordButton from "../components/DiscordButton.js";
 import * as SidebarToggle from "../components/SidebarToggle.js";
+import * as DiscordLoginButton from "../components/DiscordLoginButton.js";
 
 var Canvas = {};
 
@@ -50,13 +50,13 @@ function Root_Index$default(Props) {
     case "done" :
         var data$1 = fetcher.data;
         if (data$1 == null) {
-          linkBrightId = React.createElement(DiscordButton.make, {
+          linkBrightId = React.createElement(DiscordLoginButton.make, {
                 label: "Login to Discord"
               });
         } else {
           var match$2 = data$1.user;
           if (match$2 == null) {
-            linkBrightId = React.createElement(DiscordButton.make, {
+            linkBrightId = React.createElement(DiscordLoginButton.make, {
                   label: "Login to Discord"
                 });
           } else {

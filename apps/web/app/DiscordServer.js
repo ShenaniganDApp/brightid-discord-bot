@@ -94,6 +94,7 @@ function fetchBotGuilds(afterOpt, allGuildsOpt, param) {
                     return fetchBotGuilds(after$1, allGuilds$1, undefined);
                   }
                   var rateLimit = Js_json.decodeObject(json);
+                  console.log("rateLimit: ", rateLimit);
                   var retry_after = Belt_Option.flatMap(Js_dict.get(rateLimit, "retry_after"), Js_json.decodeNumber);
                   var retry_after$1;
                   if (retry_after !== undefined) {
