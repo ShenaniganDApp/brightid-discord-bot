@@ -17,8 +17,10 @@
     "@rescript/react",
     "rescript-remix",
     "rescript-webapi",
-    "@ryyppy/rescript-promise"
+    "@ryyppy/rescript-promise",
+    "@brightidbot/utils"
   ],
+  "pinned-dependencies": ["@brightidbot/utils"],
   "warnings": {
     "error": "+101"
   }

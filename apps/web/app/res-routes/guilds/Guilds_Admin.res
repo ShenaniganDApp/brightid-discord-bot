@@ -1,6 +1,3 @@
-@module("../../helpers/updateOrReadGist.js")
-external readGist: unit => Js.Promise.t<Js.Dict.t<Types.brightIdGuildData>> = "readGist"
-
 exception NoBrightIdData
 
 type params = {guildId: string}
@@ -11,16 +8,31 @@ type loaderData = {
   guild: Js.Nullable.t<Types.guild>,
   isAdmin: bool,
 }
+type brightIdGuild = {
+  "role": string,
+  "name": string,
+  "inviteLink": option<string>,
+  "roleId": string,
+}
+
+type brightIdGuilds = Js.Dict.t<brightIdGuild>
 
 let loader: Remix.loaderFunction<loaderData> = ({request, params}) => {
   open DiscordServer
   open Promise
+  open Utils.Gist
+
+  let config = makeGistConfig(
+    ~id=envConfig["gistId"],
+    ~name="guildData.json",
+    ~token=envConfig["githubAccessToken"],
+  )
 
   let guildId = params->Js.Dict.get("guildId")->Belt.Option.getWithDefault("")
   AuthServer.authenticator
   ->RemixAuth.Authenticator.isAuthenticated(request)
   ->then(user => {
-    readGist()->then(guilds => {
+    let config = ReadGist.content(~config, ~decoder=brightIdGuilds)->then(guilds => {
       switch user->Js.Nullable.toOption {
       | None =>
         {
@@ -31,29 +43,35 @@ let loader: Remix.loaderFunction<loaderData> = ({request, params}) => {
         }->resolve
       | Some(existingUser) => {
           let guildData = guilds->Js.Dict.get(guildId)->Js.Nullable.fromOption
-          fetchGuildFromId(~guildId)->then(guild => {
-            let userId = existingUser->RemixAuth.User.getProfile->RemixAuth.User.getId
-            fetchGuildMemberFromId(~guildId, ~userId)->then(guildMember => {
-              let memberRoles = switch guildMember->Js.Nullable.toOption {
-              | None => []
-              | Some(guildMember) => guildMember.roles
-              }
-              fetchGuildRoles(~guildId)->then(guildRoles => {
-                let isAdmin = memberIsAdmin(~guildRoles, ~memberRoles)
-                let isOwner = switch guild->Js.Nullable.toOption {
-                | None => false
-                | Some(guild) => guild.owner_id === userId
-                }
+          fetchGuildFromId(~guildId)->then(
+            guild => {
+              let userId = existingUser->RemixAuth.User.getProfile->RemixAuth.User.getId
+              fetchGuildMemberFromId(~guildId, ~userId)->then(
+                guildMember => {
+                  let memberRoles = switch guildMember->Js.Nullable.toOption {
+                  | None => []
+                  | Some(guildMember) => guildMember.roles
+                  }
+                  fetchGuildRoles(~guildId)->then(
+                    guildRoles => {
+                      let isAdmin = memberIsAdmin(~guildRoles, ~memberRoles)
+                      let isOwner = switch guild->Js.Nullable.toOption {
+                      | None => false
+                      | Some(guild) => guild.owner_id === userId
+                      }
 
-                {
-                  user: user,
-                  brightIdGuild: guildData,
-                  isAdmin: isAdmin || isOwner,
-                  guild: guild,
-                }->resolve
-              })
-            })
-          })
+                      {
+                        user,
+                        brightIdGuild: guildData,
+                        isAdmin: isAdmin || isOwner,
+                        guild,
+                      }->resolve
+                    },
+                  )
+                },
+              )
+            },
+          )
         }
       }
     })
@@ -79,11 +97,11 @@ type actions =
 
 let reducer = (state, action) =>
   switch action {
-  | RoleChanged(role) => {...state, role: role}
-  | InviteLinkChanged(inviteLink) => {...state, inviteLink: inviteLink}
+  | RoleChanged(role) => {...state, role}
+  | InviteLinkChanged(inviteLink) => {...state, inviteLink}
   | SponsorshipAddressChanged(sponsorshipAddress) => {
       ...state,
-      sponsorshipAddress: sponsorshipAddress,
+      sponsorshipAddress,
     }
   }
 
@@ -178,7 +196,9 @@ let default = () => {
             method={#post}
             action={`/guilds/${guildId}/adminSubmit`}
             className="flex-1 text-white text-2xl font-semibold justify-center items-center relative">
-            <div> <div> {"Admin Commands"->React.string} </div> </div>
+            <div>
+              <div> {"Admin Commands"->React.string} </div>
+            </div>
             <div className="flex flex-1">
               <img className="w-48 h-48 p-5" src={guild->Helpers_Guild.iconUri} />
               {switch brightIdGuild->Js.Nullable.toOption {
