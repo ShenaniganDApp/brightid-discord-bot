@@ -1,0 +1,15 @@
+{
+  "name": "@brightidbot/bindings",
+  "version": "0.0.0",
+  "description": "Rescript bindings for the brightID bot",
+  "author": "Victor Ginelli (@youngkidwarrior)",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "re:build": "rescript build -with-deps",
+    "re:start": "rescript build -w -with-deps"
+  },
+  "dependencies": {
+    "@glennsl/rescript-json-combinators": "^1.0.0"
+  }
+}
