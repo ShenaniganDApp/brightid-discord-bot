@@ -18,9 +18,11 @@
     "rescript-remix",
     "rescript-webapi",
     "@ryyppy/rescript-promise",
-    "@brightidbot/utils"
+    "@brightidbot/utils",
+    "@glennsl/rescript-json-combinators"
   ],
   "pinned-dependencies": ["@brightidbot/utils"],
+  "bsc-flags": ["-open JsonCombinators"],
   "warnings": {
     "error": "+101"
   }

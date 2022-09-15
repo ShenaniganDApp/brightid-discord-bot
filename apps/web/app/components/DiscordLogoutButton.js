@@ -7,7 +7,10 @@ function DiscordLogoutButton(Props) {
   var label = Props.label;
   return React.createElement(Remix.Form, {
               children: React.createElement("button", {
-                    className: "w-full p-2 bg-red-600 font-bold rounded-xl text-xl text-white"
+                    className: "w-full p-2 bg-red-600 font-bold rounded-xl text-xl text-white",
+                    onClick: (function (param) {
+                        ((window.location.reload()));
+                      })
                   }, label),
               method: "post",
               action: "/auth/discordLogout"
