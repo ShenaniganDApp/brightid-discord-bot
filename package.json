@@ -10,16 +10,17 @@
     "concurrently": "^7.1.0",
     "dotenv": "^8.2.0",
     "find-up": "^6.3.0",
-    "uuid": "^8.3.0",
-    "rescript": "^10.0.0-rc.1"
+    "rescript": "^10.1.0-alpha.1",
+    "uuid": "^8.3.0"
   },
   "scripts": {
     "bot": "yarn workspace @brightidbot/bot",
     "web": "yarn workspace @brightidbot/web",
     "utils": "yarn workspace @brightidbot/utils",
     "scripts": "yarn workspace @brightidbot/scripts",
-    "postinstall": "yarn patch-package",
-    "re:build": "yarn utils re:build && yarn bot re:build && yarn web re:build && yarn scripts re:build"
+    "bindings": "yarn workspace @brightidbot/bindings",
+    "postinstall": "yarn patch-package && yarn web remix setup node",
+    "re:build": "yarn workspace @brightidbot/bindings && yarn utils re:build && yarn bot re:build && yarn web re:build && yarn scripts re:build"
   },
   "workspaces": [
     "apps/*",
