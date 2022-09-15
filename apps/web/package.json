@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@brightidbot/utils": "./packages/utils",
+    "@glennsl/rescript-json-combinators": "^1.0.0",
     "@rainbow-me/rainbowkit": "^0.1.0",
     "@remix-run/react": "^1.1.1",
     "@remix-run/serve": "^1.1.1",
