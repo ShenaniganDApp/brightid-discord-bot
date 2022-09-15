@@ -11,7 +11,7 @@
     "@ryyppy/rescript-promise": "^2.1.0",
     "dotenv": "^16.0.1",
     "find-up": "^6.3.0",
-    "rescript-discordjs": "^0.2.0"
+    "rescript-discordjs": "^0.2.3"
   },
   "scripts": {
     "re:build": "rescript build -with-deps",

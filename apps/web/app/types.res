@@ -25,6 +25,7 @@ type brightIdGuildData = {
   role: Js.Nullable.t<string>,
   inviteLink: Js.Nullable.t<string>,
   sponsorshipAddress: Js.Nullable.t<string>,
+  roleId: Js.Nullable.t<string>,
 }
 
 type verifyStatus = Unknown | NotLinked | NotVerified | NotSponsored | Unique
