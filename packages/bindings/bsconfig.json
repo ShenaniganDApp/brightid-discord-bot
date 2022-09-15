@@ -1,0 +1,19 @@
+{
+  "name": "@brightidbot/bindings",
+  "namespace": "Bindings",
+  "sources": [
+    {
+      "dir": "src",
+      "subdirs": true
+    }
+  ],
+  "package-specs": [
+    {
+      "module": "es6",
+      "in-source": true
+    }
+  ],
+  "suffix": ".mjs",
+  "bs-dependencies": ["@glennsl/rescript-json-combinators"],
+  "bsc-flags": ["-open JsonCombinators"]
+}
