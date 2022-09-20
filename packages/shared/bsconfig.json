@@ -1,6 +1,6 @@
 {
-  "name": "@brightidbot/bindings",
-  "namespace": "Bindings",
+  "name": "@brightidbot/shared",
+  "namespace": "Shared",
   "sources": [
     {
       "dir": "src",

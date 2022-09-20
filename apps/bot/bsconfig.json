@@ -17,8 +17,9 @@
     "@ryyppy/rescript-promise",
     "@glennsl/rescript-json-combinators",
     "rescript-discordjs",
-    "@brightidbot/utils"
+    "@brightidbot/utils",
+    "@brightidbot/shared"
   ],
-  "pinned-dependencies": ["@brightidbot/utils"],
+  "pinned-dependencies": ["@brightidbot/utils", "@brightidbot/shared"],
   "bsc-flags": ["-open JsonCombinators"]
 }

@@ -11,6 +11,7 @@
     "dotenv": "^8.2.0",
     "find-up": "^6.3.0",
     "rescript": "^10.1.0-alpha.1",
+    "rescript-discordjs": "^0.2.4",
     "uuid": "^8.3.0"
   },
   "scripts": {
@@ -18,9 +19,9 @@
     "web": "yarn workspace @brightidbot/web",
     "utils": "yarn workspace @brightidbot/utils",
     "scripts": "yarn workspace @brightidbot/scripts",
-    "bindings": "yarn workspace @brightidbot/bindings",
+    "shared": "yarn workspace @brightidbot/shared",
     "postinstall": "yarn patch-package && yarn web remix setup node",
-    "re:build": "yarn workspace @brightidbot/bindings && yarn utils re:build && yarn bot re:build && yarn web re:build && yarn scripts re:build"
+    "re:build": "yarn workspace @brightidbot/shared && yarn utils re:build && yarn bot re:build && yarn web re:build && yarn scripts re:build"
   },
   "workspaces": [
     "apps/*",

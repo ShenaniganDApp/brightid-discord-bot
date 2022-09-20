@@ -1,6 +1,6 @@
 {
   "name": "@brightidbot/utils",
-  "namespace":"Utils",
+  "namespace": "Utils",
   "sources": [
     {
       "dir": "src",

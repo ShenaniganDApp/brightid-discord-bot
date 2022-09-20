@@ -19,6 +19,7 @@
     "prettier": "^2.1.2"
   },
   "dependencies": {
+    "@brightidbot/shared": "./packages/shared",
     "@brightidbot/utils": "./packages/utils",
     "@discordjs/builders": "^0.13.0",
     "@discordjs/rest": "^0.4.1",
@@ -29,7 +30,6 @@
     "fast-json-stable-stringify": "^2.1.0",
     "node-fetch": "^2.6.1",
     "qrcode": "^1.4.4",
-    "rescript-discordjs": "^0.2.3",
     "tweetnacl": "^1.0.3",
     "tweetnacl-util": "^0.15.1"
   }
