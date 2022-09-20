@@ -187,6 +187,57 @@ module UpdateGist = {
     })
   }
 
+  let removeManyEntries = (~content, ~keys, ~config) => {
+    exception NoKeysMatch
+    let {id, name, token} = config
+    let entries =
+      content->Js.Dict.entries->Belt.Array.keep(((k, _)) => !Belt.Set.String.has(keys, k))
+    switch entries->Belt.Array.length {
+    | 0 => NoKeysMatch->UpdateGistError->Error->resolve
+    | _ =>
+      let content = entries->Js.Dict.fromArray->Js.Json.stringifyAny
+      let files = Js.Dict.empty()
+      files->Js.Dict.set(name, {"content": content})
+      let size = keys->Belt.Set.String.size
+      let body = {
+        "gist_id": id,
+        "description": j`Removed  $size entries`,
+        "files": files,
+      }
+
+      let params = {
+        "method": "PATCH",
+        "headers": {
+          "Authorization": `token ${token}`,
+          "Accept": "application/vnd.github+json",
+        },
+        "body": body->Js.Json.stringifyAny,
+      }
+
+      `https://api.github.com/gists/${id}`
+      ->fetch(params)
+      ->then(res => {
+        switch res->Response.status {
+        | 200 => Ok(200)->resolve
+        | status => {
+            res
+            ->Response.json
+            ->then(json => {
+              Js.log2(status, json->Json.stringify)
+              resolve()
+            })
+            ->ignore
+            Error(Response.PatchError)->resolve
+          }
+        }
+      })
+      ->catch(e => {
+        Js.log2("e: ", e)
+        resolve(Error(e))
+      })
+    }
+  }
+
   let updateAllEntries = (~content, ~entries, ~config) => {
     let {id, name, token} = config
 
