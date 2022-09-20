@@ -94,15 +94,14 @@ module ReadGist = {
 
 module UpdateGist = {
   exception UpdateGistError(exn)
+  exception DuplicateKey(string)
 
   @val @scope("globalThis")
   external fetch: (string, 'params) => Promise.t<Response.t<Js.Json.t>> = "fetch"
 
   let updateEntry = (~content, ~key, ~entry, ~config) => {
     let {id, name, token} = config
-    let prev = content->Js.Dict.get(key)->Belt.Option.getExn
-    let new = prev->Js.Obj.assign(entry)
-    content->Js.Dict.set(key, new)
+    content->Js.Dict.set(key, entry)
     let content = content->Js.Json.stringifyAny
     let files = Js.Dict.empty()
     files->Js.Dict.set(name, {"content": content})
@@ -146,7 +145,6 @@ module UpdateGist = {
 
   let removeEntry = (~content, ~key, ~config) => {
     let {id, name, token} = config
-
     let entries = content->Js.Dict.entries->Belt.Array.keep(((k, _)) => key !== k)
     let content = entries->Js.Dict.fromArray->Js.Json.stringifyAny
     let files = Js.Dict.empty()
@@ -197,8 +195,7 @@ module UpdateGist = {
     keys->Belt.Array.forEach(key => {
       let prev = content->Js.Dict.get(key)->Belt.Option.getExn
       let entry = entries->Js.Dict.get(key)->Belt.Option.getExn
-      let new = prev->Js.Obj.assign(entry)
-      content->Js.Dict.set(key, new)
+      content->Js.Dict.set(key, entry)
     })
     let content = content->Js.Json.stringifyAny
     let files = Js.Dict.empty()
@@ -239,5 +236,54 @@ module UpdateGist = {
       Js.log2("e: ", e)
       resolve(Error(e))
     })
+  }
+
+  let addEntry = (~content, ~key, ~entry, ~config) => {
+    let {id, name, token} = config
+    switch content->Js.Dict.get(key) {
+    | Some(_) => key->DuplicateKey->Error->resolve
+    | None => {
+        content->Js.Dict.set(key, entry)
+        let content = content->Js.Json.stringifyAny
+        let files = Js.Dict.empty()
+        files->Js.Dict.set(name, {"content": content})
+        let body = {
+          "gist_id": id,
+          "description": `Add gist entry with key: ${key}`,
+          "files": files,
+        }
+
+        let params = {
+          "method": "PATCH",
+          "headers": {
+            "Authorization": `token ${token}`,
+            "Accept": "application/vnd.github+json",
+          },
+          "body": body->Js.Json.stringifyAny,
+        }
+
+        `https://api.github.com/gists/${id}`
+        ->fetch(params)
+        ->then(res => {
+          switch res->Response.status {
+          | 200 => Ok(200)->resolve
+          | status => {
+              res
+              ->Response.json
+              ->then(json => {
+                Js.log2(status, json->Json.stringify)
+                resolve()
+              })
+              ->ignore
+              Error(Response.PatchError)->resolve
+            }
+          }
+        })
+        ->catch(e => {
+          Js.log2("e: ", e)
+          resolve(Error(e))
+        })
+      }
+    }
   }
 }
