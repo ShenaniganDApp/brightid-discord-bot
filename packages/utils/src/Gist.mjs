@@ -103,11 +103,11 @@ var ReadGist = {
 
 var UpdateGistError = /* @__PURE__ */Caml_exceptions.create("Gist-Utils.UpdateGist.UpdateGistError");
 
+var DuplicateKey = /* @__PURE__ */Caml_exceptions.create("Gist-Utils.UpdateGist.DuplicateKey");
+
 function updateEntry(content, key, entry, config) {
   var id = config.id;
-  var prev = Belt_Option.getExn(Js_dict.get(content, key));
-  var $$new = Object.assign(prev, entry);
-  content[key] = $$new;
+  content[key] = entry;
   var content$1 = JSON.stringify(content);
   var files = {};
   files[config.name] = {
@@ -210,10 +210,9 @@ function updateAllEntries(content, entries, config) {
   var entries$1 = Js_dict.fromList(entries);
   var keys = Object.keys(entries$1);
   Belt_Array.forEach(keys, (function (key) {
-          var prev = Belt_Option.getExn(Js_dict.get(content, key));
+          Belt_Option.getExn(Js_dict.get(content, key));
           var entry = Belt_Option.getExn(Js_dict.get(entries$1, key));
-          var $$new = Object.assign(prev, entry);
-          content[key] = $$new;
+          content[key] = entry;
         }));
   var content$1 = JSON.stringify(content);
   var files = {};
@@ -261,11 +260,72 @@ function updateAllEntries(content, entries, config) {
               }));
 }
 
+function addEntry(content, key, entry, config) {
+  var id = config.id;
+  var match = Js_dict.get(content, key);
+  if (match !== undefined) {
+    return Promise.resolve({
+                TAG: /* Error */1,
+                _0: {
+                  RE_EXN_ID: DuplicateKey,
+                  _1: key
+                }
+              });
+  }
+  content[key] = entry;
+  var content$1 = JSON.stringify(content);
+  var files = {};
+  files[config.name] = {
+    content: content$1
+  };
+  var body = {
+    gist_id: id,
+    description: "Add gist entry with key: " + key + "",
+    files: files
+  };
+  var params = {
+    method: "PATCH",
+    headers: {
+      Authorization: "token " + config.token + "",
+      Accept: "application/vnd.github+json"
+    },
+    body: JSON.stringify(body)
+  };
+  return $$Promise.$$catch(globalThis.fetch("https://api.github.com/gists/" + id + "", params).then(function (res) {
+                  var status = res.status;
+                  if (status !== 200) {
+                    res.json().then(function (json) {
+                          console.log(status, JSON.stringify(json));
+                          return Promise.resolve(undefined);
+                        });
+                    return Promise.resolve({
+                                TAG: /* Error */1,
+                                _0: {
+                                  RE_EXN_ID: PatchError
+                                }
+                              });
+                  } else {
+                    return Promise.resolve({
+                                TAG: /* Ok */0,
+                                _0: 200
+                              });
+                  }
+                }), (function (e) {
+                console.log("e: ", e);
+                return Promise.resolve({
+                            TAG: /* Error */1,
+                            _0: e
+                          });
+              }));
+}
+
 var UpdateGist = {
   UpdateGistError: UpdateGistError,
+  DuplicateKey: DuplicateKey,
   updateEntry: updateEntry,
   removeEntry: removeEntry,
-  updateAllEntries: updateAllEntries
+  updateAllEntries: updateAllEntries,
+  addEntry: addEntry
 };
 
 export {
