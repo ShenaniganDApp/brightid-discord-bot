@@ -6,6 +6,7 @@ import * as Env$Utils from "./Env.mjs";
 import * as Belt_Array from "rescript/lib/es6/belt_Array.js";
 import NodeFetch from "node-fetch";
 import * as Belt_Option from "rescript/lib/es6/belt_Option.js";
+import * as Belt_SetString from "rescript/lib/es6/belt_SetString.js";
 import * as Caml_exceptions from "rescript/lib/es6/caml_exceptions.js";
 import * as Json$JsonCombinators from "@glennsl/rescript-json-combinators/src/Json.mjs";
 import * as Json_Decode$JsonCombinators from "@glennsl/rescript-json-combinators/src/Json_Decode.mjs";
@@ -205,6 +206,71 @@ function removeEntry(content, key, config) {
               }));
 }
 
+function removeManyEntries(content, keys, config) {
+  var NoKeysMatch = /* @__PURE__ */Caml_exceptions.create("NoKeysMatch");
+  var id = config.id;
+  var entries = Belt_Array.keep(Js_dict.entries(content), (function (param) {
+          return !Belt_SetString.has(keys, param[0]);
+        }));
+  var match = entries.length;
+  if (match === 0) {
+    return Promise.resolve({
+                TAG: /* Error */1,
+                _0: {
+                  RE_EXN_ID: UpdateGistError,
+                  _1: {
+                    RE_EXN_ID: NoKeysMatch
+                  }
+                }
+              });
+  }
+  var content$1 = JSON.stringify(Js_dict.fromArray(entries));
+  var files = {};
+  files[config.name] = {
+    content: content$1
+  };
+  var size = Belt_SetString.size(keys);
+  var body = {
+    gist_id: id,
+    description: "Removed  " + size + " entries",
+    files: files
+  };
+  var params = {
+    method: "PATCH",
+    headers: {
+      Authorization: "token " + config.token + "",
+      Accept: "application/vnd.github+json"
+    },
+    body: JSON.stringify(body)
+  };
+  return $$Promise.$$catch(globalThis.fetch("https://api.github.com/gists/" + id + "", params).then(function (res) {
+                  var status = res.status;
+                  if (status !== 200) {
+                    res.json().then(function (json) {
+                          console.log(status, JSON.stringify(json));
+                          return Promise.resolve(undefined);
+                        });
+                    return Promise.resolve({
+                                TAG: /* Error */1,
+                                _0: {
+                                  RE_EXN_ID: PatchError
+                                }
+                              });
+                  } else {
+                    return Promise.resolve({
+                                TAG: /* Ok */0,
+                                _0: 200
+                              });
+                  }
+                }), (function (e) {
+                console.log("e: ", e);
+                return Promise.resolve({
+                            TAG: /* Error */1,
+                            _0: e
+                          });
+              }));
+}
+
 function updateAllEntries(content, entries, config) {
   var id = config.id;
   var entries$1 = Js_dict.fromList(entries);
@@ -324,6 +390,7 @@ var UpdateGist = {
   DuplicateKey: DuplicateKey,
   updateEntry: updateEntry,
   removeEntry: removeEntry,
+  removeManyEntries: removeManyEntries,
   updateAllEntries: updateAllEntries,
   addEntry: addEntry
 };
