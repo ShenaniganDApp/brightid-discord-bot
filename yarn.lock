@@ -981,6 +981,11 @@
     "@babel/helper-validator-identifier" "^7.18.6"
     to-fast-properties "^2.0.0"
 
+"@brightidbot/shared@./packages/shared":
+  version "0.0.0"
+  dependencies:
+    "@glennsl/rescript-json-combinators" "^1.0.0"
+
 "@brightidbot/utils@./packages/utils":
   version "0.0.1"
   dependencies:
@@ -7268,10 +7273,10 @@ require-main-filename@^2.0.0:
   resolved "https://registry.yarnpkg.com/require-main-filename/-/require-main-filename-2.0.0.tgz#d0b329ecc7cc0f61649f62215be69af54aa8989b"
   integrity sha512-NKN5kMDylKuldxYLSUfrbo5Tuzh4hd+2E8NPPX02mZtn1VuREQToYe/ZdlJy+J3uCpfaiGF05e7B8W0iXbQHmg==
 
-rescript-discordjs@^0.2.3:
-  version "0.2.3"
-  resolved "https://registry.yarnpkg.com/rescript-discordjs/-/rescript-discordjs-0.2.3.tgz#740639b40412592dae1760529144368a3102a1dc"
-  integrity sha512-Yjc6m93fFQeYOrrSwzaPeW6Rh9GMwWzXgWG/tPKIsO2+IowAOQjmCk39CbAF/+6py9OVRGApOsk5LG46x9tlCA==
+rescript-discordjs@^0.2.4:
+  version "0.2.4"
+  resolved "https://registry.yarnpkg.com/rescript-discordjs/-/rescript-discordjs-0.2.4.tgz#ca649cb66a59a5bb67916f34a4fcbb871d54a528"
+  integrity sha512-TMik9B/pqCgMQakNL1FU3vdTBXk+qcFlkP9KPazE9KKdGh+h1OPDH4+8tFDqY5KnXHJXY3a2OsJ8TMz5RQLL9Q==
   dependencies:
     discord.js "^13.8.1"
     rescript "*"

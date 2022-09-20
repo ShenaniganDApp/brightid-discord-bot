@@ -17,9 +17,9 @@ type brightIdError = {
 type brightIdGuild = {
   role: string,
   name: string,
-  inviteLink?: string,
+  inviteLink: option<string>,
   roleId: string,
-  sponsorshipAddress?: string,
+  sponsorshipAddress: option<string>,
 }
 
 type brightIdGuilds = Js.Dict.t<brightIdGuild>

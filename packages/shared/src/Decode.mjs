@@ -40,10 +40,11 @@ var BrightId = {
 
 var brightIdGuild = Json_Decode$JsonCombinators.object(function (field) {
       return {
-              role: field.optional("role", Json_Decode$JsonCombinators.string),
-              name: field.optional("name", Json_Decode$JsonCombinators.string),
+              role: field.required("role", Json_Decode$JsonCombinators.string),
+              name: field.required("name", Json_Decode$JsonCombinators.string),
               inviteLink: field.optional("inviteLink", Json_Decode$JsonCombinators.string),
-              roleId: field.optional("roleId", Json_Decode$JsonCombinators.string)
+              roleId: field.required("roleId", Json_Decode$JsonCombinators.string),
+              sponsorshipAddress: field.optional("sponsorshipAddress", Json_Decode$JsonCombinators.string)
             };
     });
 
