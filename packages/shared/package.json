@@ -1,7 +1,7 @@
 {
-  "name": "@brightidbot/bindings",
+  "name": "@brightidbot/shared",
   "version": "0.0.0",
-  "description": "Rescript bindings for the brightID bot",
+  "description": "Shared logic for the BrightID bot",
   "author": "Victor Ginelli (@youngkidwarrior)",
   "license": "MIT",
   "private": true,
