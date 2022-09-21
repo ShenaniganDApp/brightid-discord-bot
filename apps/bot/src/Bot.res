@@ -1,7 +1,6 @@
 open Discord
 open Promise
 open NodeFetch
-open BrightId
 
 let {brightIdVerificationEndpoint} = module(Endpoints)
 let {context} = module(Constants)
@@ -52,50 +51,59 @@ commands
 
 buttons->Collection.set(Buttons_Verify.customId, module(Buttons_Verify))->ignore
 
-let updateGistOnGuildCreate = (guild: Guild.t, roleId) => {
+let updateGistOnGuildCreate = async (guild: Guild.t, roleId) => {
+  open Shared.BrightId
+  open Utils
+  let id = envConfig["gistId"]
+  let name = "guildData.json"
+  let token = envConfig["githubAccessToken"]
+  let config = Gist.makeGistConfig(~id, ~name, ~token)
+
   let guildId = guild->Guild.getGuildId
 
-  guildId->updateGist({
-    "name": guild->Guild.getGuildName,
-    "role": "Verified",
-    "roleId": roleId,
-  })
+  let content = await Gist.ReadGist.content(~config, ~decoder=Shared.Decode.Gist.brightIdGuilds)
+
+  let entry = {
+    name: guild->Guild.getGuildName,
+    role: "Verified",
+    roleId,
+    inviteLink: None,
+    sponsorshipAddress: None,
+  }
+
+  await Gist.UpdateGist.addEntry(~content, ~config, ~key=guildId, ~entry)
 }
 
-let onGuildCreate = guild => {
+let onGuildCreate = async (guild) => {
   let roleManager = guild->Guild.getGuildRoleManager
 
-  roleManager
-  ->RoleManager.create({
-    name: "Verified",
-    color: "ORANGE",
-    reason: "Create a role to mark verified users with BrightID",
-  })
-  ->then(role => {
-    guild->updateGistOnGuildCreate(role->Role.getRoleId)
-  })
-  ->ignore
+  let role = await RoleManager.create(
+    roleManager,
+    {
+      name: "Verified",
+      color: "ORANGE",
+      reason: "Create a role to mark verified users with BrightID",
+    },
+  )
+
+  (await updateGistOnGuildCreate(guild, role->Role.getRoleId))->ignore
 }
 
-let onInteraction = (interaction: Interaction.t) => {
+let onInteraction = async (interaction: Interaction.t) => {
   let isCommand = interaction->Interaction.isCommand
   let isButton = interaction->Interaction.isButton
   let user = interaction->Interaction.getUser
   switch (isCommand, isButton) {
   | (true, false) => {
       let commandName = interaction->Interaction.getCommandName
-
       let command = commands->Collection.get(commandName)
       switch command->Js.Nullable.toOption {
       | None => Js.Console.error("Bot.res: Command not found")
       | Some(module(Command)) =>
-        Command.execute(interaction)
-        ->then(_ =>
-          Js.Console.log(
-            `Successfully served the command ${commandName} for ${user->User.getUsername}`,
-          )->resolve
+        await Command.execute(interaction)
+        Js.Console.log(
+          `Successfully served the command ${commandName} for ${user->User.getUsername}`,
         )
-        ->ignore
       }
     }
 
@@ -106,13 +114,10 @@ let onInteraction = (interaction: Interaction.t) => {
       switch button->Js.Nullable.toOption {
       | None => Js.Console.error("Bot.res: Button not found")
       | Some(module(Button)) =>
-        Button.execute(interaction)
-        ->then(_ =>
-          Js.Console.log(
-            `Successfully served button press "${buttonCustomId}" for ${user->User.getUsername}`,
-          )->resolve
+        await Button.execute(interaction)
+        Js.Console.log(
+          `Successfully served button press "${buttonCustomId}" for ${user->User.getUsername}`,
         )
-        ->ignore
       }
     }
 
@@ -120,7 +125,7 @@ let onInteraction = (interaction: Interaction.t) => {
   }
 }
 
-let onGuildDelete = guild => {
+let onGuildDelete = async (guild) => {
   open Utils
   let config = Gist.makeGistConfig(
     ~id=envConfig["gistId"],
@@ -129,20 +134,25 @@ let onGuildDelete = guild => {
   )
   let guildId = guild->Guild.getGuildId
 
-  Gist.ReadGist.content(~config, ~decoder=Decode.Gist.brightIdGuilds)
-  ->then(content => {
-    let brightIdGuild = content->Js.Dict.get(guildId)
-    switch brightIdGuild {
-    | Some(_) => Gist.UpdateGist.removeEntry(~content, ~key=guildId, ~config)->then(_ => resolve())
+  let content = switch await Gist.ReadGist.content(
+    ~config,
+    ~decoder=Shared.Decode.Gist.brightIdGuilds,
+  ) {
+  | data => Some(data)
+  | exception JsError(_) => None
+  }->Belt.Option.getExn
 
-    | None => Js.log(`No role to delete for guild ${guildId}`)->resolve
+  let brightIdGuild = content->Js.Dict.get(guildId)
+
+  switch brightIdGuild {
+  | Some(_) =>
+    switch await Gist.UpdateGist.removeEntry(~content, ~key=guildId, ~config) {
+    | _ => Some()
+    | exception JsError(_) => None
     }
-  })
-  ->catch(err => {
-    Js.Console.error(err)
-    resolve()
-  })
-  ->ignore
+
+  | None => Js.log(`No role to delete for guild ${guildId}`)->Some
+  }
 }
 
 let onGuildMemberAdd = guildMember => {
@@ -164,7 +174,10 @@ let onGuildMemberAdd = guildMember => {
   ->fetch(params)
   ->then(res => res->Response.json)
   ->then(json => {
-    switch (json->Json.decode(Decode.BrightId.data), json->Json.decode(Decode.BrightId.error)) {
+    switch (
+      json->Json.decode(Shared.Decode.BrightId.data),
+      json->Json.decode(Shared.Decode.BrightId.error),
+    ) {
     | (Ok({data}), _) =>
       switch data.unique {
       | true =>
@@ -173,12 +186,12 @@ let onGuildMemberAdd = guildMember => {
           ~name="guildData.json",
           ~token=envConfig["githubAccessToken"],
         )
-        ->Gist.ReadGist.content(~config=_, ~decoder=Decode.Gist.brightIdGuilds)
+        ->Gist.ReadGist.content(~config=_, ~decoder=Shared.Decode.Gist.brightIdGuilds)
         ->then(content => {
           let guild = guildMember->GuildMember.getGuild
           let guildId = guild->Guild.getGuildId
           let brightIdGuild = content->Js.Dict.get(guildId)->Belt.Option.getExn
-          let roleId = brightIdGuild["roleId"]->Belt.Option.getExn
+          let roleId = brightIdGuild.roleId
 
           let role =
             guild
@@ -218,19 +231,17 @@ let onRoleUpdate = role => {
     ~name="guildData.json",
     ~token=envConfig["githubAccessToken"],
   )
-  Gist.ReadGist.content(~config, ~decoder=Decode.Gist.brightIdGuilds)
+  Gist.ReadGist.content(~config, ~decoder=Shared.Decode.Gist.brightIdGuilds)
   ->then(guilds => {
     let brightIdGuild = guilds->Js.Dict.get(guildId)->Belt.Option.getExn
-    let roleId = brightIdGuild["roleId"]->Belt.Option.getExn
+    let roleId = brightIdGuild.roleId
     let isVerifiedRole = role->Role.getRoleId === roleId
     switch isVerifiedRole {
     | true =>
       let roleName = role->Role.getName
       let entry = {
-        "inviteLink": brightIdGuild["inviteLink"],
-        "name": brightIdGuild["name"],
-        "role": Some(roleName),
-        "roleId": brightIdGuild["roleId"],
+        ...brightIdGuild,
+        role: roleName,
       }
       Gist.UpdateGist.updateEntry(~content=guilds, ~entry, ~key=guildId, ~config)->then(_ =>
         resolve()
@@ -249,11 +260,11 @@ client->Client.on(
   ),
 )
 
-client->Client.on(#guildCreate(guild => guild->onGuildCreate))
+client->Client.on(#guildCreate(guild => guild->onGuildCreate->ignore))
 
-client->Client.on(#interactionCreate(interaction => interaction->onInteraction))
+client->Client.on(#interactionCreate(interaction => interaction->onInteraction->ignore))
 
-client->Client.on(#guildDelete(guild => guild->onGuildDelete))
+client->Client.on(#guildDelete(guild => guild->onGuildDelete->ignore))
 
 client->Client.on(#guildMemberAdd(member => member->onGuildMemberAdd))
 
