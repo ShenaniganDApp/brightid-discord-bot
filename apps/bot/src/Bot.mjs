@@ -3,7 +3,6 @@
 import * as Env from "./Env.mjs";
 import * as Uuid from "uuid";
 import * as Curry from "rescript/lib/es6/curry.js";
-import * as Decode from "./bindings/Decode.mjs";
 import * as Js_dict from "rescript/lib/es6/js_dict.js";
 import * as $$Promise from "@ryyppy/rescript-promise/src/Promise.mjs";
 import * as Constants from "./Constants.mjs";
@@ -13,11 +12,13 @@ import * as DiscordJs from "discord.js";
 import * as Belt_Option from "rescript/lib/es6/belt_Option.js";
 import * as Caml_option from "rescript/lib/es6/caml_option.js";
 import * as Commands_Help from "./commands/Commands_Help.mjs";
+import * as Decode$Shared from "@brightidbot/shared/src/Decode.mjs";
 import * as Buttons_Verify from "./buttons/Buttons_Verify.mjs";
 import * as Commands_Guild from "./commands/Commands_Guild.mjs";
 import * as Caml_exceptions from "rescript/lib/es6/caml_exceptions.js";
 import * as Commands_Invite from "./commands/Commands_Invite.mjs";
 import * as Commands_Verify from "./commands/Commands_Verify.mjs";
+import * as Caml_js_exceptions from "rescript/lib/es6/caml_js_exceptions.js";
 import * as Json$JsonCombinators from "@glennsl/rescript-json-combinators/src/Json.mjs";
 import * as UpdateOrReadGistMjs from "./updateOrReadGist.mjs";
 import * as Json_Decode$JsonCombinators from "@glennsl/rescript-json-combinators/src/Json_Decode.mjs";
@@ -79,27 +80,34 @@ buttons.set(Buttons_Verify.customId, {
       execute: Buttons_Verify.execute
     });
 
-function updateGistOnGuildCreate(guild, roleId) {
+async function updateGistOnGuildCreate(guild, roleId) {
+  var id = envConfig$1.gistId;
+  var token = envConfig$1.githubAccessToken;
+  var config = Gist$Utils.makeGistConfig(id, "guildData.json", token);
   var guildId = guild.id;
-  return UpdateOrReadGistMjs.updateGist(guildId, {
-              name: guild.name,
-              role: "Verified",
-              roleId: roleId
-            });
+  var content = await Gist$Utils.ReadGist.content(config, Decode$Shared.Gist.brightIdGuilds);
+  var entry_name = guild.name;
+  var entry = {
+    role: "Verified",
+    name: entry_name,
+    inviteLink: undefined,
+    roleId: roleId,
+    sponsorshipAddress: undefined
+  };
+  return await Gist$Utils.UpdateGist.addEntry(content, guildId, entry, config);
 }
 
-function onGuildCreate(guild) {
+async function onGuildCreate(guild) {
   var roleManager = guild.roles;
-  roleManager.create({
-          name: "Verified",
-          color: "ORANGE",
-          reason: "Create a role to mark verified users with BrightID"
-        }).then(function (role) {
-        return updateGistOnGuildCreate(guild, role.id);
+  var role = await roleManager.create({
+        name: "Verified",
+        color: "ORANGE",
+        reason: "Create a role to mark verified users with BrightID"
       });
+  await updateGistOnGuildCreate(guild, role.id);
 }
 
-function onInteraction(interaction) {
+async function onInteraction(interaction) {
   var isCommand = interaction.isCommand();
   var isButton = interaction.isButton();
   var user = interaction.user;
@@ -113,9 +121,8 @@ function onInteraction(interaction) {
     if (command == null) {
       console.error("Bot.res: Command not found");
     } else {
-      Curry._1(command.execute, interaction).then(function (param) {
-            return Promise.resolve((console.log("Successfully served the command " + commandName + " for " + user.username + ""), undefined));
-          });
+      await Curry._1(command.execute, interaction);
+      console.log("Successfully served the command " + commandName + " for " + user.username + "");
     }
     return ;
   }
@@ -125,31 +132,51 @@ function onInteraction(interaction) {
     if (button == null) {
       console.error("Bot.res: Button not found");
     } else {
-      Curry._1(button.execute, interaction).then(function (param) {
-            return Promise.resolve((console.log("Successfully served button press \"" + buttonCustomId + "\" for " + user.username + ""), undefined));
-          });
+      await Curry._1(button.execute, interaction);
+      console.log("Successfully served button press \"" + buttonCustomId + "\" for " + user.username + "");
     }
     return ;
   }
   console.error("Bot.res: Unknown interaction");
 }
 
-function onGuildDelete(guild) {
+async function onGuildDelete(guild) {
   var config = Gist$Utils.makeGistConfig(envConfig$1.gistId, "guildData.json", envConfig$1.githubAccessToken);
   var guildId = guild.id;
-  $$Promise.$$catch(Gist$Utils.ReadGist.content(config, Decode.Gist.brightIdGuilds).then(function (content) {
-            var brightIdGuild = Js_dict.get(content, guildId);
-            if (brightIdGuild !== undefined) {
-              return Gist$Utils.UpdateGist.removeEntry(content, guildId, config).then(function (param) {
-                          return Promise.resolve(undefined);
-                        });
-            } else {
-              return Promise.resolve((console.log("No role to delete for guild " + guildId + ""), undefined));
-            }
-          }), (function (err) {
-          console.error(err);
-          return Promise.resolve(undefined);
-        }));
+  var tmp;
+  var exit = 0;
+  var data;
+  try {
+    data = await Gist$Utils.ReadGist.content(config, Decode$Shared.Gist.brightIdGuilds);
+    exit = 1;
+  }
+  catch (raw_exn){
+    var exn = Caml_js_exceptions.internalToOCamlException(raw_exn);
+    if (exn.RE_EXN_ID === $$Promise.JsError) {
+      tmp = undefined;
+    } else {
+      throw exn;
+    }
+  }
+  if (exit === 1) {
+    tmp = Caml_option.some(data);
+  }
+  var content = Belt_Option.getExn(tmp);
+  var brightIdGuild = Js_dict.get(content, guildId);
+  if (brightIdGuild === undefined) {
+    return Caml_option.some((console.log("No role to delete for guild " + guildId + ""), undefined));
+  }
+  try {
+    await Gist$Utils.UpdateGist.removeEntry(content, guildId, config);
+    return Caml_option.some(undefined);
+  }
+  catch (raw_exn$1){
+    var exn$1 = Caml_js_exceptions.internalToOCamlException(raw_exn$1);
+    if (exn$1.RE_EXN_ID === $$Promise.JsError) {
+      return ;
+    }
+    throw exn$1;
+  }
 }
 
 function onGuildMemberAdd(guildMember) {
@@ -166,8 +193,8 @@ function onGuildMemberAdd(guildMember) {
   $$Promise.$$catch(globalThis.fetch(endpoint, params).then(function (res) {
               return res.json();
             }).then(function (json) {
-            var match = Json$JsonCombinators.decode(json, Decode.BrightId.data);
-            var match$1 = Json$JsonCombinators.decode(json, Decode.BrightId.error);
+            var match = Json$JsonCombinators.decode(json, Decode$Shared.BrightId.data);
+            var match$1 = Json$JsonCombinators.decode(json, Decode$Shared.BrightId.error);
             if (match.TAG !== /* Ok */0) {
               if (match$1.TAG === /* Ok */0) {
                 return Promise.resolve((console.log(match$1._0.errorMessage), undefined));
@@ -182,11 +209,11 @@ function onGuildMemberAdd(guildMember) {
               return Promise.resolve((console.log("User " + guildMember.displayName + " is not unique"), undefined));
             }
             var __x = Gist$Utils.makeGistConfig(envConfig$1.gistId, "guildData.json", envConfig$1.githubAccessToken);
-            return Gist$Utils.ReadGist.content(__x, Decode.Gist.brightIdGuilds).then(function (content) {
+            return Gist$Utils.ReadGist.content(__x, Decode$Shared.Gist.brightIdGuilds).then(function (content) {
                         var guild = guildMember.guild;
                         var guildId = guild.id;
                         var brightIdGuild = Belt_Option.getExn(Js_dict.get(content, guildId));
-                        var roleId = Belt_Option.getExn(brightIdGuild.roleId);
+                        var roleId = brightIdGuild.roleId;
                         var role = Belt_Option.getExn(Caml_option.nullable_to_opt(guild.roles.cache.get(roleId)));
                         var guildMemberRoleManager = guildMember.roles;
                         guildMemberRoleManager.add(role, "User is already verified by BrightID");
@@ -201,19 +228,24 @@ function onGuildMemberAdd(guildMember) {
 function onRoleUpdate(role) {
   var guildId = role.guild.id;
   var config = Gist$Utils.makeGistConfig(envConfig$1.gistId, "guildData.json", envConfig$1.githubAccessToken);
-  Gist$Utils.ReadGist.content(config, Decode.Gist.brightIdGuilds).then(function (guilds) {
+  Gist$Utils.ReadGist.content(config, Decode$Shared.Gist.brightIdGuilds).then(function (guilds) {
         var brightIdGuild = Belt_Option.getExn(Js_dict.get(guilds, guildId));
-        var roleId = Belt_Option.getExn(brightIdGuild.roleId);
+        var roleId = brightIdGuild.roleId;
         var isVerifiedRole = role.id === roleId;
         if (!isVerifiedRole) {
           return Promise.resolve(undefined);
         }
         var roleName = role.name;
+        var entry_name = brightIdGuild.name;
+        var entry_inviteLink = brightIdGuild.inviteLink;
+        var entry_roleId = brightIdGuild.roleId;
+        var entry_sponsorshipAddress = brightIdGuild.sponsorshipAddress;
         var entry = {
-          inviteLink: brightIdGuild.inviteLink,
-          name: brightIdGuild.name,
           role: roleName,
-          roleId: brightIdGuild.roleId
+          name: entry_name,
+          inviteLink: entry_inviteLink,
+          roleId: entry_roleId,
+          sponsorshipAddress: entry_sponsorshipAddress
         };
         return Gist$Utils.UpdateGist.updateEntry(guilds, guildId, entry, config).then(function (param) {
                     return Promise.resolve(undefined);
@@ -225,11 +257,17 @@ client.on("ready", (function (param) {
         console.log("Logged In");
       }));
 
-client.on("guildCreate", onGuildCreate);
+client.on("guildCreate", (function (guild) {
+        onGuildCreate(guild);
+      }));
 
-client.on("interactionCreate", onInteraction);
+client.on("interactionCreate", (function (interaction) {
+        onInteraction(interaction);
+      }));
 
-client.on("guildDelete", onGuildDelete);
+client.on("guildDelete", (function (guild) {
+        onGuildDelete(guild);
+      }));
 
 client.on("guildMemberAdd", onGuildMemberAdd);
 
