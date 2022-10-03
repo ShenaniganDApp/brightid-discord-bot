@@ -20,15 +20,65 @@ function Root_Index$default(Props) {
           
         }), [fetcher]);
   var match = fetcher.type;
-  var verificationCount;
+  var unusedSponsorships;
   switch (match) {
     case "done" :
         var data = fetcher.data;
-        verificationCount = (data == null) ? React.createElement("p", {
+        unusedSponsorships = (data == null) ? React.createElement("p", {
                 className: "text-white"
               }, "N/A") : React.createElement("p", {
                 className: "text-3xl font-semibold text-transparent bg-clip-text bg-gradient-to-l from-brightid to-white"
-              }, String(data.verificationCount));
+              }, String(data.unusedSponsorships));
+        break;
+    case "normalLoad" :
+        unusedSponsorships = React.createElement("div", {
+              className: " animate-pulse  "
+            }, React.createElement("div", {
+                  className: "h-8 bg-gray-300 w-8 rounded-md "
+                }));
+        break;
+    default:
+      unusedSponsorships = React.createElement("div", {
+            className: " animate-pulse  "
+          }, React.createElement("div", {
+                className: "h-8 bg-gray-300 w-8 rounded-md "
+              }));
+  }
+  var match$1 = fetcher.type;
+  var usedSponsorships;
+  switch (match$1) {
+    case "done" :
+        var data$1 = fetcher.data;
+        usedSponsorships = (data$1 == null) ? React.createElement("p", {
+                className: "text-white"
+              }, "N/A") : React.createElement("p", {
+                className: "text-3xl font-semibold text-transparent bg-clip-text bg-gradient-to-l from-brightid to-white"
+              }, String(data$1.unusedSponsorships - data$1.assignedSponsorships | 0));
+        break;
+    case "normalLoad" :
+        usedSponsorships = React.createElement("div", {
+              className: " animate-pulse  "
+            }, React.createElement("div", {
+                  className: "h-8 bg-gray-300 w-8 rounded-md "
+                }));
+        break;
+    default:
+      usedSponsorships = React.createElement("div", {
+            className: " animate-pulse  "
+          }, React.createElement("div", {
+                className: "h-8 bg-gray-300 w-8 rounded-md "
+              }));
+  }
+  var match$2 = fetcher.type;
+  var verificationCount;
+  switch (match$2) {
+    case "done" :
+        var data$2 = fetcher.data;
+        verificationCount = (data$2 == null) ? React.createElement("p", {
+                className: "text-white"
+              }, "N/A") : React.createElement("p", {
+                className: "text-3xl font-semibold text-transparent bg-clip-text bg-gradient-to-l from-brightid to-white"
+              }, String(data$2.verificationCount));
         break;
     case "normalLoad" :
         verificationCount = React.createElement("div", {
@@ -44,24 +94,24 @@ function Root_Index$default(Props) {
                 className: "h-8 bg-gray-300 w-8 rounded-md "
               }));
   }
-  var match$1 = fetcher.type;
+  var match$3 = fetcher.type;
   var linkBrightId;
-  switch (match$1) {
+  switch (match$3) {
     case "done" :
-        var data$1 = fetcher.data;
-        if (data$1 == null) {
+        var data$3 = fetcher.data;
+        if (data$3 == null) {
           linkBrightId = React.createElement(DiscordLoginButton.make, {
                 label: "Login to Discord"
               });
         } else {
-          var match$2 = data$1.user;
-          if (match$2 == null) {
+          var match$4 = data$3.user;
+          if (match$4 == null) {
             linkBrightId = React.createElement(DiscordLoginButton.make, {
                   label: "Login to Discord"
                 });
           } else {
-            var match$3 = data$1.verifyStatus;
-            switch (match$3) {
+            var match$5 = data$3.verifyStatus;
+            switch (match$5) {
               case /* Unknown */0 :
                   linkBrightId = React.createElement("p", {
                         className: "text-2xl md:text-3xl font-semibold text-white"
@@ -125,10 +175,14 @@ function Root_Index$default(Props) {
                 }, React.createElement("div", {
                       className: "flex flex-1 flex-col  justify-around items-center text-center"
                     }, React.createElement("span", {
-                          className: "text-4xl md:text-8xl font-poppins font-extrabold text-transparent bg-[size:1000px_100%] bg-clip-text bg-gradient-to-l from-brightid to-white animate-text-scroll"
-                        }, "BrightID Discord Bot"), React.createElement("section", {
+                          className: "text-4xl md:text-8xl md:leading-loose font-poppins font-extrabold text-transparent bg-[size:1000px_100%] bg-clip-text bg-gradient-to-l from-brightid to-white animate-textscroll "
+                        }, "BrightID Unique Bot"), React.createElement("section", {
                           className: "width-full flex flex-col md:flex-row justify-around items-center w-full"
                         }, React.createElement("div", {
+                              className: "flex flex-col  rounded-xl justify-around items-center text-center h-32 w-60 md:h-48 m-2"
+                            }, React.createElement("div", {
+                                  className: "text-3xl font-bold text-white"
+                                }, "Available Sponsorships"), unusedSponsorships), React.createElement("div", {
                               className: "flex flex-col  rounded-xl justify-around items-center text-center h-32 w-60 md:h-48 m-2"
                             }, React.createElement("div", {
                                   className: "text-3xl font-bold text-white"
@@ -136,9 +190,9 @@ function Root_Index$default(Props) {
                               className: "flex flex-col rounded-xl justify-around items-center text-center h-32 w-60 md:h-48 m-2"
                             }, React.createElement("div", {
                                   className: "text-3xl font-bold text-white"
-                                }, "Sponsorships"), React.createElement("div", {
+                                }, "Total Used Sponsors"), React.createElement("div", {
                                   className: "text-3xl font-semibold text-transparent bg-clip-text bg-gradient-to-l from-brightid to-white"
-                                }, "0"))), React.createElement("section", {
+                                }, usedSponsorships))), React.createElement("section", {
                           className: "flex justify-center items-center flex-col w-full gap-4"
                         }, linkBrightId))));
 }

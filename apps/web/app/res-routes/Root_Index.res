@@ -23,6 +23,48 @@ let default = () => {
     None
   }, [fetcher])
 
+  let unusedSponsorships = switch fetcher->Remix.Fetcher._type {
+  | "done" =>
+    switch fetcher->Remix.Fetcher.data->Js.Nullable.toOption {
+    | None => <p className="text-white"> {"N/A"->React.string} </p>
+    | Some(data) =>
+      <p
+        className="text-3xl font-semibold text-transparent bg-clip-text bg-gradient-to-l from-brightid to-white">
+        {data["unusedSponsorships"]->Belt.Int.toString->React.string}
+      </p>
+    }
+  | "normalLoad" =>
+    <div className=" animate-pulse  ">
+      <div className="h-8 bg-gray-300 w-8 rounded-md " />
+    </div>
+  | _ =>
+    <div className=" animate-pulse  ">
+      <div className="h-8 bg-gray-300 w-8 rounded-md " />
+    </div>
+  }
+
+  let usedSponsorships = switch fetcher->Remix.Fetcher._type {
+  | "done" =>
+    switch fetcher->Remix.Fetcher.data->Js.Nullable.toOption {
+    | None => <p className="text-white"> {"N/A"->React.string} </p>
+    | Some(data) =>
+      <p
+        className="text-3xl font-semibold text-transparent bg-clip-text bg-gradient-to-l from-brightid to-white">
+        {(data["unusedSponsorships"] - data["assignedSponsorships"])
+        ->Belt.Int.toString
+        ->React.string}
+      </p>
+    }
+  | "normalLoad" =>
+    <div className=" animate-pulse  ">
+      <div className="h-8 bg-gray-300 w-8 rounded-md " />
+    </div>
+  | _ =>
+    <div className=" animate-pulse  ">
+      <div className="h-8 bg-gray-300 w-8 rounded-md " />
+    </div>
+  }
+
   let verificationCount = switch fetcher->Remix.Fetcher._type {
   | "done" =>
     switch fetcher->Remix.Fetcher.data->Js.Nullable.toOption {
@@ -108,11 +150,18 @@ let default = () => {
     <div className="flex flex-1 w-full justify-center ">
       <div className="flex flex-1 flex-col  justify-around items-center text-center">
         <span
-          className="text-4xl md:text-8xl font-poppins font-extrabold text-transparent bg-[size:1000px_100%] bg-clip-text bg-gradient-to-l from-brightid to-white animate-text-scroll">
-          {"BrightID Discord Bot"->React.string}
+          className="text-4xl md:text-8xl md:leading-loose font-poppins font-extrabold text-transparent bg-[size:1000px_100%] bg-clip-text bg-gradient-to-l from-brightid to-white animate-textscroll ">
+          {"BrightID Unique Bot"->React.string}
         </span>
         <section
           className="width-full flex flex-col md:flex-row justify-around items-center w-full">
+          <div
+            className="flex flex-col  rounded-xl justify-around items-center text-center h-32 w-60 md:h-48 m-2">
+            <div className="text-3xl font-bold text-white">
+              {"Available Sponsorships"->React.string}
+            </div>
+            {unusedSponsorships}
+          </div>
           <div
             className="flex flex-col  rounded-xl justify-around items-center text-center h-32 w-60 md:h-48 m-2">
             <div className="text-3xl font-bold text-white"> {"Verifications"->React.string} </div>
@@ -120,10 +169,12 @@ let default = () => {
           </div>
           <div
             className="flex flex-col rounded-xl justify-around items-center text-center h-32 w-60 md:h-48 m-2">
-            <div className="text-3xl font-bold text-white"> {"Sponsorships"->React.string} </div>
+            <div className="text-3xl font-bold text-white">
+              {"Total Used Sponsors"->React.string}
+            </div>
             <div
               className="text-3xl font-semibold text-transparent bg-clip-text bg-gradient-to-l from-brightid to-white">
-              {"0"->React.string}
+              {usedSponsorships}
             </div>
           </div>
         </section>

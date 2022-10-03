@@ -28,11 +28,13 @@ module BrightId = {
 
 module Gist = {
   let brightIdGuild = object(field => {
-    role: field.required(. "role", string),
-    name: field.required(. "name", string),
+    role: field.optional(. "role", string),
+    name: field.optional(. "name", string),
     inviteLink: field.optional(. "inviteLink", string),
-    roleId: field.required(. "roleId", string),
+    roleId: field.optional(. "roleId", string),
     sponsorshipAddress: field.optional(. "sponsorshipAddress", string),
+    usedSponsorships: field.optional(. "usedSponsorships", int),
+    assignedSponsorships: field.optional(. "assignedSponsorships", int),
   })
 
   let brightIdGuilds = brightIdGuild->dict

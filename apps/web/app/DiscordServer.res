@@ -107,6 +107,7 @@ let mapRoleRecord = decodedRoles => {
 
 let sleep = ms => %raw(` new Promise((resolve) => setTimeout(resolve, ms))`)
 
+//fetch all bot and user guilds
 let rec fetchBotGuilds = (~after=0, ~allGuilds=[], ()): Promise.t<array<Types.oauthGuild>> => {
   open Webapi.Fetch
 
@@ -158,6 +159,58 @@ let rec fetchBotGuilds = (~after=0, ~allGuilds=[], ()): Promise.t<array<Types.oa
     | _ => allGuilds->resolve
     }
   })
+}
+
+type guildsCursor = {guilds: array<Types.oauthGuild>, after: option<string>}
+//fetch first 1000 guilds
+let rec fetchBotGuildsLimit = (~after): Promise.t<guildsCursor> => {
+  open Webapi.Fetch
+
+  let headers = HeadersInit.make({
+    "Authorization": `Bot ${botToken}`,
+  })
+  let init = RequestInit.make(~method_=Get, ~headers, ())
+  switch after {
+  | Some(after) =>
+    `https://discord.com/api/users/@me/guilds?after=${after}`
+    ->Request.makeWithInit(init)
+    ->fetchWithRequest
+    ->then(res => res->Response.json)
+    ->then(json => {
+      switch json->Js.Json.test(Js.Json.Array) {
+      | false => {
+          let rateLimit = json->Js.Json.decodeObject->Belt.Option.getUnsafe
+
+          let retry_after =
+            rateLimit->Js.Dict.get("retry_after")->Belt.Option.flatMap(Js.Json.decodeNumber)
+
+          let retry_after = switch retry_after {
+          | None => DiscordRateLimited->raise
+          | Some(retry_after) => retry_after->Belt.Float.toInt + 100
+          }
+
+          Js.log(
+            `Discord Rate Limited: Retrying fetch for guilds after: ${after} in ${retry_after->Belt.Int.toString}ms`,
+          )
+          sleep(retry_after)->then(_ => fetchBotGuildsLimit(~after=Some(after)))
+        }
+
+      | true => {
+          let guilds = json->Js.Json.decodeArray->mapGuildOauthRecord->Belt.Option.getUnsafe
+          let last = guilds->Js.Array2.length - 1
+          let after = guilds[last].id->Some
+          {guilds, after}->resolve
+        }
+      }
+    })
+    ->catch(e => {
+      switch e {
+      | DiscordRateLimited => e->raise
+      | _ => {guilds: [], after: Some(after)}->resolve
+      }
+    })
+  | None => {guilds: [], after}->resolve
+  }
 }
 
 let rec fetchUserGuilds = (user: RemixAuth.User.t) => {
@@ -234,6 +287,7 @@ let rec fetchGuildRoles = (~guildId) => {
   let headers = HeadersInit.make({
     "Authorization": `Bot ${botToken}`,
   })
+
   let init = RequestInit.make(~method_=Get, ~headers, ())
 
   `https://discord.com/api/guilds/${guildId}/roles`

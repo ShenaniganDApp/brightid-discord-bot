@@ -7,31 +7,40 @@ import * as $$Promise from "../../../../../node_modules/@ryyppy/rescript-promise
 import * as AuthServer from "../../AuthServer.js";
 import * as AdminButton from "../../components/AdminButton.js";
 import * as Belt_Option from "../../../../../node_modules/rescript/lib/es6/belt_Option.js";
+import * as Decode$Shared from "../../../node_modules/@brightidbot/shared/src/Decode.js";
 import * as DiscordServer from "../../DiscordServer.js";
 import * as Helpers_Guild from "../../helpers/Helpers_Guild.js";
 import * as SidebarToggle from "../../components/SidebarToggle.js";
-import * as ReactHotToast from "react-hot-toast";
-import ReactHotToast$1 from "react-hot-toast";
+import * as WebUtils_Gist from "../../utils/WebUtils_Gist.js";
+import ReactHotToast from "react-hot-toast";
+import * as ReactHotToast$1 from "react-hot-toast";
+import * as Js_null_undefined from "../../../../../node_modules/rescript/lib/es6/js_null_undefined.js";
 
 function loader(param) {
+  var config = WebUtils_Gist.makeGistConfig(process.env.GIST_ID, "guildData.json", process.env.GITHUB_ACCESS_TOKEN);
   var guildId = Belt_Option.getWithDefault(Js_dict.get(param.params, "guildId"), "");
   return $$Promise.$$catch(AuthServer.authenticator.isAuthenticated(param.request).then(function (user) {
                   if (user == null) {
                     return Promise.resolve({
                                 guild: null,
+                                brightIdGuild: null,
                                 isAdmin: false
                               });
                   } else {
-                    return DiscordServer.fetchGuildFromId(guildId).then(function (guild) {
-                                var userId = user.profile.id;
-                                return DiscordServer.fetchGuildMemberFromId(guildId, userId).then(function (guildMember) {
-                                            var memberRoles = (guildMember == null) ? [] : guildMember.roles;
-                                            return DiscordServer.fetchGuildRoles(guildId).then(function (guildRoles) {
-                                                        var isAdmin = DiscordServer.memberIsAdmin(guildRoles, memberRoles);
-                                                        var isOwner = (guild == null) ? false : guild.owner_id === userId;
-                                                        return Promise.resolve({
-                                                                    guild: guild,
-                                                                    isAdmin: isAdmin || isOwner
+                    return WebUtils_Gist.ReadGist.content(config, Decode$Shared.Gist.brightIdGuilds).then(function (brightIdGuilds) {
+                                var brightIdGuild = Js_null_undefined.fromOption(Js_dict.get(brightIdGuilds, guildId));
+                                return DiscordServer.fetchGuildFromId(guildId).then(function (guild) {
+                                            var userId = user.profile.id;
+                                            return DiscordServer.fetchGuildMemberFromId(guildId, userId).then(function (guildMember) {
+                                                        var memberRoles = (guildMember == null) ? [] : guildMember.roles;
+                                                        return DiscordServer.fetchGuildRoles(guildId).then(function (guildRoles) {
+                                                                    var isAdmin = DiscordServer.memberIsAdmin(guildRoles, memberRoles);
+                                                                    var isOwner = (guild == null) ? false : guild.owner_id === userId;
+                                                                    return Promise.resolve({
+                                                                                guild: guild,
+                                                                                brightIdGuild: brightIdGuild,
+                                                                                isAdmin: isAdmin || isOwner
+                                                                              });
                                                                   });
                                                       });
                                           });
@@ -40,6 +49,7 @@ function loader(param) {
                 }), (function (error) {
                 return Promise.resolve({
                             guild: null,
+                            brightIdGuild: null,
                             isAdmin: false
                           });
               }));
@@ -49,8 +59,13 @@ function $$default(param) {
   var match = Remix.useParams();
   var context = Remix.useOutletContext();
   var match$1 = Remix.useLoaderData();
+  var isAdmin = match$1.isAdmin;
+  var brightIdGuild = match$1.brightIdGuild;
   var guild = match$1.guild;
-  var guildDisplay = (guild == null) ? React.createElement("div", undefined, "That Discord Server does not exist") : React.createElement("div", {
+  if (guild == null) {
+    React.createElement("div", undefined, "That Discord Server does not exist");
+  } else {
+    React.createElement("div", {
           className: "flex flex-col items-center"
         }, React.createElement("div", {
               className: "flex gap-4 w-full justify-start items-center"
@@ -62,20 +77,76 @@ function $$default(param) {
                 }, guild.name)), React.createElement("div", {
               className: "flex-row"
             }));
-  if (context.rateLimited) {
-    ReactHotToast$1.error("The bot is being rate limited. Please try again later");
   }
+  var guildHeader = (guild == null) ? React.createElement("div", undefined, "That Discord Server does not exist") : React.createElement("div", {
+          className: "flex gap-4 w-full justify-start items-center"
+        }, React.createElement("img", {
+              className: "rounded-full h-24",
+              src: Helpers_Guild.iconUri(guild)
+            }), React.createElement("p", {
+              className: "text-4xl font-bold text-white"
+            }, guild.name));
+  React.useEffect((function () {
+          if (context.rateLimited) {
+            ReactHotToast.error("The bot is being rate limited. Please try again later", undefined);
+          }
+          if (isAdmin) {
+            var exit = 0;
+            if ((brightIdGuild == null) || brightIdGuild.sponsorshipAddress === undefined) {
+              exit = 1;
+            }
+            if (exit === 1) {
+              ReactHotToast((function (t) {
+                      return React.createElement("span", {
+                                  className: "flex flex-col bg-dark outline-2 border-brightid text-white",
+                                  onClick: (function (param) {
+                                      t.dismiss("sponsor");
+                                    })
+                                }, "This server is not setup to sponsor its members ");
+                    }), {
+                    duration: 100000,
+                    icon: "⚠️",
+                    id: "sponsor",
+                    position: "bottom-right"
+                  });
+            }
+            
+          }
+          
+        }), []);
   return React.createElement("div", {
               className: "flex-1 p-4"
-            }, React.createElement(ReactHotToast.Toaster, {}), React.createElement("div", {
-                  className: "flex flex-col"
+            }, React.createElement(ReactHotToast$1.Toaster, {}), React.createElement("div", {
+                  className: "flex flex-col h-screen"
                 }, React.createElement("header", {
                       className: "flex flex-row justify-between md:justify-end m-4"
                     }, React.createElement(SidebarToggle.make, {
                           handleToggleSidebar: context.handleToggleSidebar
-                        }), match$1.isAdmin ? React.createElement(AdminButton.make, {
+                        }), isAdmin ? React.createElement(AdminButton.make, {
                             guildId: match.guildId
-                          }) : React.createElement(React.Fragment, undefined)), guildDisplay));
+                          }) : React.createElement(React.Fragment, undefined)), guildHeader, React.createElement("div", {
+                      className: "flex flex-1 flex-col  justify-around items-center text-center"
+                    }, React.createElement("section", {
+                          className: "width-full flex flex-col md:flex-row justify-around items-center w-full"
+                        }, React.createElement("div", {
+                              className: "flex flex-col rounded-xl justify-around items-center text-center h-32 w-60 md:h-48 m-2 border-2 border-white border-solid bg-extraDark"
+                            }, React.createElement("div", {
+                                  className: "text-3xl font-bold text-white"
+                                }, "Verified Server Members"), React.createElement("div", {
+                                  className: "text-3xl font-semibold text-transparent bg-clip-text bg-gradient-to-l from-brightid to-white"
+                                }, "1000")), React.createElement("div", {
+                              className: "flex flex-col  rounded-xl justify-around items-center text-center h-32 w-60 md:h-48 m-2 border-2 border-white border-solid bg-extraDark"
+                            }, React.createElement("div", {
+                                  className: "text-3xl font-bold text-white"
+                                }, "Users Sponsored"), React.createElement("div", {
+                                  className: "text-3xl font-semibold text-transparent bg-clip-text bg-gradient-to-l from-brightid to-white"
+                                }, "125")), React.createElement("div", {
+                              className: "flex flex-col rounded-xl justify-around items-center text-center h-32 w-60 md:h-48 m-2 border-2 border-white border-solid bg-extraDark"
+                            }, React.createElement("div", {
+                                  className: "text-3xl font-bold text-white"
+                                }, "Total Used Sponsors"), React.createElement("div", {
+                                  className: "text-3xl font-semibold text-transparent bg-clip-text bg-gradient-to-l from-brightid to-white"
+                                }, "0"))))));
 }
 
 export {
