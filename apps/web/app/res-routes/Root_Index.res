@@ -1,3 +1,12 @@
+module ConnectButton = {
+  @react.component @module("@rainbow-me/rainbowkit")
+  external make: (
+    ~children: React.element=?,
+    ~style: ReactDOM.Style.t=?,
+    ~className: string=?,
+  ) => 'b = "ConnectButton"
+}
+
 module Canvas = {
   type t
   @module("canvas") @scope("default")
@@ -142,15 +151,30 @@ let default = () => {
     </div>
   }
 
+  let discordLogoutButton = switch fetcher->Remix.Fetcher._type {
+  | "done" =>
+    switch fetcher->Remix.Fetcher.data->Js.Nullable.toOption {
+    | None => <DiscordLoginButton label="Login to Discord" />
+    | Some(data) =>
+      switch data["user"]->Js.Nullable.toOption {
+      | None => <> </>
+      | Some(_) => <DiscordLogoutButton label={`Log out of Discord 👋`} />
+      }
+    }
+  | _ => <> </>
+  }
+
   <div className="flex flex-col flex-1">
     <header className="flex flex-row justify-between md:justify-end m-4">
       <SidebarToggle handleToggleSidebar={context["handleToggleSidebar"]} />
-      <InviteButton />
+      <div className="flex flex-row items-center justify-center gap-4">
+        <ConnectButton className="h-full" />
+      </div>
     </header>
     <div className="flex flex-1 w-full justify-center ">
       <div className="flex flex-1 flex-col  justify-around items-center text-center">
         <span
-          className="text-4xl md:text-8xl md:leading-loose font-poppins font-extrabold text-transparent bg-[size:1000px_100%] bg-clip-text bg-gradient-to-l from-brightid to-white animate-textscroll ">
+          className="text-4xl md:text-6xl lg:text-8xl lg:leading-loose font-poppins font-extrabold text-transparent bg-[size:1000px_100%] bg-clip-text bg-gradient-to-l from-brightid to-white animate-textscroll ">
           {"BrightID Unique Bot"->React.string}
         </span>
         <section
@@ -180,6 +204,7 @@ let default = () => {
         </section>
         <section className="flex justify-center items-center flex-col w-full gap-4">
           {linkBrightId}
+          <div> {discordLogoutButton} </div>
         </section>
       </div>
       // <div className="bg-discordLogo h-10 w-4" />

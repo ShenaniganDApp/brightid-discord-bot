@@ -29,20 +29,24 @@ function urlModifyRole(guildId, roleId) {
 
 function action(param) {
   var request = param.request;
-  var guildId = Belt_Option.getWithDefault(Js_dict.get(param.params, "guildId"), "0x");
-  return AuthServer.authenticator.isAuthenticated(request).then(function (user) {
+  var guildId = Belt_Option.getWithDefault(Js_dict.get(param.params, "guildId"), "");
+  return AuthServer.authenticator.isAuthenticated(request).then(function (param) {
               return $$Promise.$$catch(request.formData().then(function (data) {
                               var headers = {
                                 Authorization: "Bot " + botToken + ""
                               };
                               var init = Webapi__Fetch.RequestInit.make(/* Patch */8, Caml_option.some(headers), undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined)(undefined);
-                              return fetch(new Request(urlModifyRole(guildId, "roleId"), init)).then(function (res) {
+                              return fetch(new Request(urlModifyRole(guildId, "roleId"), init)).then(function (param) {
                                           var role = data.get("role");
                                           var inviteLink = data.get("inviteLink");
-                                          if (role !== undefined && inviteLink !== undefined) {
+                                          var sponsorshipAddress = data.get("sponsorshipAddress");
+                                          if (role !== undefined && inviteLink !== undefined && sponsorshipAddress !== undefined) {
                                             return UpdateOrReadGistJs.updateGist(guildId, {
-                                                        role: Caml_option.valFromOption(role),
-                                                        inviteLink: Caml_option.valFromOption(inviteLink)
+                                                          role: Caml_option.valFromOption(role),
+                                                          inviteLink: Caml_option.valFromOption(inviteLink),
+                                                          sponsorshipAddress: Caml_option.valFromOption(sponsorshipAddress)
+                                                        }).then(function (param) {
+                                                        return Promise.resolve(null);
                                                       });
                                           } else {
                                             return Promise.reject({
@@ -53,10 +57,10 @@ function action(param) {
                             }), (function (e) {
                             if (e.RE_EXN_ID === EmptySubmit) {
                               Remix.redirect("/guilds/" + guildId + "/admin");
-                              return Promise.resolve(undefined);
+                              return Promise.resolve(null);
                             } else {
                               Remix.redirect("/guilds/" + guildId + "/admin");
-                              return Promise.resolve(undefined);
+                              return Promise.resolve(null);
                             }
                           }));
             });

@@ -123,7 +123,8 @@ let reducer = (state, action) =>
 let default = () => {
   open Remix
   let context = useOutletContext()
-  let {user, brightIdGuild, isAdmin, guild} = useLoaderData()
+  let {brightIdGuild, isAdmin, guild} = useLoaderData()
+  Js.log2("brightIdGuild: ", brightIdGuild)
   let {guildId} = useParams()
 
   let state = switch brightIdGuild->Js.Nullable.toOption {
@@ -155,6 +156,11 @@ let default = () => {
   let onInviteLinkChanged = e => {
     let value = ReactEvent.Form.currentTarget(e)["value"]->Js.Nullable.return
     value->Js.Nullable.toOption->InviteLinkChanged->dispatch
+  }
+
+  let onSponsorshipAddressChanged = e => {
+    let value = ReactEvent.Form.currentTarget(e)["value"]->Js.Nullable.return
+    value->Js.Nullable.toOption->SponsorshipAddressChanged->dispatch
   }
 
   // let onSubmit = e => {
@@ -213,7 +219,7 @@ let default = () => {
             <div>
               <div> {"Admin Commands"->React.string} </div>
             </div>
-            <div className="flex flex-1">
+            <div className="flex flex-1 justify-around">
               <img className="w-48 h-48 p-5" src={guild->Helpers_Guild.iconUri} />
               {switch brightIdGuild->Js.Nullable.toOption {
               | None =>
@@ -221,7 +227,7 @@ let default = () => {
                   <div> {"This server is not using BrightID"->React.string} </div>
                 </div>
               | Some(brightIdGuild) =>
-                <div className="flex flex-col flex-1 justify-center items-center gap-4">
+                <div className="flex flex-col flex-1 justify-center items-start gap-4">
                   <label className="flex flex-col gap-2">
                     {"Role"->React.string}
                     <input
@@ -250,9 +256,27 @@ let default = () => {
                       onChange=onInviteLinkChanged
                     />
                   </label>
-                  // <label className="flex flex-col">
-                  //   {"Sponsorship Address"->React.string} <input name="sponsorship" type_=#text />
-                  // </label>
+                  <label className="flex flex-col gap-2">
+                    {"Sponsorship Address"->React.string}
+                    <div className="flex flex-row gap-4">
+                      <input
+                        className="text-white p-2 bg-extraDark"
+                        name="sponsorshipAddress"
+                        type_="text"
+                        placeholder="No Sponsorship Address"
+                        value={state.sponsorshipAddress->Belt.Option.getWithDefault(
+                          brightIdGuild.sponsorshipAddress
+                          ->Js.Nullable.toOption
+                          ->Belt.Option.getWithDefault(""),
+                        )}
+                        readOnly={true}
+                      />
+                      <button
+                        className="p-2 bg-transparent border-3 border-brightid text-white font-xl rounded">
+                        {React.string("Sign")}
+                      </button>
+                    </div>
+                  </label>
                 </div>
               }}
             </div>

@@ -17,10 +17,10 @@ let urlModifyRole = (guildId, roleId) => `/guilds/${guildId}/roles/${roleId}`
 let action: Remix.actionFunction<'a> = ({request, params}) => {
   open Webapi.Fetch
 
-  let guildId = params->Js.Dict.get("guildId")->Belt.Option.getWithDefault("0x")
+  let guildId = params->Js.Dict.get("guildId")->Belt.Option.getWithDefault("")
   AuthServer.authenticator
   ->RemixAuth.Authenticator.isAuthenticated(request)
-  ->then(user => {
+  ->then(_ => {
     request
     ->Request.formData
     ->then(data => {
@@ -34,13 +34,24 @@ let action: Remix.actionFunction<'a> = ({request, params}) => {
       ->Request.makeWithInit(init)
       ->fetchWithRequest
       ->then(
-        res => {
+        _ => {
           let role = data->Webapi.FormData.get("role")
           let inviteLink = data->Webapi.FormData.get("inviteLink")
+          let sponsorshipAddress = data->Webapi.FormData.get("sponsorshipAddress")
 
-          switch (role, inviteLink) {
-          | (Some(role), Some(inviteLink)) =>
-            guildId->updateGist({"role": role, "inviteLink": inviteLink})
+          switch (role, inviteLink, sponsorshipAddress) {
+          | (Some(role), Some(inviteLink), Some(sponsorshipAddress)) =>
+            guildId
+            ->updateGist({
+              "role": role,
+              "inviteLink": inviteLink,
+              "sponsorshipAddress": sponsorshipAddress,
+            })
+            ->then(
+              _ => {
+                resolve(Js.Nullable.null)
+              },
+            )
           | _ => EmptySubmit->reject
           }
         },
@@ -50,12 +61,12 @@ let action: Remix.actionFunction<'a> = ({request, params}) => {
       switch e {
       | EmptySubmit => {
           Remix.redirect(`/guilds/${guildId}/admin`)->ignore
-          resolve()
+          resolve(Js.Nullable.null)
         }
 
       | _ => {
           Remix.redirect(`/guilds/${guildId}/admin`)->ignore
-          resolve()
+          resolve(Js.Nullable.null)
         }
       }
     })

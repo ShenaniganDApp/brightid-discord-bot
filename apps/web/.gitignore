@@ -8,3 +8,4 @@ s
 /lib/
 .bsb.lock
 .merlin
+.vercel

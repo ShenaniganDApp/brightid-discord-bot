@@ -2,9 +2,12 @@
 
 import * as React from "react";
 import * as Remix from "remix";
-import * as InviteButton from "../components/InviteButton.js";
 import * as SidebarToggle from "../components/SidebarToggle.js";
 import * as DiscordLoginButton from "../components/DiscordLoginButton.js";
+import * as DiscordLogoutButton from "../components/DiscordLogoutButton.js";
+import * as Rainbowkit from "@rainbow-me/rainbowkit";
+
+var ConnectButton = {};
 
 var Canvas = {};
 
@@ -164,18 +167,39 @@ function Root_Index$default(Props) {
                 className: "h-24 bg-gray-300 w-52 rounded-md "
               }));
   }
+  var match$6 = fetcher.type;
+  var discordLogoutButton;
+  if (match$6 === "done") {
+    var data$4 = fetcher.data;
+    if (data$4 == null) {
+      discordLogoutButton = React.createElement(DiscordLoginButton.make, {
+            label: "Login to Discord"
+          });
+    } else {
+      var match$7 = data$4.user;
+      discordLogoutButton = (match$7 == null) ? React.createElement(React.Fragment, undefined) : React.createElement(DiscordLogoutButton.make, {
+              label: "Log out of Discord 👋"
+            });
+    }
+  } else {
+    discordLogoutButton = React.createElement(React.Fragment, undefined);
+  }
   return React.createElement("div", {
               className: "flex flex-col flex-1"
             }, React.createElement("header", {
                   className: "flex flex-row justify-between md:justify-end m-4"
                 }, React.createElement(SidebarToggle.make, {
                       handleToggleSidebar: context.handleToggleSidebar
-                    }), React.createElement(InviteButton.make, {})), React.createElement("div", {
+                    }), React.createElement("div", {
+                      className: "flex flex-row items-center justify-center gap-4"
+                    }, React.createElement(Rainbowkit.ConnectButton, {
+                          className: "h-full"
+                        }))), React.createElement("div", {
                   className: "flex flex-1 w-full justify-center "
                 }, React.createElement("div", {
                       className: "flex flex-1 flex-col  justify-around items-center text-center"
                     }, React.createElement("span", {
-                          className: "text-4xl md:text-8xl md:leading-loose font-poppins font-extrabold text-transparent bg-[size:1000px_100%] bg-clip-text bg-gradient-to-l from-brightid to-white animate-textscroll "
+                          className: "text-4xl md:text-6xl lg:text-8xl lg:leading-loose font-poppins font-extrabold text-transparent bg-[size:1000px_100%] bg-clip-text bg-gradient-to-l from-brightid to-white animate-textscroll "
                         }, "BrightID Unique Bot"), React.createElement("section", {
                           className: "width-full flex flex-col md:flex-row justify-around items-center w-full"
                         }, React.createElement("div", {
@@ -194,12 +218,13 @@ function Root_Index$default(Props) {
                                   className: "text-3xl font-semibold text-transparent bg-clip-text bg-gradient-to-l from-brightid to-white"
                                 }, usedSponsorships))), React.createElement("section", {
                           className: "flex justify-center items-center flex-col w-full gap-4"
-                        }, linkBrightId))));
+                        }, linkBrightId, React.createElement("div", undefined, discordLogoutButton)))));
 }
 
 var $$default = Root_Index$default;
 
 export {
+  ConnectButton ,
   Canvas ,
   QRCode ,
   $$default ,

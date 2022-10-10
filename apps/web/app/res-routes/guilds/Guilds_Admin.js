@@ -104,6 +104,7 @@ function Guilds_Admin$default(Props) {
   var match = Remix.useLoaderData();
   var guild = match.guild;
   var brightIdGuild = match.brightIdGuild;
+  console.log("brightIdGuild: ", brightIdGuild);
   var match$1 = Remix.useParams();
   var guildId = match$1.guildId;
   var state;
@@ -193,14 +194,14 @@ function Guilds_Admin$default(Props) {
                           method: "post",
                           action: "/guilds/" + guildId + "/adminSubmit"
                         }, React.createElement("div", undefined, React.createElement("div", undefined, "Admin Commands")), React.createElement("div", {
-                              className: "flex flex-1"
+                              className: "flex flex-1 justify-around"
                             }, React.createElement("img", {
                                   className: "w-48 h-48 p-5",
                                   src: Helpers_Guild.iconUri(guild)
                                 }), (brightIdGuild == null) ? React.createElement("div", {
                                     className: "text-white text-2xl font-semibold justify-center items-center"
                                   }, React.createElement("div", undefined, "This server is not using BrightID")) : React.createElement("div", {
-                                    className: "flex flex-col flex-1 justify-center items-center gap-4"
+                                    className: "flex flex-col flex-1 justify-center items-start gap-4"
                                   }, React.createElement("label", {
                                         className: "flex flex-col gap-2"
                                       }, "Role", React.createElement("input", {
@@ -219,7 +220,20 @@ function Guilds_Admin$default(Props) {
                                             type: "text",
                                             value: Belt_Option.getWithDefault(state$1.inviteLink, Belt_Option.getWithDefault(Caml_option.nullable_to_opt(brightIdGuild.inviteLink), "")),
                                             onChange: onInviteLinkChanged
-                                          })))), React.createElement(SubmitPopup.make, {
+                                          })), React.createElement("label", {
+                                        className: "flex flex-col gap-2"
+                                      }, "Sponsorship Address", React.createElement("div", {
+                                            className: "flex flex-row gap-4"
+                                          }, React.createElement("input", {
+                                                className: "text-white p-2 bg-extraDark",
+                                                name: "sponsorshipAddress",
+                                                placeholder: "No Sponsorship Address",
+                                                readOnly: true,
+                                                type: "text",
+                                                value: Belt_Option.getWithDefault(state$1.sponsorshipAddress, Belt_Option.getWithDefault(Caml_option.nullable_to_opt(brightIdGuild.sponsorshipAddress), ""))
+                                              }), React.createElement("button", {
+                                                className: "p-2 bg-transparent border-3 border-brightid text-white font-xl rounded"
+                                              }, "Sign"))))), React.createElement(SubmitPopup.make, {
                               hasChangesToSave: hasChangesToSave,
                               reset: reset
                             }))));
