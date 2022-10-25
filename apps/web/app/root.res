@@ -96,11 +96,90 @@ let myTheme = LodashMerge.merge(
 
 let unstable_shouldReload = () => false
 
+type state = {
+  userGuilds: array<Types.oauthGuild>,
+  botGuilds: array<Types.oauthGuild>,
+  after: option<string>,
+  loadingGuilds: bool,
+}
+
+let state = {
+  userGuilds: [],
+  botGuilds: [],
+  after: Some("0"),
+  loadingGuilds: true,
+}
+
+type actions =
+  | AddBotGuilds(array<Types.oauthGuild>)
+  | UserGuilds(array<Types.oauthGuild>)
+  | SetAfter(option<string>)
+  | SetLoadingGuilds(bool)
+
+let reducer = (state, action) =>
+  switch action {
+  | AddBotGuilds(newBotGuilds) => {
+      ...state,
+      botGuilds: state.botGuilds->Belt.Array.concat(newBotGuilds),
+    }
+  | UserGuilds(userGuilds) => {...state, userGuilds}
+  | SetAfter(after) => {...state, after}
+  | SetLoadingGuilds(loadingGuilds) => {...state, loadingGuilds}
+  }
+
 @react.component
 let default = () => {
   open RainbowKit
   let {user, rateLimited} = Remix.useLoaderData()
   let (toggled, setToggled) = React.useState(_ => false)
+
+  let fetcher = Remix.useFetcher()
+
+  let (state, dispatch) = React.useReducer(reducer, state)
+
+  React.useEffect1(() => {
+    open Remix
+    switch state.after {
+    | None => ()
+    | Some(after) =>
+      switch fetcher->Fetcher._type {
+      | "init" =>
+        fetcher->Fetcher.load(~href=`/Root_FetchGuilds?after=${after}`)
+        SetLoadingGuilds(true)->dispatch
+
+      | "done" =>
+        switch fetcher->Remix.Fetcher.data->Js.Nullable.toOption {
+        | None =>
+          SetLoadingGuilds(false)->dispatch
+          None->SetAfter->dispatch
+        | Some(data) =>
+          switch data["userGuilds"] {
+          | [] => ()
+          | _ => data["userGuilds"]->UserGuilds->dispatch
+          }
+          switch data["botGuilds"] {
+          | [] => None->SetAfter->dispatch
+          | _ => data["botGuilds"]->AddBotGuilds->dispatch
+          }
+          if state.after === data["after"] {
+            None->SetAfter->dispatch
+            SetLoadingGuilds(false)->dispatch
+          } else {
+            data["after"]->SetAfter->dispatch
+            fetcher->Fetcher.load(~href=`/Root_FetchGuilds?after=${data["after"]}`)
+          }
+        }
+      | _ => ()
+      }
+    }
+
+    None
+  }, [fetcher])
+
+  let guilds =
+    state.userGuilds->Js.Array2.filter(userGuild =>
+      state.botGuilds->Js.Array2.findIndex(botGuild => botGuild.id === userGuild.id) !== -1
+    )
 
   let handleToggleSidebar = value => {
     setToggled(_prev => value)
@@ -117,9 +196,13 @@ let default = () => {
       <WagmiProvider client={wagmiClient}>
         <RainbowKitProvider chains={chainConfig["chains"]} theme={myTheme}>
           <div className="flex h-screen w-screen">
-            <Sidebar toggled handleToggleSidebar user />
+            <Sidebar toggled handleToggleSidebar user guilds loadingGuilds={state.loadingGuilds} />
             <Remix.Outlet
-              context={{"handleToggleSidebar": handleToggleSidebar, "rateLimited": rateLimited}}
+              context={{
+                "handleToggleSidebar": handleToggleSidebar,
+                "rateLimited": rateLimited,
+                "guilds": guilds,
+              }}
             />
           </div>
         </RainbowKitProvider>

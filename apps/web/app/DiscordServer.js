@@ -116,6 +116,56 @@ function fetchBotGuilds(afterOpt, allGuildsOpt, param) {
               }));
 }
 
+function fetchBotGuildsLimit(after) {
+  var headers = {
+    Authorization: "Bot " + botToken + ""
+  };
+  var init = Webapi__Fetch.RequestInit.make(/* Get */0, Caml_option.some(headers), undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined)(undefined);
+  if (after !== undefined) {
+    return $$Promise.$$catch(fetch(new Request("https://discord.com/api/users/@me/guilds?after=" + after + "", init)).then(function (res) {
+                      return res.json();
+                    }).then(function (json) {
+                    if (Js_json.test(json, /* Array */3)) {
+                      var guilds = mapGuildOauthRecord(Js_json.decodeArray(json));
+                      var last = guilds.length - 1 | 0;
+                      var after$1 = Caml_array.get(guilds, last).id;
+                      return Promise.resolve({
+                                  guilds: guilds,
+                                  after: after$1
+                                });
+                    }
+                    var rateLimit = Js_json.decodeObject(json);
+                    var retry_after = Belt_Option.flatMap(Js_dict.get(rateLimit, "retry_after"), Js_json.decodeNumber);
+                    var retry_after$1;
+                    if (retry_after !== undefined) {
+                      retry_after$1 = (retry_after | 0) + 100 | 0;
+                    } else {
+                      throw {
+                            RE_EXN_ID: DiscordRateLimited,
+                            Error: new Error()
+                          };
+                    }
+                    console.log("Discord Rate Limited: Retrying fetch for guilds after: " + after + " in " + String(retry_after$1) + "ms");
+                    return sleep(retry_after$1).then(function (param) {
+                                return fetchBotGuildsLimit(after);
+                              });
+                  }), (function (e) {
+                  if (e.RE_EXN_ID === DiscordRateLimited) {
+                    throw e;
+                  }
+                  return Promise.resolve({
+                              guilds: [],
+                              after: after
+                            });
+                }));
+  } else {
+    return Promise.resolve({
+                guilds: [],
+                after: after
+              });
+  }
+}
+
 function fetchUserGuilds(user) {
   var headers = {
     Authorization: "Bearer " + user.accessToken + ""
@@ -227,6 +277,7 @@ export {
   mapRoleRecord ,
   sleep ,
   fetchBotGuilds ,
+  fetchBotGuildsLimit ,
   fetchUserGuilds ,
   fetchGuildFromId ,
   fetchGuildMemberFromId ,

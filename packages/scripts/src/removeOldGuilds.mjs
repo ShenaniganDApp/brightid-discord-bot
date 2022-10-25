@@ -5,8 +5,8 @@ import * as Env$Utils from "@brightidbot/utils/src/Env.mjs";
 import * as Belt_Array from "rescript/lib/es6/belt_Array.js";
 import * as Gist$Utils from "@brightidbot/utils/src/Gist.mjs";
 import * as DiscordJs from "discord.js";
+import * as Decode$Shared from "@brightidbot/shared/src/Decode.mjs";
 import * as Belt_SetString from "rescript/lib/es6/belt_SetString.js";
-import * as Json_Decode$JsonCombinators from "@glennsl/rescript-json-combinators/src/Json_Decode.mjs";
 
 Env$Utils.createEnv(undefined);
 
@@ -32,17 +32,6 @@ var id = envConfig$1.gistId;
 
 var config = Gist$Utils.makeGistConfig(id, "guildData.json", githubAccessToken);
 
-var guild = Json_Decode$JsonCombinators.object(function (field) {
-      return {
-              role: field.optional("role", Json_Decode$JsonCombinators.string),
-              name: field.optional("name", Json_Decode$JsonCombinators.string),
-              inviteLink: field.optional("inviteLink", Json_Decode$JsonCombinators.string),
-              roleId: field.optional("roleId", Json_Decode$JsonCombinators.string)
-            };
-    });
-
-var brightIdGuilds = Json_Decode$JsonCombinators.dict(guild);
-
 var options = {
   intents: [
     "GUILDS",
@@ -54,7 +43,7 @@ var client = new DiscordJs.Client(options);
 
 $$Promise.$$catch(client.login(discordBotToken).then(function (param) {
           console.log("Client Started\n");
-          return Gist$Utils.ReadGist.content(config, brightIdGuilds).then(function (content) {
+          return Gist$Utils.ReadGist.content(config, Decode$Shared.Gist.brightIdGuilds).then(function (content) {
                       var gistGuilds = Object.keys(content);
                       var botGuilds = client.guilds.cache;
                       var keys = Belt_SetString.fromArray(Belt_Array.keep(gistGuilds, (function (gistGuild) {
@@ -79,8 +68,6 @@ export {
   githubAccessToken ,
   id ,
   config ,
-  guild ,
-  brightIdGuilds ,
   options ,
   client ,
 }

@@ -6,10 +6,15 @@ open NodeFetch
 let {brightIdVerificationEndpoint, brightIdAppDeeplink, brightIdLinkVerificationEndpoint} = module(
   Endpoints
 )
-let {context} = module(Constants)
+let {context, contractAddress} = module(Shared.Constants)
 
 exception VerifyHandlerError(string)
 exception BrightIdError(brightIdError)
+
+@val @scope("globalThis")
+external fetch: (string, 'params) => Promise.t<Response.t<Js.Json.t>> = "fetch"
+
+@module external abi: Js.Json.t = "../../../../packages/shared/abi/SP.json"
 
 module Canvas = {
   type t
@@ -22,9 +27,6 @@ module QRCode = {
   type t
   @module("qrcode") external toCanvas: (Canvas.t, string) => Promise.t<unit> = "toCanvas"
 }
-
-@val @scope("globalThis")
-external fetch: (string, 'params) => Promise.t<Response.t<Js.Json.t>> = "fetch"
 
 Env.createEnv()
 
@@ -166,6 +168,11 @@ let handleUnverifiedGuildMember = (errorNum, interaction, uuid) => {
     deepLink
     ->createMessageAttachmentFromUri
     ->then(attachment => {
+      let provider = Shared.Ethers.JsonRpcProvider.make(~url="https://idchain.one/rpc")
+      let contract = Shared.Ethers.Contract.make(~provider, ~address=contractAddress, ~abi)
+
+      let formattedContext = Shared.Ethers.Utils.formatBytes32String("Discord")
+
       let embed = verifyUrl->makeEmbed
       let row = verifyUrl->makeVerifyActionRow
       let options = {
@@ -201,6 +208,7 @@ let execute = (interaction: Interaction.t) => {
   let guildRoleManager = guild->Guild.getGuildRoleManager
   let memberId = member->GuildMember.getGuildMemberId
   let uuid = memberId->UUID.v5(config["uuidNamespace"])
+
   interaction
   ->Interaction.deferReply(~options={"ephemeral": true}, ())
   ->then(_ => {

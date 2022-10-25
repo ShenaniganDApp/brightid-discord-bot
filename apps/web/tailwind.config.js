@@ -23,7 +23,7 @@ module.exports = {
         discord: '#5865f2',
       },
       animation: {
-        'text-scroll': 'bg 25s linear infinite',
+        textscroll: 'bg 25s linear infinite',
       },
     },
   },
