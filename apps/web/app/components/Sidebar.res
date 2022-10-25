@@ -8,10 +8,8 @@ module ConnectButton = {
 }
 
 @react.component
-let make = (~toggled, ~handleToggleSidebar, ~user) => {
+let make = (~toggled, ~handleToggleSidebar, ~user, ~guilds, ~loadingGuilds) => {
   open ReactProSidebar
-
-  let fetcher = Remix.useFetcher()
 
   let icon = ({id, icon}: Types.oauthGuild) => {
     switch icon {
@@ -19,53 +17,33 @@ let make = (~toggled, ~handleToggleSidebar, ~user) => {
     | Some(icon) => `https://cdn.discordapp.com/icons/${id}/${icon}.png`
     }
   }
-  let fetchGuilds = () => {
-    if fetcher->Remix.Fetcher._type === "init" {
-      fetcher->Remix.Fetcher.load(~href=`/Root_FetchGuilds`)
-    }
-  }
-
-  React.useEffect1(() => {
-    open Remix
-    if fetcher->Fetcher._type === "init" {
-      fetcher->Fetcher.load(~href=`/Root_FetchGuilds`)
-    }
-    None
-  }, [fetcher])
 
   let sidebarElements = {
     switch user->Js.Nullable.toOption {
-    | None => <> </>
+    | None =>
+      <div className="flex justify-center items-center h-full ">
+        <p className="text-2xl text-center font-semibold">
+          {"Login to Discord to access app features"->React.string}
+        </p>
+      </div>
     | Some(_) =>
-      switch fetcher->Remix.Fetcher._type {
-      | "done" =>
-        switch fetcher->Remix.Fetcher.data->Js.Nullable.toOption {
-        | None => <p className="text-white"> {"No Guilds"->React.string} </p>
-        | Some(data) =>
-          switch data["guilds"]->Belt.Array.length {
-          | 0 => <p className="text-white"> {"No Guilds"->React.string} </p>
-          | _ =>
-            data["guilds"]
-            ->Belt.Array.mapWithIndex((i, guild: Types.oauthGuild) => {
-              <Menu iconShape="square" key={(i + 1)->Belt.Int.toString}>
-                <MenuItem
-                  className="bg-extraDark"
-                  icon={<img
-                    className=" bg-extraDark rounded-lg border-1 border-white" src={guild->icon}
-                  />}>
-                  <Remix.Link
-                    className="font-semibold text-xl" to={`/guilds/${guild.id}`} prefetch={#intent}>
-                    {guild.name->React.string}
-                  </Remix.Link>
-                </MenuItem>
-              </Menu>
-            })
-            ->React.array
-          }
-        }
-      | _ =>
-        Belt.Array.range(0, 4)
-        ->Belt.Array.map(i => {
+      switch (guilds, loadingGuilds) {
+      | (_, true) =>
+        let intersection = guilds->Belt.Array.map((guild: Types.oauthGuild) => {
+          <Menu iconShape="square" key={guild.id}>
+            <MenuItem
+              className="bg-extraDark"
+              icon={<img
+                className=" bg-extraDark rounded-lg border-1 border-white" src={guild->icon}
+              />}>
+              <Remix.Link
+                className="font-semibold text-xl" to={`/guilds/${guild.id}`} prefetch={#intent}>
+                {guild.name->React.string}
+              </Remix.Link>
+            </MenuItem>
+          </Menu>
+        })
+        let loading = Belt.Array.range(0, 4)->Belt.Array.map(i => {
           <Menu iconShape="square" key={(i + 1)->Belt.Int.toString}>
             <MenuItem
               className="flex animate-pulse flex-row h-full bg-extraDark "
@@ -78,24 +56,45 @@ let make = (~toggled, ~handleToggleSidebar, ~user) => {
             </MenuItem>
           </Menu>
         })
-        ->React.array
+        intersection->Belt.Array.concat(loading)->React.array
+      | ([], false) =>
+        <p className="text-white"> {"Couldn't Load Discord Servers"->React.string} </p>
+      | (_, false) =>
+        switch guilds->Belt.Array.length {
+        | 0 => <p className="text-white"> {"No Guilds"->React.string} </p>
+        | _ =>
+          guilds
+          ->Belt.Array.map((guild: Types.oauthGuild) => {
+            <Menu iconShape="square" key={guild.id}>
+              <MenuItem
+                className="bg-extraDark"
+                icon={<img
+                  className=" bg-extraDark rounded-lg border-1 border-white" src={guild->icon}
+                />}>
+                <Remix.Link
+                  className="font-semibold text-xl" to={`/guilds/${guild.id}`} prefetch={#intent}>
+                  {guild.name->React.string}
+                </Remix.Link>
+              </MenuItem>
+            </Menu>
+          })
+          ->React.array
+        }
       }
     }
   }
 
-  <ProSidebar className="bg-dark " breakPoint="md" onToggle={handleToggleSidebar} toggled>
-    <SidebarHeader className="p-4 flex justify-center items-center top-0 sticky bg-dark z-10 ">
-      <ConnectButton />
+  <ProSidebar
+    className="bg-dark scrollbar-hide" breakPoint="md" onToggle={handleToggleSidebar} toggled>
+    <SidebarHeader
+      className="p-2 flex justify-around items-center top-0 sticky bg-dark z-10 scrollbar-hide">
+      <InviteButton />
     </SidebarHeader>
-    <SidebarContent className="no-scrollbar">
-      <Menu iconShape="square" key={0->Belt.Int.toString}>
-        <MenuItem>
-          <DiscordLogoutButton label="Logout of Discord" />
-        </MenuItem>
-      </Menu>
+    <SidebarContent className="scrollbar-hide">
+      <Menu iconShape="square" key={0->Belt.Int.toString} />
       {sidebarElements}
     </SidebarContent>
-    <SidebarFooter className="bg-extraDark bottom-0 sticky bg-dark">
+    <SidebarFooter className="bg-extraDark bottom-0 sticky scrollbar-hide list-none">
       <Remix.Link to={""}>
         <MenuItem>
           <img src={"/assets/brightid_reversed.svg"} />

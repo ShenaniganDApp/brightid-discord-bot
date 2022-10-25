@@ -7,3 +7,12 @@ module RainbowKitProvider = {
   external make: (~chains: 'a, ~theme: 'a, ~children: React.element) => React.element =
     "RainbowKitProvider"
 }
+
+module ConnectButton = {
+  @react.component @module("@rainbow-me/rainbowkit")
+  external make: (
+    ~children: React.element=?,
+    ~style: ReactDOM.Style.t=?,
+    ~className: string=?,
+  ) => 'b = "ConnectButton"
+}

@@ -5,8 +5,11 @@ var Themes = {};
 
 var RainbowKitProvider = {};
 
+var ConnectButton = {};
+
 export {
   Themes ,
   RainbowKitProvider ,
+  ConnectButton ,
 }
 /* No side effect */

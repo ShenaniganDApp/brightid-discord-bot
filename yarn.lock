@@ -1627,6 +1627,21 @@
   dependencies:
     "@remix-run/node" "1.6.8"
 
+"@remix-run/node@1.6.1":
+  version "1.6.1"
+  resolved "https://registry.yarnpkg.com/@remix-run/node/-/node-1.6.1.tgz#dbc953ac744c6a578d4bd2eaa72288d751722390"
+  integrity sha512-IqB0K6dGjiEQD8R0iTwudScr1aj0AnsgtK3PbeA1K5gk/+VMgcbG6JlmoJxxLFnLTExONe52W6+j/b6lsFX0MA==
+  dependencies:
+    "@remix-run/server-runtime" "1.6.1"
+    "@remix-run/web-fetch" "^4.1.3"
+    "@remix-run/web-file" "^3.0.2"
+    "@remix-run/web-stream" "^1.0.3"
+    "@web3-storage/multipart-parser" "^1.0.0"
+    abort-controller "^3.0.0"
+    cookie-signature "^1.1.0"
+    source-map-support "^0.5.21"
+    stream-slice "^0.1.2"
+
 "@remix-run/node@1.6.8":
   version "1.6.8"
   resolved "https://registry.yarnpkg.com/@remix-run/node/-/node-1.6.8.tgz#f27a2b051cc461eee51a0f420cdd1f4a14886167"
@@ -1661,6 +1676,19 @@
     express "^4.17.1"
     morgan "^1.10.0"
 
+"@remix-run/server-runtime@1.6.1":
+  version "1.6.1"
+  resolved "https://registry.yarnpkg.com/@remix-run/server-runtime/-/server-runtime-1.6.1.tgz#a4d471bd3e703ba39d655efdb83e9e7e0dbdb195"
+  integrity sha512-z9ha524SQ4m+eHigHN9890F+QqirmwZlRZ6zsnhxcjg2t29MVMKPSwzETZ3IZtIpSWtHPoU/7IYJklUXIxliRA==
+  dependencies:
+    "@types/cookie" "^0.4.0"
+    "@web3-storage/multipart-parser" "^1.0.0"
+    cookie "^0.4.1"
+    jsesc "^3.0.1"
+    react-router-dom "^6.2.2"
+    set-cookie-parser "^2.4.8"
+    source-map "^0.7.3"
+
 "@remix-run/server-runtime@1.6.8":
   version "1.6.8"
   resolved "https://registry.yarnpkg.com/@remix-run/server-runtime/-/server-runtime-1.6.8.tgz#4f6a947bfe0955756ec06b030301398944a87367"
@@ -1685,6 +1713,13 @@
     react-router-dom "^6.2.2"
     set-cookie-parser "^2.4.8"
     source-map "^0.7.3"
+
+"@remix-run/vercel@1.6.1":
+  version "1.6.1"
+  resolved "https://registry.yarnpkg.com/@remix-run/vercel/-/vercel-1.6.1.tgz#e3b9f0363e4c66a47c8ab4ac8ca9c2d144f3f625"
+  integrity sha512-yJ7CeFaX1NKIcX/X+QAvyoz6yIcG4aQVFYXDpoV79qiW2WShuC62Vt4vIf0Wj+Dd3IJ+e2irE3sRHgd+GbNsYA==
+  dependencies:
+    "@remix-run/node" "1.6.1"
 
 "@remix-run/vercel@^1.6.0":
   version "1.6.8"
@@ -5355,7 +5390,7 @@ jscodeshift@^0.13.1:
     temp "^0.8.4"
     write-file-atomic "^2.3.0"
 
-jsesc@3.0.2:
+jsesc@3.0.2, jsesc@^3.0.1:
   version "3.0.2"
   resolved "https://registry.yarnpkg.com/jsesc/-/jsesc-3.0.2.tgz#bb8b09a6597ba426425f2e4a07245c3d00b9343e"
   integrity sha512-xKqzzWXDttJuOcawBt4KnKHHIf5oQ/Cxax+0PWFG+DFDgHNAdi+TXECADI+RYiFUMmx8792xsMbbgXj4CwnP4g==
@@ -6809,7 +6844,12 @@ preact@^10.5.9:
   resolved "https://registry.yarnpkg.com/preact/-/preact-10.10.4.tgz#744f624a955595dac32908c3ec518026b99df807"
   integrity sha512-3itXRadRHCZ09T5zdFg2SmgwZm7RBAGznA9W74Qwsb/Ri7SpjgGmICvwSRXFgYlXtlgJMDZqrIGP/4z53ZStZw==
 
-prettier@2.7.1, prettier@^2.1.2:
+prettier-plugin-tailwindcss@^0.1.13:
+  version "0.1.13"
+  resolved "https://registry.yarnpkg.com/prettier-plugin-tailwindcss/-/prettier-plugin-tailwindcss-0.1.13.tgz#ca1071361dc7e2ed5d95a2ee36825ce45f814942"
+  integrity sha512-/EKQURUrxLu66CMUg4+1LwGdxnz8of7IDvrSLqEtDqhLH61SAlNNUSr90UTvZaemujgl3OH/VHg+fyGltrNixw==
+
+prettier@2.7.1, prettier@^2.1.2, prettier@^2.7.1:
   version "2.7.1"
   resolved "https://registry.yarnpkg.com/prettier/-/prettier-2.7.1.tgz#e235806850d057f97bb08368a4f7d899f7760c64"
   integrity sha512-ujppO+MkdPqoVINuDFDRLClm7D78qbDt0/NR+wp5FqEZOoTNAjPHWj17QRhu7geIHJfcNhRk1XVQmF8Bp3ye+g==
@@ -7296,10 +7336,10 @@ rescript@*:
   resolved "https://registry.yarnpkg.com/rescript/-/rescript-9.1.4.tgz#1eb126f98d6c16942c0bf0df67c050198e580515"
   integrity sha512-aXANK4IqecJzdnDpJUsU6pxMViCR5ogAxzuqS0mOr8TloMnzAjJFu63fjD6LCkWrKAhlMkFFzQvVQYaAaVkFXw==
 
-rescript@^10.1.0-alpha.1:
-  version "10.1.0-alpha.1"
-  resolved "https://registry.yarnpkg.com/rescript/-/rescript-10.1.0-alpha.1.tgz#20cc45cf028d64c9b3f43a42e80c774f3264e795"
-  integrity sha512-nz7AzU3zSipuQtNqwllqjpyzgbwoim8UWKjNvaO4bU/wca1xQ9isMJfAx/1DY8vKc6egab2qj7yu9eitTxkJaA==
+rescript@^10.1.0-alpha.2:
+  version "10.1.0-rc.2"
+  resolved "https://registry.yarnpkg.com/rescript/-/rescript-10.1.0-rc.2.tgz#c24bfe853f97c0ed6556ebd388e84b76e1cf994f"
+  integrity sha512-CZuzCjc4gc78WBd/oEUmrz8k6hoR3DiEo6A1myJ9EkkBV97jZM92IcFSxbQJZ6SFr4bvsym4WbvNfQ0AYBXQ3g==
 
 resize-observer-polyfill@^1.5.1:
   version "1.5.1"

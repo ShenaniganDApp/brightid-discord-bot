@@ -23,6 +23,48 @@ let default = () => {
     None
   }, [fetcher])
 
+  let unusedSponsorships = switch fetcher->Remix.Fetcher._type {
+  | "done" =>
+    switch fetcher->Remix.Fetcher.data->Js.Nullable.toOption {
+    | None => <p className="text-white"> {"N/A"->React.string} </p>
+    | Some(data) =>
+      <p
+        className="text-3xl font-semibold text-transparent bg-clip-text bg-gradient-to-l from-brightid to-white">
+        {data["unusedSponsorships"]->Belt.Int.toString->React.string}
+      </p>
+    }
+  | "normalLoad" =>
+    <div className=" animate-pulse  ">
+      <div className="h-8 bg-gray-300 w-8 rounded-md " />
+    </div>
+  | _ =>
+    <div className=" animate-pulse  ">
+      <div className="h-8 bg-gray-300 w-8 rounded-md " />
+    </div>
+  }
+
+  let usedSponsorships = switch fetcher->Remix.Fetcher._type {
+  | "done" =>
+    switch fetcher->Remix.Fetcher.data->Js.Nullable.toOption {
+    | None => <p className="text-white"> {"N/A"->React.string} </p>
+    | Some(data) =>
+      <p
+        className="text-3xl font-semibold text-transparent bg-clip-text bg-gradient-to-l from-brightid to-white">
+        {(data["unusedSponsorships"] - data["assignedSponsorships"])
+        ->Belt.Int.toString
+        ->React.string}
+      </p>
+    }
+  | "normalLoad" =>
+    <div className=" animate-pulse  ">
+      <div className="h-8 bg-gray-300 w-8 rounded-md " />
+    </div>
+  | _ =>
+    <div className=" animate-pulse  ">
+      <div className="h-8 bg-gray-300 w-8 rounded-md " />
+    </div>
+  }
+
   let verificationCount = switch fetcher->Remix.Fetcher._type {
   | "done" =>
     switch fetcher->Remix.Fetcher.data->Js.Nullable.toOption {
@@ -100,19 +142,46 @@ let default = () => {
     </div>
   }
 
+  let discordLogoutButton = switch fetcher->Remix.Fetcher._type {
+  | "done" =>
+    switch fetcher->Remix.Fetcher.data->Js.Nullable.toOption {
+    | None => <DiscordLoginButton label="Login to Discord" />
+    | Some(data) =>
+      switch data["user"]->Js.Nullable.toOption {
+      | None => <> </>
+      | Some(_) => <DiscordLogoutButton label={`Log out of Discord 🚪`} />
+      }
+    }
+  | _ => <> </>
+  }
+
   <div className="flex flex-col flex-1">
     <header className="flex flex-row justify-between md:justify-end m-4">
       <SidebarToggle handleToggleSidebar={context["handleToggleSidebar"]} />
-      <InviteButton />
+      <div className="flex flex-row items-center justify-center gap-4">
+        <RainbowKit.ConnectButton className="h-full" />
+      </div>
     </header>
     <div className="flex flex-1 w-full justify-center ">
-      <div className="flex flex-1 flex-col  justify-around items-center text-center">
-        <span
-          className="text-4xl md:text-8xl font-poppins font-extrabold text-transparent bg-[size:1000px_100%] bg-clip-text bg-gradient-to-l from-brightid to-white animate-text-scroll">
-          {"BrightID Discord Bot"->React.string}
-        </span>
+      <div className="flex flex-1 flex-col justify-around items-center text-center">
+        <div>
+          <span
+            className="px-2 text-4xl md:text-6xl lg:text-8xl lg:leading-loose font-poppins font-extrabold text-transparent bg-[size:1000px_100%] bg-clip-text bg-gradient-to-l from-brightid to-white animate-textscroll ">
+            {"Unique Discord  "->React.string}
+          </span>
+          <p className=" text-slate-300 text-4xl md:text-6xl lg:text-8xl font-poppins font-bold">
+            {"Command Center"->React.string}
+          </p>
+        </div>
         <section
           className="width-full flex flex-col md:flex-row justify-around items-center w-full">
+          <div
+            className="flex flex-col  rounded-xl justify-around items-center text-center h-32 w-60 md:h-48 m-2">
+            <div className="text-3xl font-bold text-white">
+              {"Available Sponsorships"->React.string}
+            </div>
+            {unusedSponsorships}
+          </div>
           <div
             className="flex flex-col  rounded-xl justify-around items-center text-center h-32 w-60 md:h-48 m-2">
             <div className="text-3xl font-bold text-white"> {"Verifications"->React.string} </div>
@@ -120,15 +189,18 @@ let default = () => {
           </div>
           <div
             className="flex flex-col rounded-xl justify-around items-center text-center h-32 w-60 md:h-48 m-2">
-            <div className="text-3xl font-bold text-white"> {"Sponsorships"->React.string} </div>
+            <div className="text-3xl font-bold text-white">
+              {"Total Used Sponsors"->React.string}
+            </div>
             <div
               className="text-3xl font-semibold text-transparent bg-clip-text bg-gradient-to-l from-brightid to-white">
-              {"0"->React.string}
+              {usedSponsorships}
             </div>
           </div>
         </section>
         <section className="flex justify-center items-center flex-col w-full gap-4">
           {linkBrightId}
+          <div> {discordLogoutButton} </div>
         </section>
       </div>
       // <div className="bg-discordLogo h-10 w-4" />

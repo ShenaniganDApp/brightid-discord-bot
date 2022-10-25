@@ -9,8 +9,8 @@ function AdminButton(Props) {
               prefetch: "intent",
               to: "/guilds/" + guildId + "/admin",
               children: React.createElement("button", {
-                    className: "p-4 bg-brightid font-semibold rounded-3xl text-xl text-white"
-                  }, "Admin Commands ➡️")
+                    className: "p-4 bg-transparent border-2 border-brightid font-semibold rounded-3xl text-large text-white"
+                  }, "Admin Settings")
             });
 }
 

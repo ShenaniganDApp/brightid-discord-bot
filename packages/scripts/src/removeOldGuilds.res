@@ -1,6 +1,6 @@
 open Promise
 open Utils
-// open Shared
+open Shared
 open Discord
 
 Env.createEnv()
@@ -18,25 +18,25 @@ let githubAccessToken = envConfig["githubAccessToken"]
 let id = envConfig["gistId"]
 let config = Gist.makeGistConfig(~token=githubAccessToken, ~id, ~name="guildData.json")
 
-type brightIdGuild = {
-  "role": string,
-  "name": string,
-  "inviteLink": option<string>,
-  "roleId": string,
-}
+// type brightIdGuild = {
+//   "role": string,
+//   "name": string,
+//   "inviteLink": option<string>,
+//   "roleId": string,
+// }
 
-type brightIdGuilds = Js.Dict.t<brightIdGuild>
+// type brightIdGuilds = Js.Dict.t<brightIdGuild>
 
-let guild = Json.Decode.object(field =>
-  {
-    "role": field.optional(. "role", Json.Decode.string),
-    "name": field.optional(. "name", Json.Decode.string),
-    "inviteLink": field.optional(. "inviteLink", Json.Decode.string),
-    "roleId": field.optional(. "roleId", Json.Decode.string),
-  }
-)
+// let guild = Json.Decode.object(field =>
+//   {
+//     "role": field.optional(. "role", Json.Decode.string),
+//     "name": field.optional(. "name", Json.Decode.string),
+//     "inviteLink": field.optional(. "inviteLink", Json.Decode.string),
+//     "roleId": field.optional(. "roleId", Json.Decode.string),
+//   }
+// )
 
-let brightIdGuilds = guild->Json.Decode.dict
+// let brightIdGuilds = guild->Json.Decode.dict
 
 let options: Client.clientOptions = {
   intents: ["GUILDS", "GUILD_MESSAGES"],
@@ -47,7 +47,7 @@ let client = Client.createDiscordClient(~options)
 Client.login(client, discordBotToken)
 ->then(_ => {
   Js.log("Client Started\n")
-  Gist.ReadGist.content(~config, ~decoder=brightIdGuilds)->then(content => {
+  Gist.ReadGist.content(~config, ~decoder=Decode.Gist.brightIdGuilds)->then(content => {
     let gistGuilds = content->Js.Dict.keys
     let botGuilds = client->Client.getGuildManager->GuildManager.getCache
     let keys =

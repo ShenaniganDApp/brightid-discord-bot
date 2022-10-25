@@ -86,13 +86,17 @@ async function updateGistOnGuildCreate(guild, roleId) {
   var config = Gist$Utils.makeGistConfig(id, "guildData.json", token);
   var guildId = guild.id;
   var content = await Gist$Utils.ReadGist.content(config, Decode$Shared.Gist.brightIdGuilds);
+  var entry_role = "Verified";
   var entry_name = guild.name;
+  var entry_roleId = roleId;
   var entry = {
-    role: "Verified",
+    role: entry_role,
     name: entry_name,
     inviteLink: undefined,
-    roleId: roleId,
-    sponsorshipAddress: undefined
+    roleId: entry_roleId,
+    sponsorshipAddress: undefined,
+    usedSponsorships: undefined,
+    assignedSponsorships: undefined
   };
   return await Gist$Utils.UpdateGist.addEntry(content, guildId, entry, config);
 }
@@ -213,7 +217,7 @@ function onGuildMemberAdd(guildMember) {
                         var guild = guildMember.guild;
                         var guildId = guild.id;
                         var brightIdGuild = Belt_Option.getExn(Js_dict.get(content, guildId));
-                        var roleId = brightIdGuild.roleId;
+                        var roleId = Belt_Option.getExn(brightIdGuild.roleId);
                         var role = Belt_Option.getExn(Caml_option.nullable_to_opt(guild.roles.cache.get(roleId)));
                         var guildMemberRoleManager = guildMember.roles;
                         guildMemberRoleManager.add(role, "User is already verified by BrightID");
@@ -230,22 +234,27 @@ function onRoleUpdate(role) {
   var config = Gist$Utils.makeGistConfig(envConfig$1.gistId, "guildData.json", envConfig$1.githubAccessToken);
   Gist$Utils.ReadGist.content(config, Decode$Shared.Gist.brightIdGuilds).then(function (guilds) {
         var brightIdGuild = Belt_Option.getExn(Js_dict.get(guilds, guildId));
-        var roleId = brightIdGuild.roleId;
+        var roleId = Belt_Option.getExn(brightIdGuild.roleId);
         var isVerifiedRole = role.id === roleId;
         if (!isVerifiedRole) {
           return Promise.resolve(undefined);
         }
         var roleName = role.name;
+        var entry_role = roleName;
         var entry_name = brightIdGuild.name;
         var entry_inviteLink = brightIdGuild.inviteLink;
         var entry_roleId = brightIdGuild.roleId;
         var entry_sponsorshipAddress = brightIdGuild.sponsorshipAddress;
+        var entry_usedSponsorships = brightIdGuild.usedSponsorships;
+        var entry_assignedSponsorships = brightIdGuild.assignedSponsorships;
         var entry = {
-          role: roleName,
+          role: entry_role,
           name: entry_name,
           inviteLink: entry_inviteLink,
           roleId: entry_roleId,
-          sponsorshipAddress: entry_sponsorshipAddress
+          sponsorshipAddress: entry_sponsorshipAddress,
+          usedSponsorships: entry_usedSponsorships,
+          assignedSponsorships: entry_assignedSponsorships
         };
         return Gist$Utils.UpdateGist.updateEntry(guilds, guildId, entry, config).then(function (param) {
                     return Promise.resolve(undefined);

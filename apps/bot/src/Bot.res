@@ -64,11 +64,13 @@ let updateGistOnGuildCreate = async (guild: Guild.t, roleId) => {
   let content = await Gist.ReadGist.content(~config, ~decoder=Shared.Decode.Gist.brightIdGuilds)
 
   let entry = {
-    name: guild->Guild.getGuildName,
-    role: "Verified",
-    roleId,
+    name: guild->Guild.getGuildName->Some,
+    role: Some("Verified"),
+    roleId: Some(roleId),
     inviteLink: None,
     sponsorshipAddress: None,
+    usedSponsorships: None,
+    assignedSponsorships: None,
   }
 
   await Gist.UpdateGist.addEntry(~content, ~config, ~key=guildId, ~entry)
@@ -191,7 +193,7 @@ let onGuildMemberAdd = guildMember => {
           let guild = guildMember->GuildMember.getGuild
           let guildId = guild->Guild.getGuildId
           let brightIdGuild = content->Js.Dict.get(guildId)->Belt.Option.getExn
-          let roleId = brightIdGuild.roleId
+          let roleId = brightIdGuild.roleId->Belt.Option.getExn
 
           let role =
             guild
@@ -234,14 +236,14 @@ let onRoleUpdate = role => {
   Gist.ReadGist.content(~config, ~decoder=Shared.Decode.Gist.brightIdGuilds)
   ->then(guilds => {
     let brightIdGuild = guilds->Js.Dict.get(guildId)->Belt.Option.getExn
-    let roleId = brightIdGuild.roleId
+    let roleId = brightIdGuild.roleId->Belt.Option.getExn
     let isVerifiedRole = role->Role.getRoleId === roleId
     switch isVerifiedRole {
     | true =>
       let roleName = role->Role.getName
       let entry = {
         ...brightIdGuild,
-        role: roleName,
+        role: Some(roleName),
       }
       Gist.UpdateGist.updateEntry(~content=guilds, ~entry, ~key=guildId, ~config)->then(_ =>
         resolve()
