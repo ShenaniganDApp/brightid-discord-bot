@@ -7,6 +7,7 @@ import * as Wagmi from "wagmi";
 import * as $$Promise from "../../../node_modules/@ryyppy/rescript-promise/src/Promise.js";
 import * as Sidebar from "./components/Sidebar.js";
 import * as AuthServer from "./AuthServer.js";
+import * as Belt_Array from "../../../node_modules/rescript/lib/es6/belt_Array.js";
 import LodashMerge from "lodash.merge";
 import * as DiscordServer from "./DiscordServer.js";
 import * as Rainbowkit from "@rainbow-me/rainbowkit";
@@ -116,12 +117,135 @@ function unstable_shouldReload(param) {
   return false;
 }
 
+var state_userGuilds = [];
+
+var state_botGuilds = [];
+
+var state_after = "0";
+
+var state = {
+  userGuilds: state_userGuilds,
+  botGuilds: state_botGuilds,
+  after: state_after,
+  loadingGuilds: true
+};
+
+function reducer(state, action) {
+  switch (action.TAG | 0) {
+    case /* AddBotGuilds */0 :
+        return {
+                userGuilds: state.userGuilds,
+                botGuilds: Belt_Array.concat(state.botGuilds, action._0),
+                after: state.after,
+                loadingGuilds: state.loadingGuilds
+              };
+    case /* UserGuilds */1 :
+        return {
+                userGuilds: action._0,
+                botGuilds: state.botGuilds,
+                after: state.after,
+                loadingGuilds: state.loadingGuilds
+              };
+    case /* SetAfter */2 :
+        return {
+                userGuilds: state.userGuilds,
+                botGuilds: state.botGuilds,
+                after: action._0,
+                loadingGuilds: state.loadingGuilds
+              };
+    case /* SetLoadingGuilds */3 :
+        return {
+                userGuilds: state.userGuilds,
+                botGuilds: state.botGuilds,
+                after: state.after,
+                loadingGuilds: action._0
+              };
+    
+  }
+}
+
 function Root$default(Props) {
   var match = Remix.useLoaderData();
   var match$1 = React.useState(function () {
         return false;
       });
   var setToggled = match$1[1];
+  var fetcher = Remix.useFetcher();
+  var match$2 = React.useReducer(reducer, state);
+  var dispatch = match$2[1];
+  var state$1 = match$2[0];
+  React.useEffect((function () {
+          var after = state$1.after;
+          if (after !== undefined) {
+            var match = fetcher.type;
+            switch (match) {
+              case "done" :
+                  var data = fetcher.data;
+                  if (data == null) {
+                    Curry._1(dispatch, {
+                          TAG: /* SetLoadingGuilds */3,
+                          _0: false
+                        });
+                    Curry._1(dispatch, {
+                          TAG: /* SetAfter */2,
+                          _0: undefined
+                        });
+                  } else {
+                    var match$1 = data.userGuilds;
+                    if (match$1.length !== 0) {
+                      Curry._1(dispatch, {
+                            TAG: /* UserGuilds */1,
+                            _0: data.userGuilds
+                          });
+                    }
+                    var match$2 = data.botGuilds;
+                    if (match$2.length !== 0) {
+                      Curry._1(dispatch, {
+                            TAG: /* AddBotGuilds */0,
+                            _0: data.botGuilds
+                          });
+                    } else {
+                      Curry._1(dispatch, {
+                            TAG: /* SetAfter */2,
+                            _0: undefined
+                          });
+                    }
+                    if (state$1.after === data.after) {
+                      Curry._1(dispatch, {
+                            TAG: /* SetAfter */2,
+                            _0: undefined
+                          });
+                      Curry._1(dispatch, {
+                            TAG: /* SetLoadingGuilds */3,
+                            _0: false
+                          });
+                    } else {
+                      Curry._1(dispatch, {
+                            TAG: /* SetAfter */2,
+                            _0: data.after
+                          });
+                      fetcher.load("/Root_FetchGuilds?after=" + data.after + "");
+                    }
+                  }
+                  break;
+              case "init" :
+                  fetcher.load("/Root_FetchGuilds?after=" + after + "");
+                  Curry._1(dispatch, {
+                        TAG: /* SetLoadingGuilds */3,
+                        _0: true
+                      });
+                  break;
+              default:
+                
+            }
+          }
+          
+        }), [fetcher]);
+  var guilds = state$1.userGuilds.filter(function (userGuild) {
+        return state$1.botGuilds.findIndex(function (botGuild) {
+                    return botGuild.id === userGuild.id;
+                  }) !== -1;
+      });
   var handleToggleSidebar = function (value) {
     Curry._1(setToggled, (function (_prev) {
             return value;
@@ -144,11 +268,14 @@ function Root$default(Props) {
                                 }, React.createElement(Sidebar.make, {
                                       toggled: match$1[0],
                                       handleToggleSidebar: handleToggleSidebar,
-                                      user: match.user
+                                      user: match.user,
+                                      guilds: guilds,
+                                      loadingGuilds: state$1.loadingGuilds
                                     }), React.createElement(Remix.Outlet, {
                                       context: {
                                         handleToggleSidebar: handleToggleSidebar,
-                                        rateLimited: match.rateLimited
+                                        rateLimited: match.rateLimited,
+                                        guilds: guilds
                                       }
                                     }))
                           })
@@ -169,6 +296,8 @@ export {
   loader ,
   myTheme ,
   unstable_shouldReload ,
+  state ,
+  reducer ,
   $$default ,
   $$default as default,
 }

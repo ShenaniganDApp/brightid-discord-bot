@@ -22,6 +22,10 @@ module.exports = {
         '/Root_FetchBrightIDDiscord',
         './res-routes/Root_FetchBrightIDDiscord.js',
       )
+      // route(
+      //   '/guilds/:guildId/Guilds_FetchGuild',
+      //   './res-routes/guilds/Guilds_FetchGuild.js',
+      // )
     })
   },
 }

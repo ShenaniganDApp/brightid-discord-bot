@@ -2,27 +2,30 @@
 
 import * as $$Promise from "../../../../node_modules/@ryyppy/rescript-promise/src/Promise.js";
 import * as AuthServer from "../AuthServer.js";
+import * as Caml_option from "../../../../node_modules/rescript/lib/es6/caml_option.js";
 import * as DiscordServer from "../DiscordServer.js";
 
 function loader(param) {
-  return $$Promise.$$catch(AuthServer.authenticator.isAuthenticated(param.request).then(function (user) {
+  var request = param.request;
+  var after = new URL(request.url).searchParams.get("after");
+  var after$1 = (after == null) ? undefined : Caml_option.some(after);
+  return $$Promise.$$catch(AuthServer.authenticator.isAuthenticated(request).then(function (user) {
                   if (user == null) {
                     return Promise.resolve({
                                 user: null,
-                                guilds: [],
+                                userGuilds: [],
+                                botGuilds: [],
+                                after: undefined,
                                 rateLimited: false
                               });
                   } else {
                     return DiscordServer.fetchUserGuilds(user).then(function (userGuilds) {
-                                return DiscordServer.fetchBotGuilds(undefined, undefined, undefined).then(function (botGuilds) {
-                                            var guilds = userGuilds.filter(function (userGuild) {
-                                                  return botGuilds.findIndex(function (botGuild) {
-                                                              return botGuild.id === userGuild.id;
-                                                            }) !== -1;
-                                                });
+                                return DiscordServer.fetchBotGuildsLimit(after$1).then(function (param) {
                                             return Promise.resolve({
-                                                        user: null,
-                                                        guilds: guilds,
+                                                        user: user,
+                                                        userGuilds: userGuilds,
+                                                        botGuilds: param.guilds,
+                                                        after: param.after,
                                                         rateLimited: false
                                                       });
                                           });
@@ -32,13 +35,17 @@ function loader(param) {
                 if (error.RE_EXN_ID === DiscordServer.DiscordRateLimited) {
                   return Promise.resolve({
                               user: null,
-                              guilds: [],
+                              userGuilds: [],
+                              botGuilds: [],
+                              after: undefined,
                               rateLimited: true
                             });
                 } else {
                   return Promise.resolve({
                               user: null,
-                              guilds: [],
+                              userGuilds: [],
+                              botGuilds: [],
+                              after: undefined,
                               rateLimited: false
                             });
                 }

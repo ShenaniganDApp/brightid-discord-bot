@@ -39,21 +39,27 @@ function getConfig(param) {
   var match$2 = env("UUID_NAMESPACE");
   var match$3 = env("GIST_ID");
   var match$4 = env("GITHUB_ACCESS_TOKEN");
+  var match$5 = env("SPONSORSHIP_KEY");
   if (match.TAG === /* Ok */0) {
     if (match$1.TAG === /* Ok */0) {
       if (match$2.TAG === /* Ok */0) {
         if (match$3.TAG === /* Ok */0) {
           if (match$4.TAG === /* Ok */0) {
-            return {
-                    TAG: /* Ok */0,
-                    _0: {
-                      discordApiToken: match._0,
-                      discordClientId: match$1._0,
-                      uuidNamespace: match$2._0,
-                      gistId: match$3._0,
-                      githubAccessToken: match$4._0
-                    }
-                  };
+            if (match$5.TAG === /* Ok */0) {
+              return {
+                      TAG: /* Ok */0,
+                      _0: {
+                        discordApiToken: match._0,
+                        discordClientId: match$1._0,
+                        uuidNamespace: match$2._0,
+                        gistId: match$3._0,
+                        githubAccessToken: match$4._0,
+                        sponsorshipKey: match$5._0
+                      }
+                    };
+            } else {
+              return match$5;
+            }
           } else {
             return match$4;
           }

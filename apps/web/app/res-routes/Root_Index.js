@@ -2,9 +2,10 @@
 
 import * as React from "react";
 import * as Remix from "remix";
-import * as InviteButton from "../components/InviteButton.js";
 import * as SidebarToggle from "../components/SidebarToggle.js";
 import * as DiscordLoginButton from "../components/DiscordLoginButton.js";
+import * as DiscordLogoutButton from "../components/DiscordLogoutButton.js";
+import * as Rainbowkit from "@rainbow-me/rainbowkit";
 
 var Canvas = {};
 
@@ -20,15 +21,65 @@ function Root_Index$default(Props) {
           
         }), [fetcher]);
   var match = fetcher.type;
-  var verificationCount;
+  var unusedSponsorships;
   switch (match) {
     case "done" :
         var data = fetcher.data;
-        verificationCount = (data == null) ? React.createElement("p", {
+        unusedSponsorships = (data == null) ? React.createElement("p", {
                 className: "text-white"
               }, "N/A") : React.createElement("p", {
                 className: "text-3xl font-semibold text-transparent bg-clip-text bg-gradient-to-l from-brightid to-white"
-              }, String(data.verificationCount));
+              }, String(data.unusedSponsorships));
+        break;
+    case "normalLoad" :
+        unusedSponsorships = React.createElement("div", {
+              className: " animate-pulse  "
+            }, React.createElement("div", {
+                  className: "h-8 bg-gray-300 w-8 rounded-md "
+                }));
+        break;
+    default:
+      unusedSponsorships = React.createElement("div", {
+            className: " animate-pulse  "
+          }, React.createElement("div", {
+                className: "h-8 bg-gray-300 w-8 rounded-md "
+              }));
+  }
+  var match$1 = fetcher.type;
+  var usedSponsorships;
+  switch (match$1) {
+    case "done" :
+        var data$1 = fetcher.data;
+        usedSponsorships = (data$1 == null) ? React.createElement("p", {
+                className: "text-white"
+              }, "N/A") : React.createElement("p", {
+                className: "text-3xl font-semibold text-transparent bg-clip-text bg-gradient-to-l from-brightid to-white"
+              }, String(data$1.unusedSponsorships - data$1.assignedSponsorships | 0));
+        break;
+    case "normalLoad" :
+        usedSponsorships = React.createElement("div", {
+              className: " animate-pulse  "
+            }, React.createElement("div", {
+                  className: "h-8 bg-gray-300 w-8 rounded-md "
+                }));
+        break;
+    default:
+      usedSponsorships = React.createElement("div", {
+            className: " animate-pulse  "
+          }, React.createElement("div", {
+                className: "h-8 bg-gray-300 w-8 rounded-md "
+              }));
+  }
+  var match$2 = fetcher.type;
+  var verificationCount;
+  switch (match$2) {
+    case "done" :
+        var data$2 = fetcher.data;
+        verificationCount = (data$2 == null) ? React.createElement("p", {
+                className: "text-white"
+              }, "N/A") : React.createElement("p", {
+                className: "text-3xl font-semibold text-transparent bg-clip-text bg-gradient-to-l from-brightid to-white"
+              }, String(data$2.verificationCount));
         break;
     case "normalLoad" :
         verificationCount = React.createElement("div", {
@@ -44,24 +95,24 @@ function Root_Index$default(Props) {
                 className: "h-8 bg-gray-300 w-8 rounded-md "
               }));
   }
-  var match$1 = fetcher.type;
+  var match$3 = fetcher.type;
   var linkBrightId;
-  switch (match$1) {
+  switch (match$3) {
     case "done" :
-        var data$1 = fetcher.data;
-        if (data$1 == null) {
+        var data$3 = fetcher.data;
+        if (data$3 == null) {
           linkBrightId = React.createElement(DiscordLoginButton.make, {
                 label: "Login to Discord"
               });
         } else {
-          var match$2 = data$1.user;
-          if (match$2 == null) {
+          var match$4 = data$3.user;
+          if (match$4 == null) {
             linkBrightId = React.createElement(DiscordLoginButton.make, {
                   label: "Login to Discord"
                 });
           } else {
-            var match$3 = data$1.verifyStatus;
-            switch (match$3) {
+            var match$5 = data$3.verifyStatus;
+            switch (match$5) {
               case /* Unknown */0 :
                   linkBrightId = React.createElement("p", {
                         className: "text-2xl md:text-3xl font-semibold text-white"
@@ -114,21 +165,48 @@ function Root_Index$default(Props) {
                 className: "h-24 bg-gray-300 w-52 rounded-md "
               }));
   }
+  var match$6 = fetcher.type;
+  var discordLogoutButton;
+  if (match$6 === "done") {
+    var data$4 = fetcher.data;
+    if (data$4 == null) {
+      discordLogoutButton = React.createElement(DiscordLoginButton.make, {
+            label: "Login to Discord"
+          });
+    } else {
+      var match$7 = data$4.user;
+      discordLogoutButton = (match$7 == null) ? React.createElement(React.Fragment, undefined) : React.createElement(DiscordLogoutButton.make, {
+              label: "Log out of Discord 🚪"
+            });
+    }
+  } else {
+    discordLogoutButton = React.createElement(React.Fragment, undefined);
+  }
   return React.createElement("div", {
               className: "flex flex-col flex-1"
             }, React.createElement("header", {
                   className: "flex flex-row justify-between md:justify-end m-4"
                 }, React.createElement(SidebarToggle.make, {
                       handleToggleSidebar: context.handleToggleSidebar
-                    }), React.createElement(InviteButton.make, {})), React.createElement("div", {
+                    }), React.createElement("div", {
+                      className: "flex flex-row items-center justify-center gap-4"
+                    }, React.createElement(Rainbowkit.ConnectButton, {
+                          className: "h-full"
+                        }))), React.createElement("div", {
                   className: "flex flex-1 w-full justify-center "
                 }, React.createElement("div", {
-                      className: "flex flex-1 flex-col  justify-around items-center text-center"
-                    }, React.createElement("span", {
-                          className: "text-4xl md:text-8xl font-poppins font-extrabold text-transparent bg-[size:1000px_100%] bg-clip-text bg-gradient-to-l from-brightid to-white animate-text-scroll"
-                        }, "BrightID Discord Bot"), React.createElement("section", {
+                      className: "flex flex-1 flex-col justify-around items-center text-center"
+                    }, React.createElement("div", undefined, React.createElement("span", {
+                              className: "px-2 text-4xl md:text-6xl lg:text-8xl lg:leading-loose font-poppins font-extrabold text-transparent bg-[size:1000px_100%] bg-clip-text bg-gradient-to-l from-brightid to-white animate-textscroll "
+                            }, "Unique Discord  "), React.createElement("p", {
+                              className: " text-slate-300 text-4xl md:text-6xl lg:text-8xl font-poppins font-bold"
+                            }, "Command Center")), React.createElement("section", {
                           className: "width-full flex flex-col md:flex-row justify-around items-center w-full"
                         }, React.createElement("div", {
+                              className: "flex flex-col  rounded-xl justify-around items-center text-center h-32 w-60 md:h-48 m-2"
+                            }, React.createElement("div", {
+                                  className: "text-3xl font-bold text-white"
+                                }, "Available Sponsorships"), unusedSponsorships), React.createElement("div", {
                               className: "flex flex-col  rounded-xl justify-around items-center text-center h-32 w-60 md:h-48 m-2"
                             }, React.createElement("div", {
                                   className: "text-3xl font-bold text-white"
@@ -136,11 +214,11 @@ function Root_Index$default(Props) {
                               className: "flex flex-col rounded-xl justify-around items-center text-center h-32 w-60 md:h-48 m-2"
                             }, React.createElement("div", {
                                   className: "text-3xl font-bold text-white"
-                                }, "Sponsorships"), React.createElement("div", {
+                                }, "Total Used Sponsors"), React.createElement("div", {
                                   className: "text-3xl font-semibold text-transparent bg-clip-text bg-gradient-to-l from-brightid to-white"
-                                }, "0"))), React.createElement("section", {
+                                }, usedSponsorships))), React.createElement("section", {
                           className: "flex justify-center items-center flex-col w-full gap-4"
-                        }, linkBrightId))));
+                        }, linkBrightId, React.createElement("div", undefined, discordLogoutButton)))));
 }
 
 var $$default = Root_Index$default;

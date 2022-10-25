@@ -13,54 +13,63 @@ var context = "Discord";
 
 var brightIdVerificationEndpoint = "https://app.brightid.org/node/v5/verifications/Discord";
 
-function loader(param) {
-  var request = param.request;
+var brightIdAppEndpoint = "https://app.brightid.org/node/v5/apps/Discord";
+
+async function loader(param) {
   var uuidNamespace = process.env.UUID_NAMESPACE;
   var init = Webapi__Fetch.RequestInit.make(/* Get */0, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined)(undefined);
-  return fetch(new Request(brightIdVerificationEndpoint, init)).then(function (res) {
-                return res.json();
-              }).then(function (json) {
-              var data = Belt_Option.getExn(Js_dict.get(Js_json.decodeObject(json), "data"));
-              var verificationCount = Js_null_undefined.fromOption(Belt_Option.flatMap(Js_dict.get(Js_json.decodeObject(data), "count"), Js_json.decodeNumber));
-              return AuthServer.authenticator.isAuthenticated(request).then(function (user) {
-                          if (user == null) {
-                            return Promise.resolve({
-                                        user: null,
-                                        verificationCount: verificationCount,
-                                        verifyStatus: /* NotVerified */2
-                                      });
-                          }
-                          var userId = user.profile.id;
-                          var contextId = Uuid.v5(userId, uuidNamespace);
-                          return Brightid_sdk.verifyContextId(context, contextId, undefined).then(function (json) {
-                                      var unique = Belt_Option.flatMap(Js_dict.get(Js_json.decodeObject(json), "unique"), Js_json.decodeBoolean);
-                                      var verifyStatus;
-                                      if (unique !== undefined) {
-                                        verifyStatus = /* Unique */4;
-                                      } else {
-                                        var data = Belt_Option.getExn(Js_dict.get(Js_json.decodeObject(json), "data"));
-                                        var errorNum = Belt_Option.flatMap(Js_dict.get(Js_json.decodeObject(data), "errorNum"), Js_json.decodeNumber);
-                                        verifyStatus = errorNum !== undefined ? (
-                                            errorNum !== 2 ? (
-                                                errorNum !== 3 ? (
-                                                    errorNum !== 4 ? /* Unknown */0 : /* NotSponsored */3
-                                                  ) : /* NotVerified */2
-                                              ) : /* NotLinked */1
-                                          ) : /* Unknown */0;
-                                      }
-                                      return Promise.resolve({
-                                                  user: user,
-                                                  verificationCount: verificationCount,
-                                                  verifyStatus: verifyStatus
-                                                });
-                                    });
-                        });
-            });
+  var req = new Request(brightIdVerificationEndpoint, init);
+  var res = await fetch(req);
+  var json = await res.json();
+  var data = Belt_Option.getExn(Js_dict.get(Js_json.decodeObject(json), "data"));
+  var verificationCount = Js_null_undefined.fromOption(Belt_Option.flatMap(Js_dict.get(Js_json.decodeObject(data), "count"), Js_json.decodeNumber));
+  var req$1 = new Request(brightIdAppEndpoint, init);
+  var res$1 = await fetch(req$1);
+  var json$1 = await res$1.json();
+  var data$1 = Belt_Option.getExn(Js_dict.get(Js_json.decodeObject(json$1), "data"));
+  var unusedSponsorships = Js_null_undefined.fromOption(Belt_Option.flatMap(Js_dict.get(Js_json.decodeObject(data$1), "unusedSponsorships"), Js_json.decodeNumber));
+  var assignedSponsorships = Js_null_undefined.fromOption(Belt_Option.flatMap(Js_dict.get(Js_json.decodeObject(data$1), "assignedSponsorships"), Js_json.decodeNumber));
+  var user = await AuthServer.authenticator.isAuthenticated(param.request);
+  if (user == null) {
+    return {
+            user: null,
+            verificationCount: verificationCount,
+            unusedSponsorships: unusedSponsorships,
+            assignedSponsorships: assignedSponsorships,
+            verifyStatus: /* NotVerified */2
+          };
+  }
+  var userId = user.profile.id;
+  var contextId = Uuid.v5(userId, uuidNamespace);
+  var json$2 = await Brightid_sdk.verifyContextId(context, contextId, undefined);
+  var unique = Belt_Option.flatMap(Js_dict.get(Js_json.decodeObject(json$2), "unique"), Js_json.decodeBoolean);
+  var verifyStatus;
+  if (unique !== undefined) {
+    verifyStatus = /* Unique */4;
+  } else {
+    var data$2 = Belt_Option.getExn(Js_dict.get(Js_json.decodeObject(json$2), "data"));
+    var errorNum = Belt_Option.flatMap(Js_dict.get(Js_json.decodeObject(data$2), "errorNum"), Js_json.decodeNumber);
+    verifyStatus = errorNum !== undefined ? (
+        errorNum !== 2 ? (
+            errorNum !== 3 ? (
+                errorNum !== 4 ? /* Unknown */0 : /* NotSponsored */3
+              ) : /* NotVerified */2
+          ) : /* NotLinked */1
+      ) : /* Unknown */0;
+  }
+  return {
+          user: user,
+          verificationCount: verificationCount,
+          unusedSponsorships: unusedSponsorships,
+          assignedSponsorships: assignedSponsorships,
+          verifyStatus: verifyStatus
+        };
 }
 
 export {
   context ,
   brightIdVerificationEndpoint ,
+  brightIdAppEndpoint ,
   loader ,
 }
 /* uuid Not a pure module */

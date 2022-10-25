@@ -4,23 +4,27 @@ import * as Env from "../Env.mjs";
 import * as Uuid from "uuid";
 import * as Decode from "../bindings/Decode.mjs";
 import * as Canvas from "canvas";
+import * as Ethers from "ethers";
 import * as Qrcode from "qrcode";
 import * as Js_dict from "rescript/lib/es6/js_dict.js";
 import * as $$Promise from "@ryyppy/rescript-promise/src/Promise.mjs";
-import * as Constants from "../Constants.mjs";
 import * as Endpoints from "../Endpoints.mjs";
 import * as Gist$Utils from "@brightidbot/utils/src/Gist.mjs";
 import * as DiscordJs from "discord.js";
 import * as Belt_Option from "rescript/lib/es6/belt_Option.js";
 import * as Caml_option from "rescript/lib/es6/caml_option.js";
 import * as Caml_exceptions from "rescript/lib/es6/caml_exceptions.js";
+import * as Constants$Shared from "@brightidbot/shared/src/Constants.mjs";
 import * as Builders from "@discordjs/builders";
 import * as Json$JsonCombinators from "@glennsl/rescript-json-combinators/src/Json.mjs";
 import * as Json_Decode$JsonCombinators from "@glennsl/rescript-json-combinators/src/Json_Decode.mjs";
+import * as SPJson from "../../../../packages/shared/abi/SP.json";
 
 var VerifyHandlerError = /* @__PURE__ */Caml_exceptions.create("Commands_Verify.VerifyHandlerError");
 
 var BrightIdError = /* @__PURE__ */Caml_exceptions.create("Commands_Verify.BrightIdError");
+
+var abi = SPJson;
 
 var Canvas$1 = {};
 
@@ -48,7 +52,7 @@ function addRoleToMember(guildRole, member) {
 }
 
 function fetchVerification(uuid) {
-  var endpoint = "" + Endpoints.brightIdVerificationEndpoint + "/" + Constants.context + "/" + uuid + "?timestamp=seconds";
+  var endpoint = "" + Endpoints.brightIdVerificationEndpoint + "/" + Constants$Shared.context + "/" + uuid + "?timestamp=seconds";
   var params = {
     method: "GET",
     headers: {
@@ -160,6 +164,9 @@ function handleUnverifiedGuildMember(errorNum, interaction, uuid) {
                   });
     case 4 :
         return createMessageAttachmentFromUri(deepLink).then(function (attachment) {
+                    var provider = new Ethers.JsonRpcProvider("https://idchain.one/rpc");
+                    new Ethers.Contract(Constants$Shared.contractAddress, abi, provider);
+                    Ethers.utils.formatBytes32String("Discord");
                     var embed = makeEmbed(verifyUrl);
                     var row = makeVerifyActionRow(verifyUrl);
                     var options = {
@@ -270,15 +277,19 @@ var brightIdAppDeeplink = Endpoints.brightIdAppDeeplink;
 
 var brightIdLinkVerificationEndpoint = Endpoints.brightIdLinkVerificationEndpoint;
 
-var context = Constants.context;
+var context = Constants$Shared.context;
+
+var contractAddress = Constants$Shared.contractAddress;
 
 export {
   brightIdVerificationEndpoint ,
   brightIdAppDeeplink ,
   brightIdLinkVerificationEndpoint ,
   context ,
+  contractAddress ,
   VerifyHandlerError ,
   BrightIdError ,
+  abi ,
   Canvas$1 as Canvas,
   QRCode ,
   config$1 as config,
@@ -292,4 +303,4 @@ export {
   execute ,
   data ,
 }
-/*  Not a pure module */
+/* abi Not a pure module */

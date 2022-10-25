@@ -49,7 +49,7 @@ module Decode = {
   let gist = files->object
 }
 
-type gistConfig<'a> = {
+type gistConfig = {
   id: string,
   name: string,
   token: string,
