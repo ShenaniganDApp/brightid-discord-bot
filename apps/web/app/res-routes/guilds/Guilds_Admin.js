@@ -18,7 +18,7 @@ import * as WebUtils_Gist from "../../utils/WebUtils_Gist.js";
 import * as Caml_exceptions from "../../../../../node_modules/rescript/lib/es6/caml_exceptions.js";
 import * as ReactHotToast from "react-hot-toast";
 import ReactHotToast$1 from "react-hot-toast";
-import * as Js_null_undefined from "../../../../../node_modules/rescript/lib/es6/js_null_undefined.js";
+import * as DiscordLoginButton from "../../components/DiscordLoginButton.js";
 import * as Rainbowkit from "@rainbow-me/rainbowkit";
 
 var NoBrightIdData = /* @__PURE__ */Caml_exceptions.create("Guilds_Admin.NoBrightIdData");
@@ -26,46 +26,37 @@ var NoBrightIdData = /* @__PURE__ */Caml_exceptions.create("Guilds_Admin.NoBrigh
 function loader(param) {
   var config = WebUtils_Gist.makeGistConfig(process.env.GIST_ID, "guildData.json", process.env.GITHUB_ACCESS_TOKEN);
   var guildId = Belt_Option.getWithDefault(Js_dict.get(param.params, "guildId"), "");
-  return AuthServer.authenticator.isAuthenticated(param.request).then(function (user) {
-              return WebUtils_Gist.ReadGist.content(config, Decode$Shared.Gist.brightIdGuilds).then(function (guilds) {
-                          if (user == null) {
-                            return Promise.resolve({
-                                        user: null,
-                                        brightIdGuild: null,
-                                        guild: null,
-                                        isAdmin: false
+  return AuthServer.authenticator.isAuthenticated(param.request).then(function (maybeUser) {
+              if (maybeUser == null) {
+                Remix.redirect("/guilds/" + guildId + "");
+                return Promise.resolve({
+                            maybeUser: undefined,
+                            maybeBrightIdGuild: undefined,
+                            maybeDiscordGuild: undefined,
+                            isAdmin: false
+                          });
+              } else {
+                return WebUtils_Gist.ReadGist.content(config, Decode$Shared.Gist.brightIdGuilds).then(function (guilds) {
+                            var maybeBrightIdGuild = Js_dict.get(guilds, guildId);
+                            return DiscordServer.fetchDiscordGuildFromId(guildId).then(function (maybeDiscordGuild) {
+                                        var maybeDiscordGuild$1 = (maybeDiscordGuild == null) ? undefined : Caml_option.some(maybeDiscordGuild);
+                                        var userId = maybeUser.profile.id;
+                                        return DiscordServer.fetchGuildMemberFromId(guildId, userId).then(function (guildMember) {
+                                                    var memberRoles = (guildMember == null) ? [] : guildMember.roles;
+                                                    return DiscordServer.fetchGuildRoles(guildId).then(function (guildRoles) {
+                                                                var isAdmin = DiscordServer.memberIsAdmin(guildRoles, memberRoles);
+                                                                var isOwner = (maybeDiscordGuild == null) ? false : maybeDiscordGuild.owner_id === userId;
+                                                                return Promise.resolve({
+                                                                            maybeUser: Caml_option.some(maybeUser),
+                                                                            maybeBrightIdGuild: maybeBrightIdGuild,
+                                                                            maybeDiscordGuild: maybeDiscordGuild$1,
+                                                                            isAdmin: isAdmin || isOwner
+                                                                          });
+                                                              });
+                                                  });
                                       });
-                          }
-                          var guildData = Belt_Option.getExn(Js_dict.get(guilds, guildId));
-                          return DiscordServer.fetchGuildFromId(guildId).then(function (guild) {
-                                      var userId = user.profile.id;
-                                      return DiscordServer.fetchGuildMemberFromId(guildId, userId).then(function (guildMember) {
-                                                  var memberRoles = (guildMember == null) ? [] : guildMember.roles;
-                                                  return DiscordServer.fetchGuildRoles(guildId).then(function (guildRoles) {
-                                                              var isAdmin = DiscordServer.memberIsAdmin(guildRoles, memberRoles);
-                                                              var isOwner = (guild == null) ? false : guild.owner_id === userId;
-                                                              var brightIdGuild_name = Js_null_undefined.fromOption(guildData.name);
-                                                              var brightIdGuild_role = Js_null_undefined.fromOption(guildData.role);
-                                                              var brightIdGuild_inviteLink = Js_null_undefined.fromOption(guildData.inviteLink);
-                                                              var brightIdGuild_sponsorshipAddress = Js_null_undefined.fromOption(guildData.sponsorshipAddress);
-                                                              var brightIdGuild_roleId = Js_null_undefined.fromOption(guildData.roleId);
-                                                              var brightIdGuild = {
-                                                                name: brightIdGuild_name,
-                                                                role: brightIdGuild_role,
-                                                                inviteLink: brightIdGuild_inviteLink,
-                                                                sponsorshipAddress: brightIdGuild_sponsorshipAddress,
-                                                                roleId: brightIdGuild_roleId
-                                                              };
-                                                              return Promise.resolve({
-                                                                          user: user,
-                                                                          brightIdGuild: brightIdGuild,
-                                                                          guild: guild,
-                                                                          isAdmin: isAdmin || isOwner
-                                                                        });
-                                                            });
-                                                });
-                                    });
-                        });
+                          });
+              }
             });
 }
 
@@ -106,8 +97,9 @@ function reducer(state, action) {
 function Guilds_Admin$default(Props) {
   var context = Remix.useOutletContext();
   var match = Remix.useLoaderData();
-  var guild = match.guild;
-  var brightIdGuild = match.brightIdGuild;
+  var maybeDiscordGuild = match.maybeDiscordGuild;
+  var maybeBrightIdGuild = match.maybeBrightIdGuild;
+  var maybeUser = match.maybeUser;
   var match$1 = Remix.useParams();
   var guildId = match$1.guildId;
   var account = Wagmi.useAccount(undefined);
@@ -115,16 +107,17 @@ function Guilds_Admin$default(Props) {
   var dispatch = match$2[1];
   var state$1 = match$2[0];
   var roleId;
-  if (brightIdGuild == null) {
+  if (maybeBrightIdGuild !== undefined) {
+    var roleId$1 = maybeBrightIdGuild.roleId;
+    roleId = roleId$1 !== undefined ? roleId$1 : "";
+  } else {
     throw {
           RE_EXN_ID: NoBrightIdData,
           Error: new Error()
         };
   }
-  var roleId$1 = brightIdGuild.roleId;
-  roleId = (roleId$1 == null) ? "" : roleId$1;
-  var sign = !(guild == null) ? Caml_option.some(Wagmi.useSignMessage({
-              message: "I consent that the SP in this address is able to be used by members of " + guild.name + " Discord Server",
+  var sign = maybeDiscordGuild !== undefined ? Caml_option.some(Wagmi.useSignMessage({
+              message: "I consent that the SP in this address is able to be used by members of " + maybeDiscordGuild.name + " Discord Server",
               onError: (function (e) {
                   var match = e.name;
                   if (match === "ConnectorNotFoundError") {
@@ -192,93 +185,100 @@ function Guilds_Admin$default(Props) {
         state$1.inviteLink,
         state$1.sponsorshipAddress
       ], isSomeOrString);
-  if (match.isAdmin) {
-    if (guild == null) {
-      return React.createElement("div", {
-                  className: "flex justify-center items-center text-white text-3xl font-bold"
-                }, React.createElement("div", undefined, "This server does not exist"));
+  if (maybeUser !== undefined) {
+    if (match.isAdmin) {
+      if (maybeDiscordGuild !== undefined) {
+        return React.createElement("div", {
+                    className: "flex-1 p-4"
+                  }, React.createElement(ReactHotToast.Toaster, {}), React.createElement("div", {
+                        className: "flex flex-col flex-1 h-full"
+                      }, React.createElement("header", {
+                            className: "flex flex-row justify-between m-4"
+                          }, React.createElement("div", {
+                                className: "flex flex-col md:flex-row gap-3"
+                              }, React.createElement(SidebarToggle.make, {
+                                    handleToggleSidebar: context.handleToggleSidebar,
+                                    maybeUser: maybeUser
+                                  }), React.createElement(Remix.Link, {
+                                    className: "p-2 bg-transparent font-semibold rounded-3xl text-4xl text-white",
+                                    to: "/guilds/" + guildId + "",
+                                    children: "⬅️"
+                                  })), React.createElement(Rainbowkit.ConnectButton, {
+                                className: "h-full"
+                              })), React.createElement(Remix.Form, {
+                            className: " flex-1 text-white text-2xl font-semibold justify-center  items-center relative",
+                            children: null,
+                            method: "post",
+                            action: "/guilds/" + guildId + "/" + roleId + "/adminSubmit"
+                          }, React.createElement("div", undefined, React.createElement("div", undefined, "Admin Commands"), React.createElement("img", {
+                                    className: " w-48 h-48 p-5 rounded",
+                                    src: Helpers_Guild.iconUri(maybeDiscordGuild)
+                                  })), React.createElement("div", {
+                                className: "flex flex-1 justify-around flex-col items-center "
+                              }, maybeBrightIdGuild !== undefined ? React.createElement("div", {
+                                      className: "flex flex-col flex-1 justify-center items-start gap-4"
+                                    }, React.createElement("label", {
+                                          className: "flex flex-col gap-2"
+                                        }, "Role Name", React.createElement("input", {
+                                              className: "text-white p-2 rounded bg-extraDark cursor-not-allowed",
+                                              disabled: true,
+                                              name: "role",
+                                              placeholder: Belt_Option.getWithDefault(maybeBrightIdGuild.role, "No Role Name"),
+                                              type: "text",
+                                              value: Belt_Option.getWithDefault(state$1.role, ""),
+                                              onChange: onRoleChanged
+                                            })), React.createElement("label", {
+                                          className: "flex flex-col gap-2"
+                                        }, "Public Invite Link", React.createElement("input", {
+                                              className: "text-white p-2 bg-extraDark outline-none",
+                                              name: "inviteLink",
+                                              placeholder: Belt_Option.getWithDefault(maybeBrightIdGuild.inviteLink, "No Invite Link"),
+                                              type: "text",
+                                              value: Belt_Option.getWithDefault(state$1.inviteLink, ""),
+                                              onChange: onInviteLinkChanged
+                                            })), React.createElement("label", {
+                                          className: "flex flex-col gap-2"
+                                        }, "Sponsorship Address", React.createElement("div", {
+                                              className: "flex flex-row gap-4 bg-transparent"
+                                            }, React.createElement("input", {
+                                                  className: "text-white p-2 bg-dark",
+                                                  name: "sponsorshipAddress",
+                                                  placeholder: truncateAddress(Belt_Option.getWithDefault(maybeBrightIdGuild.sponsorshipAddress, "0x")),
+                                                  readOnly: true,
+                                                  type: "text",
+                                                  value: Belt_Option.getWithDefault(state$1.sponsorshipAddress, "")
+                                                }), React.createElement("div", {
+                                                  className: "p-2 border-2 border-brightid text-white font-xl rounded",
+                                                  onClick: handleSign
+                                                }, "Sign")))) : React.createElement("div", {
+                                      className: "text-white text-2xl font-semibold justify-center items-center"
+                                    }, React.createElement("div", undefined, "This server is not using BrightID"))), React.createElement(SubmitPopup.make, {
+                                hasChangesToSave: hasChangesToSave,
+                                reset: reset
+                              }))));
+      } else {
+        return React.createElement(React.Fragment, undefined);
+      }
     } else {
       return React.createElement("div", {
-                  className: "flex-1 p-4"
-                }, React.createElement(ReactHotToast.Toaster, {}), React.createElement("div", {
-                      className: "flex flex-col flex-1 h-full"
-                    }, React.createElement("header", {
-                          className: "flex flex-row justify-between m-4"
-                        }, React.createElement("div", {
-                              className: "flex flex-col md:flex-row gap-3"
-                            }, React.createElement(SidebarToggle.make, {
-                                  handleToggleSidebar: context.handleToggleSidebar
-                                }), React.createElement(Remix.Link, {
-                                  className: "p-2 bg-transparent font-semibold rounded-3xl text-4xl text-white",
-                                  to: "/guilds/" + guildId + "",
-                                  children: "⬅️"
-                                })), React.createElement(Rainbowkit.ConnectButton, {
-                              className: "h-full"
-                            })), React.createElement(Remix.Form, {
-                          className: " flex-1 text-white text-2xl font-semibold justify-center  items-center relative",
-                          children: null,
-                          method: "post",
-                          action: "/guilds/" + guildId + "/" + roleId + "/adminSubmit"
-                        }, React.createElement("div", undefined, React.createElement("div", undefined, "Admin Commands")), React.createElement("div", {
-                              className: "flex flex-1 justify-around flex-col md:flex-row items-center md:items-start"
-                            }, React.createElement("img", {
-                                  className: "w-48 h-48 p-5",
-                                  src: Helpers_Guild.iconUri(guild)
-                                }), (brightIdGuild == null) ? React.createElement("div", {
-                                    className: "text-white text-2xl font-semibold justify-center items-center"
-                                  }, React.createElement("div", undefined, "This server is not using BrightID")) : React.createElement("div", {
-                                    className: "flex flex-col flex-1 justify-center items-start gap-4"
-                                  }, React.createElement("label", {
-                                        className: "flex flex-col gap-2"
-                                      }, "Role", React.createElement("input", {
-                                            className: "text-white p-2 rounded bg-extraDark",
-                                            name: "role",
-                                            placeholder: Belt_Option.getWithDefault(Caml_option.nullable_to_opt(brightIdGuild.role), "No Role Name"),
-                                            type: "text",
-                                            value: Belt_Option.getWithDefault(state$1.role, ""),
-                                            onChange: onRoleChanged
-                                          })), React.createElement("label", {
-                                        className: "flex flex-col gap-2"
-                                      }, "Invite", React.createElement("input", {
-                                            className: "text-white p-2 bg-extraDark outline-none",
-                                            name: "inviteLink",
-                                            placeholder: Belt_Option.getWithDefault(Caml_option.nullable_to_opt(brightIdGuild.inviteLink), "No Invite Link"),
-                                            type: "text",
-                                            value: Belt_Option.getWithDefault(state$1.inviteLink, ""),
-                                            onChange: onInviteLinkChanged
-                                          })), React.createElement("label", {
-                                        className: "flex flex-col gap-2"
-                                      }, "Sponsorship Address", React.createElement("div", {
-                                            className: "flex flex-row gap-4 bg-transparent"
-                                          }, React.createElement("input", {
-                                                className: "text-white p-2 bg-dark",
-                                                name: "sponsorshipAddress",
-                                                placeholder: truncateAddress(Belt_Option.getWithDefault(Caml_option.nullable_to_opt(brightIdGuild.sponsorshipAddress), "No Sponsorship Address")),
-                                                readOnly: true,
-                                                type: "text",
-                                                value: Belt_Option.getWithDefault(state$1.sponsorshipAddress, "")
-                                              }), React.createElement("div", {
-                                                className: "p-2 border-2 border-brightid text-white font-xl rounded",
-                                                onClick: handleSign
-                                              }, "Sign"))))), React.createElement(SubmitPopup.make, {
-                              hasChangesToSave: hasChangesToSave,
-                              reset: reset
-                            }))));
+                  className: "flex flex-1"
+                }, React.createElement("header", {
+                      className: "flex flex-row justify-between md:justify-end m-4"
+                    }, React.createElement(SidebarToggle.make, {
+                          handleToggleSidebar: context.handleToggleSidebar,
+                          maybeUser: maybeUser
+                        }), React.createElement(Remix.Link, {
+                          className: "p-2 bg-transparent font-semibold rounded-3xl text-4xl text-white",
+                          to: "/guilds/" + guildId + "",
+                          children: "⬅️"
+                        })), React.createElement("div", {
+                      className: "flex justify-center items-center text-white text-3xl font-bold"
+                    }, React.createElement("div", undefined, "You are not an admin in this server")));
     }
   } else {
-    return React.createElement("div", {
-                className: "flex flex-1"
-              }, React.createElement("header", {
-                    className: "flex flex-row justify-between md:justify-end m-4"
-                  }, React.createElement(SidebarToggle.make, {
-                        handleToggleSidebar: context.handleToggleSidebar
-                      }), React.createElement(Remix.Link, {
-                        className: "p-2 bg-transparent font-semibold rounded-3xl text-4xl text-white",
-                        to: "/guilds/" + guildId + "",
-                        children: "⬅️"
-                      })), React.createElement("div", {
-                    className: "flex justify-center items-center text-white text-3xl font-bold"
-                  }, React.createElement("div", undefined, "You are not an admin in this server")));
+    return React.createElement(DiscordLoginButton.make, {
+                label: "Login to Discord"
+              });
   }
 }
 

@@ -3,19 +3,186 @@
 import * as Curry from "../../../../../node_modules/rescript/lib/es6/curry.js";
 import * as React from "react";
 import * as Remix from "remix";
+import * as Wagmi from "wagmi";
+import * as Js_dict from "../../../../../node_modules/rescript/lib/es6/js_dict.js";
+import * as $$Promise from "../../../../../node_modules/@ryyppy/rescript-promise/src/Promise.js";
+import * as AuthServer from "../../AuthServer.js";
 import * as Belt_Array from "../../../../../node_modules/rescript/lib/es6/belt_Array.js";
 import * as AdminButton from "../../components/AdminButton.js";
 import * as Belt_Option from "../../../../../node_modules/rescript/lib/es6/belt_Option.js";
+import * as Caml_option from "../../../../../node_modules/rescript/lib/es6/caml_option.js";
+import * as Decode$Shared from "../../../node_modules/@brightidbot/shared/src/Decode.js";
+import * as DiscordServer from "../../DiscordServer.js";
 import * as SidebarToggle from "../../components/SidebarToggle.js";
-import * as ReactHotToast from "react-hot-toast";
-import ReactHotToast$1 from "react-hot-toast";
+import * as WebUtils_Gist from "../../utils/WebUtils_Gist.js";
+import ReactHotToast from "react-hot-toast";
+import * as ReactHotToast$1 from "react-hot-toast";
+import * as SponsorshipsPopup from "../../components/SponsorshipsPopup.js";
+import * as Caml_js_exceptions from "../../../../../node_modules/rescript/lib/es6/caml_js_exceptions.js";
+import * as DiscordLoginButton from "../../components/DiscordLoginButton.js";
+import * as Guilds_AdminSubmit from "./Guilds_AdminSubmit.js";
 import * as Rainbowkit from "@rainbow-me/rainbowkit";
+
+async function loader(param) {
+  var guildId = Belt_Option.getWithDefault(Js_dict.get(param.params, "guildId"), "");
+  var maybeUser;
+  var exit = 0;
+  var data;
+  try {
+    data = await AuthServer.authenticator.isAuthenticated(param.request);
+    exit = 1;
+  }
+  catch (raw_e){
+    var e = Caml_js_exceptions.internalToOCamlException(raw_e);
+    if (e.RE_EXN_ID === $$Promise.JsError) {
+      maybeUser = undefined;
+    } else {
+      throw e;
+    }
+  }
+  if (exit === 1) {
+    maybeUser = (data == null) ? undefined : Caml_option.some(data);
+  }
+  if (maybeUser === undefined) {
+    return {
+            maybeUser: maybeUser,
+            isAdmin: false
+          };
+  }
+  var maybeDiscordGuild;
+  var exit$1 = 0;
+  var data$1;
+  try {
+    data$1 = await DiscordServer.fetchDiscordGuildFromId(guildId);
+    exit$1 = 1;
+  }
+  catch (raw_exn){
+    var exn = Caml_js_exceptions.internalToOCamlException(raw_exn);
+    if (exn.RE_EXN_ID === $$Promise.JsError) {
+      maybeDiscordGuild = undefined;
+    } else {
+      throw exn;
+    }
+  }
+  if (exit$1 === 1) {
+    maybeDiscordGuild = (data$1 == null) ? undefined : Caml_option.some(data$1);
+  }
+  var userId = Caml_option.valFromOption(maybeUser).profile.id;
+  var guildMember;
+  var exit$2 = 0;
+  var data$2;
+  try {
+    data$2 = await DiscordServer.fetchGuildMemberFromId(guildId, userId);
+    exit$2 = 1;
+  }
+  catch (raw_exn$1){
+    var exn$1 = Caml_js_exceptions.internalToOCamlException(raw_exn$1);
+    if (exn$1.RE_EXN_ID === $$Promise.JsError) {
+      guildMember = undefined;
+    } else {
+      throw exn$1;
+    }
+  }
+  if (exit$2 === 1) {
+    guildMember = (data$2 == null) ? undefined : Caml_option.some(data$2);
+  }
+  var memberRoles = guildMember !== undefined ? guildMember.roles : [];
+  var guildRoles;
+  try {
+    guildRoles = await DiscordServer.fetchGuildRoles(guildId);
+  }
+  catch (raw_exn$2){
+    var exn$2 = Caml_js_exceptions.internalToOCamlException(raw_exn$2);
+    if (exn$2.RE_EXN_ID === $$Promise.JsError) {
+      guildRoles = [];
+    } else {
+      throw exn$2;
+    }
+  }
+  var isAdmin = DiscordServer.memberIsAdmin(guildRoles, memberRoles);
+  var isOwner = maybeDiscordGuild !== undefined ? maybeDiscordGuild.owner_id === userId : false;
+  return {
+          maybeUser: maybeUser,
+          isAdmin: isAdmin || isOwner
+        };
+}
+
+async function action(param) {
+  var request = param.request;
+  var guildId = Belt_Option.getWithDefault(Js_dict.get(param.params, "guildId"), "");
+  var exit = 0;
+  var data;
+  try {
+    data = await AuthServer.authenticator.isAuthenticated(request);
+    exit = 1;
+  }
+  catch (raw_exn){
+    var exn = Caml_js_exceptions.internalToOCamlException(raw_exn);
+    if (exn.RE_EXN_ID !== "JsError") {
+      throw exn;
+    }
+    
+  }
+  exit === 1;
+  var data$1 = await request.formData();
+  var match = Guilds_AdminSubmit.Form.make(data$1);
+  var config = WebUtils_Gist.makeGistConfig(process.env.GIST_ID, "guildData.json", process.env.GITHUB_ACCESS_TOKEN);
+  var content = await WebUtils_Gist.ReadGist.content(config, Decode$Shared.Gist.brightIdGuilds);
+  var entry = Js_dict.get(content, guildId);
+  var prevEntry;
+  if (entry !== undefined) {
+    prevEntry = entry;
+  } else {
+    throw {
+          RE_EXN_ID: Guilds_AdminSubmit.GuildDoesNotExist,
+          _1: guildId,
+          Error: new Error()
+        };
+  }
+  var entry_role = prevEntry.role;
+  var entry_name = prevEntry.name;
+  var entry_inviteLink = prevEntry.inviteLink;
+  var entry_roleId = prevEntry.roleId;
+  var entry_sponsorshipAddress = match.sponsorshipAddress;
+  var entry_usedSponsorships = prevEntry.usedSponsorships;
+  var entry_assignedSponsorships = prevEntry.assignedSponsorships;
+  var entry$1 = {
+    role: entry_role,
+    name: entry_name,
+    inviteLink: entry_inviteLink,
+    roleId: entry_roleId,
+    sponsorshipAddress: entry_sponsorshipAddress,
+    usedSponsorships: entry_usedSponsorships,
+    assignedSponsorships: entry_assignedSponsorships
+  };
+  var data$2;
+  try {
+    data$2 = await WebUtils_Gist.UpdateGist.updateEntry(content, guildId, entry$1, config);
+  }
+  catch (raw_e){
+    var e = Caml_js_exceptions.internalToOCamlException(raw_e);
+    if (e.RE_EXN_ID === "JsError") {
+      return {
+              TAG: /* Error */1,
+              _0: {
+                RE_EXN_ID: "JsError",
+                _1: e._1
+              }
+            };
+    }
+    throw e;
+  }
+  return {
+          TAG: /* Ok */0,
+          _0: data$2
+        };
+}
 
 var state = {
   guild: undefined,
-  isAdmin: false,
   brightIdGuild: undefined,
   loading: true,
+  submitting: false,
   oauthGuild: undefined
 };
 
@@ -24,41 +191,41 @@ function reducer(state, action) {
     case /* SetGuild */0 :
         return {
                 guild: action._0,
-                isAdmin: state.isAdmin,
                 brightIdGuild: state.brightIdGuild,
                 loading: state.loading,
+                submitting: state.submitting,
                 oauthGuild: state.oauthGuild
               };
-    case /* SetIsAdmin */1 :
+    case /* SetBrightIdGuild */1 :
         return {
                 guild: state.guild,
-                isAdmin: action._0,
-                brightIdGuild: state.brightIdGuild,
-                loading: state.loading,
-                oauthGuild: state.oauthGuild
-              };
-    case /* SetBrightIdGuild */2 :
-        return {
-                guild: state.guild,
-                isAdmin: state.isAdmin,
                 brightIdGuild: action._0,
                 loading: state.loading,
+                submitting: state.submitting,
                 oauthGuild: state.oauthGuild
               };
-    case /* SetLoading */3 :
+    case /* SetLoading */2 :
         return {
                 guild: state.guild,
-                isAdmin: state.isAdmin,
                 brightIdGuild: state.brightIdGuild,
                 loading: action._0,
+                submitting: state.submitting,
+                oauthGuild: state.oauthGuild
+              };
+    case /* SetSubmitting */3 :
+        return {
+                guild: state.guild,
+                brightIdGuild: state.brightIdGuild,
+                loading: state.loading,
+                submitting: action._0,
                 oauthGuild: state.oauthGuild
               };
     case /* SetOAuthGuild */4 :
         return {
                 guild: state.guild,
-                isAdmin: state.isAdmin,
                 brightIdGuild: state.brightIdGuild,
                 loading: state.loading,
+                submitting: state.submitting,
                 oauthGuild: action._0
               };
     
@@ -68,46 +235,91 @@ function reducer(state, action) {
 function $$default(param) {
   var match = Remix.useParams();
   var guildId = match.guildId;
+  var match$1 = Remix.useLoaderData();
+  var isAdmin = match$1.isAdmin;
+  var maybeUser = match$1.maybeUser;
   var context = Remix.useOutletContext();
+  var account = Wagmi.useAccount(undefined);
   var fetcher = Remix.useFetcher();
-  var match$1 = React.useReducer(reducer, state);
-  var dispatch = match$1[1];
-  var state$1 = match$1[0];
+  var match$2 = React.useReducer(reducer, state);
+  var dispatch = match$2[1];
+  var state$1 = match$2[0];
+  var guild = state$1.guild;
+  var getGuildName = guild !== undefined ? guild.name : "No Guild";
+  var sign = Wagmi.useSignMessage({
+        message: "I consent that the SP in this address is able to be used by members of " + getGuildName + " Discord Server",
+        onError: (function (e) {
+            var match = e.name;
+            if (match === "ConnectorNotFoundError") {
+              ReactHotToast.error("No wallet found", undefined);
+              return ;
+            }
+            ReactHotToast.error(e.message, undefined);
+          }),
+        onSuccess: (function (param) {
+            var data = account.data;
+            if (data == null) {
+              console.log(account);
+              return ;
+            }
+            var options = {
+              method: "post"
+            };
+            fetcher.submit({
+                  sponsorshipAddress: Caml_option.nullable_to_opt(data.address)
+                }, options);
+          })
+      });
   React.useEffect((function () {
           var match = fetcher.type;
           switch (match) {
-            case "done" :
+            case "actionReload" :
                 var data = fetcher.data;
                 if (data == null) {
                   Curry._1(dispatch, {
-                        TAG: /* SetLoading */3,
+                        TAG: /* SetSubmitting */3,
                         _0: false
                       });
                 } else {
-                  console.log("data: ", data);
+                  console.log(data);
+                  Curry._1(dispatch, {
+                        TAG: /* SetSubmitting */3,
+                        _0: false
+                      });
+                }
+                break;
+            case "actionSubmission" :
+                Curry._1(dispatch, {
+                      TAG: /* SetSubmitting */3,
+                      _0: true
+                    });
+                break;
+            case "done" :
+                var data$1 = fetcher.data;
+                if (data$1 == null) {
+                  Curry._1(dispatch, {
+                        TAG: /* SetLoading */2,
+                        _0: false
+                      });
+                } else {
                   Curry._1(dispatch, {
                         TAG: /* SetGuild */0,
-                        _0: data.guild
+                        _0: data$1.guild
                       });
                   Curry._1(dispatch, {
-                        TAG: /* SetIsAdmin */1,
-                        _0: data.isAdmin
+                        TAG: /* SetBrightIdGuild */1,
+                        _0: data$1.brightIdGuild
                       });
                   Curry._1(dispatch, {
-                        TAG: /* SetBrightIdGuild */2,
-                        _0: data.brightIdGuild
-                      });
-                  Curry._1(dispatch, {
-                        TAG: /* SetLoading */3,
+                        TAG: /* SetLoading */2,
                         _0: false
                       });
                 }
                 break;
             case "init" :
                 fetcher.load("/guilds/" + guildId + "/Guilds_FetchGuild");
-                console.log(fetcher);
                 Curry._1(dispatch, {
-                      TAG: /* SetLoading */3,
+                      TAG: /* SetLoading */2,
                       _0: true
                     });
                 break;
@@ -128,94 +340,64 @@ function $$default(param) {
           }
           
         }), [context]);
-  var guild = state$1.oauthGuild;
-  var guildHeader = guild !== undefined ? React.createElement("div", {
-          className: "flex gap-6 w-full justify-start items-center"
+  var handleSign = function (param) {
+    Curry._1(sign.signMessage, undefined);
+  };
+  var guild$1 = state$1.oauthGuild;
+  var guildHeader = guild$1 !== undefined ? React.createElement("div", {
+          className: "flex gap-6 w-full justify-start items-center p-4"
         }, React.createElement("img", {
               className: "rounded-full h-24",
-              src: Belt_Option.getWithDefault(Belt_Option.map(guild.icon, (function (icon) {
-                          return "https://cdn.discordapp.com/icons/" + guild.id + "/" + icon + ".png";
+              src: Belt_Option.getWithDefault(Belt_Option.map(guild$1.icon, (function (icon) {
+                          return "https://cdn.discordapp.com/icons/" + guild$1.id + "/" + icon + ".png";
                         })), "")
             }), React.createElement("p", {
               className: "text-4xl font-bold text-white"
-            }, guild.name), state$1.isAdmin ? React.createElement(AdminButton.make, {
+            }, guild$1.name), isAdmin ? React.createElement(AdminButton.make, {
                 guildId: guildId
-              }) : React.createElement(React.Fragment, undefined)) : React.createElement("div", {
-          className: "text-2xl md:text-3xl font-semibold text-white"
-        });
+              }) : React.createElement(React.Fragment, undefined)) : React.createElement("p", {
+          className: "text-3xl text-white font-poppins p-4"
+        }, "Loading...");
   React.useEffect((function () {
           if (context.rateLimited) {
-            ReactHotToast$1.error("The bot is being rate limited. Please try again later", undefined);
-          }
-          var match = state$1.isAdmin;
-          if (match) {
-            var match$1 = state$1.brightIdGuild;
-            var exit = 0;
-            if (!(match$1 !== undefined && match$1.sponsorshipAddress !== undefined)) {
-              exit = 1;
-            }
-            if (exit === 1) {
-              ReactHotToast$1((function (t) {
-                      return React.createElement("span", {
-                                  className: "flex flex-col font-bold bg-dark outline-2 border-brightid text-white cursor-pointer",
-                                  onClick: (function (param) {
-                                      t.dismiss("sponsor");
-                                    })
-                                }, "This server is not setup to sponsor its members. Start sponsoring ➡️");
-                    }), {
-                    duration: 100000,
-                    icon: "⚠️",
-                    id: "sponsor",
-                    position: "bottom-right",
-                    style: {
-                      background: "transparent",
-                      border: "2px solid ",
-                      "border-color": "#ed7a5c"
-                    }
-                  });
-            }
-            
+            ReactHotToast.error("The bot is being rate limited. Please try again later", undefined);
           }
           
         }), []);
   return React.createElement("div", {
-              className: "flex-1 p-4"
-            }, React.createElement(ReactHotToast.Toaster, {}), React.createElement("div", {
+              className: ""
+            }, React.createElement(ReactHotToast$1.Toaster, {}), React.createElement("div", {
                   className: "flex flex-col h-screen"
                 }, React.createElement("header", {
                       className: "flex flex-row justify-between md:justify-end items-center m-4"
                     }, React.createElement(SidebarToggle.make, {
-                          handleToggleSidebar: context.handleToggleSidebar
+                          handleToggleSidebar: context.handleToggleSidebar,
+                          maybeUser: maybeUser
                         }), React.createElement("div", {
                           className: "flex flex-col md:flex-row gap-2 items-center justify-center"
                         }, React.createElement(Rainbowkit.ConnectButton, {
                               className: "h-full"
-                            }))), guildHeader, React.createElement("div", {
-                      className: "flex flex-1 flex-col  justify-around items-center text-center"
-                    }, React.createElement("section", {
-                          className: "width-full flex flex-col md:flex-row justify-around items-center w-full"
-                        }, React.createElement("div", {
-                              className: "flex flex-col rounded-xl justify-around items-center text-center h-32 w-60 md:h-48 m-2 border-2 border-white border-solid bg-extraDark"
-                            }, React.createElement("div", {
-                                  className: "text-3xl font-bold text-white"
-                                }, "Verified Server Members"), React.createElement("div", {
-                                  className: "text-3xl font-semibold text-transparent bg-clip-text bg-gradient-to-l from-brightid to-white"
-                                }, "1000")), React.createElement("div", {
-                              className: "flex flex-col  rounded-xl justify-around items-center text-center h-32 w-60 md:h-48 m-2 border-2 border-white border-solid bg-extraDark"
-                            }, React.createElement("div", {
-                                  className: "text-3xl font-bold text-white"
-                                }, "Users Sponsored"), React.createElement("div", {
-                                  className: "text-3xl font-semibold text-transparent bg-clip-text bg-gradient-to-l from-brightid to-white"
-                                }, "125")), React.createElement("div", {
-                              className: "flex flex-col rounded-xl justify-around items-center text-center h-32 w-60 md:h-48 m-2 border-2 border-white border-solid bg-extraDark"
-                            }, React.createElement("div", {
-                                  className: "text-3xl font-bold text-white"
-                                }, " Avaliable Sponsors"), React.createElement("div", {
-                                  className: "text-3xl font-semibold text-transparent bg-clip-text bg-gradient-to-l from-brightid to-white"
-                                }, "0"))))));
+                            }))), maybeUser !== undefined ? React.createElement(React.Fragment, undefined, guildHeader, React.createElement("div", {
+                            className: "flex flex-1 flex-col  justify-around items-center text-center relative"
+                          }, React.createElement("section", {
+                                className: "width-full flex flex-col md:flex-row justify-around items-center w-full"
+                              }, React.createElement("p", {
+                                    className: "text-6xl text-slate-400 font-extrabold"
+                                  }, "Server Stats Coming Soon")), React.createElement(SponsorshipsPopup.make, {
+                                isAdmin: isAdmin,
+                                sign: handleSign
+                              }))) : React.createElement("div", {
+                        className: "flex flex-col items-center justify-center h-full gap-4"
+                      }, React.createElement("p", {
+                            className: "text-3xl text-white font-poppins"
+                          }, "Please login to continue"), React.createElement(DiscordLoginButton.make, {
+                            label: "Login To Discord"
+                          }))));
 }
 
 export {
+  loader ,
+  action ,
   state ,
   reducer ,
   $$default ,

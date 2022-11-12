@@ -252,7 +252,7 @@ let rec fetchUserGuilds = (user: RemixAuth.User.t) => {
   })
 }
 
-let fetchGuildFromId = (~guildId) => {
+let fetchDiscordGuildFromId = (~guildId) => {
   open Webapi.Fetch
   let headers = HeadersInit.make({
     "Authorization": `Bot ${botToken}`,

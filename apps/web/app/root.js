@@ -8,6 +8,7 @@ import * as $$Promise from "../../../node_modules/@ryyppy/rescript-promise/src/P
 import * as Sidebar from "./components/Sidebar.js";
 import * as AuthServer from "./AuthServer.js";
 import * as Belt_Array from "../../../node_modules/rescript/lib/es6/belt_Array.js";
+import * as Caml_option from "../../../node_modules/rescript/lib/es6/caml_option.js";
 import LodashMerge from "lodash.merge";
 import * as DiscordServer from "./DiscordServer.js";
 import * as Rainbowkit from "@rainbow-me/rainbowkit";
@@ -89,18 +90,18 @@ var wagmiClient = (createClient({
 function loader(param) {
   return $$Promise.$$catch(AuthServer.authenticator.isAuthenticated(param.request).then(function (user) {
                   return Promise.resolve({
-                              user: user,
+                              maybeUser: (user == null) ? undefined : Caml_option.some(user),
                               rateLimited: false
                             });
                 }), (function (error) {
                 if (error.RE_EXN_ID === DiscordServer.DiscordRateLimited) {
                   return Promise.resolve({
-                              user: null,
+                              maybeUser: undefined,
                               rateLimited: true
                             });
                 } else {
                   return Promise.resolve({
-                              user: null,
+                              maybeUser: undefined,
                               rateLimited: false
                             });
                 }
@@ -166,6 +167,7 @@ function reducer(state, action) {
 
 function Root$default(Props) {
   var match = Remix.useLoaderData();
+  var maybeUser = match.maybeUser;
   var match$1 = React.useState(function () {
         return false;
       });
@@ -265,13 +267,13 @@ function Root$default(Props) {
                             theme: myTheme,
                             children: React.createElement("div", {
                                   className: "flex h-screen w-screen"
-                                }, React.createElement(Sidebar.make, {
-                                      toggled: match$1[0],
-                                      handleToggleSidebar: handleToggleSidebar,
-                                      user: match.user,
-                                      guilds: guilds,
-                                      loadingGuilds: state$1.loadingGuilds
-                                    }), React.createElement(Remix.Outlet, {
+                                }, maybeUser !== undefined ? React.createElement(Sidebar.make, {
+                                        toggled: match$1[0],
+                                        handleToggleSidebar: handleToggleSidebar,
+                                        user: Caml_option.valFromOption(maybeUser),
+                                        guilds: guilds,
+                                        loadingGuilds: state$1.loadingGuilds
+                                      }) : React.createElement(React.Fragment, undefined), React.createElement(Remix.Outlet, {
                                       context: {
                                         handleToggleSidebar: handleToggleSidebar,
                                         rateLimited: match.rateLimited,
@@ -281,6 +283,25 @@ function Root$default(Props) {
                           })
                     }), React.createElement(Remix.ScrollRestoration, {}), React.createElement(Remix.Scripts, {}), process.env.NODE_ENV === "development" ? React.createElement(Remix.LiveReload, {}) : null));
 }
+
+export function ErrorBoundary({ error }) {
+  console.error(error);
+  return (
+    <html>
+      <head>
+        <title>Oh no!</title>
+        <Remix.Meta />
+        <Remix.Links />
+      </head>
+      <body>
+        <p className="text-center">Something went wrong!</p>
+        <p className="text-center">BrightID command center is still in Beta. Try reloading the page!</p>
+        <Remix.Scripts />
+      </body>
+    </html>
+  );
+}
+;
 
 var $$default = Root$default;
 
