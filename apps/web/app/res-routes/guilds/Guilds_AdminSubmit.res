@@ -13,7 +13,7 @@ let loader: Remix.loaderFunction<Webapi.Fetch.Response.t> = ({params}) => {
   Remix.redirect(`/guilds/${guildId}/admin`)->resolve
 }
 
-let modifyRoleUrl = (guildId, roleId) => `/guilds/${guildId}/roles/${roleId}`
+let modifyRoleUrl = (guildId, roleId) => `https://discord.com/api/guilds/${guildId}/roles/${roleId}`
 
 module Form = {
   type t = {
@@ -46,7 +46,7 @@ let action: Remix.actionFunction<'a> = async ({request, params}) => {
   open Webapi.Fetch
 
   let guildId = params->Js.Dict.get("guildId")->Belt.Option.getWithDefault("")
-  let roleId = params->Js.Dict.get("roleId")->Belt.Option.getWithDefault("")
+  // let roleId = params->Js.Dict.get("roleId")->Belt.Option.getWithDefault("")
 
   let _ = switch await RemixAuth.Authenticator.isAuthenticated(AuthServer.authenticator, request) {
   | data => Some(data)
@@ -56,27 +56,26 @@ let action: Remix.actionFunction<'a> = async ({request, params}) => {
   let data = await Request.formData(request)
 
   let {role, inviteLink, sponsorshipAddress} = Form.make(data)
-  let _ = switch role {
-  | Some(role) =>
-    let headers = HeadersInit.make({
-      "Authorization": `Bot ${botToken}`,
-      "Content-Type": "application/x-www-form-urlencoded",
-    })
-    let body = BodyInit.make(`{name: ${role}}`)
-    let init = RequestInit.make(~method_=Patch, ~headers, ~body, ())
-    Some()
-  // let req =
-  //   `https://discord.com/api/guilds/${guildId}/roles/${roleId}`->Request.makeWithInit(init)
-  // switch await fetchWithRequest(req) {
-  // | data =>
-  //   Js.log(data)
-  //   Some(data)
-  // | exception JsError(e) =>
-  //   Js.log(e)
-  //   None
+  // let _ = switch role {
+  // | Some(role) =>
+  //   let headers = HeadersInit.make({
+  //     "Authorization": `Bot ${botToken}`,
+  //     "Content-Type": "application/x-www-form-urlencoded",
+  //   })
+  //   let body = BodyInit.make(`{name: ${role}}`)
+  //   let init = RequestInit.make(~method_=Patch, ~headers, ~body, ())
+
+  //   let req = modifyRoleUrl(guildId, roleId)->Request.makeWithInit(init)
+  //   switch await fetchWithRequest(req) {
+  //   | data =>
+  //     Js.log(data)
+  //     Some(data)
+  //   | exception JsError(e) =>
+  //     Js.log(e)
+  //     None
+  //   }
+  // | None => None
   // }
-  | None => None
-  }
 
   open WebUtils_Gist
   let config = makeGistConfig(

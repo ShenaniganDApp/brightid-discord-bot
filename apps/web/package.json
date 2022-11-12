@@ -6,7 +6,7 @@
   "scripts": {
     "build": "yarn build:css && remix build",
     "build:css": "tailwindcss -m -i ./styles/app.css -o app/styles/app.css",
-    "dev": "concurrently \"npm run dev:css\" \"rescript build -w -with-deps\" \"remix dev\"",
+    "dev": "concurrently \"npm run dev:css\" \"rescript build -w -with-deps\" \"remix dev\" -c \"yellow,red,green\" -n \"Tailwind,Rescript,Remix\"",
     "dev:css": "tailwindcss -w -i ./styles/app.css -o app/styles/app.css",
     "re:start": "rescript build -w",
     "re:build": "rescript build -with-deps"
@@ -28,6 +28,7 @@
     "ethers": "^5.6.6",
     "find-up": "^6.3.0",
     "lodash.merge": "^4.6.2",
+    "qrcode.react": "^3.1.0",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "react-hot-toast": "^2.2.0",

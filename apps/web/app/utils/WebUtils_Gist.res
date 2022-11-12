@@ -57,8 +57,7 @@ module ReadGist = {
           let json = gist.files->Js.Dict.get(name)->Belt.Option.getExn
           let content = json["content"]->Json.parseExn->Json.decode(decoder)
           switch content {
-          | Ok(content) =>
-            content->resolve
+          | Ok(content) => content->resolve
 
           | Error(err) => err->Json.Decode.DecodeError->raise
           }
@@ -222,7 +221,6 @@ module UpdateGist = {
     let entries = entries->Js.Dict.fromList
     let keys = entries->Js.Dict.keys
     keys->Belt.Array.forEach(key => {
-      let prev = content->Js.Dict.get(key)->Belt.Option.getExn
       let entry = entries->Js.Dict.get(key)->Belt.Option.getExn
       content->Js.Dict.set(key, entry)
     })

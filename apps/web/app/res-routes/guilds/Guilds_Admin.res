@@ -3,9 +3,9 @@ exception NoBrightIdData
 type params = {guildId: string}
 
 type loaderData = {
-  user: Js.Nullable.t<RemixAuth.User.t>,
-  brightIdGuild: Js.Nullable.t<Types.brightIdGuildData>,
-  guild: Js.Nullable.t<Types.guild>,
+  maybeUser: option<RemixAuth.User.t>,
+  maybeBrightIdGuild: option<Shared.BrightId.brightIdGuild>,
+  maybeDiscordGuild: option<Types.guild>,
   isAdmin: bool,
 }
 
@@ -23,62 +23,54 @@ let loader: Remix.loaderFunction<loaderData> = ({request, params}) => {
 
   AuthServer.authenticator
   ->RemixAuth.Authenticator.isAuthenticated(request)
-  ->then(user => {
-    WebUtils_Gist.ReadGist.content(
-      ~config,
-      ~decoder=Shared.Decode.Gist.brightIdGuilds,
-    )->then(guilds => {
-      switch user->Js.Nullable.toOption {
-      | None =>
-        {
-          user: Js.Nullable.null,
-          brightIdGuild: Js.Nullable.null,
-          isAdmin: false,
-          guild: Js.Nullable.null,
-        }->resolve
-      | Some(existingUser) => {
-          let guildData = guilds->Js.Dict.get(guildId)->Belt.Option.getExn
-          fetchGuildFromId(~guildId)->then(
-            guild => {
-              let userId = existingUser->RemixAuth.User.getProfile->RemixAuth.User.getId
-              fetchGuildMemberFromId(~guildId, ~userId)->then(
-                guildMember => {
-                  let memberRoles = switch guildMember->Js.Nullable.toOption {
-                  | None => []
-                  | Some(guildMember) => guildMember.roles
-                  }
-                  fetchGuildRoles(~guildId)->then(
-                    guildRoles => {
-                      let isAdmin = memberIsAdmin(~guildRoles, ~memberRoles)
-                      let isOwner = switch guild->Js.Nullable.toOption {
-                      | None => false
-                      | Some(guild) => guild.owner_id === userId
-                      }
+  ->then(maybeUser => {
+    switch maybeUser->Js.Nullable.toOption {
+    | None =>
+      Remix.redirect(`/guilds/${guildId}`)->ignore
+      {
+        maybeUser: None,
+        maybeBrightIdGuild: None,
+        isAdmin: false,
+        maybeDiscordGuild: None,
+      }->resolve
+    | Some(user) =>
+      WebUtils_Gist.ReadGist.content(
+        ~config,
+        ~decoder=Shared.Decode.Gist.brightIdGuilds,
+      )->then(guilds => {
+        let maybeBrightIdGuild = guilds->Js.Dict.get(guildId)
+        fetchDiscordGuildFromId(~guildId)->then(
+          maybeDiscordGuild => {
+            let maybeDiscordGuild = maybeDiscordGuild->Js.Nullable.toOption
+            let userId = user->RemixAuth.User.getProfile->RemixAuth.User.getId
+            fetchGuildMemberFromId(~guildId, ~userId)->then(
+              guildMember => {
+                let memberRoles = switch guildMember->Js.Nullable.toOption {
+                | None => []
+                | Some(guildMember) => guildMember.roles
+                }
+                fetchGuildRoles(~guildId)->then(
+                  guildRoles => {
+                    let isAdmin = memberIsAdmin(~guildRoles, ~memberRoles)
+                    let isOwner = switch maybeDiscordGuild {
+                    | None => false
+                    | Some(guild) => guild.owner_id === userId
+                    }
 
-                      //@TODO: This should use the decoder type
-                      let brightIdGuild: Types.brightIdGuildData = {
-                        name: guildData.name->Js.Nullable.fromOption,
-                        role: guildData.role->Js.Nullable.fromOption,
-                        inviteLink: guildData.inviteLink->Js.Nullable.fromOption,
-                        sponsorshipAddress: guildData.sponsorshipAddress->Js.Nullable.fromOption,
-                        roleId: guildData.roleId->Js.Nullable.fromOption,
-                      }
-
-                      {
-                        user,
-                        brightIdGuild: brightIdGuild->Js.Nullable.return,
-                        isAdmin: isAdmin || isOwner,
-                        guild,
-                      }->resolve
-                    },
-                  )
-                },
-              )
-            },
-          )
-        }
-      }
-    })
+                    {
+                      maybeUser: Some(user),
+                      maybeBrightIdGuild,
+                      isAdmin: isAdmin || isOwner,
+                      maybeDiscordGuild,
+                    }->resolve
+                  },
+                )
+              },
+            )
+          },
+        )
+      })
+    }
   })
 }
 
@@ -118,22 +110,22 @@ let reducer = (state, action) =>
 let default = () => {
   open Remix
   let context = useOutletContext()
-  let {brightIdGuild, isAdmin, guild} = useLoaderData()
+  let {maybeBrightIdGuild, isAdmin, maybeDiscordGuild, maybeUser} = useLoaderData()
   let {guildId} = useParams()
   let account = Wagmi.useAccount()
 
   let (state, dispatch) = React.useReducer(reducer, state)
 
-  let roleId = switch brightIdGuild->Js.Nullable.toOption {
+  let roleId = switch maybeBrightIdGuild {
   | None => NoBrightIdData->raise
   | Some(brightIdGuild) =>
-    switch brightIdGuild.roleId->Js.Nullable.toOption {
+    switch brightIdGuild.roleId {
     | None => ""
     | Some(roleId) => roleId
     }
   }
 
-  let sign = switch guild->Js.Nullable.toOption {
+  let sign = switch maybeDiscordGuild {
   | None => None // Toast error
   | Some(guild) =>
     Wagmi.useSignMessage({
@@ -206,114 +198,111 @@ let default = () => {
     [state.role, state.inviteLink, state.sponsorshipAddress],
     isSomeOrString,
   )
-
-  switch isAdmin {
-  | false =>
-    <div className="flex flex-1">
-      <header className="flex flex-row justify-between md:justify-end m-4">
-        <SidebarToggle handleToggleSidebar={context["handleToggleSidebar"]} />
-        <Link
-          className="p-2 bg-transparent font-semibold rounded-3xl text-4xl text-white"
-          to={`/guilds/${guildId}`}>
-          {`⬅️`->React.string}
-        </Link>
-      </header>
-      <div className="flex justify-center items-center text-white text-3xl font-bold">
-        <div> {"You are not an admin in this server"->React.string} </div>
-      </div>
-    </div>
-  | true =>
-    switch guild->Js.Nullable.toOption {
-    | None =>
-      <div className="flex justify-center items-center text-white text-3xl font-bold">
-        <div> {"This server does not exist"->React.string} </div>
-      </div>
-    | Some(guild) =>
-      <div className="flex-1 p-4">
-        <ReactHotToast.Toaster />
-        <div className="flex flex-col flex-1 h-full">
-          <header className="flex flex-row justify-between m-4">
-            <div className="flex flex-col md:flex-row gap-3">
-              <SidebarToggle handleToggleSidebar={context["handleToggleSidebar"]} />
-              <Link
-                className="p-2 bg-transparent font-semibold rounded-3xl text-4xl text-white"
-                to={`/guilds/${guildId}`}>
-                {`⬅️`->React.string}
-              </Link>
-            </div>
-            <RainbowKit.ConnectButton className="h-full" />
-          </header>
-          <Remix.Form
-            method={#post}
-            action={`/guilds/${guildId}/${roleId}/adminSubmit`}
-            className=" flex-1 text-white text-2xl font-semibold justify-center  items-center relative">
-            <div>
-              <div> {"Admin Commands"->React.string} </div>
-            </div>
-            <div
-              className="flex flex-1 justify-around flex-col md:flex-row items-center md:items-start">
-              <img className="w-48 h-48 p-5" src={guild->Helpers_Guild.iconUri} />
-              {switch brightIdGuild->Js.Nullable.toOption {
-              | None =>
-                <div className="text-white text-2xl font-semibold justify-center items-center">
-                  <div> {"This server is not using BrightID"->React.string} </div>
-                </div>
-              | Some(brightIdGuild) =>
-                <div className="flex flex-col flex-1 justify-center items-start gap-4">
-                  <label className="flex flex-col gap-2">
-                    {"Role"->React.string}
-                    <input
-                      className="text-white p-2 rounded bg-extraDark"
-                      type_="text"
-                      name="role"
-                      placeholder={brightIdGuild.role
-                      ->Js.Nullable.toOption
-                      ->Belt.Option.getWithDefault("No Role Name")}
-                      value={state.role->Belt.Option.getWithDefault("")}
-                      onChange={onRoleChanged}
-                    />
-                  </label>
-                  <label className="flex flex-col gap-2">
-                    {"Invite"->React.string}
-                    <input
-                      className="text-white p-2 bg-extraDark outline-none"
-                      name="inviteLink"
-                      type_="text"
-                      placeholder={brightIdGuild.inviteLink
-                      ->Js.Nullable.toOption
-                      ->Belt.Option.getWithDefault("No Invite Link")}
-                      value={state.inviteLink->Belt.Option.getWithDefault("")}
-                      onChange=onInviteLinkChanged
-                    />
-                  </label>
-                  <label className="flex flex-col gap-2">
-                    {"Sponsorship Address"->React.string}
-                    <div className="flex flex-row gap-4 bg-transparent">
-                      <input
-                        className="text-white p-2 bg-dark"
-                        name="sponsorshipAddress"
-                        type_="text"
-                        placeholder={brightIdGuild.sponsorshipAddress
-                        ->Js.Nullable.toOption
-                        ->Belt.Option.getWithDefault("No Sponsorship Address")
-                        ->truncateAddress}
-                        value={state.sponsorshipAddress->Belt.Option.getWithDefault("")}
-                        readOnly={true}
-                      />
-                      <div
-                        className="p-2 border-2 border-brightid text-white font-xl rounded"
-                        onClick={handleSign}>
-                        {React.string("Sign")}
-                      </div>
-                    </div>
-                  </label>
-                </div>
-              }}
-            </div>
-            <SubmitPopup hasChangesToSave reset />
-          </Remix.Form>
+  switch maybeUser {
+  | None => <DiscordLoginButton label="Login to Discord" />
+  | Some(_) =>
+    switch isAdmin {
+    | false =>
+      <div className="flex flex-1">
+        <header className="flex flex-row justify-between md:justify-end m-4">
+          <SidebarToggle handleToggleSidebar={context["handleToggleSidebar"]} maybeUser />
+          <Link
+            className="p-2 bg-transparent font-semibold rounded-3xl text-4xl text-white"
+            to={`/guilds/${guildId}`}>
+            {`⬅️`->React.string}
+          </Link>
+        </header>
+        <div className="flex justify-center items-center text-white text-3xl font-bold">
+          <div> {"You are not an admin in this server"->React.string} </div>
         </div>
       </div>
+    | true =>
+      switch maybeDiscordGuild {
+      | None => <> </>
+      | Some(guild) =>
+        <div className="flex-1 p-4">
+          <ReactHotToast.Toaster />
+          <div className="flex flex-col flex-1 h-full">
+            <header className="flex flex-row justify-between m-4">
+              <div className="flex flex-col md:flex-row gap-3">
+                <SidebarToggle handleToggleSidebar={context["handleToggleSidebar"]} maybeUser />
+                <Link
+                  className="p-2 bg-transparent font-semibold rounded-3xl text-4xl text-white"
+                  to={`/guilds/${guildId}`}>
+                  {`⬅️`->React.string}
+                </Link>
+              </div>
+              <RainbowKit.ConnectButton className="h-full" />
+            </header>
+            <Remix.Form
+              method={#post}
+              action={`/guilds/${guildId}/${roleId}/adminSubmit`}
+              className=" flex-1 text-white text-2xl font-semibold justify-center  items-center relative">
+              <div>
+                <div> {"Admin Commands"->React.string} </div>
+                <img className=" w-48 h-48 p-5 rounded" src={guild->Helpers_Guild.iconUri} />
+              </div>
+              <div className="flex flex-1 justify-around flex-col items-center ">
+                {switch maybeBrightIdGuild {
+                | None =>
+                  <div className="text-white text-2xl font-semibold justify-center items-center">
+                    <div> {"This server is not using BrightID"->React.string} </div>
+                  </div>
+                | Some(brightIdGuild) =>
+                  <div className="flex flex-col flex-1 justify-center items-start gap-4">
+                    <label className="flex flex-col gap-2">
+                      {"Role Name"->React.string}
+                      <input
+                        className="text-white p-2 rounded bg-extraDark cursor-not-allowed"
+                        type_="text"
+                        name="role"
+                        placeholder={brightIdGuild.role->Belt.Option.getWithDefault("No Role Name")}
+                        value={state.role->Belt.Option.getWithDefault("")}
+                        onChange={onRoleChanged}
+                        disabled={true}
+                      />
+                    </label>
+                    <label className="flex flex-col gap-2">
+                      {"Public Invite Link"->React.string}
+                      <input
+                        className="text-white p-2 bg-extraDark outline-none"
+                        name="inviteLink"
+                        type_="text"
+                        placeholder={brightIdGuild.inviteLink->Belt.Option.getWithDefault(
+                          "No Invite Link",
+                        )}
+                        value={state.inviteLink->Belt.Option.getWithDefault("")}
+                        onChange=onInviteLinkChanged
+                      />
+                    </label>
+                    <label className="flex flex-col gap-2">
+                      {"Sponsorship Address"->React.string}
+                      <div className="flex flex-row gap-4 bg-transparent">
+                        <input
+                          className="text-white p-2 bg-dark"
+                          name="sponsorshipAddress"
+                          type_="text"
+                          placeholder={brightIdGuild.sponsorshipAddress
+                          ->Belt.Option.getWithDefault("0x")
+                          ->truncateAddress}
+                          value={state.sponsorshipAddress->Belt.Option.getWithDefault("")}
+                          readOnly={true}
+                        />
+                        <div
+                          className="p-2 border-2 border-brightid text-white font-xl rounded"
+                          onClick={handleSign}>
+                          {React.string("Sign")}
+                        </div>
+                      </div>
+                    </label>
+                  </div>
+                }}
+              </div>
+              <SubmitPopup hasChangesToSave reset />
+            </Remix.Form>
+          </div>
+        </div>
+      }
     }
   }
 }

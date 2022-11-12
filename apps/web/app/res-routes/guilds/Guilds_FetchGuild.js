@@ -12,26 +12,26 @@ import * as WebUtils_Gist from "../../utils/WebUtils_Gist.js";
 function loader(param) {
   var config = WebUtils_Gist.makeGistConfig(process.env.GIST_ID, "guildData.json", process.env.GITHUB_ACCESS_TOKEN);
   var guildId = Belt_Option.getWithDefault(Js_dict.get(param.params, "guildId"), "");
-  return $$Promise.$$catch(AuthServer.authenticator.isAuthenticated(param.request).then(function (user) {
-                  if (user == null) {
+  return $$Promise.$$catch(AuthServer.authenticator.isAuthenticated(param.request).then(function (maybeUser) {
+                  if (maybeUser == null) {
                     return Promise.resolve({
-                                guild: undefined,
-                                brightIdGuild: undefined,
+                                maybeDiscordGuild: undefined,
+                                maybeBrightIdGuild: undefined,
                                 isAdmin: false
                               });
                   } else {
                     return WebUtils_Gist.ReadGist.content(config, Decode$Shared.Gist.brightIdGuilds).then(function (brightIdGuilds) {
-                                var brightIdGuild = Js_dict.get(brightIdGuilds, guildId);
-                                return DiscordServer.fetchGuildFromId(guildId).then(function (guild) {
-                                            var userId = user.profile.id;
+                                var maybeBrightIdGuild = Js_dict.get(brightIdGuilds, guildId);
+                                return DiscordServer.fetchDiscordGuildFromId(guildId).then(function (maybeDiscordGuild) {
+                                            var userId = maybeUser.profile.id;
                                             return DiscordServer.fetchGuildMemberFromId(guildId, userId).then(function (guildMember) {
                                                         var memberRoles = (guildMember == null) ? [] : guildMember.roles;
                                                         return DiscordServer.fetchGuildRoles(guildId).then(function (guildRoles) {
                                                                     var isAdmin = DiscordServer.memberIsAdmin(guildRoles, memberRoles);
-                                                                    var isOwner = (guild == null) ? false : guild.owner_id === userId;
+                                                                    var isOwner = (maybeDiscordGuild == null) ? false : maybeDiscordGuild.owner_id === userId;
                                                                     return Promise.resolve({
-                                                                                guild: (guild == null) ? undefined : Caml_option.some(guild),
-                                                                                brightIdGuild: brightIdGuild,
+                                                                                maybeDiscordGuild: (maybeDiscordGuild == null) ? undefined : Caml_option.some(maybeDiscordGuild),
+                                                                                maybeBrightIdGuild: maybeBrightIdGuild,
                                                                                 isAdmin: isAdmin || isOwner
                                                                               });
                                                                   });
@@ -41,8 +41,8 @@ function loader(param) {
                   }
                 }), (function (error) {
                 return Promise.resolve({
-                            guild: undefined,
-                            brightIdGuild: undefined,
+                            maybeDiscordGuild: undefined,
+                            maybeBrightIdGuild: undefined,
                             isAdmin: false
                           });
               }));
