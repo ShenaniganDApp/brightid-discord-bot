@@ -174,7 +174,6 @@ function updateAllEntries(content, entries, config) {
   var entries$1 = Js_dict.fromList(entries);
   var keys = Object.keys(entries$1);
   Belt_Array.forEach(keys, (function (key) {
-          Belt_Option.getExn(Js_dict.get(content, key));
           var entry = Belt_Option.getExn(Js_dict.get(entries$1, key));
           content[key] = entry;
         }));

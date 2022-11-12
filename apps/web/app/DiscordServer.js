@@ -200,7 +200,7 @@ function fetchUserGuilds(user) {
               }));
 }
 
-function fetchGuildFromId(guildId) {
+function fetchDiscordGuildFromId(guildId) {
   var headers = {
     Authorization: "Bot " + botToken + ""
   };
@@ -279,7 +279,7 @@ export {
   fetchBotGuilds ,
   fetchBotGuildsLimit ,
   fetchUserGuilds ,
-  fetchGuildFromId ,
+  fetchDiscordGuildFromId ,
   fetchGuildMemberFromId ,
   fetchGuildRoles ,
   memberIsAdmin ,

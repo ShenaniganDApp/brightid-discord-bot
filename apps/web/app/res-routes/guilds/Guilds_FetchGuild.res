@@ -1,6 +1,6 @@
 type loaderData = {
-  guild: option<Types.guild>,
-  brightIdGuild: option<Shared.BrightId.brightIdGuild>,
+  maybeDiscordGuild: option<Types.guild>,
+  maybeBrightIdGuild: option<Shared.BrightId.brightIdGuild>,
   isAdmin: bool,
 }
 
@@ -20,17 +20,17 @@ let loader: Remix.loaderFunction<loaderData> = ({request, params}) => {
   let guildId = params->Js.Dict.get("guildId")->Belt.Option.getWithDefault("")
   AuthServer.authenticator
   ->RemixAuth.Authenticator.isAuthenticated(request)
-  ->then(user => {
-    switch user->Js.Nullable.toOption {
-    | None => {guild: None, isAdmin: false, brightIdGuild: None}->resolve
+  ->then(maybeUser => {
+    switch maybeUser->Js.Nullable.toOption {
+    | None => {maybeDiscordGuild: None, isAdmin: false, maybeBrightIdGuild: None}->resolve
     | Some(user) =>
       WebUtils_Gist.ReadGist.content(
         ~config,
         ~decoder=Decode.Gist.brightIdGuilds,
       )->then(brightIdGuilds => {
-        let brightIdGuild = brightIdGuilds->Js.Dict.get(guildId)
-        fetchGuildFromId(~guildId)->then(
-          guild => {
+        let maybeBrightIdGuild = brightIdGuilds->Js.Dict.get(guildId)
+        fetchDiscordGuildFromId(~guildId)->then(
+          maybeDiscordGuild => {
             let userId = user->RemixAuth.User.getProfile->RemixAuth.User.getId
             fetchGuildMemberFromId(~guildId, ~userId)->then(
               guildMember => {
@@ -41,14 +41,14 @@ let loader: Remix.loaderFunction<loaderData> = ({request, params}) => {
                 fetchGuildRoles(~guildId)->then(
                   guildRoles => {
                     let isAdmin = memberIsAdmin(~guildRoles, ~memberRoles)
-                    let isOwner = switch guild->Js.Nullable.toOption {
+                    let isOwner = switch maybeDiscordGuild->Js.Nullable.toOption {
                     | None => false
                     | Some(guild) => guild.owner_id === userId
                     }
                     {
-                      guild: guild->Js.Nullable.toOption,
+                      maybeDiscordGuild: maybeDiscordGuild->Js.Nullable.toOption,
                       isAdmin: isAdmin || isOwner,
-                      brightIdGuild,
+                      maybeBrightIdGuild,
                     }->resolve
                   },
                 )
@@ -61,8 +61,9 @@ let loader: Remix.loaderFunction<loaderData> = ({request, params}) => {
   })
   ->catch(error => {
     switch error {
-    | DiscordRateLimited => {guild: None, isAdmin: false, brightIdGuild: None}->resolve
-    | _ => {guild: None, isAdmin: false, brightIdGuild: None}->resolve
+    | DiscordRateLimited =>
+      {maybeDiscordGuild: None, isAdmin: false, maybeBrightIdGuild: None}->resolve
+    | _ => {maybeDiscordGuild: None, isAdmin: false, maybeBrightIdGuild: None}->resolve
     }
   })
 }

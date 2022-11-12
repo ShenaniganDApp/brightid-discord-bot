@@ -6,10 +6,8 @@ import * as $$Promise from "../../../../../node_modules/@ryyppy/rescript-promise
 import * as AuthServer from "../../AuthServer.js";
 import * as Belt_Array from "../../../../../node_modules/rescript/lib/es6/belt_Array.js";
 import * as Belt_Option from "../../../../../node_modules/rescript/lib/es6/belt_Option.js";
-import * as Caml_option from "../../../../../node_modules/rescript/lib/es6/caml_option.js";
 import * as Decode$Shared from "../../../node_modules/@brightidbot/shared/src/Decode.js";
 import * as WebUtils_Gist from "../../utils/WebUtils_Gist.js";
-import * as Webapi__Fetch from "../../../../../node_modules/rescript-webapi/src/Webapi/Webapi__Fetch.js";
 import * as Caml_exceptions from "../../../../../node_modules/rescript/lib/es6/caml_exceptions.js";
 import * as Webapi__FormData from "../../../../../node_modules/rescript-webapi/src/Webapi/Webapi__FormData.js";
 import * as Caml_js_exceptions from "../../../../../node_modules/rescript/lib/es6/caml_js_exceptions.js";
@@ -26,7 +24,7 @@ function loader(param) {
 }
 
 function modifyRoleUrl(guildId, roleId) {
-  return "/guilds/" + guildId + "/roles/" + roleId + "";
+  return "https://discord.com/api/guilds/" + guildId + "/roles/" + roleId + "";
 }
 
 function someIfString(entryValue) {
@@ -61,10 +59,8 @@ var Form = {
 };
 
 async function action(param) {
-  var params = param.params;
   var request = param.request;
-  var guildId = Belt_Option.getWithDefault(Js_dict.get(params, "guildId"), "");
-  Belt_Option.getWithDefault(Js_dict.get(params, "roleId"), "");
+  var guildId = Belt_Option.getWithDefault(Js_dict.get(param.params, "guildId"), "");
   var exit = 0;
   var data;
   try {
@@ -84,14 +80,6 @@ async function action(param) {
   var sponsorshipAddress = match.sponsorshipAddress;
   var inviteLink = match.inviteLink;
   var role = match.role;
-  if (role !== undefined) {
-    var headers = {
-      Authorization: "Bot " + botToken + "",
-      "Content-Type": "application/x-www-form-urlencoded"
-    };
-    var body = "{name: " + role + "}";
-    Webapi__Fetch.RequestInit.make(/* Patch */8, Caml_option.some(headers), Caml_option.some(body), undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined)(undefined);
-  }
   var config = WebUtils_Gist.makeGistConfig(process.env.GIST_ID, "guildData.json", process.env.GITHUB_ACCESS_TOKEN);
   var content = await WebUtils_Gist.ReadGist.content(config, Decode$Shared.Gist.brightIdGuilds);
   var entry = Js_dict.get(content, guildId);

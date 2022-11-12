@@ -101,7 +101,7 @@ let loader: Remix.loaderFunction<loaderData> = async ({request}) => {
 
           | Some(4.) => NotSponsored
 
-          | _ => Unknown
+          | _ => Types.Unknown
           }
         }
       }

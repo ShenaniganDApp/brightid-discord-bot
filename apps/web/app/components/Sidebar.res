@@ -19,17 +19,43 @@ let make = (~toggled, ~handleToggleSidebar, ~user, ~guilds, ~loadingGuilds) => {
   }
 
   let sidebarElements = {
-    switch user->Js.Nullable.toOption {
-    | None =>
-      <div className="flex justify-center items-center h-full ">
-        <p className="text-2xl text-center font-semibold">
-          {"Login to Discord to access app features"->React.string}
-        </p>
-      </div>
-    | Some(_) =>
-      switch (guilds, loadingGuilds) {
-      | (_, true) =>
-        let intersection = guilds->Belt.Array.map((guild: Types.oauthGuild) => {
+    switch (guilds, loadingGuilds) {
+    | (_, true) =>
+      let intersection = guilds->Belt.Array.map((guild: Types.oauthGuild) => {
+        <Menu iconShape="square" key={guild.id}>
+          <MenuItem
+            className="bg-extraDark"
+            icon={<img
+              className=" bg-extraDark rounded-lg border-1 border-white" src={guild->icon}
+            />}>
+            <Remix.Link
+              className="font-semibold text-xl" to={`/guilds/${guild.id}`} prefetch={#intent}>
+              {guild.name->React.string}
+            </Remix.Link>
+          </MenuItem>
+        </Menu>
+      })
+      let loading = Belt.Array.range(0, 4)->Belt.Array.map(i => {
+        <Menu iconShape="square" key={(i + 1)->Belt.Int.toString}>
+          <MenuItem
+            className="flex animate-pulse flex-row h-full bg-extraDark "
+            icon={<img
+              className=" bg-extraDark  rounded-lg" src="/assets/brightid_logo_white.png"
+            />}>
+            <div className="flex flex-col space-y-3">
+              <div className="w-36 bg-gray-300 h-6 rounded-md " />
+            </div>
+          </MenuItem>
+        </Menu>
+      })
+      intersection->Belt.Array.concat(loading)->React.array
+    | ([], false) => <p className="text-white"> {"Couldn't Load Discord Servers"->React.string} </p>
+    | (_, false) =>
+      switch guilds->Belt.Array.length {
+      | 0 => <p className="text-white"> {"No Guilds"->React.string} </p>
+      | _ =>
+        guilds
+        ->Belt.Array.map((guild: Types.oauthGuild) => {
           <Menu iconShape="square" key={guild.id}>
             <MenuItem
               className="bg-extraDark"
@@ -43,43 +69,7 @@ let make = (~toggled, ~handleToggleSidebar, ~user, ~guilds, ~loadingGuilds) => {
             </MenuItem>
           </Menu>
         })
-        let loading = Belt.Array.range(0, 4)->Belt.Array.map(i => {
-          <Menu iconShape="square" key={(i + 1)->Belt.Int.toString}>
-            <MenuItem
-              className="flex animate-pulse flex-row h-full bg-extraDark "
-              icon={<img
-                className=" bg-extraDark  rounded-lg" src="/assets/brightid_logo_white.png"
-              />}>
-              <div className="flex flex-col space-y-3">
-                <div className="w-36 bg-gray-300 h-6 rounded-md " />
-              </div>
-            </MenuItem>
-          </Menu>
-        })
-        intersection->Belt.Array.concat(loading)->React.array
-      | ([], false) =>
-        <p className="text-white"> {"Couldn't Load Discord Servers"->React.string} </p>
-      | (_, false) =>
-        switch guilds->Belt.Array.length {
-        | 0 => <p className="text-white"> {"No Guilds"->React.string} </p>
-        | _ =>
-          guilds
-          ->Belt.Array.map((guild: Types.oauthGuild) => {
-            <Menu iconShape="square" key={guild.id}>
-              <MenuItem
-                className="bg-extraDark"
-                icon={<img
-                  className=" bg-extraDark rounded-lg border-1 border-white" src={guild->icon}
-                />}>
-                <Remix.Link
-                  className="font-semibold text-xl" to={`/guilds/${guild.id}`} prefetch={#intent}>
-                  {guild.name->React.string}
-                </Remix.Link>
-              </MenuItem>
-            </Menu>
-          })
-          ->React.array
-        }
+        ->React.array
       }
     }
   }

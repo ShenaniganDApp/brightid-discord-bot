@@ -11,7 +11,6 @@ var ConnectButton = {};
 function Sidebar(Props) {
   var toggled = Props.toggled;
   var handleToggleSidebar = Props.handleToggleSidebar;
-  var user = Props.user;
   var guilds = Props.guilds;
   var loadingGuilds = Props.loadingGuilds;
   var icon = function (param) {
@@ -23,13 +22,7 @@ function Sidebar(Props) {
     }
   };
   var sidebarElements;
-  if (user == null) {
-    sidebarElements = React.createElement("div", {
-          className: "flex justify-center items-center h-full "
-        }, React.createElement("p", {
-              className: "text-2xl text-center font-semibold"
-            }, "Login to Discord to access app features"));
-  } else if (loadingGuilds) {
+  if (loadingGuilds) {
     var intersection = Belt_Array.map(guilds, (function (guild) {
             return React.createElement(ReactProSidebar.Menu, {
                         children: React.createElement(ReactProSidebar.MenuItem, {

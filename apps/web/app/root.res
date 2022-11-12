@@ -70,7 +70,7 @@ let wagmiClient = %raw(`createClient({
   provider:chainConfig.provider,
   })`)
 
-type loaderData = {user: Js.Nullable.t<RemixAuth.User.t>, rateLimited: bool}
+type loaderData = {maybeUser: option<RemixAuth.User.t>, rateLimited: bool}
 
 let loader: Remix.loaderFunction<loaderData> = ({request}) => {
   open DiscordServer
@@ -79,12 +79,12 @@ let loader: Remix.loaderFunction<loaderData> = ({request}) => {
   AuthServer.authenticator
   ->RemixAuth.Authenticator.isAuthenticated(request)
   ->then(user => {
-    {user, rateLimited: false}->resolve
+    {maybeUser: user->Js.Nullable.toOption, rateLimited: false}->resolve
   })
   ->catch(error => {
     switch error {
-    | DiscordRateLimited => {user: Js.Nullable.null, rateLimited: true}->resolve
-    | _ => {user: Js.Nullable.null, rateLimited: false}->resolve
+    | DiscordRateLimited => {maybeUser: None, rateLimited: true}->resolve
+    | _ => {maybeUser: None, rateLimited: false}->resolve
     }
   })
 }
@@ -130,7 +130,7 @@ let reducer = (state, action) =>
 @react.component
 let default = () => {
   open RainbowKit
-  let {user, rateLimited} = Remix.useLoaderData()
+  let {maybeUser, rateLimited} = Remix.useLoaderData()
   let (toggled, setToggled) = React.useState(_ => false)
 
   let fetcher = Remix.useFetcher()
@@ -196,7 +196,13 @@ let default = () => {
       <WagmiProvider client={wagmiClient}>
         <RainbowKitProvider chains={chainConfig["chains"]} theme={myTheme}>
           <div className="flex h-screen w-screen">
-            <Sidebar toggled handleToggleSidebar user guilds loadingGuilds={state.loadingGuilds} />
+            {switch maybeUser {
+            | None => <> </>
+            | Some(user) =>
+              <Sidebar
+                toggled handleToggleSidebar user guilds loadingGuilds={state.loadingGuilds}
+              />
+            }}
             <Remix.Outlet
               context={{
                 "handleToggleSidebar": handleToggleSidebar,
@@ -217,3 +223,22 @@ let default = () => {
     </body>
   </html>
 }
+
+%%raw(`
+export function ErrorBoundary({ error }) {
+  console.error(error);
+  return (
+    <html>
+      <head>
+        <title>Oh no!</title>
+        <Remix.Meta />
+        <Remix.Links />
+      </head>
+      <body>
+        <p className="text-center">Something went wrong!</p>
+        <p className="text-center">BrightID command center is still in Beta. Try reloading the page!</p>
+        <Remix.Scripts />
+      </body>
+    </html>
+  );
+}`)
