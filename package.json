@@ -5,15 +5,15 @@
     "patch-package": "^6.4.7"
   },
   "dependencies": {
+    "@remix-run/vercel": "1.6.1",
     "brightid_sdk": "^1.0.1",
     "canvas": "^2.9.0",
     "concurrently": "^7.1.0",
     "dotenv": "^8.2.0",
     "find-up": "^6.3.0",
-    "rescript": "^10.1.0-alpha.2",
+    "rescript": "^10.1.0-rc.5",
     "rescript-discordjs": "^0.2.4",
-    "uuid": "^8.3.0",
-    "@remix-run/vercel": "1.6.1"
+    "uuid": "^8.3.0"
   },
   "scripts": {
     "bot": "yarn workspace @brightidbot/bot",
@@ -22,7 +22,7 @@
     "scripts": "yarn workspace @brightidbot/scripts",
     "shared": "yarn workspace @brightidbot/shared",
     "postinstall": "yarn patch-package && yarn web remix setup node",
-    "re:build": "yarn workspace @brightidbot/shared && yarn utils re:build && yarn bot re:build && yarn web re:build && yarn scripts re:build"
+    "re:build": "yarn shared re:build && yarn utils re:build && yarn bot re:build && yarn web re:build && yarn scripts re:build"
   },
   "workspaces": [
     "apps/*",
