@@ -9,7 +9,12 @@ let {brightIdVerificationEndpoint, brightIdAppDeeplink, brightIdLinkVerification
 let {context, contractAddress} = module(Shared.Constants)
 
 exception VerifyHandlerError(string)
-exception BrightIdError(brightIdError)
+exception BrightIdError(BrightId.Error.t)
+
+type sponsor =
+  | SponsorSuccess(BrightId.Sponsorships.sponsor)
+  | BrightIdError(BrightId.Error.t)
+  | JsError(Js.Exn.t)
 
 @val @scope("globalThis")
 external fetch: (string, 'params) => Promise.t<Response.t<Js.Json.t>> = "fetch"
@@ -53,7 +58,8 @@ let fetchVerification = uuid => {
   ->fetch(params)
   ->then(res => res->Response.json)
   ->then(json => {
-    switch (json->Json.decode(Decode.BrightId.data), json->Json.decode(Decode.BrightId.error)) {
+    open Decode.Decode_BrightId
+    switch (json->Json.decode(ContextId.data), json->Json.decode(Error.data)) {
     | (Ok({data}), _) => data->resolve
     | (_, Ok(error)) => error->BrightIdError->reject
     | (Error(err), _) => err->Json.Decode.DecodeError->reject
@@ -212,12 +218,13 @@ let execute = (interaction: Interaction.t) => {
   interaction
   ->Interaction.deferReply(~options={"ephemeral": true}, ())
   ->then(_ => {
+    open Shared.Decode
     let config = Gist.makeGistConfig(
       ~id=config["gistId"],
       ~name="guildData.json",
       ~token=config["githubAccessToken"],
     )
-    Gist.ReadGist.content(~config, ~decoder=Decode.Gist.brightIdGuilds)
+    Gist.ReadGist.content(~config, ~decoder=Decode_Gist.brightIdGuilds)
     ->then(guilds => {
       let guildId = guild->Guild.getGuildId
       let guildData = guilds->Js.Dict.get(guildId)

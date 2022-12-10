@@ -21,7 +21,12 @@ function data(field) {
 
 var data$1 = Json_Decode$JsonCombinators.object(data);
 
-function error(field) {
+var ContextId = {
+  contextId: contextId,
+  data: data$1
+};
+
+function data$2(field) {
   return {
           error: field.required("error", Json_Decode$JsonCombinators.bool),
           errorNum: field.required("errorNum", Json_Decode$JsonCombinators.$$int),
@@ -30,12 +35,81 @@ function error(field) {
         };
 }
 
-var error$1 = Json_Decode$JsonCombinators.object(error);
+var data$3 = Json_Decode$JsonCombinators.object(data$2);
 
-var BrightId = {
-  contextId: contextId,
-  data: data$1,
-  error: error$1
+var $$Error = {
+  data: data$3
+};
+
+function sponsor(field) {
+  return {
+          hash: field.required("hash", Json_Decode$JsonCombinators.string)
+        };
+}
+
+var sponsor$1 = Json_Decode$JsonCombinators.object(sponsor);
+
+function sponsorhip(field) {
+  return {
+          app: field.required("app", Json_Decode$JsonCombinators.string),
+          appHasAuthorized: field.required("appHasAuthorized", Json_Decode$JsonCombinators.bool),
+          spendRequested: field.required("spendRequested", Json_Decode$JsonCombinators.bool),
+          timestamp: field.required("timestamp", Json_Decode$JsonCombinators.$$int)
+        };
+}
+
+function data$4(field) {
+  var __x = Json_Decode$JsonCombinators.object(sponsorhip);
+  return {
+          data: field.required("data", __x)
+        };
+}
+
+var data$5 = Json_Decode$JsonCombinators.object(data$4);
+
+var Sponsorships = {
+  availableSponsorships: Json_Decode$JsonCombinators.$$int,
+  sponsor: sponsor$1,
+  sponsorhip: sponsorhip,
+  data: data$5
+};
+
+function result(field) {
+  return {
+          message: field.required("message", Json_Decode$JsonCombinators.string),
+          errorNum: field.required("errorNum", Json_Decode$JsonCombinators.$$int)
+        };
+}
+
+var result$1 = Json_Decode$JsonCombinators.object(result);
+
+function operation(field) {
+  return {
+          state: field.required("state", Json_Decode$JsonCombinators.string),
+          result: field.optional("result", result$1)
+        };
+}
+
+function data$6(field) {
+  var __x = Json_Decode$JsonCombinators.object(operation);
+  return {
+          data: field.required("data", __x)
+        };
+}
+
+var data$7 = Json_Decode$JsonCombinators.object(data$6);
+
+var Operations = {
+  result: result$1,
+  operation: operation,
+  data: data$7
+};
+
+var Decode_BrightId = {
+  ContextId: ContextId,
+  $$Error: $$Error,
+  Sponsorships: Sponsorships,
+  Operations: Operations
 };
 
 var brightIdGuild = Json_Decode$JsonCombinators.object(function (field) {
@@ -45,20 +119,20 @@ var brightIdGuild = Json_Decode$JsonCombinators.object(function (field) {
               inviteLink: field.optional("inviteLink", Json_Decode$JsonCombinators.string),
               roleId: field.optional("roleId", Json_Decode$JsonCombinators.string),
               sponsorshipAddress: field.optional("sponsorshipAddress", Json_Decode$JsonCombinators.string),
-              usedSponsorships: field.optional("usedSponsorships", Json_Decode$JsonCombinators.$$int),
-              assignedSponsorships: field.optional("assignedSponsorships", Json_Decode$JsonCombinators.$$int)
+              usedSponsorships: field.optional("usedSponsorships", Json_Decode$JsonCombinators.string),
+              assignedSponsorships: field.optional("assignedSponsorships", Json_Decode$JsonCombinators.string)
             };
     });
 
 var brightIdGuilds = Json_Decode$JsonCombinators.dict(brightIdGuild);
 
-var Gist = {
+var Decode_Gist = {
   brightIdGuild: brightIdGuild,
   brightIdGuilds: brightIdGuilds
 };
 
 export {
-  BrightId ,
-  Gist ,
+  Decode_BrightId ,
+  Decode_Gist ,
 }
 /* data Not a pure module */

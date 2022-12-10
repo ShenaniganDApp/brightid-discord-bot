@@ -1,20 +1,23 @@
 open Promise
 open NodeFetch
-open BrightId
+open Shared
 
 //@TODO move all top level exceptions to a new file
-exception BrightIdError(brightIdError)
+exception BrightIdError(BrightId.Error.t)
 
 type verificationInfo =
-  VerificationInfo(brightIdContextId) | BrightIdError(brightIdError) | JsError(Js.Exn.t)
+  VerificationInfo(BrightId.ContextId.t) | BrightIdError(BrightId.Error.t) | JsError(Js.Exn.t)
 
-let defaultVerification = {
-  unique: false,
-  app: "",
-  context: "Discord",
-  contextIds: [],
-  timestamp: 0,
-}
+// let defaultVerification = {
+//   open Shared.BrightId.ContextId
+//   {
+//     unique: false,
+//     app: "",
+//     context: "Discord",
+//     contextIds: [],
+//     timestamp: 0,
+//   }
+// }
 
 module UUID = {
   type t = string
@@ -58,9 +61,8 @@ let rec fetchVerificationInfo = (~retry=5, id): Promise.t<verificationInfo> => {
   endpoint
   ->fetch(params)
   ->then(Response.json)
-  ->then(json =>
-    switch (json->Json.decode(Decode.BrightId.data), json->Json.decode(Decode.BrightId.error)) {
-    | (Ok({data}), _) => VerificationInfo(data)->resolve
+    open Decode.Decode_BrightId
+    switch (json->Json.decode(ContextId.data), json->Json.decode(Error.data)) {
     | (_, Ok(error)) => error->BrightIdError->reject
     | (Error(err), _) => err->Json.Decode.DecodeError->reject
     }

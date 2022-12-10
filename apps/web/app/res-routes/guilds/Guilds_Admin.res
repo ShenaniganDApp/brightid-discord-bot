@@ -1,10 +1,11 @@
+open Shared
 exception NoBrightIdData
 
 type params = {guildId: string}
 
 type loaderData = {
   maybeUser: option<RemixAuth.User.t>,
-  maybeBrightIdGuild: option<Shared.BrightId.brightIdGuild>,
+  maybeBrightIdGuild: option<BrightId.Gist.brightIdGuild>,
   maybeDiscordGuild: option<Types.guild>,
   isAdmin: bool,
 }
@@ -34,10 +35,8 @@ let loader: Remix.loaderFunction<loaderData> = ({request, params}) => {
         maybeDiscordGuild: None,
       }->resolve
     | Some(user) =>
-      WebUtils_Gist.ReadGist.content(
-        ~config,
-        ~decoder=Shared.Decode.Gist.brightIdGuilds,
-      )->then(guilds => {
+      open Shared.Decode
+      WebUtils_Gist.ReadGist.content(~config, ~decoder=Decode_Gist.brightIdGuilds)->then(guilds => {
         let maybeBrightIdGuild = guilds->Js.Dict.get(guildId)
         fetchDiscordGuildFromId(~guildId)->then(
           maybeDiscordGuild => {

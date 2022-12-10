@@ -50,6 +50,7 @@ let loader: Remix.loaderFunction<loaderData> = async ({request, params}) => {
 let action: Remix.actionFunction<'a> = async ({request, params}) => {
   open Webapi.Fetch
   open Guilds_AdminSubmit
+  open Shared.Decode
 
   let guildId = params->Js.Dict.get("guildId")->Belt.Option.getWithDefault("")
 
@@ -68,7 +69,7 @@ let action: Remix.actionFunction<'a> = async ({request, params}) => {
     ~name="guildData.json",
     ~token=Remix.process["env"]["GITHUB_ACCESS_TOKEN"],
   )
-  let content = await ReadGist.content(~config, ~decoder=Shared.Decode.Gist.brightIdGuilds)
+  let content = await ReadGist.content(~config, ~decoder=Decode_Gist.brightIdGuilds)
   let prevEntry = switch content->Js.Dict.get(guildId) {
   | Some(entry) => entry
   | None => GuildDoesNotExist(guildId)->raise
@@ -86,7 +87,7 @@ let action: Remix.actionFunction<'a> = async ({request, params}) => {
 
 type state = {
   guild: option<Types.guild>,
-  brightIdGuild: option<Shared.BrightId.brightIdGuild>,
+  brightIdGuild: option<Shared.BrightId.Gist.brightIdGuild>,
   loading: bool,
   submitting: bool,
   oauthGuild: option<Types.oauthGuild>,
@@ -102,7 +103,7 @@ let state = {
 
 type actions =
   | SetGuild(option<Types.guild>)
-  | SetBrightIdGuild(option<Shared.BrightId.brightIdGuild>)
+  | SetBrightIdGuild(option<Shared.BrightId.Gist.brightIdGuild>)
   | SetLoading(bool)
   | SetSubmitting(bool)
   | SetOAuthGuild(option<Types.oauthGuild>)

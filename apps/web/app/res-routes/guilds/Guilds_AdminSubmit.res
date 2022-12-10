@@ -83,7 +83,7 @@ let action: Remix.actionFunction<'a> = async ({request, params}) => {
     ~name="guildData.json",
     ~token=Remix.process["env"]["GITHUB_ACCESS_TOKEN"],
   )
-  let content = await ReadGist.content(~config, ~decoder=Shared.Decode.Gist.brightIdGuilds)
+  let content = await ReadGist.content(~config, ~decoder=Shared.Decode.Decode_Gist.brightIdGuilds)
   let prevEntry = switch content->Js.Dict.get(guildId) {
   | Some(entry) => entry
   | None => GuildDoesNotExist(guildId)->raise
