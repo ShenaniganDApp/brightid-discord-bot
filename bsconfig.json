@@ -1,0 +1,19 @@
+{
+  "name": "@brightidbot/root",
+  "version": "0.0.1",
+  "sources": [],
+  "bs-dependencies": [
+    "@brightidbot/shared",
+    "@brightidbot/utils",
+    "@brightidbot/scripts",
+    "@brightidbot/bot",
+    "@brightidbot/web"
+  ],
+  "pinned-dependencies": [
+    "@brightidbot/shared",
+    "@brightidbot/utils",
+    "@brightidbot/scripts",
+    "@brightidbot/bot",
+    "@brightidbot/web"
+  ]
+}
