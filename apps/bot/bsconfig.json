@@ -1,5 +1,5 @@
 {
-  "name": "BrightID-Bot",
+  "name": "@brightidbot/bot",
   "sources": [
     {
       "dir": "src",
