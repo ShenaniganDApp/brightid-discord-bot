@@ -1,6 +1,7 @@
 open Discord
 open Promise
 open NodeFetch
+open Shared
 
 let {brightIdVerificationEndpoint} = module(Endpoints)
 let {context} = module(Constants)
@@ -52,8 +53,8 @@ commands
 buttons->Collection.set(Buttons_Verify.customId, module(Buttons_Verify))->ignore
 
 let updateGistOnGuildCreate = async (guild: Guild.t, roleId) => {
-  open Shared.BrightId
   open Utils
+  open Shared.Decode
   let id = envConfig["gistId"]
   let name = "guildData.json"
   let token = envConfig["githubAccessToken"]
@@ -61,22 +62,25 @@ let updateGistOnGuildCreate = async (guild: Guild.t, roleId) => {
 
   let guildId = guild->Guild.getGuildId
 
-  let content = await Gist.ReadGist.content(~config, ~decoder=Shared.Decode.Gist.brightIdGuilds)
+  let content = await Gist.ReadGist.content(~config, ~decoder=Decode_Gist.brightIdGuilds)
 
   let entry = {
-    name: guild->Guild.getGuildName->Some,
-    role: Some("Verified"),
-    roleId: Some(roleId),
-    inviteLink: None,
-    sponsorshipAddress: None,
-    usedSponsorships: None,
-    assignedSponsorships: None,
+    open Shared.BrightId.Gist
+    {
+      name: guild->Guild.getGuildName->Some,
+      role: Some("Verified"),
+      roleId: Some(roleId),
+      inviteLink: None,
+      sponsorshipAddress: None,
+      usedSponsorships: None,
+      assignedSponsorships: None,
+    }
   }
 
   await Gist.UpdateGist.addEntry(~content, ~config, ~key=guildId, ~entry)
 }
 
-let onGuildCreate = async (guild) => {
+let onGuildCreate = async guild => {
   let roleManager = guild->Guild.getGuildRoleManager
 
   let role = await RoleManager.create(
@@ -127,8 +131,9 @@ let onInteraction = async (interaction: Interaction.t) => {
   }
 }
 
-let onGuildDelete = async (guild) => {
+let onGuildDelete = async guild => {
   open Utils
+  open Shared.Decode
   let config = Gist.makeGistConfig(
     ~id=envConfig["gistId"],
     ~name="guildData.json",
@@ -136,10 +141,7 @@ let onGuildDelete = async (guild) => {
   )
   let guildId = guild->Guild.getGuildId
 
-  let content = switch await Gist.ReadGist.content(
-    ~config,
-    ~decoder=Shared.Decode.Gist.brightIdGuilds,
-  ) {
+  let content = switch await Gist.ReadGist.content(~config, ~decoder=Decode_Gist.brightIdGuilds) {
   | data => Some(data)
   | exception JsError(_) => None
   }->Belt.Option.getExn
@@ -176,9 +178,10 @@ let onGuildMemberAdd = guildMember => {
   ->fetch(params)
   ->then(res => res->Response.json)
   ->then(json => {
+    open Shared.Decode
     switch (
-      json->Json.decode(Shared.Decode.BrightId.data),
-      json->Json.decode(Shared.Decode.BrightId.error),
+      json->Json.decode(Decode_BrightId.ContextId.data),
+      json->Json.decode(Decode_BrightId.Error.data),
     ) {
     | (Ok({data}), _) =>
       switch data.unique {
@@ -188,7 +191,7 @@ let onGuildMemberAdd = guildMember => {
           ~name="guildData.json",
           ~token=envConfig["githubAccessToken"],
         )
-        ->Gist.ReadGist.content(~config=_, ~decoder=Shared.Decode.Gist.brightIdGuilds)
+        ->Gist.ReadGist.content(~config=_, ~decoder=Decode_Gist.brightIdGuilds)
         ->then(content => {
           let guild = guildMember->GuildMember.getGuild
           let guildId = guild->Guild.getGuildId
@@ -227,13 +230,14 @@ let onGuildMemberAdd = guildMember => {
 
 let onRoleUpdate = role => {
   open Utils
+  open Shared.Decode
   let guildId = role->Role.getGuild->Guild.getGuildId
   let config = Gist.makeGistConfig(
     ~id=envConfig["gistId"],
     ~name="guildData.json",
     ~token=envConfig["githubAccessToken"],
   )
-  Gist.ReadGist.content(~config, ~decoder=Shared.Decode.Gist.brightIdGuilds)
+  Gist.ReadGist.content(~config, ~decoder=Decode_Gist.brightIdGuilds)
   ->then(guilds => {
     let brightIdGuild = guilds->Js.Dict.get(guildId)->Belt.Option.getExn
     let roleId = brightIdGuild.roleId->Belt.Option.getExn
