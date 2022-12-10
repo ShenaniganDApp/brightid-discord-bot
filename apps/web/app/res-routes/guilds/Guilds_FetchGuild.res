@@ -1,6 +1,7 @@
+open Shared
 type loaderData = {
   maybeDiscordGuild: option<Types.guild>,
-  maybeBrightIdGuild: option<Shared.BrightId.brightIdGuild>,
+  maybeBrightIdGuild: option<BrightId.Gist.brightIdGuild>,
   isAdmin: bool,
 }
 
@@ -9,7 +10,6 @@ type params = {guildId: string}
 let loader: Remix.loaderFunction<loaderData> = ({request, params}) => {
   open DiscordServer
   open Promise
-  open Shared
 
   let config = WebUtils_Gist.makeGistConfig(
     ~id=Remix.process["env"]["GIST_ID"],
@@ -24,9 +24,10 @@ let loader: Remix.loaderFunction<loaderData> = ({request, params}) => {
     switch maybeUser->Js.Nullable.toOption {
     | None => {maybeDiscordGuild: None, isAdmin: false, maybeBrightIdGuild: None}->resolve
     | Some(user) =>
+      open Shared.Decode
       WebUtils_Gist.ReadGist.content(
         ~config,
-        ~decoder=Decode.Gist.brightIdGuilds,
+        ~decoder=Decode_Gist.brightIdGuilds,
       )->then(brightIdGuilds => {
         let maybeBrightIdGuild = brightIdGuilds->Js.Dict.get(guildId)
         fetchDiscordGuildFromId(~guildId)->then(

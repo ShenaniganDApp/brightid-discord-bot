@@ -1,34 +1,79 @@
-type brightIdContextId = {
-  unique: bool,
-  app: string,
-  context: string,
-  contextIds: array<string>,
-  timestamp: int,
-}
-type brightIdContextIdRes = {data: brightIdContextId}
-
-type brightIdError = {
-  error: bool,
-  errorNum: int,
-  errorMessage: string,
-  code: int,
+module ContextId = {
+  type t = {
+    unique: bool,
+    app: string,
+    context: string,
+    contextIds: array<string>,
+    timestamp: int,
+  }
+  type data = {data: t}
 }
 
-type brightIdGuild = {
-  role: option<string>,
-  name: option<string>,
-  inviteLink: option<string>,
-  roleId: option<string>,
-  sponsorshipAddress: option<string>,
-  usedSponsorships: option<int>,
-  assignedSponsorships: option<int>,
+module Error = {
+  type t = {
+    error: bool,
+    errorNum: int,
+    errorMessage: string,
+    code: int,
+  }
 }
 
-type brightIdGuilds = Js.Dict.t<brightIdGuild>
+module Gist = {
+  type brightIdGuild = {
+    role: option<string>,
+    name: option<string>,
+    inviteLink: option<string>,
+    roleId: option<string>,
+    sponsorshipAddress: option<string>,
+    usedSponsorships: option<string>,
+    assignedSponsorships: option<string>,
+  }
 
-@module("brightid_sdk")
-external sponsor: (
-  ~sponsorkey: string,
-  ~contextId: string,
-  ~id: string,
-) => Js.Promise.t<Js.Json.t> = "sponsor"
+  type brightIdGuilds = Js.Dict.t<brightIdGuild>
+}
+
+module Sponsorships = {
+  type availableSponsorships = int
+  type sponsor = {hash: string}
+
+  type t = {
+    app: string,
+    appHasAuthorized: bool,
+    spendRequested: bool,
+    timestamp: int,
+  }
+  type data = {data: t}
+}
+
+module Operations = {
+  type result = {
+    message: string,
+    errorNum: int,
+  }
+  type t = {
+    state: string,
+    result: option<result>,
+  }
+  type data = {data: t}
+}
+
+@module("brightid_sdk_v5")
+external sponsor: (~key: string, ~context: string, ~contextId: string) => Js.Promise.t<Js.Json.t> =
+  "sponsor"
+
+@module("brightid_sdk_v5")
+external availableSponsorships: (~context: string) => Js.Promise.t<Js.Json.t> =
+  "availableSponsorships"
+
+//@Todo:  rename this to contract name (IdSponsorships)
+module SPContract = {
+  type t
+  external make: Ethers.Contract.t => t = "%identity"
+
+  @send
+  external contextBalance: (
+    t,
+    ~address: string,
+    ~formattedContext: string,
+  ) => Js.Promise.t<Ethers.BigNumber.t> = "contextBalance"
+}
