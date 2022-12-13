@@ -81,7 +81,7 @@ async function action(param) {
   var inviteLink = match.inviteLink;
   var role = match.role;
   var config = WebUtils_Gist.makeGistConfig(process.env.GIST_ID, "guildData.json", process.env.GITHUB_ACCESS_TOKEN);
-  var content = await WebUtils_Gist.ReadGist.content(config, Decode$Shared.Gist.brightIdGuilds);
+  var content = await WebUtils_Gist.ReadGist.content(config, Decode$Shared.Decode_Gist.brightIdGuilds);
   var entry = Js_dict.get(content, guildId);
   var prevEntry;
   if (entry !== undefined) {

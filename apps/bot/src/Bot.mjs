@@ -5,7 +5,6 @@ import * as Uuid from "uuid";
 import * as Curry from "rescript/lib/es6/curry.js";
 import * as Js_dict from "rescript/lib/es6/js_dict.js";
 import * as $$Promise from "@ryyppy/rescript-promise/src/Promise.mjs";
-import * as Constants from "./Constants.mjs";
 import * as Endpoints from "./Endpoints.mjs";
 import * as Gist$Utils from "@brightidbot/utils/src/Gist.mjs";
 import * as DiscordJs from "discord.js";
@@ -18,6 +17,7 @@ import * as Commands_Guild from "./commands/Commands_Guild.mjs";
 import * as Caml_exceptions from "rescript/lib/es6/caml_exceptions.js";
 import * as Commands_Invite from "./commands/Commands_Invite.mjs";
 import * as Commands_Verify from "./commands/Commands_Verify.mjs";
+import * as Constants$Shared from "@brightidbot/shared/src/Constants.mjs";
 import * as Caml_js_exceptions from "rescript/lib/es6/caml_js_exceptions.js";
 import * as Json$JsonCombinators from "@glennsl/rescript-json-combinators/src/Json.mjs";
 import * as UpdateOrReadGistMjs from "./updateOrReadGist.mjs";
@@ -85,7 +85,7 @@ async function updateGistOnGuildCreate(guild, roleId) {
   var token = envConfig$1.githubAccessToken;
   var config = Gist$Utils.makeGistConfig(id, "guildData.json", token);
   var guildId = guild.id;
-  var content = await Gist$Utils.ReadGist.content(config, Decode$Shared.Gist.brightIdGuilds);
+  var content = await Gist$Utils.ReadGist.content(config, Decode$Shared.Decode_Gist.brightIdGuilds);
   var entry_role = "Verified";
   var entry_name = guild.name;
   var entry_roleId = roleId;
@@ -151,7 +151,7 @@ async function onGuildDelete(guild) {
   var exit = 0;
   var data;
   try {
-    data = await Gist$Utils.ReadGist.content(config, Decode$Shared.Gist.brightIdGuilds);
+    data = await Gist$Utils.ReadGist.content(config, Decode$Shared.Decode_Gist.brightIdGuilds);
     exit = 1;
   }
   catch (raw_exn){
@@ -185,7 +185,7 @@ async function onGuildDelete(guild) {
 
 function onGuildMemberAdd(guildMember) {
   var uuid = Uuid.v5(guildMember.id, envConfig$1.uuidNamespace);
-  var endpoint = "" + Endpoints.brightIdVerificationEndpoint + "/" + Constants.context + "/" + uuid + "?timestamp=seconds";
+  var endpoint = "" + Endpoints.brightIdVerificationEndpoint + "/" + Constants$Shared.context + "/" + uuid + "?timestamp=seconds";
   var params = {
     method: "GET",
     headers: {
@@ -197,8 +197,8 @@ function onGuildMemberAdd(guildMember) {
   $$Promise.$$catch(globalThis.fetch(endpoint, params).then(function (res) {
               return res.json();
             }).then(function (json) {
-            var match = Json$JsonCombinators.decode(json, Decode$Shared.BrightId.data);
-            var match$1 = Json$JsonCombinators.decode(json, Decode$Shared.BrightId.error);
+            var match = Json$JsonCombinators.decode(json, Decode$Shared.Decode_BrightId.ContextId.data);
+            var match$1 = Json$JsonCombinators.decode(json, Decode$Shared.Decode_BrightId.$$Error.data);
             if (match.TAG !== /* Ok */0) {
               if (match$1.TAG === /* Ok */0) {
                 return Promise.resolve((console.log(match$1._0.errorMessage), undefined));
@@ -213,7 +213,7 @@ function onGuildMemberAdd(guildMember) {
               return Promise.resolve((console.log("User " + guildMember.displayName + " is not unique"), undefined));
             }
             var __x = Gist$Utils.makeGistConfig(envConfig$1.gistId, "guildData.json", envConfig$1.githubAccessToken);
-            return Gist$Utils.ReadGist.content(__x, Decode$Shared.Gist.brightIdGuilds).then(function (content) {
+            return Gist$Utils.ReadGist.content(__x, Decode$Shared.Decode_Gist.brightIdGuilds).then(function (content) {
                         var guild = guildMember.guild;
                         var guildId = guild.id;
                         var brightIdGuild = Belt_Option.getExn(Js_dict.get(content, guildId));
@@ -232,7 +232,7 @@ function onGuildMemberAdd(guildMember) {
 function onRoleUpdate(role) {
   var guildId = role.guild.id;
   var config = Gist$Utils.makeGistConfig(envConfig$1.gistId, "guildData.json", envConfig$1.githubAccessToken);
-  Gist$Utils.ReadGist.content(config, Decode$Shared.Gist.brightIdGuilds).then(function (guilds) {
+  Gist$Utils.ReadGist.content(config, Decode$Shared.Decode_Gist.brightIdGuilds).then(function (guilds) {
         var brightIdGuild = Belt_Option.getExn(Js_dict.get(guilds, guildId));
         var roleId = Belt_Option.getExn(brightIdGuild.roleId);
         var isVerifiedRole = role.id === roleId;
@@ -288,7 +288,7 @@ client.login(envConfig$1.discordApiToken);
 
 var brightIdVerificationEndpoint = Endpoints.brightIdVerificationEndpoint;
 
-var context = Constants.context;
+var context = Constants$Shared.context;
 
 export {
   brightIdVerificationEndpoint ,
