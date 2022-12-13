@@ -70,7 +70,7 @@ module BrightIdVerificationActions = {
             <a href="https://apps.brightid.org/" target="_blank" className="text-2xl">
               <button
                 className="p-3 bg-transparent border-2 border-brightid font-semibold rounded-3xl text-xl text-white">
-                {"Attend a Verification Party to get Verified"->React.string}
+                {"Get Sponsored by a BrightID App"->React.string}
               </button>
             </a>
           | Types.NotLinked =>

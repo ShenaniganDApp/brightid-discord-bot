@@ -1,12 +1,16 @@
 module JsonRpcProvider = {
   type t
-  @module("ethers") @new external make: (~url: string) => t = "JsonRpcProvider"
+}
+module Providers = {
+  type t
+  @new @module("ethers") @scope("providers")
+  external jsonRpcProvider: (~url: string) => JsonRpcProvider.t = "JsonRpcProvider"
 }
 
 module Contract = {
   type t
   @module("ethers") @new
-  external make: (~address: string, ~abi: Js.Json.t, ~provider: JsonRpcProvider.t) => t = "Contract"
+  external make: (~address: string, ~abi: ABI.t, ~provider: JsonRpcProvider.t) => t = "Contract"
 }
 
 module Utils = {
@@ -14,4 +18,19 @@ module Utils = {
   external formatBytes32String: string => string = "formatBytes32String"
 
   @module("ethers") @scope("utils") external formatUnits: (int, int) => int = "formatUnits"
+}
+
+module BigNumber = {
+  type t
+
+  @module("ethers") @scope("BigNumber")
+  external fromString: string => t = "from"
+  @val @module("ethers") @scope("constants") external zero: t = "Zero"
+
+  @send external toString: t => string = "toString"
+
+  @send external toFloat: t => float = "toNumber"
+  @send external isZero: t => bool = "isZero"
+  @send external addWithString: (t, string) => t = "add"
+  @send external subWithString: (t, string) => t = "sub"
 }
