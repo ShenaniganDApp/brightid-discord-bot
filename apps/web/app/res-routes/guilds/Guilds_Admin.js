@@ -36,7 +36,7 @@ function loader(param) {
                             isAdmin: false
                           });
               } else {
-                return WebUtils_Gist.ReadGist.content(config, Decode$Shared.Gist.brightIdGuilds).then(function (guilds) {
+                return WebUtils_Gist.ReadGist.content(config, Decode$Shared.Decode_Gist.brightIdGuilds).then(function (guilds) {
                             var maybeBrightIdGuild = Js_dict.get(guilds, guildId);
                             return DiscordServer.fetchDiscordGuildFromId(guildId).then(function (maybeDiscordGuild) {
                                         var maybeDiscordGuild$1 = (maybeDiscordGuild == null) ? undefined : Caml_option.some(maybeDiscordGuild);

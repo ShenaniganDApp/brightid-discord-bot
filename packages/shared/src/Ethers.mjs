@@ -3,13 +3,19 @@
 
 var JsonRpcProvider = {};
 
+var Providers = {};
+
 var Contract = {};
 
 var Utils = {};
 
+var BigNumber = {};
+
 export {
   JsonRpcProvider ,
+  Providers ,
   Contract ,
   Utils ,
+  BigNumber ,
 }
 /* No side effect */

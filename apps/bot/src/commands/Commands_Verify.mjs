@@ -2,7 +2,6 @@
 
 import * as Env from "../Env.mjs";
 import * as Uuid from "uuid";
-import * as Decode from "../bindings/Decode.mjs";
 import * as Canvas from "canvas";
 import * as Ethers from "ethers";
 import * as Qrcode from "qrcode";
@@ -13,12 +12,15 @@ import * as Gist$Utils from "@brightidbot/utils/src/Gist.mjs";
 import * as DiscordJs from "discord.js";
 import * as Belt_Option from "rescript/lib/es6/belt_Option.js";
 import * as Caml_option from "rescript/lib/es6/caml_option.js";
+import * as Decode$Shared from "@brightidbot/shared/src/Decode.mjs";
 import * as Caml_exceptions from "rescript/lib/es6/caml_exceptions.js";
+import * as Brightid_sdk_v5 from "brightid_sdk_v5";
 import * as Constants$Shared from "@brightidbot/shared/src/Constants.mjs";
+import * as Caml_js_exceptions from "rescript/lib/es6/caml_js_exceptions.js";
 import * as Builders from "@discordjs/builders";
 import * as Json$JsonCombinators from "@glennsl/rescript-json-combinators/src/Json.mjs";
 import * as Json_Decode$JsonCombinators from "@glennsl/rescript-json-combinators/src/Json_Decode.mjs";
-import * as SPJson from "../../../../packages/shared/abi/SP.json";
+import * as SPJson from "../../../../packages/shared/src/abi/SP.json";
 
 var VerifyHandlerError = /* @__PURE__ */Caml_exceptions.create("Commands_Verify.VerifyHandlerError");
 
@@ -34,10 +36,10 @@ Env.createEnv(undefined);
 
 var config = Env.getConfig(undefined);
 
-var config$1;
+var envConfig;
 
 if (config.TAG === /* Ok */0) {
-  config$1 = config._0;
+  envConfig = config._0;
 } else {
   throw {
         RE_EXN_ID: Env.EnvError,
@@ -46,12 +48,16 @@ if (config.TAG === /* Ok */0) {
       };
 }
 
+function gistConfig(param) {
+  return Gist$Utils.makeGistConfig(envConfig.gistId, "guildData.json", envConfig.githubAccessToken);
+}
+
 function addRoleToMember(guildRole, member) {
   var guildMemberRoleManager = member.roles;
   return guildMemberRoleManager.add(guildRole, undefined);
 }
 
-function fetchVerification(uuid) {
+async function fetchVerification(uuid) {
   var endpoint = "" + Endpoints.brightIdVerificationEndpoint + "/" + Constants$Shared.context + "/" + uuid + "?timestamp=seconds";
   var params = {
     method: "GET",
@@ -61,58 +67,64 @@ function fetchVerification(uuid) {
     },
     timeout: 60000
   };
-  return globalThis.fetch(endpoint, params).then(function (res) {
-                return res.json();
-              }).then(function (json) {
-              var match = Json$JsonCombinators.decode(json, Decode.BrightId.data);
-              var match$1 = Json$JsonCombinators.decode(json, Decode.BrightId.error);
-              if (match.TAG === /* Ok */0) {
-                return Promise.resolve(match._0.data);
-              } else if (match$1.TAG === /* Ok */0) {
-                return Promise.reject({
-                            RE_EXN_ID: BrightIdError,
-                            _1: match$1._0
-                          });
-              } else {
-                return Promise.reject({
-                            RE_EXN_ID: Json_Decode$JsonCombinators.DecodeError,
-                            _1: match._0
-                          });
-              }
-            });
+  var res = await globalThis.fetch(endpoint, params);
+  var json = await res.json();
+  var match = Json$JsonCombinators.decode(json, Decode$Shared.Decode_BrightId.ContextId.data);
+  var match$1 = Json$JsonCombinators.decode(json, Decode$Shared.Decode_BrightId.$$Error.data);
+  if (match.TAG === /* Ok */0) {
+    return match._0.data;
+  }
+  if (match$1.TAG === /* Ok */0) {
+    throw {
+          RE_EXN_ID: BrightIdError,
+          _1: match$1._0,
+          Error: new Error()
+        };
+  }
+  throw {
+        RE_EXN_ID: Json_Decode$JsonCombinators.DecodeError,
+        _1: match._0,
+        Error: new Error()
+      };
 }
 
-function makeEmbed(verifyUrl) {
-  var fields = [
-    {
-      name: "1. Get Verified in the BrightID app",
-      value: "Getting verified requires you make connections with other trusted users. Given the concept is new and there are not many trusted users, this is currently being done through [Verification parties](https://www.brightid.org/meet \"https://www.brightid.org/meet\") that are hosted in the BrightID server and require members join a voice/video call."
-    },
-    {
-      name: "2. Link to a Sponsored App (like 1hive, gitcoin, etc)",
-      value: "You can link to these [sponsored apps](https://apps.brightid.org/ \"https://apps.brightid.org/\") once you are verified within the app."
-    },
-    {
-      name: "3. Type the `/verify` command in an appropriate channel",
-      value: "You can type this command in any public channel with access to the BrightID Bot, like the official BrightID server which [you can access here](https://discord.gg/gH6qAUH \"https://discord.gg/gH6qAUH\")."
-    },
-    {
-      name: "4. Scan the DM\"d QR Code",
-      value: "Open the BrightID app and scan the QR code. Mobile users can click [this link](" + verifyUrl + ")."
-    },
-    {
-      name: "5. Click the button after you scanned the QR code",
-      value: "Once you have scanned the QR code you can return to Discord and click the button to receive the appropriate BrightID role."
-    }
-  ];
+function embedFields(verifyUrl) {
+  return [
+          {
+            name: "1. Get Verified in the BrightID app",
+            value: "Getting verified requires you make connections with other trusted users. Given the concept is new and there are not many trusted users, this is currently being done through [Verification parties](https://www.brightid.org/meet \"https://www.brightid.org/meet\") that are hosted in the BrightID server and require members join a voice/video call."
+          },
+          {
+            name: "2. Link to a Sponsored App (like 1hive, gitcoin, etc)",
+            value: "You can link to these [sponsored apps](https://apps.brightid.org/ \"https://apps.brightid.org/\") once you are verified within the app."
+          },
+          {
+            name: "3. Type the `/verify` command in an appropriate channel",
+            value: "You can type this command in any public channel with access to the BrightID Bot, like the official BrightID server which [you can access here](https://discord.gg/gH6qAUH \"https://discord.gg/gH6qAUH\")."
+          },
+          {
+            name: "4. Scan the DM\"d QR Code",
+            value: "Open the BrightID app and scan the QR code. Mobile users can click [this link](" + verifyUrl + ")."
+          },
+          {
+            name: "5. Click the button after you scanned the QR code",
+            value: "Once you have scanned the QR code you can return to Discord and click the button to receive the appropriate BrightID role."
+          }
+        ];
+}
+
+function makeEmbed(fields) {
   return new DiscordJs.MessageEmbed().setColor("#fb8b60").setTitle("How To Get Verified with Bright ID").setURL("https://www.brightid.org/").setAuthor("BrightID Bot", "https://media.discordapp.net/attachments/708186850359246859/760681364163919994/1601430947224.png", "https://www.brightid.org/").setDescription("Here is a step-by-step guide to help you get verified with BrightID.").setThumbnail("https://media.discordapp.net/attachments/708186850359246859/760681364163919994/1601430947224.png").addFields(fields).setTimestamp().setFooter("Bot made by the Shenanigan team", "https://media.discordapp.net/attachments/708186850359246859/760681364163919994/1601430947224.png");
 }
 
-function createMessageAttachmentFromUri(uri) {
+async function makeCanvasFromUri(uri) {
   var canvas = Canvas.default.createCanvas(700, 250);
-  return Qrcode.toCanvas(canvas, uri).then(function (param) {
-              return Promise.resolve(new DiscordJs.MessageAttachment(canvas.toBuffer(), "qrcode.png", undefined));
-            });
+  await Qrcode.toCanvas(canvas, uri);
+  return canvas;
+}
+
+async function createMessageAttachmentFromCanvas(canvas) {
+  return new DiscordJs.MessageAttachment(canvas.toBuffer(), "qrcode.png", undefined);
 }
 
 function getRolebyRoleId(guildRoleManager, roleId) {
@@ -136,64 +148,337 @@ function makeVerifyActionRow(verifyUrl) {
             ]);
 }
 
-function handleUnverifiedGuildMember(errorNum, interaction, uuid) {
-  var deepLink = "" + Endpoints.brightIdAppDeeplink + "/" + uuid + "";
-  var verifyUrl = "" + Endpoints.brightIdLinkVerificationEndpoint + "/" + uuid + "";
-  switch (errorNum) {
-    case 2 :
-        return createMessageAttachmentFromUri(deepLink).then(function (attachment) {
-                    var embed = makeEmbed(verifyUrl);
-                    var row = makeVerifyActionRow(verifyUrl);
-                    var options = {
-                      embeds: [embed],
-                      files: [attachment],
-                      ephemeral: true,
-                      components: [row]
-                    };
-                    return interaction.editReply(options).then(function (param) {
-                                return Promise.resolve(undefined);
-                              });
-                  });
-    case 3 :
-        var options = {
-          content: "I haven't seen you at a Bright ID Connection Party yet, so your brightid is not verified. You can join a party in any timezone at https://meet.brightid.org",
-          ephemeral: true
+function makeSponsorActionRow(customId, label) {
+  var checkButton = new DiscordJs.MessageButton().setCustomId(customId).setLabel(label).setStyle("PRIMARY");
+  return new DiscordJs.MessageActionRow().addComponents([checkButton]);
+}
+
+function notLinkedOptions(attachment, embed, row) {
+  return {
+          embeds: [embed],
+          files: [attachment],
+          ephemeral: true,
+          components: [row]
         };
-        return interaction.editReply(options).then(function (param) {
-                    return Promise.resolve(undefined);
-                  });
-    case 4 :
-        return createMessageAttachmentFromUri(deepLink).then(function (attachment) {
-                    var provider = new Ethers.JsonRpcProvider("https://idchain.one/rpc");
-                    new Ethers.Contract(Constants$Shared.contractAddress, abi, provider);
-                    Ethers.utils.formatBytes32String("Discord");
-                    var embed = makeEmbed(verifyUrl);
-                    var row = makeVerifyActionRow(verifyUrl);
-                    var options = {
-                      embeds: [embed],
-                      files: [attachment],
-                      ephemeral: true,
-                      components: [row]
+}
+
+async function makeNotLinkedOptions(uri, verifyUrl) {
+  var canvas = await makeCanvasFromUri(uri);
+  var attachment = await createMessageAttachmentFromCanvas(canvas);
+  var embed = makeEmbed(embedFields(verifyUrl));
+  var row = makeVerifyActionRow(verifyUrl);
+  return notLinkedOptions(attachment, embed, row);
+}
+
+async function unknownErrorMessage(interaction) {
+  var options = {
+    content: "An unknown error occurred. Please try again later.",
+    ephemeral: true
+  };
+  return interaction.followUp(options);
+}
+
+async function checkSponsor(uuid) {
+  var endpoint = "https://app.brightid.org/node/v6/sponsorships/" + uuid + "";
+  var params = {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json"
+    },
+    timeout: 60000
+  };
+  var res = await globalThis.fetch(endpoint, params);
+  var json = await res.json();
+  var match = Json$JsonCombinators.decode(json, Decode$Shared.Decode_BrightId.Sponsorships.data);
+  var match$1 = Json$JsonCombinators.decode(json, Decode$Shared.Decode_BrightId.$$Error.data);
+  if (match.TAG === /* Ok */0) {
+    return /* Sponsorship */{
+            _0: match._0.data
+          };
+  }
+  if (match$1.TAG === /* Ok */0) {
+    throw {
+          RE_EXN_ID: BrightIdError,
+          _1: match$1._0,
+          Error: new Error()
+        };
+  }
+  throw {
+        RE_EXN_ID: Json_Decode$JsonCombinators.DecodeError,
+        _1: match._0,
+        Error: new Error()
+      };
+}
+
+function sleep(ms) {
+  return (new Promise((resolve) => setTimeout(resolve, ms)));
+}
+
+var ErrorCheckingSponsorshipStatus = /* @__PURE__ */Caml_exceptions.create("Commands_Verify.ErrorCheckingSponsorshipStatus");
+
+async function handleSponsor(interaction, uuid, maybeHashOpt, attemptsOpt, param) {
+  var maybeHash = maybeHashOpt !== undefined ? Caml_option.valFromOption(maybeHashOpt) : undefined;
+  var attempts = attemptsOpt !== undefined ? attemptsOpt : 10;
+  var uri = "" + Endpoints.brightIdAppDeeplink + "/" + uuid + "";
+  var canvas = await makeCanvasFromUri(uri);
+  var attachment = await createMessageAttachmentFromCanvas(canvas);
+  if (attempts === 0) {
+    return /* SPNotUsed */1;
+  }
+  var json = await Brightid_sdk_v5.sponsor(envConfig.sponsorshipKey, "Discord", uuid);
+  var match = Json$JsonCombinators.decode(json, Decode$Shared.Decode_BrightId.Sponsorships.sponsor);
+  var match$1 = Json$JsonCombinators.decode(json, Decode$Shared.Decode_BrightId.$$Error.data);
+  if (match.TAG === /* Ok */0) {
+    var options = {
+      content: "You sponsor request has been submitted! \n\n Make sure you have scanned this QR code in the BrightID mobile app to confirm your sponsor and link Discord to BrightID.",
+      files: [attachment],
+      ephemeral: true
+    };
+    await interaction.editReply(options);
+    return await handleSponsor(interaction, uuid, Caml_option.some(match._0.hash), undefined, undefined);
+  }
+  if (match$1.TAG === /* Ok */0) {
+    switch (match$1._0.errorNum) {
+      case 38 :
+          var options$1 = {
+            content: "There are no sponsorhips available in the premium pool at this moment. Please try again later.",
+            ephemeral: true
+          };
+          await interaction.editReply(options$1);
+          return /* SPNotUsed */1;
+      case 39 :
+          if (maybeHash !== undefined) {
+            var exit = 0;
+            var val;
+            try {
+              val = await checkSponsor(uuid);
+              exit = 2;
+            }
+            catch (raw_err){
+              var err = Caml_js_exceptions.internalToOCamlException(raw_err);
+              if (err.RE_EXN_ID === BrightIdError) {
+                await sleep(30000);
+                var attempts$1 = attempts - 1 | 0;
+                return await handleSponsor(interaction, uuid, Caml_option.some(maybeHash), attempts$1, undefined);
+              }
+              if (err.RE_EXN_ID === $$Promise.JsError) {
+                console.log("Sponsorship already assigned: \n", err._1);
+                await unknownErrorMessage(interaction);
+                throw {
+                      RE_EXN_ID: ErrorCheckingSponsorshipStatus,
+                      Error: new Error()
                     };
-                    return interaction.editReply(options).then(function (param) {
-                                var options = {
-                                  content: "Whoops! You haven't received a sponsor. There are plenty of apps with free sponsors, such as the [EIDI Faucet](https://idchain.one/begin/). \n\n See all the apps available at https://apps.brightid.org \n\n Then scan the QR code above in the BrightID mobile app.",
-                                  ephemeral: true
-                                };
-                                return interaction.followUp(options).then(function (param) {
-                                            return Promise.resolve(undefined);
-                                          });
-                              });
-                  });
-    default:
-      var options$1 = {
+              }
+              throw err;
+            }
+            if (exit === 2) {
+              var row = makeSponsorActionRow("verify", "Assign BrightID Verified Role");
+              var options$2 = {
+                content: "You have succesfully been sponsored \n\n If you are verified in BrightID you are all done. Click the button below",
+                files: [attachment],
+                ephemeral: true,
+                components: [row]
+              };
+              await interaction.editReply(options$2);
+              return /* SPUsed */0;
+            }
+            
+          } else {
+            var options$3 = {
+              content: "You have already been sponsored by another BrightID App \n\n You should never see tis message. Please contact BrightID support if you do.",
+              files: [attachment],
+              ephemeral: true
+            };
+            await interaction.editReply(options$3);
+            return /* SPNotUsed */1;
+          }
+          break;
+      case 45 :
+          if (maybeHash !== undefined) {
+            var exit$1 = 0;
+            var val$1;
+            try {
+              val$1 = await checkSponsor(uuid);
+              exit$1 = 2;
+            }
+            catch (raw_err$1){
+              var err$1 = Caml_js_exceptions.internalToOCamlException(raw_err$1);
+              if (err$1.RE_EXN_ID === BrightIdError) {
+                await sleep(30000);
+                var attempts$2 = attempts - 1 | 0;
+                return await handleSponsor(interaction, uuid, Caml_option.some(maybeHash), attempts$2, undefined);
+              }
+              if (err$1.RE_EXN_ID === $$Promise.JsError) {
+                console.log("App Authorized Before: \n", err$1._1);
+                await unknownErrorMessage(interaction);
+                throw {
+                      RE_EXN_ID: ErrorCheckingSponsorshipStatus,
+                      Error: new Error()
+                    };
+              }
+              throw err$1;
+            }
+            if (exit$1 === 2) {
+              var row$1 = makeSponsorActionRow("verify", "Assign BrightID Verified Role");
+              var options$4 = {
+                content: "You have succesfully been sponsored \n\n If you are verified in BrightID you are all done. Click the button below",
+                files: [attachment],
+                ephemeral: true,
+                components: [row$1]
+              };
+              await interaction.editReply(options$4);
+              return /* SPUsed */0;
+            }
+            
+          } else {
+            var options$5 = {
+              content: "You have already been sponsored by a Discord Server \n\n You should never see tis message. Please contact BrightID support if you do.",
+              files: [attachment],
+              ephemeral: true
+            };
+            await interaction.editReply(options$5);
+            return /* SPNotUsed */1;
+          }
+          break;
+      case 40 :
+      case 41 :
+      case 42 :
+      case 43 :
+      case 44 :
+      case 46 :
+          break;
+      case 47 :
+          if (maybeHash !== undefined) {
+            var exit$2 = 0;
+            var val$2;
+            try {
+              val$2 = await checkSponsor(uuid);
+              exit$2 = 2;
+            }
+            catch (raw_err$2){
+              var err$2 = Caml_js_exceptions.internalToOCamlException(raw_err$2);
+              if (err$2.RE_EXN_ID === BrightIdError) {
+                await sleep(30000);
+                var attempts$3 = attempts - 1 | 0;
+                return await handleSponsor(interaction, uuid, Caml_option.some(maybeHash), attempts$3, undefined);
+              }
+              if (err$2.RE_EXN_ID === $$Promise.JsError) {
+                console.log("Sponsored Request Recently: \n", err$2._1);
+                await unknownErrorMessage(interaction);
+                throw {
+                      RE_EXN_ID: ErrorCheckingSponsorshipStatus,
+                      Error: new Error()
+                    };
+              }
+              throw err$2;
+            }
+            if (exit$2 === 2) {
+              var row$2 = makeSponsorActionRow("verify", "Assign BrightID Verified Role");
+              var options$6 = {
+                content: "You have succesfully been sponsored \n\n If you are verified in BrightID you are all done. Click the button below",
+                files: [attachment],
+                ephemeral: true,
+                components: [row$2]
+              };
+              await interaction.editReply(options$6);
+              return /* SPUsed */0;
+            }
+            
+          } else {
+            var options$7 = {
+              content: "We are still processing your sponsor wait patiently!",
+              files: [attachment],
+              ephemeral: true
+            };
+            interaction.followUp(options$7);
+            await sleep(30000);
+            var attempts$4 = attempts - 1 | 0;
+            return await handleSponsor(interaction, uuid, Caml_option.some(maybeHash), attempts$4, undefined);
+          }
+          break;
+      default:
+        
+    }
+    await unknownErrorMessage(interaction);
+    throw {
+          RE_EXN_ID: ErrorCheckingSponsorshipStatus,
+          Error: new Error()
+        };
+  }
+  unknownErrorMessage(interaction);
+  throw {
+        RE_EXN_ID: ErrorCheckingSponsorshipStatus,
+        Error: new Error()
+      };
+}
+
+var NoAvailableSP = /* @__PURE__ */Caml_exceptions.create("Commands_Verify.NoAvailableSP");
+
+async function getServerSPBalance(sponsorshipAddress) {
+  var provider = new (Ethers.providers.JsonRpcProvider)("https://idchain.one/rpc");
+  var contract = new Ethers.Contract(Constants$Shared.contractAddressID, abi.default, provider);
+  var formattedContext = Ethers.utils.formatBytes32String("Discord");
+  var spBalance;
+  try {
+    spBalance = await contract.contextBalance(sponsorshipAddress, formattedContext);
+  }
+  catch (raw_exn){
+    var exn = Caml_js_exceptions.internalToOCamlException(raw_exn);
+    if (exn.RE_EXN_ID === $$Promise.JsError) {
+      throw {
+            RE_EXN_ID: NoAvailableSP,
+            Error: new Error()
+          };
+    }
+    throw exn;
+  }
+  if (spBalance.isZero()) {
+    throw {
+          RE_EXN_ID: NoAvailableSP,
+          Error: new Error()
+        };
+  }
+  return spBalance;
+}
+
+async function noSponsorshipsMessage(interaction) {
+  var options = {
+    content: "Whoops! You haven't received a sponsor. There are plenty of apps with free sponsors, such as the [EIDI Faucet](https://idchain.one/begin/). \n\n See all the apps available at https://apps.brightid.org \n\n Then scan the QR code above in the BrightID mobile app.",
+    ephemeral: true
+  };
+  return await interaction.followUp(options);
+}
+
+async function noWriteToGistMessage(interaction) {
+  var options = {
+    content: "It seems like I can't write to my database at the moment. Please try again or contact the BrightID support.",
+    ephemeral: true
+  };
+  return await interaction.followUp(options);
+}
+
+async function handleUnverifiedGuildMember(errorNum, interaction, uuid) {
+  var uri = "" + Endpoints.brightIdAppDeeplink + "/" + uuid + "";
+  var verifyUrl = "" + Endpoints.brightIdLinkVerificationEndpoint + "/" + uuid + "";
+  if (errorNum !== 2) {
+    if (errorNum !== 3) {
+      var options = {
         content: "Something unexpected happened. Please try again later.",
         ephemeral: true
       };
-      return interaction.editReply(options$1).then(function (param) {
-                  return Promise.resolve(undefined);
-                });
+      await interaction.editReply(options);
+      return ;
+    }
+    var options$1 = {
+      content: "I haven't seen you at a Bright ID Connection Party yet, so your brightid is not verified. You can join a party in any timezone at https://meet.brightid.org",
+      ephemeral: true
+    };
+    await interaction.editReply(options$1);
+    return ;
   }
+  var options$2 = await makeNotLinkedOptions(uri, verifyUrl);
+  await interaction.editReply(options$2);
 }
 
 function execute(interaction) {
@@ -201,37 +486,115 @@ function execute(interaction) {
   var member = interaction.member;
   var guildRoleManager = guild.roles;
   var memberId = member.id;
-  var uuid = Uuid.v5(memberId, config$1.uuidNamespace);
+  var uuid = Uuid.v5(memberId, envConfig.uuidNamespace);
   return interaction.deferReply({
                 ephemeral: true
               }).then(function (param) {
-              var config$2 = Gist$Utils.makeGistConfig(config$1.gistId, "guildData.json", config$1.githubAccessToken);
-              return $$Promise.$$catch(Gist$Utils.ReadGist.content(config$2, Decode.Gist.brightIdGuilds).then(function (guilds) {
+              return $$Promise.$$catch(Gist$Utils.ReadGist.content(gistConfig(undefined), Decode$Shared.Decode_Gist.brightIdGuilds).then(function (guilds) {
                               var guildId = guild.id;
                               var guildData = Js_dict.get(guilds, guildId);
                               if (guildData !== undefined) {
-                                var roleId = Belt_Option.getExn(Caml_option.valFromOption(guildData).roleId);
+                                var roleId = Belt_Option.getExn(guildData.roleId);
+                                var sponsorshipAddress = guildData.sponsorshipAddress;
                                 var guildRole = getRolebyRoleId(guildRoleManager, roleId);
-                                return fetchVerification(uuid).then(function (contextId) {
-                                            if (contextId.unique) {
-                                              return addRoleToMember(guildRole, member).then(function (param) {
-                                                          var options = {
-                                                            content: "Hey, I recognize you! I just gave you the \`" + guildRole.name + "\` role. You are now BrightID verified in " + guild.name + " server!",
-                                                            ephemeral: true
-                                                          };
-                                                          return interaction.editReply(options).then(function (param) {
-                                                                      return Promise.resolve(undefined);
-                                                                    });
-                                                        });
-                                            }
-                                            var options = {
-                                              content: "Hey, I recognize you, but your account seems to be linked to a sybil attack. You are not properly BrightID verified. If this is a mistake, contact one of the support channels",
-                                              ephemeral: true
-                                            };
-                                            return interaction.editReply(options).then(function (param) {
-                                                        return Promise.resolve(undefined);
-                                                      });
-                                          });
+                                return $$Promise.$$catch(fetchVerification(uuid).then(function (contextId) {
+                                                if (contextId.unique) {
+                                                  return addRoleToMember(guildRole, member).then(function (param) {
+                                                              var options = {
+                                                                content: "Hey, I recognize you! I just gave you the \`" + guildRole.name + "\` role. You are now BrightID verified in " + guild.name + " server!",
+                                                                ephemeral: true
+                                                              };
+                                                              return interaction.editReply(options).then(function (param) {
+                                                                          return Promise.resolve(undefined);
+                                                                        });
+                                                            });
+                                                }
+                                                var options = {
+                                                  content: "Hey, I recognize you, but your account seems to be linked to a sybil attack. You have multiple Discord accounts on the same BrightID. If this is a mistake, contact one of the support channels. ",
+                                                  ephemeral: true
+                                                };
+                                                return interaction.editReply(options).then(function (param) {
+                                                            return Promise.resolve(undefined);
+                                                          });
+                                              }), (async function (e) {
+                                              if (e.RE_EXN_ID === BrightIdError) {
+                                                if (sponsorshipAddress !== undefined) {
+                                                  var exit = 0;
+                                                  var assignedSponsorships;
+                                                  try {
+                                                    assignedSponsorships = await getServerSPBalance(sponsorshipAddress);
+                                                    exit = 1;
+                                                  }
+                                                  catch (raw_exn){
+                                                    var exn = Caml_js_exceptions.internalToOCamlException(raw_exn);
+                                                    if (exn.RE_EXN_ID === NoAvailableSP) {
+                                                      await noSponsorshipsMessage(interaction);
+                                                    } else if (exn.RE_EXN_ID === $$Promise.JsError) {
+                                                      console.error("Verify Handler: Unknown error");
+                                                    } else {
+                                                      throw exn;
+                                                    }
+                                                  }
+                                                  if (exit === 1) {
+                                                    var availableSponsorships = assignedSponsorships.sub(Belt_Option.getWithDefault(guildData.usedSponsorships, "0"));
+                                                    var assignedSponsorships$1 = assignedSponsorships.toString();
+                                                    var entry = Belt_Option.getExn(Js_dict.get(guilds, guildId));
+                                                    var match = await Gist$Utils.UpdateGist.updateEntry(guilds, guildId, {
+                                                          role: entry.role,
+                                                          name: entry.name,
+                                                          inviteLink: entry.inviteLink,
+                                                          roleId: entry.roleId,
+                                                          sponsorshipAddress: entry.sponsorshipAddress,
+                                                          usedSponsorships: entry.usedSponsorships,
+                                                          assignedSponsorships: assignedSponsorships$1
+                                                        }, gistConfig(undefined));
+                                                    var match$1 = availableSponsorships.isZero();
+                                                    if (match.TAG === /* Ok */0) {
+                                                      if (match$1) {
+                                                        await noSponsorshipsMessage(interaction);
+                                                      } else {
+                                                        var match$2 = await handleSponsor(interaction, uuid, undefined, undefined, undefined);
+                                                        switch (match$2) {
+                                                          case /* SPUsed */0 :
+                                                              var usedSponsorships = Ethers.BigNumber.from(Belt_Option.getWithDefault(guildData.usedSponsorships, "0")).add("1").toString();
+                                                              var err = await Gist$Utils.UpdateGist.updateEntry(guilds, guildId, {
+                                                                    role: entry.role,
+                                                                    name: entry.name,
+                                                                    inviteLink: entry.inviteLink,
+                                                                    roleId: entry.roleId,
+                                                                    sponsorshipAddress: entry.sponsorshipAddress,
+                                                                    usedSponsorships: usedSponsorships,
+                                                                    assignedSponsorships: entry.assignedSponsorships
+                                                                  }, gistConfig(undefined));
+                                                              if (err.TAG === /* Ok */0) {
+                                                                console.log("Successfully sponsored user with context id: " + uuid);
+                                                              } else {
+                                                                var guildName = guild.name;
+                                                                console.log("User with context id " + uuid + " from server " + guildName + " was unable to write their sponsorship to the gist: ", err._0);
+                                                                await noWriteToGistMessage(interaction);
+                                                              }
+                                                              break;
+                                                          case /* SPNotUsed */1 :
+                                                              break;
+                                                          case /* ErrorCheckingSponsorshipStatus */2 :
+                                                              var guildName$1 = guild.name;
+                                                              console.log("User with context id " + uuid + " from server " + guildName$1 + " was unable to check their sponsorship status properly: ");
+                                                              await noWriteToGistMessage(interaction);
+                                                              break;
+                                                          
+                                                        }
+                                                      }
+                                                    } else {
+                                                      await noWriteToGistMessage(interaction);
+                                                    }
+                                                  }
+                                                  return ;
+                                                }
+                                                await noSponsorshipsMessage(interaction);
+                                                return ;
+                                              }
+                                              console.error("Verify Handler: Unknown error");
+                                            }));
                               }
                               var options = {
                                 content: "Hi, sorry about that. I couldn't retrieve the data for this server from BrightId"
@@ -243,13 +606,6 @@ function execute(interaction) {
                                                     });
                                         });
                             }), (function (e) {
-                            if (e.RE_EXN_ID === BrightIdError) {
-                              var match = e._1;
-                              var errorMessage = match.errorMessage;
-                              return handleUnverifiedGuildMember(match.errorNum, interaction, uuid).then(function (param) {
-                                          return Promise.resolve((console.error("" + member.displayName + ": " + errorMessage + ""), undefined));
-                                        });
-                            }
                             if (e.RE_EXN_ID === VerifyHandlerError) {
                               return Promise.resolve((console.error(e._1), undefined));
                             }
@@ -261,7 +617,7 @@ function execute(interaction) {
                             }
                             var msg = e._1.message;
                             if (msg !== undefined) {
-                              return Promise.resolve((console.error(msg), undefined));
+                              return Promise.resolve((console.error("Verify Handler: " + msg), undefined));
                             } else {
                               return Promise.resolve((console.error("Verify Handler: Unknown error"), undefined));
                             }
@@ -279,26 +635,41 @@ var brightIdLinkVerificationEndpoint = Endpoints.brightIdLinkVerificationEndpoin
 
 var context = Constants$Shared.context;
 
-var contractAddress = Constants$Shared.contractAddress;
+var contractAddressID = Constants$Shared.contractAddressID;
 
 export {
   brightIdVerificationEndpoint ,
   brightIdAppDeeplink ,
   brightIdLinkVerificationEndpoint ,
   context ,
-  contractAddress ,
+  contractAddressID ,
   VerifyHandlerError ,
   BrightIdError ,
   abi ,
   Canvas$1 as Canvas,
   QRCode ,
-  config$1 as config,
+  envConfig ,
+  gistConfig ,
   addRoleToMember ,
   fetchVerification ,
+  embedFields ,
   makeEmbed ,
-  createMessageAttachmentFromUri ,
+  makeCanvasFromUri ,
+  createMessageAttachmentFromCanvas ,
   getRolebyRoleId ,
   makeVerifyActionRow ,
+  makeSponsorActionRow ,
+  notLinkedOptions ,
+  makeNotLinkedOptions ,
+  unknownErrorMessage ,
+  checkSponsor ,
+  sleep ,
+  ErrorCheckingSponsorshipStatus ,
+  handleSponsor ,
+  NoAvailableSP ,
+  getServerSPBalance ,
+  noSponsorshipsMessage ,
+  noWriteToGistMessage ,
   handleUnverifiedGuildMember ,
   execute ,
   data ,
