@@ -20,7 +20,7 @@ function loader(param) {
                                 isAdmin: false
                               });
                   } else {
-                    return WebUtils_Gist.ReadGist.content(config, Decode$Shared.Gist.brightIdGuilds).then(function (brightIdGuilds) {
+                    return WebUtils_Gist.ReadGist.content(config, Decode$Shared.Decode_Gist.brightIdGuilds).then(function (brightIdGuilds) {
                                 var maybeBrightIdGuild = Js_dict.get(brightIdGuilds, guildId);
                                 return DiscordServer.fetchDiscordGuildFromId(guildId).then(function (maybeDiscordGuild) {
                                             var userId = maybeUser.profile.id;

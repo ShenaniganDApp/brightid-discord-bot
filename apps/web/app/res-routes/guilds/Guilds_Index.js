@@ -127,7 +127,7 @@ async function action(param) {
   var data$1 = await request.formData();
   var match = Guilds_AdminSubmit.Form.make(data$1);
   var config = WebUtils_Gist.makeGistConfig(process.env.GIST_ID, "guildData.json", process.env.GITHUB_ACCESS_TOKEN);
-  var content = await WebUtils_Gist.ReadGist.content(config, Decode$Shared.Gist.brightIdGuilds);
+  var content = await WebUtils_Gist.ReadGist.content(config, Decode$Shared.Decode_Gist.brightIdGuilds);
   var entry = Js_dict.get(content, guildId);
   var prevEntry;
   if (entry !== undefined) {
@@ -365,7 +365,7 @@ function $$default(param) {
           
         }), []);
   return React.createElement("div", {
-              className: ""
+              className: "flex-1"
             }, React.createElement(ReactHotToast$1.Toaster, {}), React.createElement("div", {
                   className: "flex flex-col h-screen"
                 }, React.createElement("header", {

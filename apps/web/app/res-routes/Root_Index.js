@@ -138,7 +138,7 @@ function Root_Index$BrightIdVerificationActions(Props) {
                           target: "_blank"
                         }, React.createElement("button", {
                               className: "p-3 bg-transparent border-2 border-brightid font-semibold rounded-3xl text-xl text-white"
-                            }, "Attend a Verification Party to get Verified"));
+                            }, "Get Sponsored by a BrightID App"));
           case /* Unknown */0 :
           case /* Unique */4 :
               return React.createElement(React.Fragment, undefined);

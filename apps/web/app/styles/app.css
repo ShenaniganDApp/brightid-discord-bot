@@ -580,10 +580,6 @@ video {
   bottom: 0px;
 }
 
-.bottom-5 {
-  bottom: 1.25rem;
-}
-
 .z-10 {
   z-index: 10;
 }
@@ -750,16 +746,16 @@ video {
   justify-content: space-around;
 }
 
+.gap-2 {
+  gap: 0.5rem;
+}
+
 .gap-4 {
   gap: 1rem;
 }
 
 .gap-3 {
   gap: 0.75rem;
-}
-
-.gap-2 {
-  gap: 0.5rem;
 }
 
 .gap-6 {
@@ -1066,10 +1062,6 @@ video {
 
   .md\:rounded-xl {
     border-radius: 0.75rem;
-  }
-
-  .md\:p-4 {
-    padding: 1rem;
   }
 
   .md\:text-6xl {
