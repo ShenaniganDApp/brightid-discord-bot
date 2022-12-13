@@ -50,6 +50,7 @@ let loader: Remix.loaderFunction<loaderData> = async ({request, params}) => {
 let action: Remix.actionFunction<'a> = async ({request, params}) => {
   open Webapi.Fetch
   open Guilds_AdminSubmit
+  open WebUtils_Gist
   open Shared.Decode
 
   let guildId = params->Js.Dict.get("guildId")->Belt.Option.getWithDefault("")
@@ -63,7 +64,6 @@ let action: Remix.actionFunction<'a> = async ({request, params}) => {
 
   let {sponsorshipAddress} = Form.make(data)
 
-  open WebUtils_Gist
   let config = makeGistConfig(
     ~id=Remix.process["env"]["GIST_ID"],
     ~name="guildData.json",
@@ -240,7 +240,7 @@ let default = () => {
     None
   })
 
-  <div className="">
+  <div className="flex-1">
     <ReactHotToast.Toaster />
     <div className="flex flex-col h-screen">
       <header className="flex flex-row justify-between md:justify-end items-center m-4">

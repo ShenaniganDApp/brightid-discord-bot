@@ -2,27 +2,17 @@
 
 import * as Env from "../Env.mjs";
 import * as Uuid from "uuid";
-import * as Decode from "../bindings/Decode.mjs";
 import * as $$Promise from "@ryyppy/rescript-promise/src/Promise.mjs";
-import * as Constants from "../Constants.mjs";
 import * as Endpoints from "../Endpoints.mjs";
 import NodeFetch from "node-fetch";
+import * as Decode$Shared from "@brightidbot/shared/src/Decode.mjs";
 import * as Caml_exceptions from "rescript/lib/es6/caml_exceptions.js";
+import * as Constants$Shared from "@brightidbot/shared/src/Constants.mjs";
 import * as Json$JsonCombinators from "@glennsl/rescript-json-combinators/src/Json.mjs";
 import * as Services_ResponseCodes from "./Services_ResponseCodes.mjs";
 import * as Json_Decode$JsonCombinators from "@glennsl/rescript-json-combinators/src/Json_Decode.mjs";
 
 var BrightIdError = /* @__PURE__ */Caml_exceptions.create("Services_VerificationInfo.BrightIdError");
-
-var defaultVerification_contextIds = [];
-
-var defaultVerification = {
-  unique: false,
-  app: "",
-  context: "Discord",
-  contextIds: defaultVerification_contextIds,
-  timestamp: 0
-};
 
 var UUID = {};
 
@@ -45,7 +35,7 @@ if (config.TAG === /* Ok */0) {
 function fetchVerificationInfo(retryOpt, id) {
   var retry = retryOpt !== undefined ? retryOpt : 5;
   var uuid = Uuid.v5(id, config$1.uuidNamespace);
-  var endpoint = "" + Endpoints.brightIdVerificationEndpoint + "/" + Constants.context + "/" + uuid + "?timestamp=seconds";
+  var endpoint = "" + Endpoints.brightIdVerificationEndpoint + "/" + Constants$Shared.context + "/" + uuid + "?timestamp=seconds";
   var params = {
     method: "GET",
     headers: {
@@ -57,8 +47,8 @@ function fetchVerificationInfo(retryOpt, id) {
   return $$Promise.$$catch(NodeFetch(endpoint, params).then(function (prim) {
                     return prim.json();
                   }).then(function (json) {
-                  var match = Json$JsonCombinators.decode(json, Decode.BrightId.data);
-                  var match$1 = Json$JsonCombinators.decode(json, Decode.BrightId.error);
+                  var match = Json$JsonCombinators.decode(json, Decode$Shared.Decode_BrightId.ContextId.data);
+                  var match$1 = Json$JsonCombinators.decode(json, Decode$Shared.Decode_BrightId.$$Error.data);
                   if (match.TAG === /* Ok */0) {
                     return Promise.resolve({
                                 TAG: /* VerificationInfo */0,
@@ -101,7 +91,7 @@ function getBrightIdVerification(member) {
   return fetchVerificationInfo(undefined, id);
 }
 
-var context = Constants.context;
+var context = Constants$Shared.context;
 
 var brightIdVerificationEndpoint = Endpoints.brightIdVerificationEndpoint;
 
@@ -117,7 +107,6 @@ var requestTimeout = 60000;
 
 export {
   BrightIdError ,
-  defaultVerification ,
   UUID ,
   config$1 as config,
   context ,

@@ -35,7 +35,7 @@ let getConfig = () =>
       Ok(uuidNamespace),
       Ok(gistId),
       Ok(githubAccessToken),
-      Ok(sponsorhipKey),
+      Ok(sponsorshipKey),
     ) =>
     Ok({
       "discordApiToken": discordApiToken,
@@ -43,7 +43,7 @@ let getConfig = () =>
       "uuidNamespace": uuidNamespace,
       "gistId": gistId,
       "githubAccessToken": githubAccessToken,
-      "sponsorshipKey": sponsorhipKey,
+      "sponsorshipKey": sponsorshipKey,
     })
   // Did not get one or more vars, return the first error
   | (Error(_) as err, _, _, _, _, _)

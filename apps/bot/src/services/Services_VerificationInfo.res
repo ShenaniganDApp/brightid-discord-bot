@@ -8,17 +8,6 @@ exception BrightIdError(BrightId.Error.t)
 type verificationInfo =
   VerificationInfo(BrightId.ContextId.t) | BrightIdError(BrightId.Error.t) | JsError(Js.Exn.t)
 
-// let defaultVerification = {
-//   open Shared.BrightId.ContextId
-//   {
-//     unique: false,
-//     app: "",
-//     context: "Discord",
-//     contextIds: [],
-//     timestamp: 0,
-//   }
-// }
-
 module UUID = {
   type t = string
   type name = UUIDName(string)
@@ -61,12 +50,14 @@ let rec fetchVerificationInfo = (~retry=5, id): Promise.t<verificationInfo> => {
   endpoint
   ->fetch(params)
   ->then(Response.json)
+  ->then(json => {
     open Decode.Decode_BrightId
     switch (json->Json.decode(ContextId.data), json->Json.decode(Error.data)) {
+    | (Ok({data}), _) => VerificationInfo(data)->resolve
     | (_, Ok(error)) => error->BrightIdError->reject
     | (Error(err), _) => err->Json.Decode.DecodeError->reject
     }
-  )
+  })
   ->catch(e => {
     let retry = retry - 1
     switch retry {
