@@ -14,6 +14,9 @@ exception BrightIdError(BrightId.Error.t)
 @val @scope("globalThis")
 external fetch: (string, 'params) => Promise.t<Response.t<Js.Json.t>> = "fetch"
 
+let sleep: int => Js.Promise.t<unit> = ms =>
+  %raw(` new Promise((resolve) => setTimeout(resolve, ms))`)
+
 @module external abi: {"default": Shared.ABI.t} = "../../../../packages/shared/src/abi/SP.json"
 
 module Canvas = {
@@ -58,13 +61,25 @@ let fetchVerification = async uuid => {
     },
     "timeout": 60000,
   }
-  let res = await fetch(endpoint, params)
-  let json = await Response.json(res)
-
-  switch (json->Json.decode(ContextId.data), json->Json.decode(Error.data)) {
-  | (Ok({data}), _) => data
-  | (_, Ok(error)) => error->BrightIdError->raise
-  | (Error(err), _) => err->Json.Decode.DecodeError->raise
+  let res = switch await fetch(endpoint, params) {
+  | res => res
+  | exception JsError(obj) =>
+    switch Js.Exn.message(obj) {
+    | Some(msg) =>
+      Js.Console.error(msg)
+      VerifyHandlerError(msg)->raise
+    | None =>
+      Js.Console.error(obj)
+      VerifyHandlerError("Fetch Verification Error")->raise
+    }
+  }
+  switch await Response.json(res) {
+  | json =>
+    switch (json->Json.decode(ContextId.data), json->Json.decode(Error.data)) {
+    | (Ok({data}), _) => data
+    | (_, Ok(error)) => error->BrightIdError->raise
+    | (Error(err), _) => err->Json.Decode.DecodeError->raise
+    }
   }
 }
 
@@ -137,31 +152,37 @@ let getRolebyRoleId = (guildRoleManager, roleId) => {
   }
 }
 
-let makeVerifyActionRow = verifyUrl => {
-  let roleButton =
+let makeLinkActionRow = verifyUrl => {
+  let mobileButton =
     MessageButton.make()
     ->MessageButton.setLabel("Open QRCode in the BrightID app")
     ->MessageButton.setStyle("LINK")
     ->MessageButton.setURL(verifyUrl)
-  let mobileButton =
+  let roleButton =
     MessageButton.make()
     ->MessageButton.setCustomId("verify")
     ->MessageButton.setLabel("Click here after scanning QR Code in the BrightID app")
     ->MessageButton.setStyle("PRIMARY")
 
-  MessageActionRow.make()->MessageActionRow.addComponents([mobileButton, roleButton])
+  MessageActionRow.make()->MessageActionRow.addComponents([roleButton, mobileButton])
 }
-let makeSponsorActionRow = (customId, label) => {
-  let checkButton =
+let makeBeforeSponsorActionRow = (label, verifyUrl) => {
+  let sponsorButton =
     MessageButton.make()
-    ->MessageButton.setCustomId(customId)
+    ->MessageButton.setCustomId("before-sponsor")
     ->MessageButton.setLabel(label)
     ->MessageButton.setStyle("PRIMARY")
 
-  MessageActionRow.make()->MessageActionRow.addComponents([checkButton])
+  let mobileButton =
+    MessageButton.make()
+    ->MessageButton.setLabel("Open QRCode in the BrightID app")
+    ->MessageButton.setStyle("LINK")
+    ->MessageButton.setURL(verifyUrl)
+
+  MessageActionRow.make()->MessageActionRow.addComponents([sponsorButton, mobileButton])
 }
 
-let notLinkedOptions = (attachment, embed, row) => {
+let linkOptions = (attachment, embed, row) => {
   {
     "embeds": [embed],
     "files": [attachment],
@@ -170,12 +191,14 @@ let notLinkedOptions = (attachment, embed, row) => {
   }
 }
 
-let makeNotLinkedOptions = async (uri, verifyUrl) => {
+let makeLinkOptions = async uuid => {
+  let uri = `${brightIdAppDeeplink}/${uuid}`
+  let verifyUrl = `${brightIdLinkVerificationEndpoint}/${uuid}`
   let canvas = await makeCanvasFromUri(uri)
   let attachment = await createMessageAttachmentFromCanvas(canvas)
   let embed = verifyUrl->embedFields->makeEmbed
-  let row = makeVerifyActionRow(verifyUrl)
-  notLinkedOptions(attachment, embed, row)
+  let row = makeLinkActionRow(verifyUrl)
+  linkOptions(attachment, embed, row)
 }
 let unknownErrorMessage = async interaction => {
   let options = {
@@ -184,208 +207,32 @@ let unknownErrorMessage = async interaction => {
   }
   Interaction.followUp(interaction, ~options, ())
 }
-type sponsorhip = Sponsorship(BrightId.Sponsorships.t)
-let checkSponsor = async uuid => {
-  open Shared.Decode.Decode_BrightId
-  let endpoint = `https://app.brightid.org/node/v6/sponsorships/${uuid}`
-  let params = {
-    "method": "GET",
-    "headers": {
-      "Accept": "application/json",
-      "Content-Type": "application/json",
-    },
-    "timeout": 60000,
-  }
-  let res = await fetch(endpoint, params)
-  let json = await Response.json(res)
 
-  switch (json->Json.decode(Sponsorships.data), json->Json.decode(Error.data)) {
-  | (Ok({data}), _) => Sponsorship(data)
-  | (_, Ok(error)) => error->BrightIdError->raise
-  | (Error(err), _) => err->Json.Decode.DecodeError->raise
+let beforeSponsorMessageOptions = async uuid => {
+  let uri = `${brightIdAppDeeplink}/${uuid}`
+  let verifyUrl = `${brightIdLinkVerificationEndpoint}/${uuid}`
+  let canvas = await makeCanvasFromUri(uri)
+  let attachment = await createMessageAttachmentFromCanvas(canvas)
+  let row = makeBeforeSponsorActionRow("Click this after scanning QR code ", verifyUrl)
+  {
+    "content": "Please scan the QR code in the BrightID app. \n\n **__You can download the app on Android and iOS__** \n Android: <https://play.google.com/store/apps/details?id=org.brightid> \n\n iOS: <https://apps.apple.com/us/app/brightid/id1428946820> \n\n",
+    "files": [attachment],
+    "ephemeral": true,
+    "components": [row],
   }
 }
 
-let sleep: int => Js.Promise.t<unit> = ms =>
-  %raw(` new Promise((resolve) => setTimeout(resolve, ms))`)
-
-exception ErrorCheckingSponsorshipStatus
-type sponsor =
-  | SponsorSuccess(BrightId.Sponsorships.sponsor)
-  | BrightIdError(BrightId.Error.t)
-  | JsError(Js.Exn.t)
-type handleSponsor = SPUsed | SPNotUsed | ErrorCheckingSponsorshipStatus
-let rec handleSponsor = async (interaction, uuid, ~maybeHash=None, ~attempts=10, ()) => {
-  open Shared.BrightId
-  open Shared.Decode
-  let uri = `${brightIdAppDeeplink}/${uuid}`
-  let canvas = await makeCanvasFromUri(uri)
-  let attachment = await createMessageAttachmentFromCanvas(canvas)
-  let secondsBetweenAttempts = 30
-
-  switch attempts {
-  | 0 => SPNotUsed
-  | _ =>
-    let json = await sponsor(~key=envConfig["sponsorshipKey"], ~context="Discord", ~contextId=uuid)
-
-    switch (
-      json->Json.decode(Decode_BrightId.Sponsorships.sponsor),
-      json->Json.decode(Decode_BrightId.Error.data),
-    ) {
-    | (Ok({hash}), _) =>
-      let options = {
-        "content": "You sponsor request has been submitted! \n\n Make sure you have scanned this QR code in the BrightID mobile app to confirm your sponsor and link Discord to BrightID.",
-        "files": [attachment],
-        "ephemeral": true,
-      }
-      let _ = await Interaction.editReply(interaction, ~options, ())
-      await handleSponsor(interaction, uuid, ~maybeHash=Some(hash), ())
-
-    | (_, Ok({errorNum})) =>
-      switch errorNum {
-      //No Unused Sponsorships
-      | 38 =>
-        let options = {
-          "content": "There are no sponsorhips available in the premium pool at this moment. Please try again later.",
-          "ephemeral": true,
-        }
-        let _ = await interaction->Interaction.editReply(~options, ())
-        SPNotUsed
-      //Sponsorship already assigned
-      | 39 =>
-        switch maybeHash {
-        | Some(_) =>
-          switch await checkSponsor(uuid) {
-          | exception BrightIdError(_) =>
-            let _ = await sleep(secondsBetweenAttempts * 1000)
-            let attempts = attempts - 1
-            await handleSponsor(interaction, uuid, ~maybeHash, ~attempts, ())
-          | exception JsError(err) =>
-            Js.log2("Sponsorship already assigned: \n", err)
-            switch await unknownErrorMessage(interaction) {
-            | _ => ErrorCheckingSponsorshipStatus->raise
-            }
-          | Sponsorship(_) => {
-              let row = makeSponsorActionRow("verify", "Assign BrightID Verified Role")
-              let options = {
-                "content": "You have succesfully been sponsored \n\n If you are verified in BrightID you are all done. Click the button below",
-                "files": [attachment],
-                "ephemeral": true,
-                "components": [row],
-              }
-              let _ = await Interaction.editReply(interaction, ~options, ())
-              SPUsed
-            }
-          }
-
-        | None =>
-          let options = {
-            "content": "You have already been sponsored by another BrightID App \n\n You should never see tis message. Please contact BrightID support if you do.",
-            "files": [attachment],
-            "ephemeral": true,
-          }
-          let _ = await Interaction.editReply(interaction, ~options, ())
-          SPNotUsed
-        }
-
-      //App authorized before
-      | 45 =>
-        switch maybeHash {
-        | Some(_) =>
-          switch await checkSponsor(uuid) {
-          | exception BrightIdError(_) =>
-            let _ = await sleep(secondsBetweenAttempts * 1000)
-            let attempts = attempts - 1
-            await handleSponsor(interaction, uuid, ~maybeHash, ~attempts, ())
-          | exception JsError(err) =>
-            Js.log2("App Authorized Before: \n", err)
-            switch await unknownErrorMessage(interaction) {
-            | _ => ErrorCheckingSponsorshipStatus->raise
-            }
-          | Sponsorship(_) => {
-              let row = makeSponsorActionRow("verify", "Assign BrightID Verified Role")
-              let options = {
-                "content": "You have succesfully been sponsored \n\n If you are verified in BrightID you are all done. Click the button below",
-                "files": [attachment],
-                "ephemeral": true,
-                "components": [row],
-              }
-              let _ = await Interaction.editReply(interaction, ~options, ())
-              SPUsed
-            }
-          }
-
-        | None =>
-          let options = {
-            "content": "You have already been sponsored by a Discord Server \n\n You should never see tis message. Please contact BrightID support if you do.",
-            "files": [attachment],
-            "ephemeral": true,
-          }
-          let _ = await Interaction.editReply(interaction, ~options, ())
-          SPNotUsed
-        }
-
-      // // Spend Request Submitted
-      // | 46 =>
-      //   let row = makeSponsorActionRow("spend-success", "Check Sponsor Status")
-      //   let options = {
-      //     "content": "You sponsor request has been approved! \n\n A spend request has now been made to the BrightId node. Please continue waiting \n\n While you wait, you can scan this QR code in the BrightID mobile app to link Discord to BrightID.",
-      //     "files": [attachment],
-      //     "ephemeral": true,
-      //     "components": [row],
-      //   }
-      //   let _ = await interaction->Interaction.editReply(~options, ())
-      // Sponsored Request Recently
-      | 47 =>
-        switch maybeHash {
-        | Some(_) =>
-          switch await checkSponsor(uuid) {
-          | exception BrightIdError(_) =>
-            let _ = await sleep(secondsBetweenAttempts * 1000)
-            let attempts = attempts - 1
-            await handleSponsor(interaction, uuid, ~maybeHash, ~attempts, ())
-          | exception JsError(err) =>
-            Js.log2("Sponsored Request Recently: \n", err)
-            switch await unknownErrorMessage(interaction) {
-            | _ => ErrorCheckingSponsorshipStatus->raise
-            }
-          | Sponsorship(_) => {
-              let row = makeSponsorActionRow("verify", "Assign BrightID Verified Role")
-              let options = {
-                "content": "You have succesfully been sponsored \n\n If you are verified in BrightID you are all done. Click the button below",
-                "files": [attachment],
-                "ephemeral": true,
-                "components": [row],
-              }
-              let _ = await Interaction.editReply(interaction, ~options, ())
-              SPUsed
-            }
-          }
-        | None =>
-          let options = {
-            "content": "We are still processing your sponsor wait patiently!",
-            "files": [attachment],
-            "ephemeral": true,
-          }
-          let _ = interaction->Interaction.followUp(~options, ())
-          let _ = await sleep(secondsBetweenAttempts * 1000)
-          let attempts = attempts - 1
-          await handleSponsor(interaction, uuid, ~maybeHash, ~attempts, ())
-        }
-      | _ =>
-        let _ = await unknownErrorMessage(interaction)
-        ErrorCheckingSponsorshipStatus->raise
-      }
-
-    | (Error(_), _) =>
-      let _ = unknownErrorMessage(interaction)
-      ErrorCheckingSponsorshipStatus->raise
-    }
+let noWriteToGistMessage = async interaction => {
+  let options = {
+    "content": "It seems like I can't write to my database at the moment. Please try again or contact the BrightID support.",
+    "ephemeral": true,
   }
+
+  await Interaction.followUp(interaction, ~options, ())
 }
 
 exception NoAvailableSP
-let getServerSPBalance = async sponsorshipAddress => {
+let getAssignedSPFromContract = async sponsorshipAddress => {
   let provider = Ethers.Providers.jsonRpcProvider(~url="https://idchain.one/rpc")
   let contract = Ethers.Contract.make(~provider, ~address=contractAddressID, ~abi=abi["default"])
 
@@ -402,22 +249,21 @@ let getServerSPBalance = async sponsorshipAddress => {
       NoAvailableSP->raise
     }
     spBalance
-  | exception JsError(_) => NoAvailableSP->raise
+  | exception JsError(obj) =>
+    switch Js.Exn.message(obj) {
+    | Some(msg) =>
+      Js.Console.error(msg)
+      NoAvailableSP->raise
+    | None =>
+      Js.Console.error(obj)
+      NoAvailableSP->raise
+    }
   }
 }
 
 let noSponsorshipsMessage = async interaction => {
   let options = {
-    "content": "Whoops! You haven't received a sponsor. There are plenty of apps with free sponsors, such as the [EIDI Faucet](https://idchain.one/begin/). \n\n See all the apps available at https://apps.brightid.org \n\n Then scan the QR code above in the BrightID mobile app.",
-    "ephemeral": true,
-  }
-
-  await Interaction.followUp(interaction, ~options, ())
-}
-
-let noWriteToGistMessage = async interaction => {
-  let options = {
-    "content": "It seems like I can't write to my database at the moment. Please try again or contact the BrightID support.",
+    "content": "Whoops! You haven't received a sponsor. There are plenty of apps with free sponsors, such as the [EIDI Faucet](https://idchain.one/begin/). \n\n See all the apps available at https://apps.brightid.org \n\n ",
     "ephemeral": true,
   }
 
@@ -425,11 +271,9 @@ let noWriteToGistMessage = async interaction => {
 }
 
 let handleUnverifiedGuildMember = async (errorNum, interaction, uuid) => {
-  let uri = `${brightIdAppDeeplink}/${uuid}`
-  let verifyUrl = `${brightIdLinkVerificationEndpoint}/${uuid}`
   switch errorNum {
   | 2 =>
-    let options = await makeNotLinkedOptions(uri, verifyUrl)
+    let options = await makeLinkOptions(uuid)
     let _ = await Interaction.editReply(interaction, ~options, ())
 
   | 3 =>
@@ -448,7 +292,7 @@ let handleUnverifiedGuildMember = async (errorNum, interaction, uuid) => {
   }
 }
 
-let execute = (interaction: Interaction.t) => {
+let execute = interaction => {
   open Utils
 
   let guild = interaction->Interaction.getGuild
@@ -473,7 +317,7 @@ let execute = (interaction: Interaction.t) => {
         interaction
         ->Interaction.editReply(~options, ())
         ->then(
-          _ => VerifyHandlerError(`Guild Id ${guildId} could not be found in the gist`)->reject,
+          _ => VerifyHandlerError(`Guild Id ${guildId} could not be found in the database`)->reject,
         )
 
       | Some(guildData) => {
@@ -510,74 +354,45 @@ let execute = (interaction: Interaction.t) => {
             async e => {
               switch e {
               | BrightIdError({errorNum, errorMessage}) =>
-                switch 4 {
-                | 4 =>
-                  switch sponsorshipAddress {
-                  | None =>
-                    let _ = await noSponsorshipsMessage(interaction)
-                  | Some(sponsorshipAddress) =>
-                    let _ = switch await getServerSPBalance(sponsorshipAddress) {
-                    | assignedSponsorships =>
-                      let availableSponsorships =
-                        assignedSponsorships->Ethers.BigNumber.subWithString(
-                          guildData.usedSponsorships->Belt.Option.getWithDefault("0"),
-                        )
-                      let assignedSponsorships = assignedSponsorships->Ethers.BigNumber.toString
-                      let entry = guilds->Js.Dict.get(guildId)->Belt.Option.getExn
-                      switch (
-                        await Utils.Gist.UpdateGist.updateEntry(
-                          ~config=gistConfig(),
-                          ~content=guilds,
-                          ~key=guildId,
-                          ~entry={...entry, assignedSponsorships: Some(assignedSponsorships)},
-                        ),
-                        availableSponsorships->Ethers.BigNumber.isZero,
-                      ) {
-                      | (Ok(_), true) =>
-                        let _ = await noSponsorshipsMessage(interaction)
-                      | (Ok(_), false) =>
-                        let _ = switch await handleSponsor(interaction, uuid, ()) {
-                        | SPNotUsed => ()
-                        | SPUsed =>
-                          open Ethers.BigNumber
-                          let usedSponsorships =
-                            guildData.usedSponsorships
-                            ->Belt.Option.getWithDefault("0")
-                            ->fromString
-                            ->addWithString("1")
-                            ->toString
-                          switch await Utils.Gist.UpdateGist.updateEntry(
-                            ~config=gistConfig(),
-                            ~content=guilds,
-                            ~key=guildId,
-                            ~entry={...entry, usedSponsorships: Some(usedSponsorships)},
-                          ) {
-                          | Ok(_) => Js.log("Successfully sponsored user with context id: " ++ uuid)
-                          | Error(err) =>
-                            let guildName = guild->Guild.getGuildName
-                            Js.log2(
-                              `User with context id ${uuid} from server ${guildName} was unable to write their sponsorship to the gist: `,
-                              err,
-                            )
-                            let _ = await noWriteToGistMessage(interaction)
-                          }
-                        | ErrorCheckingSponsorshipStatus =>
-                          let guildName = guild->Guild.getGuildName
-                          Js.log(
-                            `User with context id ${uuid} from server ${guildName} was unable to check their sponsorship status properly: `,
-                          )
-                          let _ = await noWriteToGistMessage(interaction)
-                        }
-                      | (Error(_), _) =>
-                        let _ = await noWriteToGistMessage(interaction)
-                      }
-
-                    | exception NoAvailableSP =>
+                switch (errorNum, sponsorshipAddress) {
+                // No Sponsorship Address Set
+                | (4, None) =>
+                  let _ = await noSponsorshipsMessage(interaction)
+                | (4, Some(sponsorshipAddress)) =>
+                  let _ = switch await getAssignedSPFromContract(sponsorshipAddress) {
+                  | assignedSponsorships =>
+                    let availableSponsorships =
+                      assignedSponsorships->Ethers.BigNumber.subWithString(
+                        guildData.usedSponsorships->Belt.Option.getWithDefault("0"),
+                      )
+                    let assignedSponsorships = assignedSponsorships->Ethers.BigNumber.toString
+                    let entry = guilds->Js.Dict.get(guildId)->Belt.Option.getExn
+                    let updateAssignedSponsorships = await Utils.Gist.UpdateGist.updateEntry(
+                      ~config=gistConfig(),
+                      ~content=guilds,
+                      ~key=guildId,
+                      ~entry={...entry, assignedSponsorships: Some(assignedSponsorships)},
+                    )
+                    let hasAvailableSponsorships = !Ethers.BigNumber.isZero(availableSponsorships)
+                    switch (updateAssignedSponsorships, hasAvailableSponsorships) {
+                    | (Ok(_), false) =>
                       let _ = await noSponsorshipsMessage(interaction)
-                    | exception JsError(_) => Js.Console.error("Verify Handler: Unknown error")
+                    | (Ok(_), true) =>
+                      let options = await beforeSponsorMessageOptions(uuid)
+                      let _ = await Interaction.editReply(interaction, ~options, ())
+                    | (Error(_), _) =>
+                      let _ = await noWriteToGistMessage(interaction)
+                    }
+
+                  | exception NoAvailableSP =>
+                    let _ = await noSponsorshipsMessage(interaction)
+                  | exception JsError(obj) =>
+                    switch Js.Exn.message(obj) {
+                    | Some(msg) => Js.Console.error(msg)
+                    | None => Js.Console.error(obj)
                     }
                   }
-                | _ => {
+                | (_, _) => {
                     let _ = switch await handleUnverifiedGuildMember(errorNum, interaction, uuid) {
                     | data => Some(data)
                     | exception JsError(_) =>
@@ -600,7 +415,7 @@ let execute = (interaction: Interaction.t) => {
       | JsError(obj) =>
         switch Js.Exn.message(obj) {
         | Some(msg) => Js.Console.error("Verify Handler: " ++ msg)->resolve
-        | None => Js.Console.error("Verify Handler: Unknown error")->resolve
+        | None => Js.Console.error2("Verify Handler: Unknown error", obj)->resolve
         }
       | _ => Js.Console.error("Verify Handler: Unknown error")->resolve
       }

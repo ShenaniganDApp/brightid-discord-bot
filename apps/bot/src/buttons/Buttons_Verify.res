@@ -47,7 +47,7 @@ let addRoleToMember = (guildRole, member) => {
 
 let noMultipleContextIds = (member, interaction) => {
   let options = {
-    "content": "Please scan the above QR code in the BrightID mobile app",
+    "content": "Hey, I recognize you, but you have two or more Discord accounts linked to the same BrightID. Unfortunately, the bot doesn't support this yet and can't assign you the BrightID role",
     "ephemeral": true,
   }
   interaction
@@ -145,7 +145,7 @@ let execute = interaction => {
               interaction->Interaction.followUp(~options, ())->then(_ => resolve())
             | (_, false) =>
               let options = {
-                "content": "Hey, I recognize you, but your account seems to be linked to a sybil attack. You are not properly BrightID verified. If this is a mistake, contact one of the support channels",
+                "content": "Hey, I recognize you, but your account seems to be linked to a possible sybil attack. You are not properly BrightID verified. If this is a mistake, contact one of the support channels",
                 "ephemeral": true,
               }
               interaction

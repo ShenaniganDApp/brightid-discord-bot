@@ -40,7 +40,7 @@ module Sponsorships = {
     app: string,
     appHasAuthorized: bool,
     spendRequested: bool,
-    timestamp: int,
+    timestamp: float,
   }
   type data = {data: t}
 }

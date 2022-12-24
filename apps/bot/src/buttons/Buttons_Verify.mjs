@@ -64,7 +64,7 @@ function addRoleToMember(guildRole, member) {
 
 function noMultipleContextIds(member, interaction) {
   var options = {
-    content: "Please scan the above QR code in the BrightID mobile app",
+    content: "Hey, I recognize you, but you have two or more Discord accounts linked to the same BrightID. Unfortunately, the bot doesn't support this yet and can't assign you the BrightID role",
     ephemeral: true
   };
   return interaction.followUp(options).then(function (param) {
@@ -156,7 +156,7 @@ function execute(interaction) {
                                                   return noMultipleContextIds(member, interaction);
                                                 }
                                                 var options$1 = {
-                                                  content: "Hey, I recognize you, but your account seems to be linked to a sybil attack. You are not properly BrightID verified. If this is a mistake, contact one of the support channels",
+                                                  content: "Hey, I recognize you, but your account seems to be linked to a possible sybil attack. You are not properly BrightID verified. If this is a mistake, contact one of the support channels",
                                                   ephemeral: true
                                                 };
                                                 return interaction.followUp(options$1).then(function (param) {
