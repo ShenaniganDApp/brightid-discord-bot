@@ -39,15 +39,15 @@ module Decode_BrightId = {
     }
     let sponsor = sponsor->object
 
-    let sponsorhip = field => {
+    let sponsorship = field => {
       app: field.required(. "app", string),
       appHasAuthorized: field.required(. "appHasAuthorized", bool),
       spendRequested: field.required(. "spendRequested", bool),
-      timestamp: field.required(. "timestamp", int),
+      timestamp: field.required(. "timestamp", Json.Decode.float),
     }
 
     let data = field => {
-      data: sponsorhip->object->field.required(. "data", _),
+      data: sponsorship->object->field.required(. "data", _),
     }
     let data = data->object
   }

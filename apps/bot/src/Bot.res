@@ -43,14 +43,23 @@ let commands: Collection.t<string, module(Command)> = Collection.make()
 let buttons: Collection.t<string, module(Button)> = Collection.make()
 
 // One by one is the only way I can find to do this atm. Hopefully we find a better way
-commands
-->Collection.set(Commands_Help.data->SlashCommandBuilder.getCommandName, module(Commands_Help))
-->Collection.set(Commands_Verify.data->SlashCommandBuilder.getCommandName, module(Commands_Verify))
-->Collection.set(Commands_Invite.data->SlashCommandBuilder.getCommandName, module(Commands_Invite))
-->Collection.set(Commands_Guild.data->SlashCommandBuilder.getCommandName, module(Commands_Guild))
-->ignore
+let _ =
+  commands
+  ->Collection.set(Commands_Help.data->SlashCommandBuilder.getCommandName, module(Commands_Help))
+  ->Collection.set(
+    Commands_Verify.data->SlashCommandBuilder.getCommandName,
+    module(Commands_Verify),
+  )
+  ->Collection.set(
+    Commands_Invite.data->SlashCommandBuilder.getCommandName,
+    module(Commands_Invite),
+  )
+  ->Collection.set(Commands_Guild.data->SlashCommandBuilder.getCommandName, module(Commands_Guild))
 
-buttons->Collection.set(Buttons_Verify.customId, module(Buttons_Verify))->ignore
+let _ =
+  buttons
+  ->Collection.set(Buttons_Verify.customId, module(Buttons_Verify))
+  ->Collection.set(Buttons_Sponsor.customId, module(Buttons_Sponsor))
 
 let updateGistOnGuildCreate = async (guild: Guild.t, roleId) => {
   open Utils
