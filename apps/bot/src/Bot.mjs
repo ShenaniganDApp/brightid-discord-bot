@@ -14,6 +14,7 @@ import * as Commands_Help from "./commands/Commands_Help.mjs";
 import * as Decode$Shared from "@brightidbot/shared/src/Decode.mjs";
 import * as Buttons_Verify from "./buttons/Buttons_Verify.mjs";
 import * as Commands_Guild from "./commands/Commands_Guild.mjs";
+import * as Buttons_Sponsor from "./buttons/Buttons_Sponsor.mjs";
 import * as Caml_exceptions from "rescript/lib/es6/caml_exceptions.js";
 import * as Commands_Invite from "./commands/Commands_Invite.mjs";
 import * as Commands_Verify from "./commands/Commands_Verify.mjs";
@@ -76,8 +77,11 @@ commands.set(Commands_Help.data.name, {
     });
 
 buttons.set(Buttons_Verify.customId, {
-      customId: Buttons_Verify.customId,
-      execute: Buttons_Verify.execute
+        customId: Buttons_Verify.customId,
+        execute: Buttons_Verify.execute
+      }).set(Buttons_Sponsor.customId, {
+      customId: Buttons_Sponsor.customId,
+      execute: Buttons_Sponsor.execute
     });
 
 async function updateGistOnGuildCreate(guild, roleId) {

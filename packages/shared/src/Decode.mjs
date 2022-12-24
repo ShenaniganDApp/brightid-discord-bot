@@ -49,17 +49,17 @@ function sponsor(field) {
 
 var sponsor$1 = Json_Decode$JsonCombinators.object(sponsor);
 
-function sponsorhip(field) {
+function sponsorship(field) {
   return {
           app: field.required("app", Json_Decode$JsonCombinators.string),
           appHasAuthorized: field.required("appHasAuthorized", Json_Decode$JsonCombinators.bool),
           spendRequested: field.required("spendRequested", Json_Decode$JsonCombinators.bool),
-          timestamp: field.required("timestamp", Json_Decode$JsonCombinators.$$int)
+          timestamp: field.required("timestamp", Json_Decode$JsonCombinators.$$float)
         };
 }
 
 function data$4(field) {
-  var __x = Json_Decode$JsonCombinators.object(sponsorhip);
+  var __x = Json_Decode$JsonCombinators.object(sponsorship);
   return {
           data: field.required("data", __x)
         };
@@ -70,7 +70,7 @@ var data$5 = Json_Decode$JsonCombinators.object(data$4);
 var Sponsorships = {
   availableSponsorships: Json_Decode$JsonCombinators.$$int,
   sponsor: sponsor$1,
-  sponsorhip: sponsorhip,
+  sponsorship: sponsorship,
   data: data$5
 };
 
