@@ -340,6 +340,8 @@ function execute(interaction) {
                                               if (e.RE_EXN_ID === BrightIdError) {
                                                 var match = e._1;
                                                 var errorNum = match.errorNum;
+                                                var whitelist = envConfig.sponsorshipsWhitelist.split(",");
+                                                var inWhitelist = whitelist.includes(guild.id);
                                                 if (errorNum !== 4) {
                                                   var exit = 0;
                                                   var data;
@@ -358,54 +360,58 @@ function execute(interaction) {
                                                   exit === 1;
                                                   return ;
                                                 }
-                                                if (sponsorshipAddress !== undefined) {
-                                                  var exit$1 = 0;
-                                                  var assignedSponsorships;
-                                                  try {
-                                                    assignedSponsorships = await getAssignedSPFromContract(sponsorshipAddress);
-                                                    exit$1 = 1;
-                                                  }
-                                                  catch (raw_obj){
-                                                    var obj = Caml_js_exceptions.internalToOCamlException(raw_obj);
-                                                    if (obj.RE_EXN_ID === NoAvailableSP) {
-                                                      await noSponsorshipsMessage(interaction);
-                                                    } else if (obj.RE_EXN_ID === $$Promise.JsError) {
-                                                      var obj$1 = obj._1;
-                                                      var msg = obj$1.message;
-                                                      if (msg !== undefined) {
-                                                        console.error(msg);
-                                                      } else {
-                                                        console.error(obj$1);
-                                                      }
-                                                    } else {
-                                                      throw obj;
+                                                if (inWhitelist) {
+                                                  if (sponsorshipAddress !== undefined) {
+                                                    var exit$1 = 0;
+                                                    var assignedSponsorships;
+                                                    try {
+                                                      assignedSponsorships = await getAssignedSPFromContract(sponsorshipAddress);
+                                                      exit$1 = 1;
                                                     }
-                                                  }
-                                                  if (exit$1 === 1) {
-                                                    var availableSponsorships = assignedSponsorships.sub(Belt_Option.getWithDefault(guildData.usedSponsorships, "0"));
-                                                    var assignedSponsorships$1 = assignedSponsorships.toString();
-                                                    var entry = Belt_Option.getExn(Js_dict.get(guilds, guildId));
-                                                    var updateAssignedSponsorships = await Gist$Utils.UpdateGist.updateEntry(guilds, guildId, {
-                                                          role: entry.role,
-                                                          name: entry.name,
-                                                          inviteLink: entry.inviteLink,
-                                                          roleId: entry.roleId,
-                                                          sponsorshipAddress: entry.sponsorshipAddress,
-                                                          usedSponsorships: entry.usedSponsorships,
-                                                          assignedSponsorships: assignedSponsorships$1
-                                                        }, gistConfig(undefined));
-                                                    var hasAvailableSponsorships = !availableSponsorships.isZero();
-                                                    if (updateAssignedSponsorships.TAG === /* Ok */0) {
-                                                      if (hasAvailableSponsorships) {
-                                                        var options = await beforeSponsorMessageOptions(uuid);
-                                                        await interaction.editReply(options);
-                                                      } else {
+                                                    catch (raw_obj){
+                                                      var obj = Caml_js_exceptions.internalToOCamlException(raw_obj);
+                                                      if (obj.RE_EXN_ID === NoAvailableSP) {
                                                         await noSponsorshipsMessage(interaction);
+                                                      } else if (obj.RE_EXN_ID === $$Promise.JsError) {
+                                                        var obj$1 = obj._1;
+                                                        var msg = obj$1.message;
+                                                        if (msg !== undefined) {
+                                                          console.error(msg);
+                                                        } else {
+                                                          console.error(obj$1);
+                                                        }
+                                                      } else {
+                                                        throw obj;
                                                       }
-                                                    } else {
-                                                      await noWriteToGistMessage(interaction);
                                                     }
+                                                    if (exit$1 === 1) {
+                                                      var availableSponsorships = assignedSponsorships.sub(Belt_Option.getWithDefault(guildData.usedSponsorships, "0"));
+                                                      var assignedSponsorships$1 = assignedSponsorships.toString();
+                                                      var entry = Belt_Option.getExn(Js_dict.get(guilds, guildId));
+                                                      var updateAssignedSponsorships = await Gist$Utils.UpdateGist.updateEntry(guilds, guildId, {
+                                                            role: entry.role,
+                                                            name: entry.name,
+                                                            inviteLink: entry.inviteLink,
+                                                            roleId: entry.roleId,
+                                                            sponsorshipAddress: entry.sponsorshipAddress,
+                                                            usedSponsorships: entry.usedSponsorships,
+                                                            assignedSponsorships: assignedSponsorships$1
+                                                          }, gistConfig(undefined));
+                                                      var hasAvailableSponsorships = !availableSponsorships.isZero();
+                                                      if (updateAssignedSponsorships.TAG === /* Ok */0) {
+                                                        if (hasAvailableSponsorships) {
+                                                          var options = await beforeSponsorMessageOptions(uuid);
+                                                          await interaction.editReply(options);
+                                                        } else {
+                                                          await noSponsorshipsMessage(interaction);
+                                                        }
+                                                      } else {
+                                                        await noWriteToGistMessage(interaction);
+                                                      }
+                                                    }
+                                                    return ;
                                                   }
+                                                  await noSponsorshipsMessage(interaction);
                                                   return ;
                                                 }
                                                 await noSponsorshipsMessage(interaction);
