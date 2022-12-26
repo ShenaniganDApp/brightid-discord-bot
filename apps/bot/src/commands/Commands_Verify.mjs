@@ -314,87 +314,87 @@ function execute(interaction) {
                               var guildId = guild.id;
                               var guildData = Js_dict.get(guilds, guildId);
                               if (guildData !== undefined) {
-                                var roleId = Belt_Option.getExn(guildData.roleId);
-                                var sponsorshipAddress = guildData.sponsorshipAddress;
-                                var guildRole = getRolebyRoleId(guildRoleManager, roleId);
-                                return $$Promise.$$catch(fetchVerification(uuid).then(function (contextId) {
-                                                if (contextId.unique) {
-                                                  return addRoleToMember(guildRole, member).then(function (param) {
-                                                              var options = {
-                                                                content: "Hey, I recognize you! I just gave you the \`" + guildRole.name + "\` role. You are now BrightID verified in " + guild.name + " server!",
-                                                                ephemeral: true
-                                                              };
-                                                              return interaction.editReply(options).then(function (param) {
-                                                                          return Promise.resolve(undefined);
-                                                                        });
+                                var roleId = guildData.roleId;
+                                if (roleId !== undefined) {
+                                  var guildRole = getRolebyRoleId(guildRoleManager, roleId);
+                                  return $$Promise.$$catch(fetchVerification(uuid).then(function (contextId) {
+                                                  if (contextId.unique) {
+                                                    return addRoleToMember(guildRole, member).then(function (param) {
+                                                                var options = {
+                                                                  content: "Hey, I recognize you! I just gave you the \`" + guildRole.name + "\` role. You are now BrightID verified in " + guild.name + " server!",
+                                                                  ephemeral: true
+                                                                };
+                                                                return interaction.editReply(options).then(function (param) {
+                                                                            return Promise.resolve(undefined);
+                                                                          });
+                                                              });
+                                                  }
+                                                  var options = {
+                                                    content: "Hey, I recognize you, but your account seems to be linked to a sybil attack. You have multiple Discord accounts on the same BrightID. If this is a mistake, contact one of the support channels. ",
+                                                    ephemeral: true
+                                                  };
+                                                  return interaction.editReply(options).then(function (param) {
+                                                              return Promise.resolve(undefined);
                                                             });
-                                                }
-                                                var options = {
-                                                  content: "Hey, I recognize you, but your account seems to be linked to a sybil attack. You have multiple Discord accounts on the same BrightID. If this is a mistake, contact one of the support channels. ",
-                                                  ephemeral: true
-                                                };
-                                                return interaction.editReply(options).then(function (param) {
-                                                            return Promise.resolve(undefined);
-                                                          });
-                                              }), (async function (e) {
-                                              if (e.RE_EXN_ID === BrightIdError) {
-                                                var match = e._1;
-                                                var errorNum = match.errorNum;
-                                                var whitelist = envConfig.sponsorshipsWhitelist.split(",");
-                                                var inWhitelist = whitelist.includes(guild.id);
-                                                if (errorNum !== 4) {
-                                                  var exit = 0;
-                                                  var data;
-                                                  try {
-                                                    data = await handleUnverifiedGuildMember(errorNum, interaction, uuid);
-                                                    exit = 1;
-                                                  }
-                                                  catch (raw_exn){
-                                                    var exn = Caml_js_exceptions.internalToOCamlException(raw_exn);
-                                                    if (exn.RE_EXN_ID === $$Promise.JsError) {
-                                                      console.error("" + member.displayName + ": " + match.errorMessage + "");
-                                                    } else {
-                                                      throw exn;
-                                                    }
-                                                  }
-                                                  exit === 1;
-                                                  return ;
-                                                }
-                                                if (inWhitelist) {
-                                                  if (sponsorshipAddress !== undefined) {
-                                                    var exit$1 = 0;
-                                                    var assignedSponsorships;
+                                                }), (async function (e) {
+                                                if (e.RE_EXN_ID === BrightIdError) {
+                                                  var match = e._1;
+                                                  var errorNum = match.errorNum;
+                                                  var whitelist = envConfig.sponsorshipsWhitelist.split(",");
+                                                  var inWhitelist = whitelist.includes(guild.id);
+                                                  var match$1 = guildData.sponsorshipAddress;
+                                                  if (errorNum !== 4) {
+                                                    var exit = 0;
+                                                    var data;
                                                     try {
-                                                      assignedSponsorships = await getAssignedSPFromContract(sponsorshipAddress);
-                                                      exit$1 = 1;
+                                                      data = await handleUnverifiedGuildMember(errorNum, interaction, uuid);
+                                                      exit = 1;
                                                     }
-                                                    catch (raw_obj){
-                                                      var obj = Caml_js_exceptions.internalToOCamlException(raw_obj);
-                                                      if (obj.RE_EXN_ID === NoAvailableSP) {
-                                                        await noSponsorshipsMessage(interaction);
-                                                      } else if (obj.RE_EXN_ID === $$Promise.JsError) {
-                                                        var obj$1 = obj._1;
-                                                        var msg = obj$1.message;
-                                                        if (msg !== undefined) {
-                                                          console.error(msg);
-                                                        } else {
-                                                          console.error(obj$1);
-                                                        }
+                                                    catch (raw_exn){
+                                                      var exn = Caml_js_exceptions.internalToOCamlException(raw_exn);
+                                                      if (exn.RE_EXN_ID === $$Promise.JsError) {
+                                                        console.error("" + member.displayName + ": " + match.errorMessage + "");
                                                       } else {
-                                                        throw obj;
+                                                        throw exn;
                                                       }
                                                     }
-                                                    if (exit$1 === 1) {
-                                                      var availableSponsorships = assignedSponsorships.sub(Belt_Option.getWithDefault(guildData.usedSponsorships, "0"));
+                                                    exit === 1;
+                                                    return ;
+                                                  }
+                                                  if (inWhitelist) {
+                                                    if (match$1 !== undefined) {
+                                                      var assignedSponsorships;
+                                                      try {
+                                                        assignedSponsorships = await getAssignedSPFromContract(match$1);
+                                                      }
+                                                      catch (raw_obj){
+                                                        var obj = Caml_js_exceptions.internalToOCamlException(raw_obj);
+                                                        if (obj.RE_EXN_ID === NoAvailableSP) {
+                                                          await noSponsorshipsMessage(interaction);
+                                                          return ;
+                                                        }
+                                                        if (obj.RE_EXN_ID === $$Promise.JsError) {
+                                                          var obj$1 = obj._1;
+                                                          var msg = obj$1.message;
+                                                          if (msg !== undefined) {
+                                                            console.error(msg);
+                                                          } else {
+                                                            console.error(obj$1);
+                                                          }
+                                                          return ;
+                                                        }
+                                                        throw obj;
+                                                      }
+                                                      var usedSponsorships = Belt_Option.getWithDefault(guildData.usedSponsorships, "0");
+                                                      var availableSponsorships = assignedSponsorships.sub(usedSponsorships);
                                                       var assignedSponsorships$1 = assignedSponsorships.toString();
-                                                      var entry = Belt_Option.getExn(Js_dict.get(guilds, guildId));
                                                       var updateAssignedSponsorships = await Gist$Utils.UpdateGist.updateEntry(guilds, guildId, {
-                                                            role: entry.role,
-                                                            name: entry.name,
-                                                            inviteLink: entry.inviteLink,
-                                                            roleId: entry.roleId,
-                                                            sponsorshipAddress: entry.sponsorshipAddress,
-                                                            usedSponsorships: entry.usedSponsorships,
+                                                            role: guildData.role,
+                                                            name: guildData.name,
+                                                            inviteLink: guildData.inviteLink,
+                                                            roleId: guildData.roleId,
+                                                            sponsorshipAddress: guildData.sponsorshipAddress,
+                                                            usedSponsorships: guildData.usedSponsorships,
                                                             assignedSponsorships: assignedSponsorships$1
                                                           }, gistConfig(undefined));
                                                       var hasAvailableSponsorships = !availableSponsorships.isZero();
@@ -402,28 +402,37 @@ function execute(interaction) {
                                                         if (hasAvailableSponsorships) {
                                                           var options = await beforeSponsorMessageOptions(uuid);
                                                           await interaction.editReply(options);
-                                                        } else {
-                                                          await noSponsorshipsMessage(interaction);
+                                                          return ;
                                                         }
-                                                      } else {
-                                                        await noWriteToGistMessage(interaction);
+                                                        await noSponsorshipsMessage(interaction);
+                                                        return ;
                                                       }
+                                                      await noWriteToGistMessage(interaction);
+                                                      return ;
                                                     }
+                                                    await noSponsorshipsMessage(interaction);
                                                     return ;
                                                   }
                                                   await noSponsorshipsMessage(interaction);
                                                   return ;
                                                 }
-                                                await noSponsorshipsMessage(interaction);
-                                                return ;
-                                              }
-                                              console.error("Verify Handler: Unknown error");
-                                            }));
+                                                console.error("Verify Handler: Unknown error");
+                                              }));
+                                }
+                                var options = {
+                                  content: "Hi, sorry about that. I couldn't retrieve the data for this server from BrightID. Try reinviting the bot. \n\n **Note: This will create a new role BrightID Role.**"
+                                };
+                                return interaction.editReply(options).then(function (param) {
+                                            return Promise.reject({
+                                                        RE_EXN_ID: VerifyHandlerError,
+                                                        _1: "Guild Id " + guildId + " has no roleId"
+                                                      });
+                                          });
                               }
-                              var options = {
+                              var options$1 = {
                                 content: "Hi, sorry about that. I couldn't retrieve the data for this server from BrightId"
                               };
-                              return interaction.editReply(options).then(function (param) {
+                              return interaction.editReply(options$1).then(function (param) {
                                           return Promise.reject({
                                                       RE_EXN_ID: VerifyHandlerError,
                                                       _1: "Guild Id " + guildId + " could not be found in the database"
