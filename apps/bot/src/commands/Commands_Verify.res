@@ -300,6 +300,7 @@ let execute = interaction => {
   let guildRoleManager = guild->Guild.getGuildRoleManager
   let memberId = member->GuildMember.getGuildMemberId
   let uuid = memberId->UUID.v5(envConfig["uuidNamespace"])
+
   interaction
   ->Interaction.deferReply(~options={"ephemeral": true}, ())
   ->then(_ => {
@@ -354,11 +355,16 @@ let execute = interaction => {
             async e => {
               switch e {
               | BrightIdError({errorNum, errorMessage}) =>
-                switch (errorNum, sponsorshipAddress) {
-                // No Sponsorship Address Set
-                | (4, None) =>
+                let whitelist = envConfig["sponsorshipsWhitelist"]->Js.String2.split(",")
+                let inWhitelist = whitelist->Js.Array2.includes(guild->Guild.getGuildId)
+                switch (errorNum, sponsorshipAddress, inWhitelist) {
+                //Not in beta whitelist
+                | (4, _, false) =>
                   let _ = await noSponsorshipsMessage(interaction)
-                | (4, Some(sponsorshipAddress)) =>
+                // No Sponsorship Address Set
+                | (4, None, _) =>
+                  let _ = await noSponsorshipsMessage(interaction)
+                | (4, Some(sponsorshipAddress), true) =>
                   let _ = switch await getAssignedSPFromContract(sponsorshipAddress) {
                   | assignedSponsorships =>
                     let availableSponsorships =
@@ -392,7 +398,7 @@ let execute = interaction => {
                     | None => Js.Console.error(obj)
                     }
                   }
-                | (_, _) => {
+                | (_, _, _) => {
                     let _ = switch await handleUnverifiedGuildMember(errorNum, interaction, uuid) {
                     | data => Some(data)
                     | exception JsError(_) =>
