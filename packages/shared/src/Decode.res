@@ -71,6 +71,28 @@ module Decode_BrightId = {
 
     let data = data->object
   }
+
+  module App = {
+    open BrightId.App
+    let app = field => {
+      id: field.required(. "id", string),
+      name: field.required(. "name", string),
+      context: field.required(. "context", string),
+      verification: field.required(. "verification", string),
+      logo: field.required(. "logo", string),
+      url: field.required(. "url", string),
+      assignedSponsorships: field.required(. "assignedSponsorships", float),
+      unusedSponsorships: field.required(. "unusedSponsorships", float),
+      testing: field.required(. "testing", bool),
+      soulbound: field.required(. "soulbound", bool),
+      soulboundMessage: field.required(. "soulboundMessage", string),
+    }
+    let data = field => {
+      data: app->object->field.required(. "data", _),
+    }
+
+    let data = data->object
+  }
 }
 module Decode_Gist = {
   open BrightId.Gist
@@ -82,6 +104,8 @@ module Decode_Gist = {
     sponsorshipAddress: field.optional(. "sponsorshipAddress", string),
     usedSponsorships: field.optional(. "usedSponsorships", string),
     assignedSponsorships: field.optional(. "assignedSponsorships", string),
+    premiumSponsorshipsUsed: field.optional(. "premiumSponsorshipsUsed", string),
+    premiumExpirationTimestamp: field.optional(. "premiumExpirationTimestamp", float),
   })
 
   let brightIdGuilds = brightIdGuild->dict

@@ -22,6 +22,7 @@ import * as Constants$Shared from "@brightidbot/shared/src/Constants.mjs";
 import * as Caml_js_exceptions from "rescript/lib/es6/caml_js_exceptions.js";
 import * as Json$JsonCombinators from "@glennsl/rescript-json-combinators/src/Json.mjs";
 import * as UpdateOrReadGistMjs from "./updateOrReadGist.mjs";
+import * as Buttons_PremiumSponsor from "./buttons/Buttons_PremiumSponsor.mjs";
 import * as Json_Decode$JsonCombinators from "@glennsl/rescript-json-combinators/src/Json_Decode.mjs";
 
 var RequestHandlerError = /* @__PURE__ */Caml_exceptions.create("Bot.RequestHandlerError");
@@ -77,11 +78,14 @@ commands.set(Commands_Help.data.name, {
     });
 
 buttons.set(Buttons_Verify.customId, {
-        customId: Buttons_Verify.customId,
-        execute: Buttons_Verify.execute
-      }).set(Buttons_Sponsor.customId, {
-      customId: Buttons_Sponsor.customId,
-      execute: Buttons_Sponsor.execute
+          customId: Buttons_Verify.customId,
+          execute: Buttons_Verify.execute
+        }).set(Buttons_Sponsor.customId, {
+        customId: Buttons_Sponsor.customId,
+        execute: Buttons_Sponsor.execute
+      }).set(Buttons_PremiumSponsor.customId, {
+      customId: Buttons_PremiumSponsor.customId,
+      execute: Buttons_PremiumSponsor.execute
     });
 
 async function updateGistOnGuildCreate(guild, roleId) {
@@ -100,7 +104,9 @@ async function updateGistOnGuildCreate(guild, roleId) {
     roleId: entry_roleId,
     sponsorshipAddress: undefined,
     usedSponsorships: undefined,
-    assignedSponsorships: undefined
+    assignedSponsorships: undefined,
+    premiumSponsorshipsUsed: undefined,
+    premiumExpirationTimestamp: undefined
   };
   return await Gist$Utils.UpdateGist.addEntry(content, guildId, entry, config);
 }
@@ -251,6 +257,8 @@ function onRoleUpdate(role) {
         var entry_sponsorshipAddress = brightIdGuild.sponsorshipAddress;
         var entry_usedSponsorships = brightIdGuild.usedSponsorships;
         var entry_assignedSponsorships = brightIdGuild.assignedSponsorships;
+        var entry_premiumSponsorshipsUsed = brightIdGuild.premiumSponsorshipsUsed;
+        var entry_premiumExpirationTimestamp = brightIdGuild.premiumExpirationTimestamp;
         var entry = {
           role: entry_role,
           name: entry_name,
@@ -258,7 +266,9 @@ function onRoleUpdate(role) {
           roleId: entry_roleId,
           sponsorshipAddress: entry_sponsorshipAddress,
           usedSponsorships: entry_usedSponsorships,
-          assignedSponsorships: entry_assignedSponsorships
+          assignedSponsorships: entry_assignedSponsorships,
+          premiumSponsorshipsUsed: entry_premiumSponsorshipsUsed,
+          premiumExpirationTimestamp: entry_premiumExpirationTimestamp
         };
         return Gist$Utils.UpdateGist.updateEntry(guilds, guildId, entry, config).then(function (param) {
                     return Promise.resolve(undefined);

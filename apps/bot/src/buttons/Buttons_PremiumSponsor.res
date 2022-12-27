@@ -33,8 +33,7 @@ let envConfig = switch Env.getConfig() {
 
 let noUnusedSponsorshipsOptions = () =>
   {
-    "content": "There are no sponsorships available in the Discord pool. Please try again later.",
-    "content": "There are no sponsorships available in the Discord pool. Please try again later.",
+    "content": "There are no sponsorhips available in the Discord pool. Please try again later.",
     "ephemeral": true,
   }
 
@@ -62,15 +61,6 @@ let sponsorRequestSubmittedMessageOptions = async uuid => {
     "files": [attachment],
     "ephemeral": true,
   }
-}
-
-let noWriteToGistMessage = async interaction => {
-  let options = {
-    "content": "It seems like I can't write to my database at the moment. Please try again or contact the BrightID support.",
-    "ephemeral": true,
-  }
-
-  await Interaction.followUp(interaction, ~options, ())
 }
 
 let noWriteToGistMessage = async interaction => {
@@ -330,28 +320,28 @@ let execute = async interaction => {
       | Some(guildData) =>
         let _ = switch await handleSponsor(interaction, uuid) {
         | SponsorshipUsed =>
-          let usedSponsorships =
-            guildData.usedSponsorships->Belt.Option.getWithDefault(
+          let premiumSponsorshipsUsed =
+            guildData.premiumSponsorshipsUsed->Belt.Option.getWithDefault(
               Ethers.BigNumber.zero->Ethers.BigNumber.toString,
             )
-          let usedSponsorships =
-            usedSponsorships
+          let premiumSponsorshipsUsed =
+            premiumSponsorshipsUsed
             ->Ethers.BigNumber.fromString
             ->Ethers.BigNumber.addWithString("1")
             ->Ethers.BigNumber.toString
 
-          let updateUsedSponsorships = await Utils.Gist.UpdateGist.updateEntry(
+          let updatePremiumSponsorshipsUsed = await Utils.Gist.UpdateGist.updateEntry(
             ~config=gistConfig(),
             ~content=guilds,
             ~key=guildId,
-            ~entry={...guildData, usedSponsorships: Some(usedSponsorships)},
+            ~entry={...guildData, premiumSponsorshipsUsed: Some(premiumSponsorshipsUsed)},
           )
-          switch updateUsedSponsorships {
+          switch updatePremiumSponsorshipsUsed {
           | Ok(_) =>
             let options = await successfulSponsorMessageOptions(uuid)
             let _ = await Interaction.followUp(interaction, ~options, ())
           | Error(err) =>
-            Js.Console.error2("Buttons Sponsor: Error updating used sponsorships", err)
+            Js.Console.error2("Buttons Sponsor: Error updating premium used sponsorships", err)
             let _ = await noWriteToGistMessage(interaction)
           }
 
@@ -391,4 +381,4 @@ let execute = async interaction => {
   }
 }
 
-let customId = "before-sponsor"
+let customId = "before-premium-sponsor"

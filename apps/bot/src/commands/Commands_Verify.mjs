@@ -8,12 +8,14 @@ import * as Qrcode from "qrcode";
 import * as Js_dict from "rescript/lib/es6/js_dict.js";
 import * as $$Promise from "@ryyppy/rescript-promise/src/Promise.mjs";
 import * as Endpoints from "../Endpoints.mjs";
+import * as Belt_Array from "rescript/lib/es6/belt_Array.js";
 import * as Gist$Utils from "@brightidbot/utils/src/Gist.mjs";
 import * as DiscordJs from "discord.js";
 import * as Belt_Option from "rescript/lib/es6/belt_Option.js";
 import * as Decode$Shared from "@brightidbot/shared/src/Decode.mjs";
 import * as Caml_exceptions from "rescript/lib/es6/caml_exceptions.js";
 import * as Constants$Shared from "@brightidbot/shared/src/Constants.mjs";
+import * as Services_AppInfo from "../services/Services_AppInfo.mjs";
 import * as Caml_js_exceptions from "rescript/lib/es6/caml_js_exceptions.js";
 import * as Builders from "@discordjs/builders";
 import * as Json$JsonCombinators from "@glennsl/rescript-json-combinators/src/Json.mjs";
@@ -57,6 +59,13 @@ function gistConfig(param) {
 function addRoleToMember(guildRole, member) {
   var guildMemberRoleManager = member.roles;
   return guildMemberRoleManager.add(guildRole, undefined);
+}
+
+function noUnusedSponsorshipsOptions(param) {
+  return {
+          content: "There are no sponsorships available in the Discord pool. Please try again later.",
+          ephemeral: true
+        };
 }
 
 async function fetchVerification(uuid) {
@@ -175,8 +184,8 @@ function makeLinkActionRow(verifyUrl) {
             ]);
 }
 
-function makeBeforeSponsorActionRow(label, verifyUrl) {
-  var sponsorButton = new DiscordJs.MessageButton().setCustomId("before-sponsor").setLabel(label).setStyle("PRIMARY");
+function makeBeforeSponsorActionRow(customId, verifyUrl) {
+  var sponsorButton = new DiscordJs.MessageButton().setCustomId(customId).setLabel("Click this after scanning QR code").setStyle("PRIMARY");
   var mobileButton = new DiscordJs.MessageButton().setLabel("Open QRCode in the BrightID app").setStyle("LINK").setURL(verifyUrl);
   return new DiscordJs.MessageActionRow().addComponents([
               sponsorButton,
@@ -211,12 +220,12 @@ async function unknownErrorMessage(interaction) {
   return interaction.followUp(options);
 }
 
-async function beforeSponsorMessageOptions(uuid) {
+async function beforeSponsorMessageOptions(customId, uuid) {
   var uri = "" + Endpoints.brightIdAppDeeplink + "/" + uuid + "";
   var verifyUrl = "" + Endpoints.brightIdLinkVerificationEndpoint + "/" + uuid + "";
   var canvas = await makeCanvasFromUri(uri);
   var attachment = await createMessageAttachmentFromCanvas(canvas);
-  var row = makeBeforeSponsorActionRow("Click this after scanning QR code ", verifyUrl);
+  var row = makeBeforeSponsorActionRow(customId, verifyUrl);
   return {
           content: "Please scan the QR code in the BrightID app. \n\n **__You can download the app on Android and iOS__** \n Android: <https://play.google.com/store/apps/details?id=org.brightid> \n\n iOS: <https://apps.apple.com/us/app/brightid/id1428946820> \n\n",
           files: [attachment],
@@ -235,7 +244,7 @@ async function noWriteToGistMessage(interaction) {
 
 var NoAvailableSP = /* @__PURE__ */Caml_exceptions.create("Commands_Verify.NoAvailableSP");
 
-async function getAssignedSPFromContract(sponsorshipAddress) {
+async function getAssignedSPFromAddress(sponsorshipAddress) {
   var provider = new (Ethers.providers.JsonRpcProvider)("https://idchain.one/rpc");
   var contract = new Ethers.Contract(Constants$Shared.contractAddressID, abi.default, provider);
   var formattedContext = Ethers.utils.formatBytes32String("Discord");
@@ -299,6 +308,50 @@ async function handleUnverifiedGuildMember(errorNum, interaction, uuid) {
   }
   var options$2 = await makeLinkOptions(uuid);
   await interaction.editReply(options$2);
+}
+
+function hasPremium(guildData) {
+  var premiumExpirationTimestamp = guildData.premiumExpirationTimestamp;
+  if (premiumExpirationTimestamp === undefined) {
+    return false;
+  }
+  var now = Date.now();
+  return now < premiumExpirationTimestamp;
+}
+
+async function getAppUnusedSponsorships(context) {
+  var data;
+  try {
+    data = await Services_AppInfo.getAppInfo(context);
+  }
+  catch (raw_exn){
+    var exn = Caml_js_exceptions.internalToOCamlException(raw_exn);
+    if (exn.RE_EXN_ID === BrightIdError) {
+      return ;
+    }
+    if (exn.RE_EXN_ID === $$Promise.JsError) {
+      return ;
+    }
+    throw exn;
+  }
+  return data.unusedSponsorships;
+}
+
+function getDiscordServerSponsorshipTotals(guilds) {
+  return Belt_Array.reduce(Object.keys(guilds), [
+              Ethers.constants.Zero,
+              Ethers.constants.Zero
+            ], (function (acc, key) {
+                var guild = guilds[key];
+                var assignedSponsorships = Belt_Option.getWithDefault(guild.assignedSponsorships, "0");
+                var usedSponsorships = Belt_Option.getWithDefault(guild.usedSponsorships, "0");
+                var totalAssignedSponsorships = acc[0].add(assignedSponsorships);
+                var totalUsedSponsorships = acc[1].add(usedSponsorships);
+                return [
+                        totalAssignedSponsorships,
+                        totalUsedSponsorships
+                      ];
+              }));
 }
 
 function execute(interaction) {
@@ -365,7 +418,7 @@ function execute(interaction) {
                                                     if (match$1 !== undefined) {
                                                       var assignedSponsorships;
                                                       try {
-                                                        assignedSponsorships = await getAssignedSPFromContract(match$1);
+                                                        assignedSponsorships = await getAssignedSPFromAddress(match$1);
                                                       }
                                                       catch (raw_obj){
                                                         var obj = Caml_js_exceptions.internalToOCamlException(raw_obj);
@@ -385,7 +438,7 @@ function execute(interaction) {
                                                         }
                                                         throw obj;
                                                       }
-                                                      var usedSponsorships = Belt_Option.getWithDefault(guildData.usedSponsorships, "0");
+                                                      var usedSponsorships = Belt_Option.getWithDefault(guildData.usedSponsorships, Ethers.constants.Zero.toString());
                                                       var availableSponsorships = assignedSponsorships.sub(usedSponsorships);
                                                       var assignedSponsorships$1 = assignedSponsorships.toString();
                                                       var updateAssignedSponsorships = await Gist$Utils.UpdateGist.updateEntry(guilds, guildId, {
@@ -395,12 +448,14 @@ function execute(interaction) {
                                                             roleId: guildData.roleId,
                                                             sponsorshipAddress: guildData.sponsorshipAddress,
                                                             usedSponsorships: guildData.usedSponsorships,
-                                                            assignedSponsorships: assignedSponsorships$1
+                                                            assignedSponsorships: assignedSponsorships$1,
+                                                            premiumSponsorshipsUsed: guildData.premiumSponsorshipsUsed,
+                                                            premiumExpirationTimestamp: guildData.premiumExpirationTimestamp
                                                           }, gistConfig(undefined));
                                                       var hasAvailableSponsorships = !availableSponsorships.isZero();
                                                       if (updateAssignedSponsorships.TAG === /* Ok */0) {
                                                         if (hasAvailableSponsorships) {
-                                                          var options = await beforeSponsorMessageOptions(uuid);
+                                                          var options = await beforeSponsorMessageOptions("before-sponsor", uuid);
                                                           await interaction.editReply(options);
                                                           return ;
                                                         }
@@ -408,6 +463,25 @@ function execute(interaction) {
                                                         return ;
                                                       }
                                                       await noWriteToGistMessage(interaction);
+                                                      return ;
+                                                    }
+                                                    if (hasPremium(guildData)) {
+                                                      var appUnusedSponsorships = await getAppUnusedSponsorships(Constants$Shared.context);
+                                                      if (appUnusedSponsorships === undefined) {
+                                                        return ;
+                                                      }
+                                                      var match$2 = getDiscordServerSponsorshipTotals(guilds);
+                                                      var unusedDiscordSponsorships = match$2[0].sub(match$2[1]);
+                                                      var unusedPremiumSponsorships = Ethers.BigNumber.from(String(appUnusedSponsorships)).sub(unusedDiscordSponsorships);
+                                                      if (unusedPremiumSponsorships.gt("0")) {
+                                                        var options$1 = await beforeSponsorMessageOptions("before-premium-sponsor", uuid);
+                                                        await interaction.editReply(options$1);
+                                                        return ;
+                                                      }
+                                                      await interaction.followUp({
+                                                            content: "There are no sponsorships available in the Discord pool. Please try again later.",
+                                                            ephemeral: true
+                                                          });
                                                       return ;
                                                     }
                                                     await noSponsorshipsMessage(interaction);
@@ -486,6 +560,7 @@ export {
   envConfig ,
   gistConfig ,
   addRoleToMember ,
+  noUnusedSponsorshipsOptions ,
   fetchVerification ,
   embedFields ,
   makeEmbed ,
@@ -500,9 +575,12 @@ export {
   beforeSponsorMessageOptions ,
   noWriteToGistMessage ,
   NoAvailableSP ,
-  getAssignedSPFromContract ,
+  getAssignedSPFromAddress ,
   noSponsorshipsMessage ,
   handleUnverifiedGuildMember ,
+  hasPremium ,
+  getAppUnusedSponsorships ,
+  getDiscordServerSponsorshipTotals ,
   execute ,
   data ,
 }

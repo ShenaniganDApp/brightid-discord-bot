@@ -10,6 +10,8 @@ var brightIdVerificationEndpoint = "" + brightIdEndpointv5 + "/verifications";
 
 var brightIdSubscriptionEndpoint = "" + brightIdEndpointv5 + "/operations";
 
+var brightIdAppsEndpoint = "" + brightIdEndpointv5 + "/apps";
+
 var brightIdAppDeeplink = "brightid://link-verification/" + nodeUrl + "/" + Constants.context + "";
 
 var brightIdLinkVerificationEndpoint = "https://app.brightid.org/link-verification/" + nodeUrl + "/" + Constants.context + "";
@@ -22,6 +24,7 @@ export {
   brightIdEndpointv5 ,
   brightIdVerificationEndpoint ,
   brightIdSubscriptionEndpoint ,
+  brightIdAppsEndpoint ,
   brightIdAppDeeplink ,
   brightIdLinkVerificationEndpoint ,
 }

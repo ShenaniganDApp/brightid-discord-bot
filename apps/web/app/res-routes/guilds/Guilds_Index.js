@@ -146,6 +146,8 @@ async function action(param) {
   var entry_sponsorshipAddress = match.sponsorshipAddress;
   var entry_usedSponsorships = prevEntry.usedSponsorships;
   var entry_assignedSponsorships = prevEntry.assignedSponsorships;
+  var entry_premiumSponsorshipsUsed = prevEntry.premiumSponsorshipsUsed;
+  var entry_premiumExpirationTimestamp = prevEntry.premiumExpirationTimestamp;
   var entry$1 = {
     role: entry_role,
     name: entry_name,
@@ -153,7 +155,9 @@ async function action(param) {
     roleId: entry_roleId,
     sponsorshipAddress: entry_sponsorshipAddress,
     usedSponsorships: entry_usedSponsorships,
-    assignedSponsorships: entry_assignedSponsorships
+    assignedSponsorships: entry_assignedSponsorships,
+    premiumSponsorshipsUsed: entry_premiumSponsorshipsUsed,
+    premiumExpirationTimestamp: entry_premiumExpirationTimestamp
   };
   var data$2;
   try {

@@ -31,6 +31,13 @@ module BigNumber = {
 
   @send external toFloat: t => float = "toNumber"
   @send external isZero: t => bool = "isZero"
+  @send external add: (t, t) => t = "add"
+  @send external sub: (t, t) => t = "sub"
   @send external addWithString: (t, string) => t = "add"
   @send external subWithString: (t, string) => t = "sub"
+  @send external addWithFloat: (t, float) => t = "add"
+  @send external subWithFloat: (t, float) => t = "sub"
+
+  @send external gt: (t, t) => bool = "gt"
+  @send external gtWithString: (t, string) => bool = "gt"
 }
