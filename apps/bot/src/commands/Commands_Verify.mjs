@@ -478,7 +478,7 @@ function execute(interaction) {
                                                           await interaction.editReply(options$1);
                                                           return ;
                                                         }
-                                                        console.error("Commands_Verify: No rponsorships available in premium pool");
+                                                        console.error("Commands_Verify: No sponsorships available in premium pool");
                                                         await interaction.followUp({
                                                               content: "There are no sponsorships available in the Discord pool. Please try again later.",
                                                               ephemeral: true

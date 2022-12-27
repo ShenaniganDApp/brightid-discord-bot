@@ -145,7 +145,7 @@ function execute(interaction) {
                                                   
                                                 } else {
                                                   var options = {
-                                                    content: "The brightid has not been linked to Discord. That means the qr code hast not been properly scanned!",
+                                                    content: "The brightid has not been linked to Discord. That means the qr code has not been properly scanned!",
                                                     ephemeral: true
                                                   };
                                                   return interaction.followUp(options).then(function (param) {

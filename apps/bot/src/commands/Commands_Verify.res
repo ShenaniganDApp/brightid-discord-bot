@@ -450,7 +450,7 @@ let execute = interaction => {
                         switch unusedPremiumSponsorships->Ethers.BigNumber.gtWithString("0") {
                         | false =>
                           Js.Console.error(
-                            "Commands_Verify: No rponsorships available in premium pool",
+                            "Commands_Verify: No sponsorships available in premium pool",
                           )
                           let _ = await Interaction.followUp(
                             interaction,
