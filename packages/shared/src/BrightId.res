@@ -9,6 +9,23 @@ module ContextId = {
   type data = {data: t}
 }
 
+module App = {
+  type t = {
+    id: string,
+    name: string,
+    context: string,
+    verification: string,
+    logo: string,
+    url: string,
+    assignedSponsorships: float,
+    unusedSponsorships: float,
+    testing: bool,
+    soulbound: bool,
+    soulboundMessage: string,
+  }
+  type data = {data: t}
+}
+
 module Error = {
   type t = {
     error: bool,
@@ -27,6 +44,8 @@ module Gist = {
     sponsorshipAddress: option<string>,
     usedSponsorships: option<string>,
     assignedSponsorships: option<string>,
+    premiumSponsorshipsUsed: option<string>,
+    premiumExpirationTimestamp: option<float>,
   }
 
   type brightIdGuilds = Js.Dict.t<brightIdGuild>
