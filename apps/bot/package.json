@@ -6,8 +6,8 @@
   "scripts": {
     "lint": "npx eslint ./src",
     "test": "npx jest",
-    "start": "nodemon --experimental-json-modules src/Bot.mjs ",
-    "dev": "concurrently  \"yarn re:start\" \"yarn start\" -c \"red,green\" -n \"Rescript,Node\"",
+    "start": "node --experimental-json-modules src/Bot.mjs ",
+    "dev": "concurrently  \"yarn re:start\" \"nodemon --experimental-json-modules src/Bot.mjs\" -c \"red,green\" -n \"Rescript,Node\"",
     "re:build": "rescript build -with-deps",
     "re:start": "rescript build -w -with-deps",
     "prettify": "prettier . --write",
