@@ -21,7 +21,14 @@ let data =
   ->SlashCommandBuilder.setName("help")
   ->SlashCommandBuilder.setDescription("Explain the BrightId bot commands")
 
-let execute = (interaction: Interaction.t) => {
-  interaction->Interaction.reply(~options={"content": helpMessage, "ephemeral": true}, ())->ignore
-  resolve()
+let execute = async (interaction: Interaction.t) => {
+  switch await interaction->Interaction.reply(
+    ~options={"content": helpMessage, "ephemeral": true},
+    (),
+  ) {
+  | exception JsError(obj) =>
+    Js.Console.error(obj)
+    JsError(obj)->raise
+  | _ => ()
+  }
 }
