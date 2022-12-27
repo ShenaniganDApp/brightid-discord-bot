@@ -71,8 +71,8 @@ async function sponsorRequestSubmittedMessageOptions(uuid) {
   var canvas = await Commands_Verify.makeCanvasFromUri(uri);
   var attachment = await Commands_Verify.createMessageAttachmentFromCanvas(canvas);
   var nowInSeconds = Math.round(Date.now() / 1000);
-  var fiveMinutesAfter = 15 * 60 + nowInSeconds;
-  var content = "You sponsor request has been submitted! \n\n Make sure you have scanned this QR code in the BrightID mobile app to confirm your sponsor and link Discord to BrightID. \n This process will timeout <t:" + String(fiveMinutesAfter) + ":R>.\n\nPlease be patient until time expires \n";
+  var fifteenMinutesAfter = 15 * 60 + nowInSeconds;
+  var content = "You sponsor request has been submitted! \n\n Make sure you have scanned this QR code in the BrightID mobile app to confirm your sponsor and link Discord to BrightID. \n This process will timeout <t:" + String(fifteenMinutesAfter) + ":R>.\n\nPlease be patient until time expires \n";
   return {
           content: content,
           files: [attachment],

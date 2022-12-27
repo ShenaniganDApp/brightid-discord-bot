@@ -43,7 +43,7 @@ var client = new DiscordJs.Client(options);
 
 $$Promise.$$catch(client.login(discordBotToken).then(function (param) {
           console.log("Client Started\n");
-          return Gist$Utils.ReadGist.content(config, Decode$Shared.Gist.brightIdGuilds).then(function (content) {
+          return Gist$Utils.ReadGist.content(config, Decode$Shared.Decode_Gist.brightIdGuilds).then(function (content) {
                       var gistGuilds = Object.keys(content);
                       var botGuilds = client.guilds.cache;
                       var keys = Belt_SetString.fromArray(Belt_Array.keep(gistGuilds, (function (gistGuild) {
