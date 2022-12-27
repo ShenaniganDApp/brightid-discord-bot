@@ -3,6 +3,8 @@
 
 var ContextId = {};
 
+var App = {};
+
 var $$Error = {};
 
 var Gist = {};
@@ -15,6 +17,7 @@ var SPContract = {};
 
 export {
   ContextId ,
+  App ,
   $$Error ,
   Gist ,
   Sponsorships ,

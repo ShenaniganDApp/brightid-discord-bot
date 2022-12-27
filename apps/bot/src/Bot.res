@@ -60,6 +60,7 @@ let _ =
   buttons
   ->Collection.set(Buttons_Verify.customId, module(Buttons_Verify))
   ->Collection.set(Buttons_Sponsor.customId, module(Buttons_Sponsor))
+  ->Collection.set(Buttons_PremiumSponsor.customId, module(Buttons_PremiumSponsor))
 
 let updateGistOnGuildCreate = async (guild: Guild.t, roleId) => {
   open Utils
@@ -83,6 +84,8 @@ let updateGistOnGuildCreate = async (guild: Guild.t, roleId) => {
       sponsorshipAddress: None,
       usedSponsorships: None,
       assignedSponsorships: None,
+      premiumSponsorshipsUsed: None,
+      premiumExpirationTimestamp: None,
     }
   }
 

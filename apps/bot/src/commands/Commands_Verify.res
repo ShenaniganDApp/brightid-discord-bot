@@ -50,6 +50,12 @@ let addRoleToMember = (guildRole, member) => {
   guildMemberRoleManager->GuildMemberRoleManager.add(guildRole, ())
 }
 
+let noUnusedSponsorshipsOptions = () =>
+  {
+    "content": "There are no sponsorships available in the Discord pool. Please try again later.",
+    "ephemeral": true,
+  }
+
 let fetchVerification = async uuid => {
   open Decode.Decode_BrightId
   let endpoint = `${brightIdVerificationEndpoint}/${context}/${uuid}?timestamp=seconds`
@@ -166,11 +172,11 @@ let makeLinkActionRow = verifyUrl => {
 
   MessageActionRow.make()->MessageActionRow.addComponents([roleButton, mobileButton])
 }
-let makeBeforeSponsorActionRow = (label, verifyUrl) => {
+let makeBeforeSponsorActionRow = (customId, verifyUrl) => {
   let sponsorButton =
     MessageButton.make()
-    ->MessageButton.setCustomId("before-sponsor")
-    ->MessageButton.setLabel(label)
+    ->MessageButton.setCustomId(customId)
+    ->MessageButton.setLabel("Click this after scanning QR code")
     ->MessageButton.setStyle("PRIMARY")
 
   let mobileButton =
@@ -208,12 +214,12 @@ let unknownErrorMessage = async interaction => {
   Interaction.followUp(interaction, ~options, ())
 }
 
-let beforeSponsorMessageOptions = async uuid => {
+let beforeSponsorMessageOptions = async (customId, uuid) => {
   let uri = `${brightIdAppDeeplink}/${uuid}`
   let verifyUrl = `${brightIdLinkVerificationEndpoint}/${uuid}`
   let canvas = await makeCanvasFromUri(uri)
   let attachment = await createMessageAttachmentFromCanvas(canvas)
-  let row = makeBeforeSponsorActionRow("Click this after scanning QR code ", verifyUrl)
+  let row = makeBeforeSponsorActionRow(customId, verifyUrl)
   {
     "content": "Please scan the QR code in the BrightID app. \n\n **__You can download the app on Android and iOS__** \n Android: <https://play.google.com/store/apps/details?id=org.brightid> \n\n iOS: <https://apps.apple.com/us/app/brightid/id1428946820> \n\n",
     "files": [attachment],
@@ -232,7 +238,7 @@ let noWriteToGistMessage = async interaction => {
 }
 
 exception NoAvailableSP
-let getAssignedSPFromContract = async sponsorshipAddress => {
+let getAssignedSPFromAddress = async sponsorshipAddress => {
   let provider = Ethers.Providers.jsonRpcProvider(~url="https://idchain.one/rpc")
   let contract = Ethers.Contract.make(~provider, ~address=contractAddressID, ~abi=abi["default"])
 
@@ -290,6 +296,41 @@ let handleUnverifiedGuildMember = async (errorNum, interaction, uuid) => {
     }
     let _ = await Interaction.editReply(interaction, ~options, ())
   }
+}
+
+let hasPremium = (guildData: BrightId.Gist.brightIdGuild) =>
+  switch guildData.premiumExpirationTimestamp {
+  | Some(premiumExpirationTimestamp) =>
+    let now = Js.Date.now()
+    now < premiumExpirationTimestamp
+  | None => false
+  }
+
+let getAppUnusedSponsorships = async context => {
+  switch await Services_AppInfo.getAppInfo(context) {
+  | exception BrightIdError(_) => None
+  | exception JsError(_) => None
+  | data => Some(data.unusedSponsorships)
+  }
+}
+let getDiscordServerSponsorshipTotals = (guilds: BrightId.Gist.brightIdGuilds) => {
+  guilds
+  ->Js.Dict.keys
+  ->Belt.Array.reduce((Ethers.BigNumber.zero, Ethers.BigNumber.zero), (acc, key) => {
+    let (totalAssignedSponsorships, totalUsedSponsorships) = acc
+    let guild = guilds->Js.Dict.unsafeGet(key)
+    let assignedSponsorships = guild.assignedSponsorships->Belt.Option.getWithDefault("0")
+    let usedSponsorships = guild.usedSponsorships->Belt.Option.getWithDefault("0")
+    let totalAssignedSponsorships = Ethers.BigNumber.addWithString(
+      totalAssignedSponsorships,
+      assignedSponsorships,
+    )
+    let totalUsedSponsorships = Ethers.BigNumber.addWithString(
+      totalUsedSponsorships,
+      usedSponsorships,
+    )
+    (totalAssignedSponsorships, totalUsedSponsorships)
+  })
 }
 
 let execute = interaction => {
@@ -371,12 +412,51 @@ let execute = interaction => {
                     let _ = await noSponsorshipsMessage(interaction)
                   // No Sponsorship Address Set
                   | (4, None, _) =>
-                    let _ = await noSponsorshipsMessage(interaction)
+                    switch hasPremium(guildData) {
+                    | false =>
+                      let _ = await noSponsorshipsMessage(interaction)
+                    | true =>
+                      switch await getAppUnusedSponsorships(context) {
+                      | None => ()
+                      // let _ = await noSponsorshipsAvailableMessage(interaction)
+                      // SponsorshipUsed
+                      | Some(appUnusedSponsorships) =>
+                        let (
+                          totalDiscordAssignedSponsorships,
+                          totalDiscordUsedSponsorships,
+                        ) = getDiscordServerSponsorshipTotals(guilds)
+                        let unusedDiscordSponsorships =
+                          totalDiscordAssignedSponsorships->Ethers.BigNumber.sub(
+                            totalDiscordUsedSponsorships,
+                          )
+                        let unusedPremiumSponsorships =
+                          appUnusedSponsorships
+                          ->Belt.Float.toString
+                          ->Ethers.BigNumber.fromString
+                          ->Ethers.BigNumber.sub(unusedDiscordSponsorships)
+                        switch unusedPremiumSponsorships->Ethers.BigNumber.gtWithString("0") {
+                        | false =>
+                          let _ = await Interaction.followUp(
+                            interaction,
+                            ~options=noUnusedSponsorshipsOptions(),
+                            (),
+                          )
+                        | true =>
+                          let options = await beforeSponsorMessageOptions(
+                            "before-premium-sponsor",
+                            uuid,
+                          )
+                          let _ = await Interaction.editReply(interaction, ~options, ())
+                        }
+                      }
+                    }
                   | (4, Some(sponsorshipAddress), true) =>
-                    switch await getAssignedSPFromContract(sponsorshipAddress) {
+                    switch await getAssignedSPFromAddress(sponsorshipAddress) {
                     | assignedSponsorships =>
                       let usedSponsorships =
-                        guildData.usedSponsorships->Belt.Option.getWithDefault("0")
+                        guildData.usedSponsorships->Belt.Option.getWithDefault(
+                          Ethers.BigNumber.zero->Ethers.BigNumber.toString,
+                        )
                       let availableSponsorships =
                         assignedSponsorships->Ethers.BigNumber.subWithString(usedSponsorships)
                       let assignedSponsorships = assignedSponsorships->Ethers.BigNumber.toString
@@ -391,7 +471,7 @@ let execute = interaction => {
                       | (Ok(_), false) =>
                         let _ = await noSponsorshipsMessage(interaction)
                       | (Ok(_), true) =>
-                        let options = await beforeSponsorMessageOptions(uuid)
+                        let options = await beforeSponsorMessageOptions("before-sponsor", uuid)
                         let _ = await Interaction.editReply(interaction, ~options, ())
                       | (Error(_), _) =>
                         let _ = await noWriteToGistMessage(interaction)
