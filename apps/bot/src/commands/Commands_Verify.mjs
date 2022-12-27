@@ -397,103 +397,98 @@ function execute(interaction) {
                                                   var errorNum = match.errorNum;
                                                   var whitelist = envConfig.sponsorshipsWhitelist.split(",");
                                                   var inWhitelist = whitelist.includes(guild.id);
-                                                  var match$1 = guildData.sponsorshipAddress;
-                                                  if (errorNum !== 4) {
-                                                    var exit = 0;
-                                                    var data;
-                                                    try {
-                                                      data = await handleUnverifiedGuildMember(errorNum, interaction, uuid);
-                                                      exit = 1;
-                                                    }
-                                                    catch (raw_exn){
-                                                      var exn = Caml_js_exceptions.internalToOCamlException(raw_exn);
-                                                      if (exn.RE_EXN_ID === $$Promise.JsError) {
-                                                        console.error("" + member.displayName + ": " + match.errorMessage + "");
-                                                      } else {
-                                                        throw exn;
-                                                      }
-                                                    }
-                                                    exit === 1;
-                                                    return ;
-                                                  }
-                                                  if (inWhitelist) {
-                                                    if (match$1 !== undefined) {
-                                                      var assignedSponsorships;
+                                                  var appUnusedSponsorships = await getAppUnusedSponsorships(Constants$Shared.context);
+                                                  if (appUnusedSponsorships !== undefined) {
+                                                    var match$1 = getDiscordServerSponsorshipTotals(guilds);
+                                                    var unusedDiscordSponsorships = match$1[0].sub(match$1[1]);
+                                                    var unusedPremiumSponsorships = Ethers.BigNumber.from(String(appUnusedSponsorships)).sub(unusedDiscordSponsorships);
+                                                    var hasPremium$1 = hasPremium(guildData);
+                                                    var premiumCanBeUsed = unusedPremiumSponsorships.gt("0") && hasPremium$1;
+                                                    var match$2 = guildData.sponsorshipAddress;
+                                                    if (errorNum !== 4) {
+                                                      var exit = 0;
+                                                      var data;
                                                       try {
-                                                        assignedSponsorships = await getAssignedSPFromAddress(match$1);
+                                                        data = await handleUnverifiedGuildMember(errorNum, interaction, uuid);
+                                                        exit = 1;
                                                       }
-                                                      catch (raw_obj){
-                                                        var obj = Caml_js_exceptions.internalToOCamlException(raw_obj);
-                                                        if (obj.RE_EXN_ID === NoAvailableSP) {
+                                                      catch (raw_exn){
+                                                        var exn = Caml_js_exceptions.internalToOCamlException(raw_exn);
+                                                        if (exn.RE_EXN_ID === $$Promise.JsError) {
+                                                          console.error("" + member.displayName + ": " + match.errorMessage + "");
+                                                        } else {
+                                                          throw exn;
+                                                        }
+                                                      }
+                                                      exit === 1;
+                                                      return ;
+                                                    }
+                                                    if (inWhitelist) {
+                                                      if (premiumCanBeUsed) {
+                                                        console.log("Unused Sponsorships in premium pool: ", unusedPremiumSponsorships);
+                                                        var options = await beforeSponsorMessageOptions("before-premium-sponsor", uuid);
+                                                        await interaction.editReply(options);
+                                                        return ;
+                                                      }
+                                                      if (match$2 !== undefined) {
+                                                        var assignedSponsorships;
+                                                        try {
+                                                          assignedSponsorships = await getAssignedSPFromAddress(match$2);
+                                                        }
+                                                        catch (raw_obj){
+                                                          var obj = Caml_js_exceptions.internalToOCamlException(raw_obj);
+                                                          if (obj.RE_EXN_ID === NoAvailableSP) {
+                                                            await noSponsorshipsMessage(interaction);
+                                                            return ;
+                                                          }
+                                                          if (obj.RE_EXN_ID === $$Promise.JsError) {
+                                                            var obj$1 = obj._1;
+                                                            var msg = obj$1.message;
+                                                            if (msg !== undefined) {
+                                                              console.error(msg);
+                                                            } else {
+                                                              console.error(obj$1);
+                                                            }
+                                                            return ;
+                                                          }
+                                                          throw obj;
+                                                        }
+                                                        var usedSponsorships = Belt_Option.getWithDefault(guildData.usedSponsorships, Ethers.constants.Zero.toString());
+                                                        var availableSponsorships = assignedSponsorships.sub(usedSponsorships);
+                                                        var assignedSponsorships$1 = assignedSponsorships.toString();
+                                                        var updateAssignedSponsorships = await Gist$Utils.UpdateGist.updateEntry(guilds, guildId, {
+                                                              role: guildData.role,
+                                                              name: guildData.name,
+                                                              inviteLink: guildData.inviteLink,
+                                                              roleId: guildData.roleId,
+                                                              sponsorshipAddress: guildData.sponsorshipAddress,
+                                                              usedSponsorships: guildData.usedSponsorships,
+                                                              assignedSponsorships: assignedSponsorships$1,
+                                                              premiumSponsorshipsUsed: guildData.premiumSponsorshipsUsed,
+                                                              premiumExpirationTimestamp: guildData.premiumExpirationTimestamp
+                                                            }, gistConfig(undefined));
+                                                        var hasAvailableSponsorships = !availableSponsorships.isZero();
+                                                        if (updateAssignedSponsorships.TAG === /* Ok */0) {
+                                                          if (hasAvailableSponsorships) {
+                                                            var options$1 = await beforeSponsorMessageOptions("before-sponsor", uuid);
+                                                            await interaction.editReply(options$1);
+                                                            return ;
+                                                          }
                                                           await noSponsorshipsMessage(interaction);
                                                           return ;
                                                         }
-                                                        if (obj.RE_EXN_ID === $$Promise.JsError) {
-                                                          var obj$1 = obj._1;
-                                                          var msg = obj$1.message;
-                                                          if (msg !== undefined) {
-                                                            console.error(msg);
-                                                          } else {
-                                                            console.error(obj$1);
-                                                          }
-                                                          return ;
-                                                        }
-                                                        throw obj;
-                                                      }
-                                                      var usedSponsorships = Belt_Option.getWithDefault(guildData.usedSponsorships, Ethers.constants.Zero.toString());
-                                                      var availableSponsorships = assignedSponsorships.sub(usedSponsorships);
-                                                      var assignedSponsorships$1 = assignedSponsorships.toString();
-                                                      var updateAssignedSponsorships = await Gist$Utils.UpdateGist.updateEntry(guilds, guildId, {
-                                                            role: guildData.role,
-                                                            name: guildData.name,
-                                                            inviteLink: guildData.inviteLink,
-                                                            roleId: guildData.roleId,
-                                                            sponsorshipAddress: guildData.sponsorshipAddress,
-                                                            usedSponsorships: guildData.usedSponsorships,
-                                                            assignedSponsorships: assignedSponsorships$1,
-                                                            premiumSponsorshipsUsed: guildData.premiumSponsorshipsUsed,
-                                                            premiumExpirationTimestamp: guildData.premiumExpirationTimestamp
-                                                          }, gistConfig(undefined));
-                                                      var hasAvailableSponsorships = !availableSponsorships.isZero();
-                                                      if (updateAssignedSponsorships.TAG === /* Ok */0) {
-                                                        if (hasAvailableSponsorships) {
-                                                          var options = await beforeSponsorMessageOptions("before-sponsor", uuid);
-                                                          await interaction.editReply(options);
-                                                          return ;
-                                                        }
-                                                        await noSponsorshipsMessage(interaction);
+                                                        await noWriteToGistMessage(interaction);
                                                         return ;
                                                       }
-                                                      await noWriteToGistMessage(interaction);
-                                                      return ;
-                                                    }
-                                                    if (hasPremium(guildData)) {
-                                                      var appUnusedSponsorships = await getAppUnusedSponsorships(Constants$Shared.context);
-                                                      if (appUnusedSponsorships !== undefined) {
-                                                        var match$2 = getDiscordServerSponsorshipTotals(guilds);
-                                                        var unusedDiscordSponsorships = match$2[0].sub(match$2[1]);
-                                                        var unusedPremiumSponsorships = Ethers.BigNumber.from(String(appUnusedSponsorships)).sub(unusedDiscordSponsorships);
-                                                        if (unusedPremiumSponsorships.gt("0")) {
-                                                          var options$1 = await beforeSponsorMessageOptions("before-premium-sponsor", uuid);
-                                                          await interaction.editReply(options$1);
-                                                          return ;
-                                                        }
-                                                        console.error("Commands_Verify: No sponsorships available in premium pool");
-                                                        await interaction.followUp({
-                                                              content: "There are no sponsorships available in the Discord pool. Please try again later.",
-                                                              ephemeral: true
-                                                            });
-                                                        return ;
-                                                      }
-                                                      console.error("Commands_Verify: No sponsorships available in Discord app");
+                                                      console.error("Commands_Verify: Guild with guildId:" + guildId + " does not have a sponsorship address set");
                                                       await noSponsorshipsMessage(interaction);
                                                       return ;
                                                     }
-                                                    console.error("Commands_Verify: Guild with guildId:" + guildId + " does not have a sponsorship address set");
+                                                    console.error("Commands_Verify: Not in beta whitelist");
                                                     await noSponsorshipsMessage(interaction);
                                                     return ;
                                                   }
-                                                  console.error("Commands_Verify: Not in beta whitelist");
+                                                  console.error("Commands_Verify: No sponsorships available in Discord app");
                                                   await noSponsorshipsMessage(interaction);
                                                   return ;
                                                 }

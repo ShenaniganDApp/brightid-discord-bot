@@ -413,94 +413,86 @@ let execute = interaction => {
                 | BrightIdError({errorNum, errorMessage}) =>
                   let whitelist = envConfig["sponsorshipsWhitelist"]->Js.String2.split(",")
                   let inWhitelist = whitelist->Js.Array2.includes(guild->Guild.getGuildId)
-                  switch (errorNum, guildData.sponsorshipAddress, inWhitelist) {
-                  //Not in beta whitelist
-                  | (4, _, false) =>
-                    Js.Console.error("Commands_Verify: Not in beta whitelist")
+                  switch await getAppUnusedSponsorships(context) {
+                  | None =>
+                    Js.Console.error("Commands_Verify: No sponsorships available in Discord app")
                     let _ = await noSponsorshipsMessage(interaction)
-                  // No Sponsorship Address Set
-                  | (4, None, _) =>
-                    switch hasPremium(guildData) {
-                    | false =>
+                  | Some(appUnusedSponsorships) =>
+                    let (
+                      totalDiscordAssignedSponsorships,
+                      totalDiscordUsedSponsorships,
+                    ) = getDiscordServerSponsorshipTotals(guilds)
+                    let unusedDiscordSponsorships =
+                      totalDiscordAssignedSponsorships->Ethers.BigNumber.sub(
+                        totalDiscordUsedSponsorships,
+                      )
+                    let unusedPremiumSponsorships =
+                      appUnusedSponsorships
+                      ->Belt.Float.toString
+                      ->Ethers.BigNumber.fromString
+                      ->Ethers.BigNumber.sub(unusedDiscordSponsorships)
+                    let hasPremium = hasPremium(guildData)
+                    let premiumCanBeUsed =
+                      unusedPremiumSponsorships->Ethers.BigNumber.gtWithString("0") && hasPremium
+                    switch (errorNum, premiumCanBeUsed, guildData.sponsorshipAddress, inWhitelist) {
+                    //Not in beta whitelist
+                    | (4, _, _, false) =>
+                      Js.Console.error("Commands_Verify: Not in beta whitelist")
+                      let _ = await noSponsorshipsMessage(interaction)
+                    // Use Premium Sponsorships
+                    | (4, true, _, _) =>
+                      Js.log2("Unused Sponsorships in premium pool: ", unusedPremiumSponsorships)
+                      let options = await beforeSponsorMessageOptions(
+                        "before-premium-sponsor",
+                        uuid,
+                      )
+                      let _ = await Interaction.editReply(interaction, ~options, ())
+
+                    // Has Sponsorship Address
+                    | (4, false, Some(sponsorshipAddress), true) =>
+                      switch await getAssignedSPFromAddress(sponsorshipAddress) {
+                      | assignedSponsorships =>
+                        let usedSponsorships =
+                          guildData.usedSponsorships->Belt.Option.getWithDefault(
+                            Ethers.BigNumber.zero->Ethers.BigNumber.toString,
+                          )
+                        let availableSponsorships =
+                          assignedSponsorships->Ethers.BigNumber.subWithString(usedSponsorships)
+                        let assignedSponsorships = assignedSponsorships->Ethers.BigNumber.toString
+                        let updateAssignedSponsorships = await Utils.Gist.UpdateGist.updateEntry(
+                          ~config=gistConfig(),
+                          ~content=guilds,
+                          ~key=guildId,
+                          ~entry={...guildData, assignedSponsorships: Some(assignedSponsorships)},
+                        )
+                        let hasAvailableSponsorships = !Ethers.BigNumber.isZero(
+                          availableSponsorships,
+                        )
+                        switch (updateAssignedSponsorships, hasAvailableSponsorships) {
+                        | (Ok(_), false) =>
+                          let _ = await noSponsorshipsMessage(interaction)
+                        | (Ok(_), true) =>
+                          let options = await beforeSponsorMessageOptions("before-sponsor", uuid)
+                          let _ = await Interaction.editReply(interaction, ~options, ())
+                        | (Error(_), _) =>
+                          let _ = await noWriteToGistMessage(interaction)
+                        }
+                      | exception NoAvailableSP =>
+                        let _ = await noSponsorshipsMessage(interaction)
+                      | exception JsError(obj) =>
+                        switch Js.Exn.message(obj) {
+                        | Some(msg) => Js.Console.error(msg)
+                        | None => Js.Console.error(obj)
+                        }
+                      }
+                    // No Sponsorship Address and No Premium
+                    | (4, false, None, true) =>
                       Js.Console.error(
                         `Commands_Verify: Guild with guildId:${guildId} does not have a sponsorship address set`,
                       )
                       let _ = await noSponsorshipsMessage(interaction)
-                    | true =>
-                      switch await getAppUnusedSponsorships(context) {
-                      | None =>
-                        Js.Console.error(
-                          "Commands_Verify: No sponsorships available in Discord app",
-                        )
-                        let _ = await noSponsorshipsMessage(interaction)
-                      | Some(appUnusedSponsorships) =>
-                        let (
-                          totalDiscordAssignedSponsorships,
-                          totalDiscordUsedSponsorships,
-                        ) = getDiscordServerSponsorshipTotals(guilds)
-                        let unusedDiscordSponsorships =
-                          totalDiscordAssignedSponsorships->Ethers.BigNumber.sub(
-                            totalDiscordUsedSponsorships,
-                          )
-                        let unusedPremiumSponsorships =
-                          appUnusedSponsorships
-                          ->Belt.Float.toString
-                          ->Ethers.BigNumber.fromString
-                          ->Ethers.BigNumber.sub(unusedDiscordSponsorships)
-                        switch unusedPremiumSponsorships->Ethers.BigNumber.gtWithString("0") {
-                        | false =>
-                          Js.Console.error(
-                            "Commands_Verify: No sponsorships available in premium pool",
-                          )
-                          let _ = await Interaction.followUp(
-                            interaction,
-                            ~options=noUnusedSponsorshipsOptions(),
-                            (),
-                          )
-                        | true =>
-                          let options = await beforeSponsorMessageOptions(
-                            "before-premium-sponsor",
-                            uuid,
-                          )
-                          let _ = await Interaction.editReply(interaction, ~options, ())
-                        }
-                      }
-                    }
-                  | (4, Some(sponsorshipAddress), true) =>
-                    switch await getAssignedSPFromAddress(sponsorshipAddress) {
-                    | assignedSponsorships =>
-                      let usedSponsorships =
-                        guildData.usedSponsorships->Belt.Option.getWithDefault(
-                          Ethers.BigNumber.zero->Ethers.BigNumber.toString,
-                        )
-                      let availableSponsorships =
-                        assignedSponsorships->Ethers.BigNumber.subWithString(usedSponsorships)
-                      let assignedSponsorships = assignedSponsorships->Ethers.BigNumber.toString
-                      let updateAssignedSponsorships = await Utils.Gist.UpdateGist.updateEntry(
-                        ~config=gistConfig(),
-                        ~content=guilds,
-                        ~key=guildId,
-                        ~entry={...guildData, assignedSponsorships: Some(assignedSponsorships)},
-                      )
-                      let hasAvailableSponsorships = !Ethers.BigNumber.isZero(availableSponsorships)
-                      switch (updateAssignedSponsorships, hasAvailableSponsorships) {
-                      | (Ok(_), false) =>
-                        let _ = await noSponsorshipsMessage(interaction)
-                      | (Ok(_), true) =>
-                        let options = await beforeSponsorMessageOptions("before-sponsor", uuid)
-                        let _ = await Interaction.editReply(interaction, ~options, ())
-                      | (Error(_), _) =>
-                        let _ = await noWriteToGistMessage(interaction)
-                      }
-                    | exception NoAvailableSP =>
-                      let _ = await noSponsorshipsMessage(interaction)
-                    | exception JsError(obj) =>
-                      switch Js.Exn.message(obj) {
-                      | Some(msg) => Js.Console.error(msg)
-                      | None => Js.Console.error(obj)
-                      }
-                    }
-                  | (_, _, _) => {
+
+                    | (_, _, _, _) =>
                       let _ = switch await handleUnverifiedGuildMember(
                         errorNum,
                         interaction,
