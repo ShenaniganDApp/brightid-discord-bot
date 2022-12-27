@@ -118,10 +118,13 @@ let onInteraction = async (interaction: Interaction.t) => {
       switch command->Js.Nullable.toOption {
       | None => Js.Console.error("Bot.res: Command not found")
       | Some(module(Command)) =>
-        await Command.execute(interaction)
-        Js.Console.log(
-          `Successfully served the command ${commandName} for ${user->User.getUsername}`,
-        )
+        switch await Command.execute(interaction) {
+        | exception _ => ()
+        | _ =>
+          Js.Console.log(
+            `Successfully served the command ${commandName} for ${user->User.getUsername}`,
+          )
+        }
       }
     }
 
