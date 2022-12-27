@@ -20,7 +20,6 @@ import * as Caml_js_exceptions from "rescript/lib/es6/caml_js_exceptions.js";
 import * as Builders from "@discordjs/builders";
 import * as Json$JsonCombinators from "@glennsl/rescript-json-combinators/src/Json.mjs";
 import * as Json_Decode$JsonCombinators from "@glennsl/rescript-json-combinators/src/Json_Decode.mjs";
-import * as SPJson from "../../../../packages/shared/src/abi/SP.json";
 
 var VerifyHandlerError = /* @__PURE__ */Caml_exceptions.create("Commands_Verify.VerifyHandlerError");
 
@@ -30,7 +29,7 @@ function sleep(ms) {
   return (new Promise((resolve) => setTimeout(resolve, ms)));
 }
 
-var abi = SPJson;
+var abi = (import("../../../../packages/shared/src/abi/SP.json", {assert: {type: "json"}}).then((module) => module.default));
 
 var Canvas$1 = {};
 
@@ -246,7 +245,7 @@ var NoAvailableSP = /* @__PURE__ */Caml_exceptions.create("Commands_Verify.NoAva
 
 async function getAssignedSPFromAddress(sponsorshipAddress) {
   var provider = new (Ethers.providers.JsonRpcProvider)("https://idchain.one/rpc");
-  var contract = new Ethers.Contract(Constants$Shared.contractAddressID, abi.default, provider);
+  var contract = new Ethers.Contract(Constants$Shared.contractAddressID, abi, provider);
   var formattedContext = Ethers.utils.formatBytes32String("Discord");
   var spBalance;
   try {

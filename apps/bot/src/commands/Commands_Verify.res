@@ -17,7 +17,7 @@ external fetch: (string, 'params) => Promise.t<Response.t<Js.Json.t>> = "fetch"
 let sleep: int => Js.Promise.t<unit> = ms =>
   %raw(` new Promise((resolve) => setTimeout(resolve, ms))`)
 
-@module external abi: {"default": Shared.ABI.t} = "../../../../packages/shared/src/abi/SP.json"
+let abi: Shared.ABI.t = %raw(`import("../../../../packages/shared/src/abi/SP.json", {assert: {type: "json"}}).then((module) => module.default)`)
 
 module Canvas = {
   type t
@@ -240,7 +240,7 @@ let noWriteToGistMessage = async interaction => {
 exception NoAvailableSP
 let getAssignedSPFromAddress = async sponsorshipAddress => {
   let provider = Ethers.Providers.jsonRpcProvider(~url="https://idchain.one/rpc")
-  let contract = Ethers.Contract.make(~provider, ~address=contractAddressID, ~abi=abi["default"])
+  let contract = Ethers.Contract.make(~provider, ~address=contractAddressID, ~abi)
 
   let formattedContext = Ethers.Utils.formatBytes32String("Discord")
   let contract = BrightId.SPContract.make(contract)
