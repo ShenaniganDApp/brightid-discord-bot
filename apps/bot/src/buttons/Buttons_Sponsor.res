@@ -33,7 +33,7 @@ let envConfig = switch Env.getConfig() {
 
 let noUnusedSponsorshipsOptions = () =>
   {
-    "content": "There are no sponsorhips available in the Discord pool. Please try again later.",
+    "content": "There are no sponsorships available in the Discord pool. Please try again later.",
     "ephemeral": true,
   }
 
@@ -61,6 +61,15 @@ let sponsorRequestSubmittedMessageOptions = async uuid => {
     "files": [attachment],
     "ephemeral": true,
   }
+}
+
+let noWriteToGistMessage = async interaction => {
+  let options = {
+    "content": "It seems like I can't write to my database at the moment. Please try again or contact the BrightID support.",
+    "ephemeral": true,
+  }
+
+  await Interaction.followUp(interaction, ~options, ())
 }
 
 let makeAfterSponsorActionRow = label => {
@@ -230,7 +239,6 @@ let rec handleSponsor = async (interaction, ~maybeHash=None, ~attempts=30, uuid)
             SponsorshipUsed
           | None => RetriedCommandDuring
           }
-
         // Sponsored Request Recently
         | 47 =>
           switch maybeHash {
@@ -272,50 +280,105 @@ let rec handleSponsor = async (interaction, ~maybeHash=None, ~attempts=30, uuid)
   }
 }
 
+let gistConfig = () =>
+  Utils.Gist.makeGistConfig(
+    ~id=envConfig["gistId"],
+    ~name="guildData.json",
+    ~token=envConfig["githubAccessToken"],
+  )
+
 let execute = async interaction => {
+  open Utils
+  open Shared.Decode
   let guild = interaction->Interaction.getGuild
+  let guildId = guild->Guild.getGuildId
   let member = interaction->Interaction.getGuildMember
   let memberId = member->GuildMember.getGuildMemberId
   let uuid = memberId->UUID.v5(envConfig["uuidNamespace"])
-
   switch await Interaction.deferReply(interaction, ~options={"ephemeral": true}, ()) {
   | exception JsError(obj) =>
     switch Js.Exn.message(obj) {
     | Some(msg) => Js.Console.error(msg)
+
     | None => Js.Console.error("Must be some non-error value")
     }
   | _ =>
-    let _ = switch await handleSponsor(interaction, uuid) {
-    | SponsorshipUsed =>
-      let options = await successfulSponsorMessageOptions(uuid)
-      let _ = await Interaction.followUp(interaction, ~options, ())
-    | NoUnusedSponsorships =>
-      let _ = await Interaction.followUp(interaction, ~options=noUnusedSponsorshipsOptions(), ())
+    switch await Gist.ReadGist.content(~config=gistConfig(), ~decoder=Decode_Gist.brightIdGuilds) {
+    | exception JsError(msg) =>
+      Js.Console.error(msg)
+      let _ = await unknownErrorMessage(interaction)
 
-    | RetriedCommandDuring =>
-      let options = {
-        "content": "Your request is still processing. Maybe you haven't scanned the QR code yet?\n\n If you have already scanned the code, please wait a few minutes for BrightID nodes to sync your sponsorship request",
-        "ephemeral": true,
+    | exception Json.Decode.DecodeError(msg) =>
+      Js.Console.error(msg)
+      let _ = await unknownErrorMessage(interaction)
+
+    | guilds =>
+      switch guilds->Js.Dict.get(guildId) {
+      | None =>
+        Js.Console.error(`Buttons_Sponsor: Guild with guildId: ${guildId} not found in gist`)
+        let _ = noWriteToGistMessage(interaction)
+      | Some(guildData) =>
+        let _ = switch await handleSponsor(interaction, uuid) {
+        | SponsorshipUsed =>
+          let usedSponsorships =
+            guildData.usedSponsorships->Belt.Option.getWithDefault(
+              Ethers.BigNumber.zero->Ethers.BigNumber.toString,
+            )
+          let usedSponsorships =
+            usedSponsorships
+            ->Ethers.BigNumber.fromString
+            ->Ethers.BigNumber.addWithString("1")
+            ->Ethers.BigNumber.toString
+
+          let updateUsedSponsorships = await Utils.Gist.UpdateGist.updateEntry(
+            ~config=gistConfig(),
+            ~content=guilds,
+            ~key=guildId,
+            ~entry={...guildData, usedSponsorships: Some(usedSponsorships)},
+          )
+          switch updateUsedSponsorships {
+          | Ok(_) =>
+            let options = await successfulSponsorMessageOptions(uuid)
+            let _ = await Interaction.followUp(interaction, ~options, ())
+          | Error(err) =>
+            Js.Console.error2("Buttons Sponsor: Error updating used sponsorships", err)
+            let _ = await noWriteToGistMessage(interaction)
+          }
+
+        | NoUnusedSponsorships =>
+          let _ = await Interaction.followUp(
+            interaction,
+            ~options=noUnusedSponsorshipsOptions(),
+            (),
+          )
+
+        | RetriedCommandDuring =>
+          let options = {
+            "content": "Your request is still processing. Maybe you haven't scanned the QR code yet?\n\n If you have already scanned the code, please wait a few minutes for BrightID nodes to sync your sponsorship request",
+            "ephemeral": true,
+          }
+          let _ = await Interaction.followUp(interaction, ~options, ())
+        | TimedOut =>
+          let options = await unsuccessfulSponsorMessageOptions(uuid)
+          let _ = await Interaction.followUp(interaction, ~options, ())
+        | exception HandleSponsorError(errorMessage) =>
+          let guildName = guild->Guild.getGuildName
+          Js.Console.error2(
+            `User: ${uuid} from server ${guildName} ran into an unexpected error: `,
+            errorMessage,
+          )
+          let _ = await unknownErrorMessage(interaction)
+        | exception JsError(err) =>
+          let guildName = guild->Guild.getGuildName
+          Js.Console.error2(
+            `User: ${uuid} from server ${guildName} ran into an unexpected error: `,
+            err,
+          )
+          let _ = await unknownErrorMessage(interaction)
+        }
       }
-      let _ = await Interaction.followUp(interaction, ~options, ())
-    | TimedOut =>
-      let options = await unsuccessfulSponsorMessageOptions(uuid)
-      let _ = await Interaction.followUp(interaction, ~options, ())
-    | exception HandleSponsorError(errorMessage) =>
-      let guildName = guild->Guild.getGuildName
-      Js.Console.error2(
-        `User: ${uuid} from server ${guildName} ran into an unexpected error: `,
-        errorMessage,
-      )
-      let _ = await unknownErrorMessage(interaction)
-    | exception JsError(err) =>
-      let guildName = guild->Guild.getGuildName
-      Js.Console.error2(
-        `User: ${uuid} from server ${guildName} ran into an unexpected error: `,
-        err,
-      )
-      let _ = await unknownErrorMessage(interaction)
     }
   }
 }
+
 let customId = "before-sponsor"
