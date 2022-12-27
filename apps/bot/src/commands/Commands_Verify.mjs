@@ -387,7 +387,10 @@ function execute(interaction) {
                                                     ephemeral: true
                                                   };
                                                   return interaction.editReply(options).then(function (param) {
-                                                              return Promise.resolve(undefined);
+                                                              return Promise.reject({
+                                                                          RE_EXN_ID: VerifyHandlerError,
+                                                                          _1: "Commands_Verify: User with contextId: " + uuid + " is not unique "
+                                                                        });
                                                             });
                                                 }), (async function (e) {
                                                 if (e.RE_EXN_ID === BrightIdError) {
@@ -467,30 +470,35 @@ function execute(interaction) {
                                                     }
                                                     if (hasPremium(guildData)) {
                                                       var appUnusedSponsorships = await getAppUnusedSponsorships(Constants$Shared.context);
-                                                      if (appUnusedSponsorships === undefined) {
+                                                      if (appUnusedSponsorships !== undefined) {
+                                                        var match$2 = getDiscordServerSponsorshipTotals(guilds);
+                                                        var unusedDiscordSponsorships = match$2[0].sub(match$2[1]);
+                                                        var unusedPremiumSponsorships = Ethers.BigNumber.from(String(appUnusedSponsorships)).sub(unusedDiscordSponsorships);
+                                                        if (unusedPremiumSponsorships.gt("0")) {
+                                                          var options$1 = await beforeSponsorMessageOptions("before-premium-sponsor", uuid);
+                                                          await interaction.editReply(options$1);
+                                                          return ;
+                                                        }
+                                                        console.error("Commands_Verify: No rponsorships available in premium pool");
+                                                        await interaction.followUp({
+                                                              content: "There are no sponsorships available in the Discord pool. Please try again later.",
+                                                              ephemeral: true
+                                                            });
                                                         return ;
                                                       }
-                                                      var match$2 = getDiscordServerSponsorshipTotals(guilds);
-                                                      var unusedDiscordSponsorships = match$2[0].sub(match$2[1]);
-                                                      var unusedPremiumSponsorships = Ethers.BigNumber.from(String(appUnusedSponsorships)).sub(unusedDiscordSponsorships);
-                                                      if (unusedPremiumSponsorships.gt("0")) {
-                                                        var options$1 = await beforeSponsorMessageOptions("before-premium-sponsor", uuid);
-                                                        await interaction.editReply(options$1);
-                                                        return ;
-                                                      }
-                                                      await interaction.followUp({
-                                                            content: "There are no sponsorships available in the Discord pool. Please try again later.",
-                                                            ephemeral: true
-                                                          });
+                                                      console.error("Commands_Verify: No sponsorships available in Discord app");
+                                                      await noSponsorshipsMessage(interaction);
                                                       return ;
                                                     }
+                                                    console.error("Commands_Verify: Guild with guildId:" + guildId + " does not have a sponsorship address set");
                                                     await noSponsorshipsMessage(interaction);
                                                     return ;
                                                   }
+                                                  console.error("Commands_Verify: Not in beta whitelist");
                                                   await noSponsorshipsMessage(interaction);
                                                   return ;
                                                 }
-                                                console.error("Verify Handler: Unknown error");
+                                                throw e;
                                               }));
                                 }
                                 var options = {
@@ -514,21 +522,43 @@ function execute(interaction) {
                                         });
                             }), (function (e) {
                             if (e.RE_EXN_ID === VerifyHandlerError) {
-                              return Promise.resolve((console.error(e._1), undefined));
+                              var msg = e._1;
+                              console.error(msg);
+                              return Promise.reject({
+                                          RE_EXN_ID: VerifyHandlerError,
+                                          _1: msg
+                                        });
                             }
                             if (e.RE_EXN_ID === Json_Decode$JsonCombinators.DecodeError) {
-                              return Promise.resolve((console.error(e._1), undefined));
+                              var msg$1 = e._1;
+                              console.error(msg$1);
+                              return Promise.reject({
+                                          RE_EXN_ID: Json_Decode$JsonCombinators.DecodeError,
+                                          _1: msg$1
+                                        });
                             }
-                            if (e.RE_EXN_ID !== $$Promise.JsError) {
-                              return Promise.resolve((console.error("Verify Handler: Unknown error"), undefined));
+                            if (e.RE_EXN_ID === $$Promise.JsError) {
+                              var obj = e._1;
+                              var msg$2 = obj.message;
+                              if (msg$2 !== undefined) {
+                                console.error("Verify Handler: " + msg$2);
+                                return Promise.reject({
+                                            RE_EXN_ID: $$Promise.JsError,
+                                            _1: obj
+                                          });
+                              } else {
+                                console.error("Verify Handler: Unknown error", obj);
+                                return Promise.reject({
+                                            RE_EXN_ID: $$Promise.JsError,
+                                            _1: obj
+                                          });
+                              }
                             }
-                            var obj = e._1;
-                            var msg = obj.message;
-                            if (msg !== undefined) {
-                              return Promise.resolve((console.error("Verify Handler: " + msg), undefined));
-                            } else {
-                              return Promise.resolve((console.error("Verify Handler: Unknown error", obj), undefined));
-                            }
+                            console.error(e);
+                            return Promise.reject({
+                                        RE_EXN_ID: VerifyHandlerError,
+                                        _1: "Unknown error"
+                                      });
                           }));
             });
 }
