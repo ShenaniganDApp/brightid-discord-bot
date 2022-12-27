@@ -134,10 +134,16 @@ async function onInteraction(interaction) {
     var command = commands.get(commandName);
     if (command == null) {
       console.error("Bot.res: Command not found");
-    } else {
-      await Curry._1(command.execute, interaction);
-      console.log("Successfully served the command " + commandName + " for " + user.username + "");
+      return ;
     }
+    var val;
+    try {
+      val = await Curry._1(command.execute, interaction);
+    }
+    catch (exn){
+      return ;
+    }
+    console.log("Successfully served the command " + commandName + " for " + user.username + "");
     return ;
   }
   if (isButton) {
