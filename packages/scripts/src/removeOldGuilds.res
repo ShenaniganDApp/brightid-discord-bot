@@ -47,7 +47,7 @@ let client = Client.createDiscordClient(~options)
 Client.login(client, discordBotToken)
 ->then(_ => {
   Js.log("Client Started\n")
-  Gist.ReadGist.content(~config, ~decoder=Decode.Gist.brightIdGuilds)->then(content => {
+  Gist.ReadGist.content(~config, ~decoder=Decode.Decode_Gist.brightIdGuilds)->then(content => {
     let gistGuilds = content->Js.Dict.keys
     let botGuilds = client->Client.getGuildManager->GuildManager.getCache
     let keys =
