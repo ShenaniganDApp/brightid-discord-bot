@@ -20,9 +20,9 @@ import * as Caml_js_exceptions from "rescript/lib/es6/caml_js_exceptions.js";
 import * as Json$JsonCombinators from "@glennsl/rescript-json-combinators/src/Json.mjs";
 import * as Json_Decode$JsonCombinators from "@glennsl/rescript-json-combinators/src/Json_Decode.mjs";
 
-var BrightIdError = /* @__PURE__ */Caml_exceptions.create("Buttons_Sponsor.BrightIdError");
+var BrightIdError = /* @__PURE__ */Caml_exceptions.create("Buttons_PremiumSponsor.BrightIdError");
 
-var ButtonSponsorHandlerError = /* @__PURE__ */Caml_exceptions.create("Buttons_Sponsor.ButtonSponsorHandlerError");
+var ButtonSponsorHandlerError = /* @__PURE__ */Caml_exceptions.create("Buttons_PremiumSponsor.ButtonSponsorHandlerError");
 
 function sleep(ms) {
   return (new Promise((resolve) => setTimeout(resolve, ms)));
@@ -46,8 +46,7 @@ if (config.TAG === /* Ok */0) {
 
 function noUnusedSponsorshipsOptions(param) {
   return {
-          content: "There are no sponsorships available in the Discord pool. Please try again later.",
-          content: "There are no sponsorships available in the Discord pool. Please try again later.",
+          content: "There are no sponsorhips available in the Discord pool. Please try again later.",
           ephemeral: true
         };
 }
@@ -140,7 +139,7 @@ async function checkSponsor(uuid) {
       };
 }
 
-var HandleSponsorError = /* @__PURE__ */Caml_exceptions.create("Buttons_Sponsor.HandleSponsorError");
+var HandleSponsorError = /* @__PURE__ */Caml_exceptions.create("Buttons_PremiumSponsor.HandleSponsorError");
 
 async function handleSponsor(interaction, maybeHashOpt, attemptsOpt, uuid) {
   var maybeHash = maybeHashOpt !== undefined ? Caml_option.valFromOption(maybeHashOpt) : undefined;
@@ -441,24 +440,24 @@ async function execute(interaction) {
         if (exit$2 === 3) {
           switch (val$1) {
             case /* SponsorshipUsed */0 :
-                var usedSponsorships = Belt_Option.getWithDefault(guildData.usedSponsorships, Ethers.constants.Zero.toString());
-                var usedSponsorships$1 = Ethers.BigNumber.from(usedSponsorships).add("1").toString();
-                var updateUsedSponsorships = await Gist$Utils.UpdateGist.updateEntry(guilds, guildId, {
+                var premiumSponsorshipsUsed = Belt_Option.getWithDefault(guildData.premiumSponsorshipsUsed, Ethers.constants.Zero.toString());
+                var premiumSponsorshipsUsed$1 = Ethers.BigNumber.from(premiumSponsorshipsUsed).add("1").toString();
+                var updatePremiumSponsorshipsUsed = await Gist$Utils.UpdateGist.updateEntry(guilds, guildId, {
                       role: guildData.role,
                       name: guildData.name,
                       inviteLink: guildData.inviteLink,
                       roleId: guildData.roleId,
                       sponsorshipAddress: guildData.sponsorshipAddress,
-                      usedSponsorships: usedSponsorships$1,
+                      usedSponsorships: guildData.usedSponsorships,
                       assignedSponsorships: guildData.assignedSponsorships,
-                      premiumSponsorshipsUsed: guildData.premiumSponsorshipsUsed,
+                      premiumSponsorshipsUsed: premiumSponsorshipsUsed$1,
                       premiumExpirationTimestamp: guildData.premiumExpirationTimestamp
                     }, gistConfig(undefined));
-                if (updateUsedSponsorships.TAG === /* Ok */0) {
+                if (updatePremiumSponsorshipsUsed.TAG === /* Ok */0) {
                   var options = await successfulSponsorMessageOptions(uuid);
                   await interaction.followUp(options);
                 } else {
-                  console.error("Buttons Sponsor: Error updating used sponsorships", updateUsedSponsorships._0);
+                  console.error("Buttons Sponsor: Error updating premium used sponsorships", updatePremiumSponsorshipsUsed._0);
                   await noWriteToGistMessage(interaction);
                 }
                 break;
@@ -471,8 +470,7 @@ async function execute(interaction) {
                 break;
             case /* NoUnusedSponsorships */2 :
                 await interaction.followUp({
-                      content: "There are no sponsorships available in the Discord pool. Please try again later.",
-                      content: "There are no sponsorships available in the Discord pool. Please try again later.",
+                      content: "There are no sponsorhips available in the Discord pool. Please try again later.",
                       ephemeral: true
                     });
                 break;
@@ -510,7 +508,7 @@ var makeBeforeSponsorActionRow = Commands_Verify.makeBeforeSponsorActionRow;
 
 var unknownErrorMessage = Commands_Verify.unknownErrorMessage;
 
-var customId = "before-sponsor";
+var customId = "before-premium-sponsor";
 
 export {
   brightIdVerificationEndpoint ,
