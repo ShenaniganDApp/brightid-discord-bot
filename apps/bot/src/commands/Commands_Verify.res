@@ -397,7 +397,14 @@ let execute = interaction => {
                     "content": `Hey, I recognize you, but your account seems to be linked to a sybil attack. You have multiple Discord accounts on the same BrightID. If this is a mistake, contact one of the support channels. `,
                     "ephemeral": true,
                   }
-                  interaction->Interaction.editReply(~options, ())->then(_ => resolve())
+                  interaction
+                  ->Interaction.editReply(~options, ())
+                  ->then(
+                    _ =>
+                      VerifyHandlerError(
+                        `Commands_Verify: User with contextId: ${uuid} is not unique `,
+                      )->reject,
+                  )
                 },
             )
             ->catch(
@@ -409,17 +416,23 @@ let execute = interaction => {
                   switch (errorNum, guildData.sponsorshipAddress, inWhitelist) {
                   //Not in beta whitelist
                   | (4, _, false) =>
+                    Js.Console.error("Commands_Verify: Not in beta whitelist")
                     let _ = await noSponsorshipsMessage(interaction)
                   // No Sponsorship Address Set
                   | (4, None, _) =>
                     switch hasPremium(guildData) {
                     | false =>
+                      Js.Console.error(
+                        `Commands_Verify: Guild with guildId:${guildId} does not have a sponsorship address set`,
+                      )
                       let _ = await noSponsorshipsMessage(interaction)
                     | true =>
                       switch await getAppUnusedSponsorships(context) {
-                      | None => ()
-                      // let _ = await noSponsorshipsAvailableMessage(interaction)
-                      // SponsorshipUsed
+                      | None =>
+                        Js.Console.error(
+                          "Commands_Verify: No sponsorships available in Discord app",
+                        )
+                        let _ = await noSponsorshipsMessage(interaction)
                       | Some(appUnusedSponsorships) =>
                         let (
                           totalDiscordAssignedSponsorships,
@@ -436,6 +449,9 @@ let execute = interaction => {
                           ->Ethers.BigNumber.sub(unusedDiscordSponsorships)
                         switch unusedPremiumSponsorships->Ethers.BigNumber.gtWithString("0") {
                         | false =>
+                          Js.Console.error(
+                            "Commands_Verify: No rponsorships available in premium pool",
+                          )
                           let _ = await Interaction.followUp(
                             interaction,
                             ~options=noUnusedSponsorshipsOptions(),
@@ -497,7 +513,7 @@ let execute = interaction => {
                       }
                     }
                   }
-                | _ => Js.Console.error("Verify Handler: Unknown error")
+                | _ => e->raise
                 }
               },
             )
@@ -507,14 +523,24 @@ let execute = interaction => {
     })
     ->catch(e => {
       switch e {
-      | VerifyHandlerError(msg) => Js.Console.error(msg)->resolve
-      | Json.Decode.DecodeError(msg) => Js.Console.error(msg)->resolve
+      | VerifyHandlerError(msg) =>
+        Js.Console.error(msg)
+        reject(VerifyHandlerError(msg))
+      | Json.Decode.DecodeError(msg) =>
+        Js.Console.error(msg)
+        reject(Json.Decode.DecodeError(msg))
       | JsError(obj) =>
         switch Js.Exn.message(obj) {
-        | Some(msg) => Js.Console.error("Verify Handler: " ++ msg)->resolve
-        | None => Js.Console.error2("Verify Handler: Unknown error", obj)->resolve
+        | Some(msg) =>
+          Js.Console.error("Verify Handler: " ++ msg)
+          reject(JsError(obj))
+        | None =>
+          Js.Console.error2("Verify Handler: Unknown error", obj)
+          reject(JsError(obj))
         }
-      | _ => Js.Console.error("Verify Handler: Unknown error")->resolve
+      | _ =>
+        Js.Console.error(e)
+        reject(VerifyHandlerError("Unknown error"))
       }
     })
   })
