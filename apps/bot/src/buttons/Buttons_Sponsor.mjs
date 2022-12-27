@@ -3,9 +3,13 @@
 import * as Env from "../Env.mjs";
 import * as Uuid from "uuid";
 import * as Js_exn from "rescript/lib/es6/js_exn.js";
+import * as Ethers from "ethers";
+import * as Js_dict from "rescript/lib/es6/js_dict.js";
 import * as $$Promise from "@ryyppy/rescript-promise/src/Promise.mjs";
 import * as Endpoints from "../Endpoints.mjs";
+import * as Gist$Utils from "@brightidbot/utils/src/Gist.mjs";
 import * as DiscordJs from "discord.js";
+import * as Belt_Option from "rescript/lib/es6/belt_Option.js";
 import * as Caml_option from "rescript/lib/es6/caml_option.js";
 import * as Decode$Shared from "@brightidbot/shared/src/Decode.mjs";
 import * as Caml_exceptions from "rescript/lib/es6/caml_exceptions.js";
@@ -42,7 +46,7 @@ if (config.TAG === /* Ok */0) {
 
 function noUnusedSponsorshipsOptions(param) {
   return {
-          content: "There are no sponsorhips available in the Discord pool. Please try again later.",
+          content: "There are no sponsorships available in the Discord pool. Please try again later.",
           ephemeral: true
         };
 }
@@ -74,6 +78,14 @@ async function sponsorRequestSubmittedMessageOptions(uuid) {
           files: [attachment],
           ephemeral: true
         };
+}
+
+async function noWriteToGistMessage(interaction) {
+  var options = {
+    content: "It seems like I can't write to my database at the moment. Please try again or contact the BrightID support.",
+    ephemeral: true
+  };
+  return await interaction.followUp(options);
 }
 
 function makeAfterSponsorActionRow(label) {
@@ -350,8 +362,13 @@ async function handleSponsor(interaction, maybeHashOpt, attemptsOpt, uuid) {
       };
 }
 
+function gistConfig(param) {
+  return Gist$Utils.makeGistConfig(envConfig.gistId, "guildData.json", envConfig.githubAccessToken);
+}
+
 async function execute(interaction) {
   var guild = interaction.guild;
+  var guildId = guild.id;
   var member = interaction.member;
   var memberId = member.id;
   var uuid = Uuid.v5(memberId, envConfig.uuidNamespace);
@@ -378,52 +395,97 @@ async function execute(interaction) {
   }
   if (exit === 1) {
     var exit$1 = 0;
-    var val$1;
+    var guilds;
     try {
-      val$1 = await handleSponsor(interaction, undefined, undefined, uuid);
+      guilds = await Gist$Utils.ReadGist.content(gistConfig(undefined), Decode$Shared.Decode_Gist.brightIdGuilds);
       exit$1 = 2;
     }
-    catch (raw_errorMessage){
-      var errorMessage = Caml_js_exceptions.internalToOCamlException(raw_errorMessage);
-      if (errorMessage.RE_EXN_ID === HandleSponsorError) {
-        var guildName = guild.name;
-        console.error("User: " + uuid + " from server " + guildName + " ran into an unexpected error: ", errorMessage._1);
+    catch (raw_msg){
+      var msg$1 = Caml_js_exceptions.internalToOCamlException(raw_msg);
+      if (msg$1.RE_EXN_ID === $$Promise.JsError) {
+        console.error(msg$1._1);
         await Commands_Verify.unknownErrorMessage(interaction);
-      } else if (errorMessage.RE_EXN_ID === $$Promise.JsError) {
-        var guildName$1 = guild.name;
-        console.error("User: " + uuid + " from server " + guildName$1 + " ran into an unexpected error: ", errorMessage._1);
-        await Commands_Verify.unknownErrorMessage(interaction);
-      } else {
-        throw errorMessage;
+        return ;
       }
+      if (msg$1.RE_EXN_ID === Json_Decode$JsonCombinators.DecodeError) {
+        console.error(msg$1._1);
+        await Commands_Verify.unknownErrorMessage(interaction);
+        return ;
+      }
+      throw msg$1;
     }
     if (exit$1 === 2) {
-      switch (val$1) {
-        case /* SponsorshipUsed */0 :
-            var options = await successfulSponsorMessageOptions(uuid);
-            await interaction.followUp(options);
-            break;
-        case /* RetriedCommandDuring */1 :
-            var options$1 = {
-              content: "Your request is still processing. Maybe you haven't scanned the QR code yet?\n\n If you have already scanned the code, please wait a few minutes for BrightID nodes to sync your sponsorship request",
-              ephemeral: true
-            };
-            await interaction.followUp(options$1);
-            break;
-        case /* NoUnusedSponsorships */2 :
-            await interaction.followUp({
-                  content: "There are no sponsorhips available in the Discord pool. Please try again later.",
+      var guildData = Js_dict.get(guilds, guildId);
+      if (guildData !== undefined) {
+        var exit$2 = 0;
+        var val$1;
+        try {
+          val$1 = await handleSponsor(interaction, undefined, undefined, uuid);
+          exit$2 = 3;
+        }
+        catch (raw_errorMessage){
+          var errorMessage = Caml_js_exceptions.internalToOCamlException(raw_errorMessage);
+          if (errorMessage.RE_EXN_ID === HandleSponsorError) {
+            var guildName = guild.name;
+            console.error("User: " + uuid + " from server " + guildName + " ran into an unexpected error: ", errorMessage._1);
+            await Commands_Verify.unknownErrorMessage(interaction);
+          } else if (errorMessage.RE_EXN_ID === $$Promise.JsError) {
+            var guildName$1 = guild.name;
+            console.error("User: " + uuid + " from server " + guildName$1 + " ran into an unexpected error: ", errorMessage._1);
+            await Commands_Verify.unknownErrorMessage(interaction);
+          } else {
+            throw errorMessage;
+          }
+        }
+        if (exit$2 === 3) {
+          switch (val$1) {
+            case /* SponsorshipUsed */0 :
+                var usedSponsorships = Belt_Option.getWithDefault(guildData.usedSponsorships, Ethers.constants.Zero.toString());
+                var usedSponsorships$1 = Ethers.BigNumber.from(usedSponsorships).add("1").toString();
+                var updateUsedSponsorships = await Gist$Utils.UpdateGist.updateEntry(guilds, guildId, {
+                      role: guildData.role,
+                      name: guildData.name,
+                      inviteLink: guildData.inviteLink,
+                      roleId: guildData.roleId,
+                      sponsorshipAddress: guildData.sponsorshipAddress,
+                      usedSponsorships: usedSponsorships$1,
+                      assignedSponsorships: guildData.assignedSponsorships
+                    }, gistConfig(undefined));
+                if (updateUsedSponsorships.TAG === /* Ok */0) {
+                  var options = await successfulSponsorMessageOptions(uuid);
+                  await interaction.followUp(options);
+                } else {
+                  console.error("Buttons Sponsor: Error updating used sponsorships", updateUsedSponsorships._0);
+                  await noWriteToGistMessage(interaction);
+                }
+                break;
+            case /* RetriedCommandDuring */1 :
+                var options$1 = {
+                  content: "Your request is still processing. Maybe you haven't scanned the QR code yet?\n\n If you have already scanned the code, please wait a few minutes for BrightID nodes to sync your sponsorship request",
                   ephemeral: true
-                });
-            break;
-        case /* TimedOut */3 :
-            var options$2 = await unsuccessfulSponsorMessageOptions(uuid);
-            await interaction.followUp(options$2);
-            break;
-        
+                };
+                await interaction.followUp(options$1);
+                break;
+            case /* NoUnusedSponsorships */2 :
+                await interaction.followUp({
+                      content: "There are no sponsorships available in the Discord pool. Please try again later.",
+                      ephemeral: true
+                    });
+                break;
+            case /* TimedOut */3 :
+                var options$2 = await unsuccessfulSponsorMessageOptions(uuid);
+                await interaction.followUp(options$2);
+                break;
+            
+          }
+        }
+        return ;
       }
+      console.error("Buttons_Sponsor: Guild with guildId: " + guildId + " not found in gist");
+      noWriteToGistMessage(interaction);
+      return ;
     }
-    return ;
+    
   }
   
 }
@@ -462,11 +524,13 @@ export {
   noUnusedSponsorshipsOptions ,
   unsuccessfulSponsorMessageOptions ,
   sponsorRequestSubmittedMessageOptions ,
+  noWriteToGistMessage ,
   makeAfterSponsorActionRow ,
   successfulSponsorMessageOptions ,
   checkSponsor ,
   HandleSponsorError ,
   handleSponsor ,
+  gistConfig ,
   execute ,
   customId ,
 }
