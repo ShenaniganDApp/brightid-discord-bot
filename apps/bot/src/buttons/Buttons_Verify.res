@@ -123,18 +123,10 @@ let execute = interaction => {
         ->then(
           verificationInfo => {
             switch verificationInfo {
-            | exception JsError(obj) =>
-              let options = {
-                "content": "Something unexpected happened. Try again later",
-                "ephemeral": true,
-              }
-              interaction->Interaction.followUp(~options, ())->then(_ => JsError(obj)->reject)
-            | exception Exceptions.BrightIdError({errorNum}) =>
-              errorNum->handleUnverifiedGuildMember(interaction)
             | VerificationInfo({contextIds, unique}) =>
               let contextIdsLength = contextIds->Belt.Array.length
               switch (contextIdsLength, unique) {
-              | (1, true) =>
+              | (_, true) =>
                 let guildRole = roleId->getRolebyRoleId(guildRoleManager, _)
                 guildRole
                 ->addRoleToMember(member)
@@ -169,6 +161,22 @@ let execute = interaction => {
                 )
               | (_, _) => member->noMultipleContextIds(interaction)
               }
+            }
+          },
+        )
+        ->catch(
+          async e => {
+            switch e {
+            | JsError(obj) =>
+              let options = {
+                "content": "Something unexpected happened. Try again later",
+                "ephemeral": true,
+              }
+              let _ = await Interaction.followUp(interaction, ~options, ())
+              JsError(obj)->raise
+            | Exceptions.BrightIdError({errorNum}) =>
+              let _ = await errorNum->handleUnverifiedGuildMember(interaction)
+            | _ => e->raise
             }
           },
         )

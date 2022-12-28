@@ -56,14 +56,18 @@ let rec fetchVerificationInfo = (~retry=5, id): Promise.t<verificationInfo> => {
     }
   })
   ->catch(e => {
-    let retry = retry - 1
-    switch retry {
-    | 0 =>
-      switch e {
-      | _ => e->raise
-      }
+    switch e {
+    | Exceptions.BrightIdError(_) => e->raise
+    | _ =>
+      let retry = retry - 1
+      switch retry {
+      | 0 =>
+        switch e {
+        | _ => e->raise
+        }
 
-    | _ => fetchVerificationInfo(~retry, id)
+      | _ => fetchVerificationInfo(~retry, id)
+      }
     }
   })
 }

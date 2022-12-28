@@ -10,7 +10,6 @@ import * as Caml_option from "rescript/lib/es6/caml_option.js";
 import * as Decode$Shared from "@brightidbot/shared/src/Decode.mjs";
 import * as Caml_exceptions from "rescript/lib/es6/caml_exceptions.js";
 import * as Constants$Shared from "@brightidbot/shared/src/Constants.mjs";
-import * as Caml_js_exceptions from "rescript/lib/es6/caml_js_exceptions.js";
 import * as Services_VerificationInfo from "../services/Services_VerificationInfo.mjs";
 
 var ButtonVerifyHandlerError = /* @__PURE__ */Caml_exceptions.create("Buttons_Verify.ButtonVerifyHandlerError");
@@ -126,57 +125,33 @@ function execute(interaction) {
                           var guildData = getGuildDataFromGist(guilds, guildId, interaction);
                           var roleId = guildData.roleId;
                           if (roleId !== undefined) {
-                            return Services_VerificationInfo.getBrightIdVerification(member).then(function (verificationInfo) {
-                                        var exit = 0;
-                                        var val;
-                                        try {
-                                          val = verificationInfo;
-                                          exit = 1;
-                                        }
-                                        catch (raw_obj){
-                                          var obj = Caml_js_exceptions.internalToOCamlException(raw_obj);
-                                          if (obj.RE_EXN_ID === $$Promise.JsError) {
-                                            var obj$1 = obj._1;
-                                            var options = {
-                                              content: "Something unexpected happened. Try again later",
-                                              ephemeral: true
-                                            };
-                                            return interaction.followUp(options).then(function (param) {
-                                                        return Promise.reject({
-                                                                    RE_EXN_ID: $$Promise.JsError,
-                                                                    _1: obj$1
-                                                                  });
-                                                      });
-                                          }
-                                          if (obj.RE_EXN_ID === Exceptions.BrightIdError) {
-                                            return handleUnverifiedGuildMember(obj._1.errorNum, interaction);
-                                          }
-                                          throw obj;
-                                        }
-                                        if (exit === 1) {
-                                          var match = val._0;
-                                          var unique = match.unique;
-                                          var contextIdsLength = match.contextIds.length;
-                                          var exit$1 = 0;
-                                          if (contextIdsLength !== 0) {
-                                            if (contextIdsLength !== 1) {
-                                              exit$1 = 2;
-                                            } else {
-                                              if (unique) {
-                                                var guildRole = getRolebyRoleId(guildRoleManager, roleId);
-                                                return addRoleToMember(guildRole, member).then(function (param) {
-                                                              var options = {
-                                                                content: "Hey, I recognize you! I just gave you the \`" + guildRole.name + "\` role. You are now BrightID verified in " + guild.name + " server!",
-                                                                ephemeral: true
-                                                              };
-                                                              return interaction.followUp(options);
-                                                            }).then(function (param) {
-                                                            return Promise.resolve(undefined);
-                                                          });
-                                              }
-                                              exit$1 = 2;
+                            return $$Promise.$$catch(Services_VerificationInfo.getBrightIdVerification(member).then(function (verificationInfo) {
+                                            var match = verificationInfo._0;
+                                            var contextIdsLength = match.contextIds.length;
+                                            if (match.unique) {
+                                              var guildRole = getRolebyRoleId(guildRoleManager, roleId);
+                                              return addRoleToMember(guildRole, member).then(function (param) {
+                                                            var options = {
+                                                              content: "Hey, I recognize you! I just gave you the \`" + guildRole.name + "\` role. You are now BrightID verified in " + guild.name + " server!",
+                                                              ephemeral: true
+                                                            };
+                                                            return interaction.followUp(options);
+                                                          }).then(function (param) {
+                                                          return Promise.resolve(undefined);
+                                                        });
                                             }
-                                          } else {
+                                            if (contextIdsLength !== 0) {
+                                              var options = {
+                                                content: "Hey, I recognize you, but your account seems to be linked to a possible sybil attack. You are not properly BrightID verified. If this is a mistake, contact one of the support channels",
+                                                ephemeral: true
+                                              };
+                                              return interaction.followUp(options).then(function (param) {
+                                                          return Promise.reject({
+                                                                      RE_EXN_ID: ButtonVerifyHandlerError,
+                                                                      _1: "" + member.displayName + " is not unique"
+                                                                    });
+                                                        });
+                                            }
                                             var options$1 = {
                                               content: "The BrightID has not been linked to Discord. That means the qr code has not been properly scanned!",
                                               ephemeral: true
@@ -184,26 +159,25 @@ function execute(interaction) {
                                             return interaction.followUp(options$1).then(function (param) {
                                                         return Promise.resolve(undefined);
                                                       });
-                                          }
-                                          if (exit$1 === 2) {
-                                            if (unique) {
-                                              return noMultipleContextIds(member, interaction);
-                                            }
-                                            var options$2 = {
-                                              content: "Hey, I recognize you, but your account seems to be linked to a possible sybil attack. You are not properly BrightID verified. If this is a mistake, contact one of the support channels",
+                                          }), (async function (e) {
+                                          if (e.RE_EXN_ID === $$Promise.JsError) {
+                                            var options = {
+                                              content: "Something unexpected happened. Try again later",
                                               ephemeral: true
                                             };
-                                            return interaction.followUp(options$2).then(function (param) {
-                                                        return Promise.reject({
-                                                                    RE_EXN_ID: ButtonVerifyHandlerError,
-                                                                    _1: "" + member.displayName + " is not unique"
-                                                                  });
-                                                      });
+                                            await interaction.followUp(options);
+                                            throw {
+                                                  RE_EXN_ID: $$Promise.JsError,
+                                                  _1: e._1,
+                                                  Error: new Error()
+                                                };
                                           }
-                                          
-                                        }
-                                        
-                                      });
+                                          if (e.RE_EXN_ID === Exceptions.BrightIdError) {
+                                            await handleUnverifiedGuildMember(e._1.errorNum, interaction);
+                                            return ;
+                                          }
+                                          throw e;
+                                        }));
                           }
                           var options = {
                             content: "Hi, sorry about that. I couldn't retrieve the data for this server from BrightID. Try reinviting the bot. \n\n **Note: This will create a new role BrightID Role.**"

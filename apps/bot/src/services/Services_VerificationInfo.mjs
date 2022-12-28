@@ -63,6 +63,9 @@ function fetchVerificationInfo(retryOpt, id) {
                               });
                   }
                 }), (function (e) {
+                if (e.RE_EXN_ID === Exceptions.BrightIdError) {
+                  throw e;
+                }
                 var retry$1 = retry - 1 | 0;
                 if (retry$1 !== 0) {
                   return fetchVerificationInfo(retry$1, id);
