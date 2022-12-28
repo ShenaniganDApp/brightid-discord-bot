@@ -6,8 +6,9 @@ open Shared
 let {brightIdVerificationEndpoint} = module(Endpoints)
 let {context} = module(Constants)
 
-exception RequestHandlerError({date: float, message: string})
+exception RequestHandlerError(string)
 exception GuildNotInGist(string)
+exception BrightIdError(BrightId.Error.t)
 
 module type Command = {
   let data: SlashCommandBuilder.t
@@ -94,6 +95,8 @@ let updateGistOnGuildCreate = async (guild: Guild.t, roleId) => {
 
 let onGuildCreate = async guild => {
   let roleManager = guild->Guild.getGuildRoleManager
+  let guildId = guild->Guild.getGuildId
+  let guildName = guild->Guild.getGuildName
 
   let role = await RoleManager.create(
     roleManager,
@@ -104,10 +107,15 @@ let onGuildCreate = async guild => {
     },
   )
 
-  (await updateGistOnGuildCreate(guild, role->Role.getRoleId))->ignore
+  switch await updateGistOnGuildCreate(guild, role->Role.getRoleId) {
+  | exception e => Js.Console.error2(`${guildName} : ${guildId}: `, e)
+  | _ => Js.log(`${guildName} : ${guildId}: Successfully added to the database`)
+  }
 }
 
 let onInteraction = async (interaction: Interaction.t) => {
+  let guildId = interaction->Interaction.getGuild->Guild.getGuildId
+  let guildName = interaction->Interaction.getGuild->Guild.getGuildName
   let isCommand = interaction->Interaction.isCommand
   let isButton = interaction->Interaction.isButton
   let user = interaction->Interaction.getUser
@@ -119,10 +127,16 @@ let onInteraction = async (interaction: Interaction.t) => {
       | None => Js.Console.error("Bot.res: Command not found")
       | Some(module(Command)) =>
         switch await Command.execute(interaction) {
-        | exception _ => ()
+        | exception e =>
+          switch e {
+          | BrightIdError({errorMessage}) =>
+            Js.Console.error2(`${guildName} : ${guildId}: `, errorMessage)
+          | JsError(obj) => Js.Console.error2(`${guildName} : ${guildId}: `, obj)
+          | _ => Js.Console.error2(`${guildName} : ${guildId}: `, e)
+          }
         | _ =>
           Js.Console.log(
-            `Successfully served the command ${commandName} for ${user->User.getUsername}`,
+            `${guildName}: Successfully served the command ${commandName} for ${user->User.getUsername}`,
           )
         }
       }
@@ -135,10 +149,19 @@ let onInteraction = async (interaction: Interaction.t) => {
       switch button->Js.Nullable.toOption {
       | None => Js.Console.error("Bot.res: Button not found")
       | Some(module(Button)) =>
-        await Button.execute(interaction)
-        Js.Console.log(
-          `Successfully served button press "${buttonCustomId}" for ${user->User.getUsername}`,
-        )
+        switch await Button.execute(interaction) {
+        | exception e =>
+          switch e {
+          | BrightIdError({errorMessage}) =>
+            Js.Console.error2(`${guildName} : ${guildId}: `, errorMessage)
+          | JsError(obj) => Js.Console.error2(`${guildName} : ${guildId}: `, obj)
+          | _ => Js.Console.error2(`${guildName} : ${guildId}: `, e)
+          }
+        | _ =>
+          Js.Console.log(
+            `${guildName}: Successfully served button press "${buttonCustomId}" for ${user->User.getUsername}`,
+          )
+        }
       }
     }
 
@@ -174,45 +197,30 @@ let onGuildDelete = async guild => {
   }
 }
 
-let onGuildMemberAdd = guildMember => {
+let onGuildMemberAdd = async guildMember => {
   open Utils
-
-  let requestTimeout = 60000
-  let uuid = guildMember->GuildMember.getGuildMemberId->UUID.v5(envConfig["uuidNamespace"])
-  let endpoint = `${brightIdVerificationEndpoint}/${context}/${uuid}?timestamp=seconds`
-
-  let params = {
-    "method": "GET",
-    "headers": {
-      "Accept": "application/json",
-      "Content-Type": "application/json",
-    },
-    "timestamp": requestTimeout,
-  }
-  endpoint
-  ->fetch(params)
-  ->then(res => res->Response.json)
-  ->then(json => {
-    open Shared.Decode
-    switch (
-      json->Json.decode(Decode_BrightId.ContextId.data),
-      json->Json.decode(Decode_BrightId.Error.data),
-    ) {
-    | (Ok({data}), _) =>
-      switch data.unique {
-      | true =>
-        Gist.makeGistConfig(
-          ~id=envConfig["gistId"],
-          ~name="guildData.json",
-          ~token=envConfig["githubAccessToken"],
-        )
-        ->Gist.ReadGist.content(~config=_, ~decoder=Decode_Gist.brightIdGuilds)
-        ->then(content => {
-          let guild = guildMember->GuildMember.getGuild
-          let guildId = guild->Guild.getGuildId
-          let brightIdGuild = content->Js.Dict.get(guildId)->Belt.Option.getExn
-          let roleId = brightIdGuild.roleId->Belt.Option.getExn
-
+  open Services_VerificationInfo
+  let config = Gist.makeGistConfig(
+    ~id=envConfig["gistId"],
+    ~name="guildData.json",
+    ~token=envConfig["githubAccessToken"],
+  )
+  let guildName = guildMember->GuildMember.getGuild->Guild.getGuildName
+  let guildId = guildMember->GuildMember.getGuild->Guild.getGuildId
+  let _ = switch await getBrightIdVerification(guildMember) {
+  | VerificationInfo({unique}) =>
+    switch unique {
+    | true =>
+      switch await Gist.ReadGist.content(~config, ~decoder=Decode.Decode_Gist.brightIdGuilds) {
+      | exception e => Js.Console.error2(`${guildName} with guildId: ${guildId}`, e)
+      | guilds =>
+        let guild = guildMember->GuildMember.getGuild
+        let guildId = guild->Guild.getGuildId
+        let brightIdGuild = guilds->Js.Dict.get(guildId)
+        switch brightIdGuild {
+        | None => GuildNotInGist(`Guild does not exist in Gist`)->raise
+        | Some({roleId: None}) => RequestHandlerError(`Guild does not have a saved roleId`)->raise
+        | Some({roleId: Some(roleId)}) =>
           let role =
             guild
             ->Guild.getGuildRoleManager
@@ -222,55 +230,70 @@ let onGuildMemberAdd = guildMember => {
             ->Belt.Option.getExn
 
           let guildMemberRoleManager = guildMember->GuildMember.getGuildMemberRoleManager
-          guildMemberRoleManager
-          ->GuildMemberRoleManager.add(role, ~reason="User is already verified by BrightID", ())
-          ->ignore
-          resolve()
-        })
-
-      | false => Js.log(`User ${guildMember->GuildMember.getDisplayName} is not unique`)->resolve
+          let _ = switch await GuildMemberRoleManager.add(
+            guildMemberRoleManager,
+            role,
+            ~reason="User is already verified by BrightID",
+            (),
+          ) {
+          | exception e => e->raise
+          | _ =>
+            let uuid =
+              guildMember->GuildMember.getGuildMemberId->UUID.v5(envConfig["uuidNamespace"])
+            Js.log2(`${guildName} : ${guildId} verified the user with contextId: ${uuid}`)
+          }
+        }
       }
 
-    | (_, Ok(error)) => Js.log(error.errorMessage)->resolve
-
-    | (Error(err), _) => err->Json.Decode.DecodeError->reject
+    | false =>
+      RequestHandlerError(`User ${guildMember->GuildMember.getDisplayName} is not unique`)->raise
     }
-  })
-  ->catch(err => {
-    Js.Console.error(err)
-    resolve()
-  })
-  ->ignore
+  | exception e =>
+    switch e {
+    | BrightIdError({errorMessage}) =>
+      Js.Console.error2(`${guildName} : ${guildId}: `, errorMessage)
+    | JsError(obj) => Js.Console.error2(`${guildName} : ${guildId}: `, obj)
+    | _ => Js.Console.error2(`${guildName} : ${guildId}: `, e)
+    }
+  }
 }
 
-let onRoleUpdate = role => {
+let onRoleUpdate = async role => {
   open Utils
-  open Shared.Decode
   let guildId = role->Role.getGuild->Guild.getGuildId
+  let guildName = role->Role.getGuild->Guild.getGuildName
   let config = Gist.makeGistConfig(
     ~id=envConfig["gistId"],
     ~name="guildData.json",
     ~token=envConfig["githubAccessToken"],
   )
-  Gist.ReadGist.content(~config, ~decoder=Decode_Gist.brightIdGuilds)
-  ->then(guilds => {
-    let brightIdGuild = guilds->Js.Dict.get(guildId)->Belt.Option.getExn
-    let roleId = brightIdGuild.roleId->Belt.Option.getExn
-    let isVerifiedRole = role->Role.getRoleId === roleId
-    switch isVerifiedRole {
-    | true =>
-      let roleName = role->Role.getName
-      let entry = {
-        ...brightIdGuild,
-        role: Some(roleName),
+  switch await Gist.ReadGist.content(~config, ~decoder=Decode.Decode_Gist.brightIdGuilds) {
+  | exception e => Js.Console.error2(`${guildName} : ${guildId}: `, e)
+  | content =>
+    let brightIdGuild = content->Js.Dict.get(guildId)
+    switch brightIdGuild {
+    | None => GuildNotInGist(`Guild does not exist in Gist`)->raise
+    | Some(brightIdGuild) =>
+      switch brightIdGuild.roleId {
+      | None => RequestHandlerError(`Guild does not have a saved roleId`)->raise
+      | Some(roleId) =>
+        let isVerifiedRole = role->Role.getRoleId === roleId
+        switch isVerifiedRole {
+        | true =>
+          let roleName = role->Role.getName
+          let entry = {
+            ...brightIdGuild,
+            role: Some(roleName),
+          }
+          switch await Gist.UpdateGist.updateEntry(~content, ~entry, ~key=guildId, ~config) {
+          | exception e => Js.Console.error2(`${guildName} : ${guildId}: `, e)
+          | _ => Js.log(`${guildName} : ${guildId} updated the role name to ${roleName}`)
+          }
+        | false => ()
+        }
       }
-      Gist.UpdateGist.updateEntry(~content=guilds, ~entry, ~key=guildId, ~config)->then(_ =>
-        resolve()
-      )
-    | false => resolve()
     }
-  })
-  ->ignore
+  }
 }
 
 client->Client.on(
@@ -287,8 +310,8 @@ client->Client.on(#interactionCreate(interaction => interaction->onInteraction->
 
 client->Client.on(#guildDelete(guild => guild->onGuildDelete->ignore))
 
-client->Client.on(#guildMemberAdd(member => member->onGuildMemberAdd))
+client->Client.on(#guildMemberAdd(member => member->onGuildMemberAdd->ignore))
 
-client->Client.on(#roleUpdate((~oldRole as _, ~newRole) => newRole->onRoleUpdate))
+client->Client.on(#roleUpdate((~oldRole as _, ~newRole) => newRole->onRoleUpdate->ignore))
 
 client->Client.login(envConfig["discordApiToken"])->ignore

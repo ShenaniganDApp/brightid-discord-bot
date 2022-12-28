@@ -20,14 +20,15 @@ import * as Commands_Invite from "./commands/Commands_Invite.mjs";
 import * as Commands_Verify from "./commands/Commands_Verify.mjs";
 import * as Constants$Shared from "@brightidbot/shared/src/Constants.mjs";
 import * as Caml_js_exceptions from "rescript/lib/es6/caml_js_exceptions.js";
-import * as Json$JsonCombinators from "@glennsl/rescript-json-combinators/src/Json.mjs";
 import * as UpdateOrReadGistMjs from "./updateOrReadGist.mjs";
 import * as Buttons_PremiumSponsor from "./buttons/Buttons_PremiumSponsor.mjs";
-import * as Json_Decode$JsonCombinators from "@glennsl/rescript-json-combinators/src/Json_Decode.mjs";
+import * as Services_VerificationInfo from "./services/Services_VerificationInfo.mjs";
 
 var RequestHandlerError = /* @__PURE__ */Caml_exceptions.create("Bot.RequestHandlerError");
 
 var GuildNotInGist = /* @__PURE__ */Caml_exceptions.create("Bot.GuildNotInGist");
+
+var BrightIdError = /* @__PURE__ */Caml_exceptions.create("Bot.BrightIdError");
 
 function updateGist(prim0, prim1) {
   return UpdateOrReadGistMjs.updateGist(prim0, prim1);
@@ -113,15 +114,28 @@ async function updateGistOnGuildCreate(guild, roleId) {
 
 async function onGuildCreate(guild) {
   var roleManager = guild.roles;
+  var guildId = guild.id;
+  var guildName = guild.name;
   var role = await roleManager.create({
         name: "Verified",
         color: "ORANGE",
         reason: "Create a role to mark verified users with BrightID"
       });
-  await updateGistOnGuildCreate(guild, role.id);
+  var val;
+  try {
+    val = await updateGistOnGuildCreate(guild, role.id);
+  }
+  catch (raw_e){
+    var e = Caml_js_exceptions.internalToOCamlException(raw_e);
+    console.error("" + guildName + " : " + guildId + ": ", e);
+    return ;
+  }
+  console.log("" + guildName + " : " + guildId + ": Successfully added to the database");
 }
 
 async function onInteraction(interaction) {
+  var guildId = interaction.guild.id;
+  var guildName = interaction.guild.name;
   var isCommand = interaction.isCommand();
   var isButton = interaction.isButton();
   var user = interaction.user;
@@ -140,10 +154,18 @@ async function onInteraction(interaction) {
     try {
       val = await Curry._1(command.execute, interaction);
     }
-    catch (exn){
+    catch (raw_e){
+      var e = Caml_js_exceptions.internalToOCamlException(raw_e);
+      if (e.RE_EXN_ID === BrightIdError) {
+        console.error("" + guildName + " : " + guildId + ": ", e._1.errorMessage);
+      } else if (e.RE_EXN_ID === $$Promise.JsError) {
+        console.error("" + guildName + " : " + guildId + ": ", e._1);
+      } else {
+        console.error("" + guildName + " : " + guildId + ": ", e);
+      }
       return ;
     }
-    console.log("Successfully served the command " + commandName + " for " + user.username + "");
+    console.log("" + guildName + ": Successfully served the command " + commandName + " for " + user.username + "");
     return ;
   }
   if (isButton) {
@@ -151,10 +173,24 @@ async function onInteraction(interaction) {
     var button = buttons.get(buttonCustomId);
     if (button == null) {
       console.error("Bot.res: Button not found");
-    } else {
-      await Curry._1(button.execute, interaction);
-      console.log("Successfully served button press \"" + buttonCustomId + "\" for " + user.username + "");
+      return ;
     }
+    var val$1;
+    try {
+      val$1 = await Curry._1(button.execute, interaction);
+    }
+    catch (raw_e$1){
+      var e$1 = Caml_js_exceptions.internalToOCamlException(raw_e$1);
+      if (e$1.RE_EXN_ID === BrightIdError) {
+        console.error("" + guildName + " : " + guildId + ": ", e$1._1.errorMessage);
+      } else if (e$1.RE_EXN_ID === $$Promise.JsError) {
+        console.error("" + guildName + " : " + guildId + ": ", e$1._1);
+      } else {
+        console.error("" + guildName + " : " + guildId + ": ", e$1);
+      }
+      return ;
+    }
+    console.log("" + guildName + ": Successfully served button press \"" + buttonCustomId + "\" for " + user.username + "");
     return ;
   }
   console.error("Bot.res: Unknown interaction");
@@ -199,61 +235,111 @@ async function onGuildDelete(guild) {
   }
 }
 
-function onGuildMemberAdd(guildMember) {
-  var uuid = Uuid.v5(guildMember.id, envConfig$1.uuidNamespace);
-  var endpoint = "" + Endpoints.brightIdVerificationEndpoint + "/" + Constants$Shared.context + "/" + uuid + "?timestamp=seconds";
-  var params = {
-    method: "GET",
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json"
-    },
-    timestamp: 60000
-  };
-  $$Promise.$$catch(globalThis.fetch(endpoint, params).then(function (res) {
-              return res.json();
-            }).then(function (json) {
-            var match = Json$JsonCombinators.decode(json, Decode$Shared.Decode_BrightId.ContextId.data);
-            var match$1 = Json$JsonCombinators.decode(json, Decode$Shared.Decode_BrightId.$$Error.data);
-            if (match.TAG !== /* Ok */0) {
-              if (match$1.TAG === /* Ok */0) {
-                return Promise.resolve((console.log(match$1._0.errorMessage), undefined));
-              } else {
-                return Promise.reject({
-                            RE_EXN_ID: Json_Decode$JsonCombinators.DecodeError,
-                            _1: match._0
-                          });
-              }
+async function onGuildMemberAdd(guildMember) {
+  var config = Gist$Utils.makeGistConfig(envConfig$1.gistId, "guildData.json", envConfig$1.githubAccessToken);
+  var guildName = guildMember.guild.name;
+  var guildId = guildMember.guild.id;
+  var exit = 0;
+  var val;
+  try {
+    val = await Services_VerificationInfo.getBrightIdVerification(guildMember);
+    exit = 1;
+  }
+  catch (raw_e){
+    var e = Caml_js_exceptions.internalToOCamlException(raw_e);
+    if (e.RE_EXN_ID === Services_VerificationInfo.BrightIdError) {
+      console.error("" + guildName + " : " + guildId + ": ", e._1.errorMessage);
+    } else if (e.RE_EXN_ID === $$Promise.JsError) {
+      console.error("" + guildName + " : " + guildId + ": ", e._1);
+    } else {
+      console.error("" + guildName + " : " + guildId + ": ", e);
+    }
+  }
+  if (exit === 1) {
+    if (val._0.unique) {
+      var exit$1 = 0;
+      var guilds;
+      try {
+        guilds = await Gist$Utils.ReadGist.content(config, Decode$Shared.Decode_Gist.brightIdGuilds);
+        exit$1 = 2;
+      }
+      catch (raw_e$1){
+        var e$1 = Caml_js_exceptions.internalToOCamlException(raw_e$1);
+        console.error("" + guildName + " with guildId: " + guildId + "", e$1);
+      }
+      if (exit$1 === 2) {
+        var guild = guildMember.guild;
+        var guildId$1 = guild.id;
+        var brightIdGuild = Js_dict.get(guilds, guildId$1);
+        if (brightIdGuild !== undefined) {
+          var roleId = brightIdGuild.roleId;
+          if (roleId !== undefined) {
+            var role = Belt_Option.getExn(Caml_option.nullable_to_opt(guild.roles.cache.get(roleId)));
+            var guildMemberRoleManager = guildMember.roles;
+            var exit$2 = 0;
+            var val$1;
+            try {
+              val$1 = await guildMemberRoleManager.add(role, "User is already verified by BrightID");
+              exit$2 = 3;
             }
-            if (!match._0.data.unique) {
-              return Promise.resolve((console.log("User " + guildMember.displayName + " is not unique"), undefined));
+            catch (e$2){
+              throw e$2;
             }
-            var __x = Gist$Utils.makeGistConfig(envConfig$1.gistId, "guildData.json", envConfig$1.githubAccessToken);
-            return Gist$Utils.ReadGist.content(__x, Decode$Shared.Decode_Gist.brightIdGuilds).then(function (content) {
-                        var guild = guildMember.guild;
-                        var guildId = guild.id;
-                        var brightIdGuild = Belt_Option.getExn(Js_dict.get(content, guildId));
-                        var roleId = Belt_Option.getExn(brightIdGuild.roleId);
-                        var role = Belt_Option.getExn(Caml_option.nullable_to_opt(guild.roles.cache.get(roleId)));
-                        var guildMemberRoleManager = guildMember.roles;
-                        guildMemberRoleManager.add(role, "User is already verified by BrightID");
-                        return Promise.resolve(undefined);
-                      });
-          }), (function (err) {
-          console.error(err);
-          return Promise.resolve(undefined);
-        }));
+            if (exit$2 === 3) {
+              Uuid.v5(guildMember.id, envConfig$1.uuidNamespace);
+              
+            }
+            
+          } else {
+            throw {
+                  RE_EXN_ID: RequestHandlerError,
+                  _1: "Guild does not have a saved roleId",
+                  Error: new Error()
+                };
+          }
+        } else {
+          throw {
+                RE_EXN_ID: GuildNotInGist,
+                _1: "Guild does not exist in Gist",
+                Error: new Error()
+              };
+        }
+      }
+      
+    } else {
+      throw {
+            RE_EXN_ID: RequestHandlerError,
+            _1: "User " + guildMember.displayName + " is not unique",
+            Error: new Error()
+          };
+    }
+  }
+  
 }
 
-function onRoleUpdate(role) {
+async function onRoleUpdate(role) {
   var guildId = role.guild.id;
+  var guildName = role.guild.name;
   var config = Gist$Utils.makeGistConfig(envConfig$1.gistId, "guildData.json", envConfig$1.githubAccessToken);
-  Gist$Utils.ReadGist.content(config, Decode$Shared.Decode_Gist.brightIdGuilds).then(function (guilds) {
-        var brightIdGuild = Belt_Option.getExn(Js_dict.get(guilds, guildId));
-        var roleId = Belt_Option.getExn(brightIdGuild.roleId);
+  var exit = 0;
+  var content;
+  try {
+    content = await Gist$Utils.ReadGist.content(config, Decode$Shared.Decode_Gist.brightIdGuilds);
+    exit = 1;
+  }
+  catch (raw_e){
+    var e = Caml_js_exceptions.internalToOCamlException(raw_e);
+    console.error("" + guildName + " : " + guildId + ": ", e);
+    return ;
+  }
+  if (exit === 1) {
+    var brightIdGuild = Js_dict.get(content, guildId);
+    if (brightIdGuild !== undefined) {
+      var roleId = brightIdGuild.roleId;
+      if (roleId !== undefined) {
         var isVerifiedRole = role.id === roleId;
         if (!isVerifiedRole) {
-          return Promise.resolve(undefined);
+          return ;
         }
         var roleName = role.name;
         var entry_role = roleName;
@@ -276,10 +362,38 @@ function onRoleUpdate(role) {
           premiumSponsorshipsUsed: entry_premiumSponsorshipsUsed,
           premiumExpirationTimestamp: entry_premiumExpirationTimestamp
         };
-        return Gist$Utils.UpdateGist.updateEntry(guilds, guildId, entry, config).then(function (param) {
-                    return Promise.resolve(undefined);
-                  });
-      });
+        var exit$1 = 0;
+        var val;
+        try {
+          val = await Gist$Utils.UpdateGist.updateEntry(content, guildId, entry, config);
+          exit$1 = 2;
+        }
+        catch (raw_e$1){
+          var e$1 = Caml_js_exceptions.internalToOCamlException(raw_e$1);
+          console.error("" + guildName + " : " + guildId + ": ", e$1);
+          return ;
+        }
+        if (exit$1 === 2) {
+          console.log("" + guildName + " : " + guildId + " updated the role name to " + roleName + "");
+          return ;
+        }
+        
+      } else {
+        throw {
+              RE_EXN_ID: RequestHandlerError,
+              _1: "Guild does not have a saved roleId",
+              Error: new Error()
+            };
+      }
+    } else {
+      throw {
+            RE_EXN_ID: GuildNotInGist,
+            _1: "Guild does not exist in Gist",
+            Error: new Error()
+          };
+    }
+  }
+  
 }
 
 client.on("ready", (function (param) {
@@ -298,7 +412,9 @@ client.on("guildDelete", (function (guild) {
         onGuildDelete(guild);
       }));
 
-client.on("guildMemberAdd", onGuildMemberAdd);
+client.on("guildMemberAdd", (function (member) {
+        onGuildMemberAdd(member);
+      }));
 
 client.on("roleUpdate", (function (param, newRole) {
         onRoleUpdate(newRole);
@@ -315,6 +431,7 @@ export {
   context ,
   RequestHandlerError ,
   GuildNotInGist ,
+  BrightIdError ,
   updateGist ,
   envConfig$1 as envConfig,
   options ,

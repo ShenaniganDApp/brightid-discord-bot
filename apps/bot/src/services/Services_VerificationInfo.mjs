@@ -50,8 +50,7 @@ function fetchVerificationInfo(retryOpt, id) {
                   var match = Json$JsonCombinators.decode(json, Decode$Shared.Decode_BrightId.ContextId.data);
                   var match$1 = Json$JsonCombinators.decode(json, Decode$Shared.Decode_BrightId.$$Error.data);
                   if (match.TAG === /* Ok */0) {
-                    return Promise.resolve({
-                                TAG: /* VerificationInfo */0,
+                    return Promise.resolve(/* VerificationInfo */{
                                 _0: match._0.data
                               });
                   } else if (match$1.TAG === /* Ok */0) {
@@ -69,18 +68,6 @@ function fetchVerificationInfo(retryOpt, id) {
                 var retry$1 = retry - 1 | 0;
                 if (retry$1 !== 0) {
                   return fetchVerificationInfo(retry$1, id);
-                }
-                if (e.RE_EXN_ID === BrightIdError) {
-                  return Promise.resolve({
-                              TAG: /* BrightIdError */1,
-                              _0: e._1
-                            });
-                }
-                if (e.RE_EXN_ID === $$Promise.JsError) {
-                  return Promise.resolve({
-                              TAG: /* JsError */2,
-                              _0: e._1
-                            });
                 }
                 throw e;
               }));

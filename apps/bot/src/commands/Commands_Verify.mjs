@@ -18,8 +18,7 @@ import * as Constants$Shared from "@brightidbot/shared/src/Constants.mjs";
 import * as Services_AppInfo from "../services/Services_AppInfo.mjs";
 import * as Caml_js_exceptions from "rescript/lib/es6/caml_js_exceptions.js";
 import * as Builders from "@discordjs/builders";
-import * as Json$JsonCombinators from "@glennsl/rescript-json-combinators/src/Json.mjs";
-import * as Json_Decode$JsonCombinators from "@glennsl/rescript-json-combinators/src/Json_Decode.mjs";
+import * as Services_VerificationInfo from "../services/Services_VerificationInfo.mjs";
 
 var VerifyHandlerError = /* @__PURE__ */Caml_exceptions.create("Commands_Verify.VerifyHandlerError");
 
@@ -65,62 +64,6 @@ function noUnusedSponsorshipsOptions(param) {
           content: "There are no sponsorships available in the Discord pool. Please try again later.",
           ephemeral: true
         };
-}
-
-async function fetchVerification(uuid) {
-  var endpoint = "" + Endpoints.brightIdVerificationEndpoint + "/" + Constants$Shared.context + "/" + uuid + "?timestamp=seconds";
-  var params = {
-    method: "GET",
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json"
-    },
-    timeout: 60000
-  };
-  var res;
-  try {
-    res = await globalThis.fetch(endpoint, params);
-  }
-  catch (raw_obj){
-    var obj = Caml_js_exceptions.internalToOCamlException(raw_obj);
-    if (obj.RE_EXN_ID === $$Promise.JsError) {
-      var obj$1 = obj._1;
-      var msg = obj$1.message;
-      if (msg !== undefined) {
-        console.error(msg);
-        throw {
-              RE_EXN_ID: VerifyHandlerError,
-              _1: msg,
-              Error: new Error()
-            };
-      }
-      console.error(obj$1);
-      throw {
-            RE_EXN_ID: VerifyHandlerError,
-            _1: "Fetch Verification Error",
-            Error: new Error()
-          };
-    }
-    throw obj;
-  }
-  var json = await res.json();
-  var match = Json$JsonCombinators.decode(json, Decode$Shared.Decode_BrightId.ContextId.data);
-  var match$1 = Json$JsonCombinators.decode(json, Decode$Shared.Decode_BrightId.$$Error.data);
-  if (match.TAG === /* Ok */0) {
-    return match._0.data;
-  }
-  if (match$1.TAG === /* Ok */0) {
-    throw {
-          RE_EXN_ID: BrightIdError,
-          _1: match$1._0,
-          Error: new Error()
-        };
-  }
-  throw {
-        RE_EXN_ID: Json_Decode$JsonCombinators.DecodeError,
-        _1: match._0,
-        Error: new Error()
-      };
 }
 
 function embedFields(verifyUrl) {
@@ -226,7 +169,7 @@ async function beforeSponsorMessageOptions(customId, uuid) {
   var attachment = await createMessageAttachmentFromCanvas(canvas);
   var row = makeBeforeSponsorActionRow(customId, verifyUrl);
   return {
-          content: "Please scan the QR code in the BrightID app. \n\n **__You can download the app on Android and iOS__** \n Android: <https://play.google.com/store/apps/details?id=org.brightid> \n\n iOS: <https://apps.apple.com/us/app/brightid/id1428946820> \n\n",
+          content: "Please scan this QR code in the BrightID app to link Discord. \n\n **__You can download the app on Android and iOS__** \n Android: <https://play.google.com/store/apps/details?id=org.brightid> \n\n iOS: <https://apps.apple.com/us/app/brightid/id1428946820> \n\n",
           files: [attachment],
           ephemeral: true,
           components: [row]
@@ -369,8 +312,8 @@ function execute(interaction) {
                                 var roleId = guildData.roleId;
                                 if (roleId !== undefined) {
                                   var guildRole = getRolebyRoleId(guildRoleManager, roleId);
-                                  return $$Promise.$$catch(fetchVerification(uuid).then(function (contextId) {
-                                                  if (contextId.unique) {
+                                  return $$Promise.$$catch(Services_VerificationInfo.getBrightIdVerification(member).then(function (verificationInfo) {
+                                                  if (verificationInfo._0.unique) {
                                                     return addRoleToMember(guildRole, member).then(function (param) {
                                                                 var options = {
                                                                   content: "Hey, I recognize you! I just gave you the \`" + guildRole.name + "\` role. You are now BrightID verified in " + guild.name + " server!",
@@ -393,18 +336,17 @@ function execute(interaction) {
                                                             });
                                                 }), (async function (e) {
                                                 if (e.RE_EXN_ID === BrightIdError) {
-                                                  var match = e._1;
-                                                  var errorNum = match.errorNum;
+                                                  var errorNum = e._1.errorNum;
                                                   var whitelist = envConfig.sponsorshipsWhitelist.split(",");
                                                   var inWhitelist = whitelist.includes(guild.id);
                                                   var appUnusedSponsorships = await getAppUnusedSponsorships(Constants$Shared.context);
                                                   if (appUnusedSponsorships !== undefined) {
-                                                    var match$1 = getDiscordServerSponsorshipTotals(guilds);
-                                                    var unusedDiscordSponsorships = match$1[0].sub(match$1[1]);
+                                                    var match = getDiscordServerSponsorshipTotals(guilds);
+                                                    var unusedDiscordSponsorships = match[0].sub(match[1]);
                                                     var unusedPremiumSponsorships = Ethers.BigNumber.from(String(appUnusedSponsorships)).sub(unusedDiscordSponsorships);
                                                     var hasPremium$1 = hasPremium(guildData);
                                                     var premiumCanBeUsed = unusedPremiumSponsorships.gt("0") && hasPremium$1;
-                                                    var match$2 = guildData.sponsorshipAddress;
+                                                    var match$1 = guildData.sponsorshipAddress;
                                                     if (errorNum !== 4) {
                                                       var exit = 0;
                                                       var data;
@@ -412,46 +354,52 @@ function execute(interaction) {
                                                         data = await handleUnverifiedGuildMember(errorNum, interaction, uuid);
                                                         exit = 1;
                                                       }
-                                                      catch (raw_exn){
-                                                        var exn = Caml_js_exceptions.internalToOCamlException(raw_exn);
-                                                        if (exn.RE_EXN_ID === $$Promise.JsError) {
-                                                          console.error("" + member.displayName + ": " + match.errorMessage + "");
-                                                        } else {
-                                                          throw exn;
+                                                      catch (raw_obj){
+                                                        var obj = Caml_js_exceptions.internalToOCamlException(raw_obj);
+                                                        if (obj.RE_EXN_ID === $$Promise.JsError) {
+                                                          console.error(obj._1);
+                                                          throw {
+                                                                RE_EXN_ID: VerifyHandlerError,
+                                                                _1: "Unknown JS Error",
+                                                                Error: new Error()
+                                                              };
                                                         }
+                                                        throw obj;
                                                       }
                                                       exit === 1;
                                                       return ;
                                                     }
                                                     if (inWhitelist) {
                                                       if (premiumCanBeUsed) {
-                                                        console.log("Unused Sponsorships in premium pool: ", unusedPremiumSponsorships);
+                                                        console.log("Unused Sponsorships in premium pool: ", unusedPremiumSponsorships.toString());
                                                         var options = await beforeSponsorMessageOptions("before-premium-sponsor", uuid);
                                                         await interaction.editReply(options);
                                                         return ;
                                                       }
-                                                      if (match$2 !== undefined) {
+                                                      if (match$1 !== undefined) {
                                                         var assignedSponsorships;
                                                         try {
-                                                          assignedSponsorships = await getAssignedSPFromAddress(match$2);
+                                                          assignedSponsorships = await getAssignedSPFromAddress(match$1);
                                                         }
-                                                        catch (raw_obj){
-                                                          var obj = Caml_js_exceptions.internalToOCamlException(raw_obj);
-                                                          if (obj.RE_EXN_ID === NoAvailableSP) {
+                                                        catch (raw_obj$1){
+                                                          var obj$1 = Caml_js_exceptions.internalToOCamlException(raw_obj$1);
+                                                          if (obj$1.RE_EXN_ID === NoAvailableSP) {
                                                             await noSponsorshipsMessage(interaction);
-                                                            return ;
+                                                            throw {
+                                                                  RE_EXN_ID: VerifyHandlerError,
+                                                                  _1: "This server has no usable sponsorships",
+                                                                  Error: new Error()
+                                                                };
                                                           }
-                                                          if (obj.RE_EXN_ID === $$Promise.JsError) {
-                                                            var obj$1 = obj._1;
-                                                            var msg = obj$1.message;
-                                                            if (msg !== undefined) {
-                                                              console.error(msg);
-                                                            } else {
-                                                              console.error(obj$1);
-                                                            }
-                                                            return ;
+                                                          if (obj$1.RE_EXN_ID === $$Promise.JsError) {
+                                                            console.error(obj$1._1);
+                                                            throw {
+                                                                  RE_EXN_ID: VerifyHandlerError,
+                                                                  _1: "Unknown JS Error",
+                                                                  Error: new Error()
+                                                                };
                                                           }
-                                                          throw obj;
+                                                          throw obj$1;
                                                         }
                                                         var usedSponsorships = Belt_Option.getWithDefault(guildData.usedSponsorships, Ethers.constants.Zero.toString());
                                                         var availableSponsorships = assignedSponsorships.sub(usedSponsorships);
@@ -480,17 +428,26 @@ function execute(interaction) {
                                                         await noWriteToGistMessage(interaction);
                                                         return ;
                                                       }
-                                                      console.error("Commands_Verify: Guild with guildId:" + guildId + " does not have a sponsorship address set");
                                                       await noSponsorshipsMessage(interaction);
-                                                      return ;
+                                                      throw {
+                                                            RE_EXN_ID: VerifyHandlerError,
+                                                            _1: "Does not have a sponsorship address set",
+                                                            Error: new Error()
+                                                          };
                                                     }
-                                                    console.error("Commands_Verify: Not in beta whitelist");
                                                     await noSponsorshipsMessage(interaction);
-                                                    return ;
+                                                    throw {
+                                                          RE_EXN_ID: VerifyHandlerError,
+                                                          _1: "Guild not in beta whitelist",
+                                                          Error: new Error()
+                                                        };
                                                   }
-                                                  console.error("Commands_Verify: No sponsorships available in Discord app");
                                                   await noSponsorshipsMessage(interaction);
-                                                  return ;
+                                                  throw {
+                                                        RE_EXN_ID: VerifyHandlerError,
+                                                        _1: "No sponsorships available in Discord pool",
+                                                        Error: new Error()
+                                                      };
                                                 }
                                                 throw e;
                                               }));
@@ -501,7 +458,7 @@ function execute(interaction) {
                                 return interaction.editReply(options).then(function (param) {
                                             return Promise.reject({
                                                         RE_EXN_ID: VerifyHandlerError,
-                                                        _1: "Guild Id " + guildId + " has no roleId"
+                                                        _1: "Guild does not have a saved roleId"
                                                       });
                                           });
                               }
@@ -511,48 +468,11 @@ function execute(interaction) {
                               return interaction.editReply(options$1).then(function (param) {
                                           return Promise.reject({
                                                       RE_EXN_ID: VerifyHandlerError,
-                                                      _1: "Guild Id " + guildId + " could not be found in the database"
+                                                      _1: "Guild could not be found in the database"
                                                     });
                                         });
                             }), (function (e) {
-                            if (e.RE_EXN_ID === VerifyHandlerError) {
-                              var msg = e._1;
-                              console.error(msg);
-                              return Promise.reject({
-                                          RE_EXN_ID: VerifyHandlerError,
-                                          _1: msg
-                                        });
-                            }
-                            if (e.RE_EXN_ID === Json_Decode$JsonCombinators.DecodeError) {
-                              var msg$1 = e._1;
-                              console.error(msg$1);
-                              return Promise.reject({
-                                          RE_EXN_ID: Json_Decode$JsonCombinators.DecodeError,
-                                          _1: msg$1
-                                        });
-                            }
-                            if (e.RE_EXN_ID === $$Promise.JsError) {
-                              var obj = e._1;
-                              var msg$2 = obj.message;
-                              if (msg$2 !== undefined) {
-                                console.error("Verify Handler: " + msg$2);
-                                return Promise.reject({
-                                            RE_EXN_ID: $$Promise.JsError,
-                                            _1: obj
-                                          });
-                              } else {
-                                console.error("Verify Handler: Unknown error", obj);
-                                return Promise.reject({
-                                            RE_EXN_ID: $$Promise.JsError,
-                                            _1: obj
-                                          });
-                              }
-                            }
-                            console.error(e);
-                            return Promise.reject({
-                                        RE_EXN_ID: VerifyHandlerError,
-                                        _1: "Unknown error"
-                                      });
+                            return Promise.reject(e);
                           }));
             });
 }
@@ -585,7 +505,6 @@ export {
   gistConfig ,
   addRoleToMember ,
   noUnusedSponsorshipsOptions ,
-  fetchVerification ,
   embedFields ,
   makeEmbed ,
   makeCanvasFromUri ,

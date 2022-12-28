@@ -1,5 +1,6 @@
 open Discord
 open Promise
+open Shared
 
 let {brightIdVerificationEndpoint, brightIdAppDeeplink, brightIdLinkVerificationEndpoint} = module(
   Endpoints
@@ -7,6 +8,7 @@ let {brightIdVerificationEndpoint, brightIdAppDeeplink, brightIdLinkVerification
 let {context} = module(Constants)
 
 exception ButtonVerifyHandlerError(string)
+exception BrightIdError(BrightId.Error.t)
 
 Env.createEnv()
 
@@ -106,74 +108,73 @@ let execute = interaction => {
       ~name="guildData.json",
       ~token=config["githubAccessToken"],
     )
-    Gist.ReadGist.content(~config, ~decoder=Decode.Gist.brightIdGuilds)->then(guilds => {
+    Gist.ReadGist.content(~config, ~decoder=Decode.Decode_Gist.brightIdGuilds)->then(guilds => {
       let guildData = guilds->getGuildDataFromGist(guildId, interaction)
-      let guildRole = guildData["roleId"]->Belt.Option.getExn->getRolebyRoleId(guildRoleManager, _)
-      member
-      ->Services_VerificationInfo.getBrightIdVerification
-      ->then(
-        verificationInfo => {
-          switch verificationInfo {
-          | JsError(obj) =>
-            let options = {
-              "content": "Something unexpected happened. Try again later",
-              "ephemeral": true,
-            }
-            interaction->Interaction.followUp(~options, ())->then(_ => JsError(obj)->reject)
-          | BrightIdError({errorNum}) => errorNum->handleUnverifiedGuildMember(interaction)
-          | VerificationInfo({contextIds, unique}) =>
-            let contextIdsLength = contextIds->Belt.Array.length
-            switch (contextIdsLength, unique) {
-            | (1, true) =>
-              guildRole
-              ->addRoleToMember(member)
-              ->then(
-                _ => {
-                  let options = {
-                    "content": `Hey, I recognize you! I just gave you the \`${guildRole->Role.getName}\` role. You are now BrightID verified in ${guild->Guild.getGuildName} server!`,
-                    "ephemeral": true,
-                  }
-                  interaction->Interaction.followUp(~options, ())
-                },
-              )
-              ->then(_ => resolve())
-            | (0, _) =>
+      switch guildData.roleId {
+      | None =>
+        let options = {
+          "content": "Hi, sorry about that. I couldn't retrieve the data for this server from BrightID. Try reinviting the bot. \n\n **Note: This will create a new role BrightID Role.**",
+        }
+        interaction
+        ->Interaction.editReply(~options, ())
+        ->then(_ => ButtonVerifyHandlerError(`Guild does not have a saved roleId`)->reject)
+      | Some(roleId) =>
+        member
+        ->Services_VerificationInfo.getBrightIdVerification
+        ->then(
+          verificationInfo => {
+            switch verificationInfo {
+            | exception JsError(obj) =>
               let options = {
-                "content": `The BrightID has not been linked to Discord. That means the qr code has not been properly scanned!`,
+                "content": "Something unexpected happened. Try again later",
                 "ephemeral": true,
               }
-              interaction->Interaction.followUp(~options, ())->then(_ => resolve())
-            | (_, false) =>
-              let options = {
-                "content": "Hey, I recognize you, but your account seems to be linked to a possible sybil attack. You are not properly BrightID verified. If this is a mistake, contact one of the support channels",
-                "ephemeral": true,
+              interaction->Interaction.followUp(~options, ())->then(_ => JsError(obj)->reject)
+            | exception BrightIdError({errorNum}) =>
+              errorNum->handleUnverifiedGuildMember(interaction)
+            | VerificationInfo({contextIds, unique}) =>
+              let contextIdsLength = contextIds->Belt.Array.length
+              switch (contextIdsLength, unique) {
+              | (1, true) =>
+                let guildRole = roleId->getRolebyRoleId(guildRoleManager, _)
+                guildRole
+                ->addRoleToMember(member)
+                ->then(
+                  _ => {
+                    let options = {
+                      "content": `Hey, I recognize you! I just gave you the \`${guildRole->Role.getName}\` role. You are now BrightID verified in ${guild->Guild.getGuildName} server!`,
+                      "ephemeral": true,
+                    }
+                    interaction->Interaction.followUp(~options, ())
+                  },
+                )
+                ->then(_ => resolve())
+              | (0, _) =>
+                let options = {
+                  "content": `The BrightID has not been linked to Discord. That means the qr code has not been properly scanned!`,
+                  "ephemeral": true,
+                }
+                interaction->Interaction.followUp(~options, ())->then(_ => resolve())
+              | (_, false) =>
+                let options = {
+                  "content": "Hey, I recognize you, but your account seems to be linked to a possible sybil attack. You are not properly BrightID verified. If this is a mistake, contact one of the support channels",
+                  "ephemeral": true,
+                }
+                interaction
+                ->Interaction.followUp(~options, ())
+                ->then(
+                  _ =>
+                    ButtonVerifyHandlerError(
+                      `${member->GuildMember.getDisplayName} is not unique`,
+                    )->reject,
+                )
+              | (_, _) => member->noMultipleContextIds(interaction)
               }
-              interaction
-              ->Interaction.followUp(~options, ())
-              ->then(
-                _ =>
-                  ButtonVerifyHandlerError(
-                    `${member->GuildMember.getDisplayName} is not unique`,
-                  )->reject,
-              )
-            | (_, _) => member->noMultipleContextIds(interaction)
             }
-          }
-        },
-      )
-    })
-  })
-  ->catch(e => {
-    switch e {
-    | ButtonVerifyHandlerError(msg) => Js.Console.error(msg)
-    | JsError(obj) =>
-      switch Js.Exn.message(obj) {
-      | Some(msg) => Js.Console.error(msg)
-      | None => Js.Console.error("Must be some non-error value")
+          },
+        )
       }
-    | _ => Js.Console.error("Some unknown error")
-    }
-    resolve()
+    })
   })
 }
 

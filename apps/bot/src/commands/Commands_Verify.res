@@ -56,39 +56,6 @@ let noUnusedSponsorshipsOptions = () =>
     "ephemeral": true,
   }
 
-let fetchVerification = async uuid => {
-  open Decode.Decode_BrightId
-  let endpoint = `${brightIdVerificationEndpoint}/${context}/${uuid}?timestamp=seconds`
-  let params = {
-    "method": "GET",
-    "headers": {
-      "Accept": "application/json",
-      "Content-Type": "application/json",
-    },
-    "timeout": 60000,
-  }
-  let res = switch await fetch(endpoint, params) {
-  | res => res
-  | exception JsError(obj) =>
-    switch Js.Exn.message(obj) {
-    | Some(msg) =>
-      Js.Console.error(msg)
-      VerifyHandlerError(msg)->raise
-    | None =>
-      Js.Console.error(obj)
-      VerifyHandlerError("Fetch Verification Error")->raise
-    }
-  }
-  switch await Response.json(res) {
-  | json =>
-    switch (json->Json.decode(ContextId.data), json->Json.decode(Error.data)) {
-    | (Ok({data}), _) => data
-    | (_, Ok(error)) => error->BrightIdError->raise
-    | (Error(err), _) => err->Json.Decode.DecodeError->raise
-    }
-  }
-}
-
 let embedFields = verifyUrl => {
   open MessageEmbed
   [
@@ -221,7 +188,7 @@ let beforeSponsorMessageOptions = async (customId, uuid) => {
   let attachment = await createMessageAttachmentFromCanvas(canvas)
   let row = makeBeforeSponsorActionRow(customId, verifyUrl)
   {
-    "content": "Please scan the QR code in the BrightID app. \n\n **__You can download the app on Android and iOS__** \n Android: <https://play.google.com/store/apps/details?id=org.brightid> \n\n iOS: <https://apps.apple.com/us/app/brightid/id1428946820> \n\n",
+    "content": "Please scan this QR code in the BrightID app to link Discord. \n\n **__You can download the app on Android and iOS__** \n Android: <https://play.google.com/store/apps/details?id=org.brightid> \n\n iOS: <https://apps.apple.com/us/app/brightid/id1428946820> \n\n",
     "files": [attachment],
     "ephemeral": true,
     "components": [row],
@@ -337,6 +304,7 @@ let execute = interaction => {
   open Utils
 
   let guild = interaction->Interaction.getGuild
+  let guildName = guild->Guild.getGuildName
   let member = interaction->Interaction.getGuildMember
   let guildRoleManager = guild->Guild.getGuildRoleManager
   let memberId = member->GuildMember.getGuildMemberId
@@ -358,9 +326,7 @@ let execute = interaction => {
         }
         interaction
         ->Interaction.editReply(~options, ())
-        ->then(
-          _ => VerifyHandlerError(`Guild Id ${guildId} could not be found in the database`)->reject,
-        )
+        ->then(_ => VerifyHandlerError(`Guild could not be found in the database`)->reject)
 
       | Some(guildData) => {
           let roleId = guildData.roleId
@@ -371,41 +337,45 @@ let execute = interaction => {
             }
             interaction
             ->Interaction.editReply(~options, ())
-            ->then(_ => VerifyHandlerError(`Guild Id ${guildId} has no roleId`)->reject)
+            ->then(_ => VerifyHandlerError(`Guild does not have a saved roleId`)->reject)
           | Some(roleId) =>
             let guildRole = guildRoleManager->getRolebyRoleId(roleId)
-            uuid
-            ->fetchVerification
+            member
+            ->Services_VerificationInfo.getBrightIdVerification
             ->then(
-              contextId =>
-                switch contextId.unique {
-                | true =>
-                  guildRole
-                  ->addRoleToMember(member)
-                  ->then(
-                    _ => {
-                      let options = {
-                        "content": `Hey, I recognize you! I just gave you the \`${guildRole->Role.getName}\` role. You are now BrightID verified in ${guild->Guild.getGuildName} server!`,
-                        "ephemeral": true,
-                      }
-                      interaction->Interaction.editReply(~options, ())->then(_ => resolve())
-                    },
-                  )
+              verificationInfo => {
+                switch verificationInfo {
+                | VerificationInfo({unique}) =>
+                  switch unique {
+                  | true =>
+                    guildRole
+                    ->addRoleToMember(member)
+                    ->then(
+                      _ => {
+                        let options = {
+                          "content": `Hey, I recognize you! I just gave you the \`${guildRole->Role.getName}\` role. You are now BrightID verified in ${guild->Guild.getGuildName} server!`,
+                          "ephemeral": true,
+                        }
+                        interaction->Interaction.editReply(~options, ())->then(_ => resolve())
+                      },
+                    )
 
-                | false =>
-                  let options = {
-                    "content": `Hey, I recognize you, but your account seems to be linked to a sybil attack. You have multiple Discord accounts on the same BrightID. If this is a mistake, contact one of the support channels. `,
-                    "ephemeral": true,
+                  | false =>
+                    let options = {
+                      "content": `Hey, I recognize you, but your account seems to be linked to a sybil attack. You have multiple Discord accounts on the same BrightID. If this is a mistake, contact one of the support channels. `,
+                      "ephemeral": true,
+                    }
+                    interaction
+                    ->Interaction.editReply(~options, ())
+                    ->then(
+                      _ =>
+                        VerifyHandlerError(
+                          `Commands_Verify: User with contextId: ${uuid} is not unique `,
+                        )->reject,
+                    )
                   }
-                  interaction
-                  ->Interaction.editReply(~options, ())
-                  ->then(
-                    _ =>
-                      VerifyHandlerError(
-                        `Commands_Verify: User with contextId: ${uuid} is not unique `,
-                      )->reject,
-                  )
-                },
+                }
+              },
             )
             ->catch(
               async e => {
@@ -415,8 +385,8 @@ let execute = interaction => {
                   let inWhitelist = whitelist->Js.Array2.includes(guild->Guild.getGuildId)
                   switch await getAppUnusedSponsorships(context) {
                   | None =>
-                    Js.Console.error("Commands_Verify: No sponsorships available in Discord app")
                     let _ = await noSponsorshipsMessage(interaction)
+                    VerifyHandlerError("No sponsorships available in Discord pool")->raise
                   | Some(appUnusedSponsorships) =>
                     let (
                       totalDiscordAssignedSponsorships,
@@ -437,11 +407,14 @@ let execute = interaction => {
                     switch (errorNum, premiumCanBeUsed, guildData.sponsorshipAddress, inWhitelist) {
                     //Not in beta whitelist
                     | (4, _, _, false) =>
-                      Js.Console.error("Commands_Verify: Not in beta whitelist")
                       let _ = await noSponsorshipsMessage(interaction)
+                      VerifyHandlerError("Guild not in beta whitelist")->raise
                     // Use Premium Sponsorships
                     | (4, true, _, _) =>
-                      Js.log2("Unused Sponsorships in premium pool: ", unusedPremiumSponsorships)
+                      Js.log2(
+                        "Unused Sponsorships in premium pool: ",
+                        unusedPremiumSponsorships->Ethers.BigNumber.toString,
+                      )
                       let options = await beforeSponsorMessageOptions(
                         "before-premium-sponsor",
                         uuid,
@@ -479,19 +452,15 @@ let execute = interaction => {
                         }
                       | exception NoAvailableSP =>
                         let _ = await noSponsorshipsMessage(interaction)
+                        VerifyHandlerError("This server has no usable sponsorships")->raise
                       | exception JsError(obj) =>
-                        switch Js.Exn.message(obj) {
-                        | Some(msg) => Js.Console.error(msg)
-                        | None => Js.Console.error(obj)
-                        }
+                        Js.Console.error(obj)
+                        VerifyHandlerError("Unknown JS Error")->raise
                       }
                     // No Sponsorship Address and No Premium
                     | (4, false, None, true) =>
-                      Js.Console.error(
-                        `Commands_Verify: Guild with guildId:${guildId} does not have a sponsorship address set`,
-                      )
                       let _ = await noSponsorshipsMessage(interaction)
-
+                      VerifyHandlerError("Does not have a sponsorship address set")->raise
                     | (_, _, _, _) =>
                       let _ = switch await handleUnverifiedGuildMember(
                         errorNum,
@@ -499,9 +468,9 @@ let execute = interaction => {
                         uuid,
                       ) {
                       | data => Some(data)
-                      | exception JsError(_) =>
-                        Js.Console.error(`${member->GuildMember.getDisplayName}: ${errorMessage}`)
-                        None
+                      | exception JsError(obj) =>
+                        Js.Console.error(obj)
+                        VerifyHandlerError("Unknown JS Error")->raise
                       }
                     }
                   }
@@ -515,24 +484,7 @@ let execute = interaction => {
     })
     ->catch(e => {
       switch e {
-      | VerifyHandlerError(msg) =>
-        Js.Console.error(msg)
-        reject(VerifyHandlerError(msg))
-      | Json.Decode.DecodeError(msg) =>
-        Js.Console.error(msg)
-        reject(Json.Decode.DecodeError(msg))
-      | JsError(obj) =>
-        switch Js.Exn.message(obj) {
-        | Some(msg) =>
-          Js.Console.error("Verify Handler: " ++ msg)
-          reject(JsError(obj))
-        | None =>
-          Js.Console.error2("Verify Handler: Unknown error", obj)
-          reject(JsError(obj))
-        }
-      | _ =>
-        Js.Console.error(e)
-        reject(VerifyHandlerError("Unknown error"))
+      | _ => e->reject
       }
     })
   })

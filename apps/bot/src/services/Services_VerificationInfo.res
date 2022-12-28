@@ -5,8 +5,7 @@ open Shared
 //@TODO move all top level exceptions to a new file
 exception BrightIdError(BrightId.Error.t)
 
-type verificationInfo =
-  VerificationInfo(BrightId.ContextId.t) | BrightIdError(BrightId.Error.t) | JsError(Js.Exn.t)
+type verificationInfo = VerificationInfo(BrightId.ContextId.t)
 
 module UUID = {
   type t = string
@@ -63,8 +62,6 @@ let rec fetchVerificationInfo = (~retry=5, id): Promise.t<verificationInfo> => {
     switch retry {
     | 0 =>
       switch e {
-      | BrightIdError(error) => BrightIdError(error)->resolve
-      | JsError(obj) => JsError(obj)->resolve
       | _ => e->raise
       }
 

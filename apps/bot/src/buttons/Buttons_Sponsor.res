@@ -34,7 +34,6 @@ let envConfig = switch Env.getConfig() {
 let noUnusedSponsorshipsOptions = () =>
   {
     "content": "There are no sponsorships available in the Discord pool. Please try again later.",
-    "content": "There are no sponsorships available in the Discord pool. Please try again later.",
     "ephemeral": true,
   }
 
@@ -62,15 +61,6 @@ let sponsorRequestSubmittedMessageOptions = async uuid => {
     "files": [attachment],
     "ephemeral": true,
   }
-}
-
-let noWriteToGistMessage = async interaction => {
-  let options = {
-    "content": "It seems like I can't write to my database at the moment. Please try again or contact the BrightID support.",
-    "ephemeral": true,
-  }
-
-  await Interaction.followUp(interaction, ~options, ())
 }
 
 let noWriteToGistMessage = async interaction => {
@@ -306,22 +296,10 @@ let execute = async interaction => {
   let memberId = member->GuildMember.getGuildMemberId
   let uuid = memberId->UUID.v5(envConfig["uuidNamespace"])
   switch await Interaction.deferReply(interaction, ~options={"ephemeral": true}, ()) {
-  | exception JsError(obj) =>
-    switch Js.Exn.message(obj) {
-    | Some(msg) => Js.Console.error(msg)
-
-    | None => Js.Console.error("Must be some non-error value")
-    }
+  | exception e => e->raise
   | _ =>
     switch await Gist.ReadGist.content(~config=gistConfig(), ~decoder=Decode_Gist.brightIdGuilds) {
-    | exception JsError(msg) =>
-      Js.Console.error(msg)
-      let _ = await unknownErrorMessage(interaction)
-
-    | exception Json.Decode.DecodeError(msg) =>
-      Js.Console.error(msg)
-      let _ = await unknownErrorMessage(interaction)
-
+    | exception e => e->raise
     | guilds =>
       switch guilds->Js.Dict.get(guildId) {
       | None =>
@@ -329,6 +307,7 @@ let execute = async interaction => {
         let _ = noWriteToGistMessage(interaction)
       | Some(guildData) =>
         let _ = switch await handleSponsor(interaction, uuid) {
+        | exception e => e->raise
         | SponsorshipUsed =>
           let usedSponsorships =
             guildData.usedSponsorships->Belt.Option.getWithDefault(
@@ -371,20 +350,6 @@ let execute = async interaction => {
         | TimedOut =>
           let options = await unsuccessfulSponsorMessageOptions(uuid)
           let _ = await Interaction.followUp(interaction, ~options, ())
-        | exception HandleSponsorError(errorMessage) =>
-          let guildName = guild->Guild.getGuildName
-          Js.Console.error2(
-            `User: ${uuid} from server ${guildName} ran into an unexpected error: `,
-            errorMessage,
-          )
-          let _ = await unknownErrorMessage(interaction)
-        | exception JsError(err) =>
-          let guildName = guild->Guild.getGuildName
-          Js.Console.error2(
-            `User: ${uuid} from server ${guildName} ran into an unexpected error: `,
-            err,
-          )
-          let _ = await unknownErrorMessage(interaction)
         }
       }
     }

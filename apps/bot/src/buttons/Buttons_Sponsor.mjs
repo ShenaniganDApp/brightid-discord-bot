@@ -47,7 +47,6 @@ if (config.TAG === /* Ok */0) {
 function noUnusedSponsorshipsOptions(param) {
   return {
           content: "There are no sponsorships available in the Discord pool. Please try again later.",
-          content: "There are no sponsorships available in the Discord pool. Please try again later.",
           ephemeral: true
         };
 }
@@ -381,18 +380,8 @@ async function execute(interaction) {
         });
     exit = 1;
   }
-  catch (raw_obj){
-    var obj = Caml_js_exceptions.internalToOCamlException(raw_obj);
-    if (obj.RE_EXN_ID === $$Promise.JsError) {
-      var msg = obj._1.message;
-      if (msg !== undefined) {
-        console.error(msg);
-      } else {
-        console.error("Must be some non-error value");
-      }
-      return ;
-    }
-    throw obj;
+  catch (e){
+    throw e;
   }
   if (exit === 1) {
     var exit$1 = 0;
@@ -401,19 +390,8 @@ async function execute(interaction) {
       guilds = await Gist$Utils.ReadGist.content(gistConfig(undefined), Decode$Shared.Decode_Gist.brightIdGuilds);
       exit$1 = 2;
     }
-    catch (raw_msg){
-      var msg$1 = Caml_js_exceptions.internalToOCamlException(raw_msg);
-      if (msg$1.RE_EXN_ID === $$Promise.JsError) {
-        console.error(msg$1._1);
-        await Commands_Verify.unknownErrorMessage(interaction);
-        return ;
-      }
-      if (msg$1.RE_EXN_ID === Json_Decode$JsonCombinators.DecodeError) {
-        console.error(msg$1._1);
-        await Commands_Verify.unknownErrorMessage(interaction);
-        return ;
-      }
-      throw msg$1;
+    catch (e$1){
+      throw e$1;
     }
     if (exit$1 === 2) {
       var guildData = Js_dict.get(guilds, guildId);
@@ -424,19 +402,8 @@ async function execute(interaction) {
           val$1 = await handleSponsor(interaction, undefined, undefined, uuid);
           exit$2 = 3;
         }
-        catch (raw_errorMessage){
-          var errorMessage = Caml_js_exceptions.internalToOCamlException(raw_errorMessage);
-          if (errorMessage.RE_EXN_ID === HandleSponsorError) {
-            var guildName = guild.name;
-            console.error("User: " + uuid + " from server " + guildName + " ran into an unexpected error: ", errorMessage._1);
-            await Commands_Verify.unknownErrorMessage(interaction);
-          } else if (errorMessage.RE_EXN_ID === $$Promise.JsError) {
-            var guildName$1 = guild.name;
-            console.error("User: " + uuid + " from server " + guildName$1 + " ran into an unexpected error: ", errorMessage._1);
-            await Commands_Verify.unknownErrorMessage(interaction);
-          } else {
-            throw errorMessage;
-          }
+        catch (e$2){
+          throw e$2;
         }
         if (exit$2 === 3) {
           switch (val$1) {
@@ -471,7 +438,6 @@ async function execute(interaction) {
                 break;
             case /* NoUnusedSponsorships */2 :
                 await interaction.followUp({
-                      content: "There are no sponsorships available in the Discord pool. Please try again later.",
                       content: "There are no sponsorships available in the Discord pool. Please try again later.",
                       ephemeral: true
                     });
