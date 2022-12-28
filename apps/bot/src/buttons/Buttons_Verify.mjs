@@ -4,6 +4,7 @@ import * as Env from "../Env.mjs";
 import * as Js_dict from "rescript/lib/es6/js_dict.js";
 import * as $$Promise from "@ryyppy/rescript-promise/src/Promise.mjs";
 import * as Endpoints from "../Endpoints.mjs";
+import * as Exceptions from "../Exceptions.mjs";
 import * as Gist$Utils from "@brightidbot/utils/src/Gist.mjs";
 import * as Caml_option from "rescript/lib/es6/caml_option.js";
 import * as Decode$Shared from "@brightidbot/shared/src/Decode.mjs";
@@ -13,8 +14,6 @@ import * as Caml_js_exceptions from "rescript/lib/es6/caml_js_exceptions.js";
 import * as Services_VerificationInfo from "../services/Services_VerificationInfo.mjs";
 
 var ButtonVerifyHandlerError = /* @__PURE__ */Caml_exceptions.create("Buttons_Verify.ButtonVerifyHandlerError");
-
-var BrightIdError = /* @__PURE__ */Caml_exceptions.create("Buttons_Verify.BrightIdError");
 
 Env.createEnv(undefined);
 
@@ -149,7 +148,7 @@ function execute(interaction) {
                                                                   });
                                                       });
                                           }
-                                          if (obj.RE_EXN_ID === BrightIdError) {
+                                          if (obj.RE_EXN_ID === Exceptions.BrightIdError) {
                                             return handleUnverifiedGuildMember(obj._1.errorNum, interaction);
                                           }
                                           throw obj;
@@ -235,7 +234,6 @@ export {
   brightIdLinkVerificationEndpoint ,
   context ,
   ButtonVerifyHandlerError ,
-  BrightIdError ,
   config$1 as config,
   getRolebyRoleId ,
   getGuildDataFromGist ,

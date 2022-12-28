@@ -6,6 +6,7 @@ import * as Curry from "rescript/lib/es6/curry.js";
 import * as Js_dict from "rescript/lib/es6/js_dict.js";
 import * as $$Promise from "@ryyppy/rescript-promise/src/Promise.mjs";
 import * as Endpoints from "./Endpoints.mjs";
+import * as Exceptions from "./Exceptions.mjs";
 import * as Gist$Utils from "@brightidbot/utils/src/Gist.mjs";
 import * as DiscordJs from "discord.js";
 import * as Belt_Option from "rescript/lib/es6/belt_Option.js";
@@ -27,8 +28,6 @@ import * as Services_VerificationInfo from "./services/Services_VerificationInfo
 var RequestHandlerError = /* @__PURE__ */Caml_exceptions.create("Bot.RequestHandlerError");
 
 var GuildNotInGist = /* @__PURE__ */Caml_exceptions.create("Bot.GuildNotInGist");
-
-var BrightIdError = /* @__PURE__ */Caml_exceptions.create("Bot.BrightIdError");
 
 function updateGist(prim0, prim1) {
   return UpdateOrReadGistMjs.updateGist(prim0, prim1);
@@ -156,7 +155,7 @@ async function onInteraction(interaction) {
     }
     catch (raw_e){
       var e = Caml_js_exceptions.internalToOCamlException(raw_e);
-      if (e.RE_EXN_ID === BrightIdError) {
+      if (e.RE_EXN_ID === Exceptions.BrightIdError) {
         console.error("" + guildName + " : " + guildId + ": ", e._1.errorMessage);
       } else if (e.RE_EXN_ID === $$Promise.JsError) {
         console.error("" + guildName + " : " + guildId + ": ", e._1);
@@ -181,7 +180,7 @@ async function onInteraction(interaction) {
     }
     catch (raw_e$1){
       var e$1 = Caml_js_exceptions.internalToOCamlException(raw_e$1);
-      if (e$1.RE_EXN_ID === BrightIdError) {
+      if (e$1.RE_EXN_ID === Exceptions.BrightIdError) {
         console.error("" + guildName + " : " + guildId + ": ", e$1._1.errorMessage);
       } else if (e$1.RE_EXN_ID === $$Promise.JsError) {
         console.error("" + guildName + " : " + guildId + ": ", e$1._1);
@@ -247,7 +246,7 @@ async function onGuildMemberAdd(guildMember) {
   }
   catch (raw_e){
     var e = Caml_js_exceptions.internalToOCamlException(raw_e);
-    if (e.RE_EXN_ID === Services_VerificationInfo.BrightIdError) {
+    if (e.RE_EXN_ID === Exceptions.BrightIdError) {
       console.error("" + guildName + " : " + guildId + ": ", e._1.errorMessage);
     } else if (e.RE_EXN_ID === $$Promise.JsError) {
       console.error("" + guildName + " : " + guildId + ": ", e._1);
@@ -431,7 +430,6 @@ export {
   context ,
   RequestHandlerError ,
   GuildNotInGist ,
-  BrightIdError ,
   updateGist ,
   envConfig$1 as envConfig,
   options ,

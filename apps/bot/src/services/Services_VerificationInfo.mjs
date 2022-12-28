@@ -4,15 +4,13 @@ import * as Env from "../Env.mjs";
 import * as Uuid from "uuid";
 import * as $$Promise from "@ryyppy/rescript-promise/src/Promise.mjs";
 import * as Endpoints from "../Endpoints.mjs";
+import * as Exceptions from "../Exceptions.mjs";
 import NodeFetch from "node-fetch";
 import * as Decode$Shared from "@brightidbot/shared/src/Decode.mjs";
-import * as Caml_exceptions from "rescript/lib/es6/caml_exceptions.js";
 import * as Constants$Shared from "@brightidbot/shared/src/Constants.mjs";
 import * as Json$JsonCombinators from "@glennsl/rescript-json-combinators/src/Json.mjs";
 import * as Services_ResponseCodes from "./Services_ResponseCodes.mjs";
 import * as Json_Decode$JsonCombinators from "@glennsl/rescript-json-combinators/src/Json_Decode.mjs";
-
-var BrightIdError = /* @__PURE__ */Caml_exceptions.create("Services_VerificationInfo.BrightIdError");
 
 var UUID = {};
 
@@ -55,7 +53,7 @@ function fetchVerificationInfo(retryOpt, id) {
                               });
                   } else if (match$1.TAG === /* Ok */0) {
                     return Promise.reject({
-                                RE_EXN_ID: BrightIdError,
+                                RE_EXN_ID: Exceptions.BrightIdError,
                                 _1: match$1._0
                               });
                   } else {
@@ -93,7 +91,6 @@ var verificationPollingEvery = 3000;
 var requestTimeout = 60000;
 
 export {
-  BrightIdError ,
   UUID ,
   config$1 as config,
   context ,

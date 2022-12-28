@@ -7,6 +7,7 @@ import * as Ethers from "ethers";
 import * as Js_dict from "rescript/lib/es6/js_dict.js";
 import * as $$Promise from "@ryyppy/rescript-promise/src/Promise.mjs";
 import * as Endpoints from "../Endpoints.mjs";
+import * as Exceptions from "../Exceptions.mjs";
 import * as Gist$Utils from "@brightidbot/utils/src/Gist.mjs";
 import * as DiscordJs from "discord.js";
 import * as Belt_Option from "rescript/lib/es6/belt_Option.js";
@@ -19,8 +20,6 @@ import * as Constants$Shared from "@brightidbot/shared/src/Constants.mjs";
 import * as Caml_js_exceptions from "rescript/lib/es6/caml_js_exceptions.js";
 import * as Json$JsonCombinators from "@glennsl/rescript-json-combinators/src/Json.mjs";
 import * as Json_Decode$JsonCombinators from "@glennsl/rescript-json-combinators/src/Json_Decode.mjs";
-
-var BrightIdError = /* @__PURE__ */Caml_exceptions.create("Buttons_PremiumSponsor.BrightIdError");
 
 var ButtonSponsorHandlerError = /* @__PURE__ */Caml_exceptions.create("Buttons_PremiumSponsor.ButtonSponsorHandlerError");
 
@@ -127,7 +126,7 @@ async function checkSponsor(uuid) {
   }
   if (match$1.TAG === /* Ok */0) {
     throw {
-          RE_EXN_ID: BrightIdError,
+          RE_EXN_ID: Exceptions.BrightIdError,
           _1: match$1._0,
           Error: new Error()
         };
@@ -185,7 +184,7 @@ async function handleSponsor(interaction, maybeHashOpt, attemptsOpt, uuid) {
               }
               catch (raw_obj){
                 var obj = Caml_js_exceptions.internalToOCamlException(raw_obj);
-                if (obj.RE_EXN_ID === BrightIdError) {
+                if (obj.RE_EXN_ID === Exceptions.BrightIdError) {
                   await sleep(30000);
                   return await handleSponsor(interaction, Caml_option.some(maybeHash), attempts - 1 | 0, uuid);
                 }
@@ -240,7 +239,7 @@ async function handleSponsor(interaction, maybeHashOpt, attemptsOpt, uuid) {
               }
               catch (raw_obj$1){
                 var obj$2 = Caml_js_exceptions.internalToOCamlException(raw_obj$1);
-                if (obj$2.RE_EXN_ID === BrightIdError) {
+                if (obj$2.RE_EXN_ID === Exceptions.BrightIdError) {
                   await sleep(30000);
                   return await handleSponsor(interaction, Caml_option.some(maybeHash), attempts - 1 | 0, uuid);
                 }
@@ -292,7 +291,7 @@ async function handleSponsor(interaction, maybeHashOpt, attemptsOpt, uuid) {
               }
               catch (raw_obj$2){
                 var obj$4 = Caml_js_exceptions.internalToOCamlException(raw_obj$2);
-                if (obj$4.RE_EXN_ID === BrightIdError) {
+                if (obj$4.RE_EXN_ID === Exceptions.BrightIdError) {
                   await sleep(30000);
                   return await handleSponsor(interaction, Caml_option.some(maybeHash), attempts - 1 | 0, uuid);
                 }
@@ -519,7 +518,6 @@ export {
   createMessageAttachmentFromCanvas ,
   makeBeforeSponsorActionRow ,
   unknownErrorMessage ,
-  BrightIdError ,
   ButtonSponsorHandlerError ,
   sleep ,
   envConfig ,

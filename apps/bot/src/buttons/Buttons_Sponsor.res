@@ -15,7 +15,6 @@ let {
   unknownErrorMessage,
 } = module(Commands_Verify)
 
-exception BrightIdError(BrightId.Error.t)
 exception ButtonSponsorHandlerError(string)
 
 @val @scope("globalThis")
@@ -112,16 +111,13 @@ let checkSponsor = async uuid => {
 
   switch (json->Json.decode(Sponsorships.data), json->Json.decode(Error.data)) {
   | (Ok({data}), _) => Sponsorship(data)
-  | (_, Ok(error)) => error->BrightIdError->raise
+  | (_, Ok(error)) => error->Exceptions.BrightIdError->raise
   | (Error(err), _) => err->Json.Decode.DecodeError->raise
   }
 }
 
 exception HandleSponsorError(string)
-type sponsor =
-  | SponsorSuccess(BrightId.Sponsorships.sponsor)
-  | BrightIdError(BrightId.Error.t)
-  | JsError(Js.Exn.t)
+type sponsor = SponsorSuccess(BrightId.Sponsorships.sponsor)
 type handleSponsor =
   | SponsorshipUsed
   | RetriedCommandDuring
@@ -182,7 +178,7 @@ let rec handleSponsor = async (interaction, ~maybeHash=None, ~attempts=30, uuid)
                   ~attempts=attempts - 1,
                 )
               }
-            | exception BrightIdError(_) =>
+            | exception Exceptions.BrightIdError(_) =>
               let _ = await sleep(secondsBetweenAttempts * 1000)
               await handleSponsor(interaction, uuid, ~maybeHash=Some(hash), ~attempts=attempts - 1)
             | exception JsError(obj) =>
@@ -215,7 +211,7 @@ let rec handleSponsor = async (interaction, ~maybeHash=None, ~attempts=30, uuid)
                   ~attempts=attempts - 1,
                 )
               }
-            | exception BrightIdError(_) =>
+            | exception Exceptions.BrightIdError(_) =>
               let _ = await sleep(secondsBetweenAttempts * 1000)
               await handleSponsor(interaction, uuid, ~maybeHash=Some(hash), ~attempts=attempts - 1)
             | exception JsError(obj) =>
@@ -258,7 +254,7 @@ let rec handleSponsor = async (interaction, ~maybeHash=None, ~attempts=30, uuid)
                   ~attempts=attempts - 1,
                 )
               }
-            | exception BrightIdError(_) =>
+            | exception Exceptions.BrightIdError(_) =>
               let _ = await sleep(secondsBetweenAttempts * 1000)
               await handleSponsor(interaction, uuid, ~maybeHash=Some(hash), ~attempts=attempts - 1)
             | exception JsError(obj) =>

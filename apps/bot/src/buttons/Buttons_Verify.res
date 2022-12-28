@@ -8,7 +8,6 @@ let {brightIdVerificationEndpoint, brightIdAppDeeplink, brightIdLinkVerification
 let {context} = module(Constants)
 
 exception ButtonVerifyHandlerError(string)
-exception BrightIdError(BrightId.Error.t)
 
 Env.createEnv()
 
@@ -130,7 +129,7 @@ let execute = interaction => {
                 "ephemeral": true,
               }
               interaction->Interaction.followUp(~options, ())->then(_ => JsError(obj)->reject)
-            | exception BrightIdError({errorNum}) =>
+            | exception Exceptions.BrightIdError({errorNum}) =>
               errorNum->handleUnverifiedGuildMember(interaction)
             | VerificationInfo({contextIds, unique}) =>
               let contextIdsLength = contextIds->Belt.Array.length

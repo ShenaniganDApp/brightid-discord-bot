@@ -2,9 +2,6 @@ open Promise
 open NodeFetch
 open Shared
 
-//@TODO move all top level exceptions to a new file
-exception BrightIdError(BrightId.Error.t)
-
 type verificationInfo = VerificationInfo(BrightId.ContextId.t)
 
 module UUID = {
@@ -51,9 +48,10 @@ let rec fetchVerificationInfo = (~retry=5, id): Promise.t<verificationInfo> => {
   ->then(Response.json)
   ->then(json => {
     open Decode.Decode_BrightId
+
     switch (json->Json.decode(ContextId.data), json->Json.decode(Error.data)) {
     | (Ok({data}), _) => VerificationInfo(data)->resolve
-    | (_, Ok(error)) => error->BrightIdError->reject
+    | (_, Ok(error)) => error->Exceptions.BrightIdError->reject
     | (Error(err), _) => err->Json.Decode.DecodeError->reject
     }
   })

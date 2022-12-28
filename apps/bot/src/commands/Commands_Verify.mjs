@@ -9,6 +9,7 @@ import * as Js_dict from "rescript/lib/es6/js_dict.js";
 import * as $$Promise from "@ryyppy/rescript-promise/src/Promise.mjs";
 import * as Endpoints from "../Endpoints.mjs";
 import * as Belt_Array from "rescript/lib/es6/belt_Array.js";
+import * as Exceptions from "../Exceptions.mjs";
 import * as Gist$Utils from "@brightidbot/utils/src/Gist.mjs";
 import * as DiscordJs from "discord.js";
 import * as Belt_Option from "rescript/lib/es6/belt_Option.js";
@@ -21,8 +22,6 @@ import * as Builders from "@discordjs/builders";
 import * as Services_VerificationInfo from "../services/Services_VerificationInfo.mjs";
 
 var VerifyHandlerError = /* @__PURE__ */Caml_exceptions.create("Commands_Verify.VerifyHandlerError");
-
-var BrightIdError = /* @__PURE__ */Caml_exceptions.create("Commands_Verify.BrightIdError");
 
 function sleep(ms) {
   return (new Promise((resolve) => setTimeout(resolve, ms)));
@@ -268,7 +267,7 @@ async function getAppUnusedSponsorships(context) {
   }
   catch (raw_exn){
     var exn = Caml_js_exceptions.internalToOCamlException(raw_exn);
-    if (exn.RE_EXN_ID === BrightIdError) {
+    if (exn.RE_EXN_ID === Exceptions.BrightIdError) {
       return ;
     }
     if (exn.RE_EXN_ID === $$Promise.JsError) {
@@ -335,7 +334,7 @@ function execute(interaction) {
                                                                         });
                                                             });
                                                 }), (async function (e) {
-                                                if (e.RE_EXN_ID === BrightIdError) {
+                                                if (e.RE_EXN_ID === Exceptions.BrightIdError) {
                                                   var errorNum = e._1.errorNum;
                                                   var whitelist = envConfig.sponsorshipsWhitelist.split(",");
                                                   var inWhitelist = whitelist.includes(guild.id);
@@ -496,7 +495,6 @@ export {
   context ,
   contractAddressID ,
   VerifyHandlerError ,
-  BrightIdError ,
   sleep ,
   abi ,
   Canvas$1 as Canvas,

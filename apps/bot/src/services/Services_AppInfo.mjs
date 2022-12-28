@@ -3,15 +3,13 @@
 import * as Env from "../Env.mjs";
 import * as $$Promise from "@ryyppy/rescript-promise/src/Promise.mjs";
 import * as Endpoints from "../Endpoints.mjs";
+import * as Exceptions from "../Exceptions.mjs";
 import NodeFetch from "node-fetch";
 import * as Decode$Shared from "@brightidbot/shared/src/Decode.mjs";
-import * as Caml_exceptions from "rescript/lib/es6/caml_exceptions.js";
 import * as Constants$Shared from "@brightidbot/shared/src/Constants.mjs";
 import * as Caml_js_exceptions from "rescript/lib/es6/caml_js_exceptions.js";
 import * as Json$JsonCombinators from "@glennsl/rescript-json-combinators/src/Json.mjs";
 import * as Json_Decode$JsonCombinators from "@glennsl/rescript-json-combinators/src/Json_Decode.mjs";
-
-var BrightIdError = /* @__PURE__ */Caml_exceptions.create("Services_AppInfo.BrightIdError");
 
 var UUID = {};
 
@@ -51,7 +49,7 @@ function fetchAppInformation(retryOpt, context) {
                     return Promise.resolve(match._0.data);
                   } else if (match$1.TAG === /* Ok */0) {
                     return Promise.reject({
-                                RE_EXN_ID: BrightIdError,
+                                RE_EXN_ID: Exceptions.BrightIdError,
                                 _1: match$1._0
                               });
                   } else {
@@ -71,9 +69,9 @@ function fetchAppInformation(retryOpt, context) {
                 }
                 catch (raw_error){
                   var error = Caml_js_exceptions.internalToOCamlException(raw_error);
-                  if (error.RE_EXN_ID === BrightIdError) {
+                  if (error.RE_EXN_ID === Exceptions.BrightIdError) {
                     return Promise.reject({
-                                RE_EXN_ID: BrightIdError,
+                                RE_EXN_ID: Exceptions.BrightIdError,
                                 _1: error._1
                               });
                   }
@@ -104,7 +102,6 @@ var requestTimeout = 60000;
 export {
   context ,
   brightIdAppsEndpoint ,
-  BrightIdError ,
   UUID ,
   config$1 as config,
   verificationPollingEvery ,

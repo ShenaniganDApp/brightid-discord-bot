@@ -8,7 +8,6 @@ let {context} = module(Constants)
 
 exception RequestHandlerError(string)
 exception GuildNotInGist(string)
-exception BrightIdError(BrightId.Error.t)
 
 module type Command = {
   let data: SlashCommandBuilder.t
@@ -129,7 +128,7 @@ let onInteraction = async (interaction: Interaction.t) => {
         switch await Command.execute(interaction) {
         | exception e =>
           switch e {
-          | BrightIdError({errorMessage}) =>
+          | Exceptions.BrightIdError({errorMessage}) =>
             Js.Console.error2(`${guildName} : ${guildId}: `, errorMessage)
           | JsError(obj) => Js.Console.error2(`${guildName} : ${guildId}: `, obj)
           | _ => Js.Console.error2(`${guildName} : ${guildId}: `, e)
@@ -152,7 +151,7 @@ let onInteraction = async (interaction: Interaction.t) => {
         switch await Button.execute(interaction) {
         | exception e =>
           switch e {
-          | BrightIdError({errorMessage}) =>
+          | Exceptions.BrightIdError({errorMessage}) =>
             Js.Console.error2(`${guildName} : ${guildId}: `, errorMessage)
           | JsError(obj) => Js.Console.error2(`${guildName} : ${guildId}: `, obj)
           | _ => Js.Console.error2(`${guildName} : ${guildId}: `, e)
@@ -250,7 +249,7 @@ let onGuildMemberAdd = async guildMember => {
     }
   | exception e =>
     switch e {
-    | BrightIdError({errorMessage}) =>
+    | Exceptions.BrightIdError({errorMessage}) =>
       Js.Console.error2(`${guildName} : ${guildId}: `, errorMessage)
     | JsError(obj) => Js.Console.error2(`${guildName} : ${guildId}: `, obj)
     | _ => Js.Console.error2(`${guildName} : ${guildId}: `, e)

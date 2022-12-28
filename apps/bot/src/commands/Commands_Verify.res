@@ -9,7 +9,6 @@ let {brightIdVerificationEndpoint, brightIdAppDeeplink, brightIdLinkVerification
 let {context, contractAddressID} = module(Shared.Constants)
 
 exception VerifyHandlerError(string)
-exception BrightIdError(BrightId.Error.t)
 
 @val @scope("globalThis")
 external fetch: (string, 'params) => Promise.t<Response.t<Js.Json.t>> = "fetch"
@@ -275,7 +274,7 @@ let hasPremium = (guildData: BrightId.Gist.brightIdGuild) =>
 
 let getAppUnusedSponsorships = async context => {
   switch await Services_AppInfo.getAppInfo(context) {
-  | exception BrightIdError(_) => None
+  | exception Exceptions.BrightIdError(_) => None
   | exception JsError(_) => None
   | data => Some(data.unusedSponsorships)
   }
@@ -380,7 +379,7 @@ let execute = interaction => {
             ->catch(
               async e => {
                 switch e {
-                | BrightIdError({errorNum, errorMessage}) =>
+                | Exceptions.BrightIdError({errorNum, errorMessage}) =>
                   let whitelist = envConfig["sponsorshipsWhitelist"]->Js.String2.split(",")
                   let inWhitelist = whitelist->Js.Array2.includes(guild->Guild.getGuildId)
                   switch await getAppUnusedSponsorships(context) {

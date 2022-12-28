@@ -6,7 +6,6 @@ let {context} = module(Constants)
 
 let {brightIdAppsEndpoint} = module(Endpoints)
 //@TODO move all top level exceptions to a new file
-exception BrightIdError(BrightId.Error.t)
 
 module UUID = {
   type t = string
@@ -47,7 +46,7 @@ let rec fetchAppInformation = (~retry=5, context): Promise.t<BrightId.App.t> => 
     open Decode.Decode_BrightId
     switch (json->Json.decode(App.data), json->Json.decode(Error.data)) {
     | (Ok({data}), _) => data->resolve
-    | (_, Ok(error)) => error->BrightIdError->reject
+    | (_, Ok(error)) => error->Exceptions.BrightIdError->reject
     | (Error(err), _) => err->Json.Decode.DecodeError->reject
     }
   })
@@ -56,7 +55,7 @@ let rec fetchAppInformation = (~retry=5, context): Promise.t<BrightId.App.t> => 
     switch retry {
     | 0 =>
       switch e {
-      | exception BrightIdError(error) => BrightIdError(error)->reject
+      | exception Exceptions.BrightIdError(error) => Exceptions.BrightIdError(error)->reject
       | exception JsError(obj) => JsError(obj)->reject
       | _ => e->raise
       }
