@@ -51,12 +51,11 @@ function noUnusedSponsorshipsOptions(param) {
 }
 
 async function unsuccessfulSponsorMessageOptions(uuid) {
+  var verifyUrl = "" + Endpoints.brightIdLinkVerificationEndpoint + "/" + uuid + "";
   var uri = "" + Endpoints.brightIdAppDeeplink + "/" + uuid + "";
   var canvas = await Commands_Verify.makeCanvasFromUri(uri);
   var attachment = await Commands_Verify.createMessageAttachmentFromCanvas(canvas);
-  var row = function (param) {
-    return Commands_Verify.makeBeforeSponsorActionRow("Retry Sponsor", param);
-  };
+  var row = Commands_Verify.makeBeforeSponsorActionRow("Retry Sponsor", verifyUrl);
   return {
           content: "Your sponsor request failed. \n\n This is often due to the BrightID App not being linked to Discord. Please scan this QR code in the BrightID mobile app then retry your sponsorship request.\n\n",
           files: [attachment],
@@ -475,7 +474,7 @@ async function execute(interaction) {
                 break;
             case /* TimedOut */3 :
                 var options$2 = await unsuccessfulSponsorMessageOptions(uuid);
-                await interaction.followUp(options$2);
+                await interaction.editReply(options$2);
                 break;
             
           }

@@ -37,10 +37,11 @@ let noUnusedSponsorshipsOptions = () =>
   }
 
 let unsuccessfulSponsorMessageOptions = async uuid => {
+  let verifyUrl = `${brightIdLinkVerificationEndpoint}/${uuid}`
   let uri = `${brightIdAppDeeplink}/${uuid}`
   let canvas = await makeCanvasFromUri(uri)
   let attachment = await createMessageAttachmentFromCanvas(canvas)
-  let row = makeBeforeSponsorActionRow("Retry Sponsor")
+  let row = makeBeforeSponsorActionRow("Retry Sponsor", verifyUrl)
   {
     "content": "Your sponsor request failed. \n\n This is often due to the BrightID App not being linked to Discord. Please scan this QR code in the BrightID mobile app then retry your sponsorship request.\n\n",
     "files": [attachment],
@@ -356,7 +357,7 @@ let execute = async interaction => {
           let _ = await Interaction.followUp(interaction, ~options, ())
         | TimedOut =>
           let options = await unsuccessfulSponsorMessageOptions(uuid)
-          let _ = await Interaction.followUp(interaction, ~options, ())
+          let _ = await Interaction.editReply(interaction, ~options, ())
         | exception HandleSponsorError(errorMessage) =>
           let guildName = guild->Guild.getGuildName
           Js.Console.error2(
