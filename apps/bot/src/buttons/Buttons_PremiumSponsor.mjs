@@ -21,8 +21,6 @@ import * as Caml_js_exceptions from "rescript/lib/es6/caml_js_exceptions.js";
 import * as Json$JsonCombinators from "@glennsl/rescript-json-combinators/src/Json.mjs";
 import * as Json_Decode$JsonCombinators from "@glennsl/rescript-json-combinators/src/Json_Decode.mjs";
 
-var ButtonSponsorHandlerError = /* @__PURE__ */Caml_exceptions.create("Buttons_PremiumSponsor.ButtonSponsorHandlerError");
-
 function sleep(ms) {
   return (new Promise((resolve) => setTimeout(resolve, ms)));
 }
@@ -378,18 +376,8 @@ async function execute(interaction) {
         });
     exit = 1;
   }
-  catch (raw_obj){
-    var obj = Caml_js_exceptions.internalToOCamlException(raw_obj);
-    if (obj.RE_EXN_ID === $$Promise.JsError) {
-      var msg = obj._1.message;
-      if (msg !== undefined) {
-        console.error(msg);
-      } else {
-        console.error("Must be some non-error value");
-      }
-      return ;
-    }
-    throw obj;
+  catch (e){
+    throw e;
   }
   if (exit === 1) {
     var exit$1 = 0;
@@ -399,18 +387,18 @@ async function execute(interaction) {
       exit$1 = 2;
     }
     catch (raw_msg){
-      var msg$1 = Caml_js_exceptions.internalToOCamlException(raw_msg);
-      if (msg$1.RE_EXN_ID === $$Promise.JsError) {
-        console.error(msg$1._1);
+      var msg = Caml_js_exceptions.internalToOCamlException(raw_msg);
+      if (msg.RE_EXN_ID === $$Promise.JsError) {
+        console.error(msg._1);
         await Commands_Verify.unknownErrorMessage(interaction);
         return ;
       }
-      if (msg$1.RE_EXN_ID === Json_Decode$JsonCombinators.DecodeError) {
-        console.error(msg$1._1);
+      if (msg.RE_EXN_ID === Json_Decode$JsonCombinators.DecodeError) {
+        console.error(msg._1);
         await Commands_Verify.unknownErrorMessage(interaction);
         return ;
       }
-      throw msg$1;
+      throw msg;
     }
     if (exit$1 === 2) {
       var guildData = Js_dict.get(guilds, guildId);
@@ -481,9 +469,12 @@ async function execute(interaction) {
         }
         return ;
       }
-      console.error("Buttons_Sponsor: Guild with guildId: " + guildId + " not found in gist");
-      noWriteToGistMessage(interaction);
-      return ;
+      await noWriteToGistMessage(interaction);
+      throw {
+            RE_EXN_ID: Exceptions.PremiumSponsorButtonError,
+            _1: "Buttons_PremiumSponsor: Guild with guildId: " + guildId + " not found in gist",
+            Error: new Error()
+          };
     }
     
   }
@@ -517,7 +508,6 @@ export {
   createMessageAttachmentFromCanvas ,
   makeBeforeSponsorActionRow ,
   unknownErrorMessage ,
-  ButtonSponsorHandlerError ,
   sleep ,
   envConfig ,
   noUnusedSponsorshipsOptions ,

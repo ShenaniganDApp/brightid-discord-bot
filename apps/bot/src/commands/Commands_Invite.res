@@ -1,7 +1,6 @@
 open Discord
 open Promise
-
-exception InviteCommandError(string)
+open Exceptions
 
 @module("../updateOrReadGist.mjs")
 external updateGist: (string, 'a) => Js.Promise.t<unit> = "updateGist"

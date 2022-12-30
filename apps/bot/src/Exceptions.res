@@ -1,1 +1,6 @@
 exception BrightIdError(Shared.BrightId.Error.t)
+exception VerifyCommandError(string)
+exception InviteCommandError(string)
+exception ButtonVerifyHandlerError(string)
+exception SponsorButtonError(string)
+exception PremiumSponsorButtonError(string)

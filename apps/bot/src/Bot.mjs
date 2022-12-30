@@ -157,6 +157,10 @@ async function onInteraction(interaction) {
       var e = Caml_js_exceptions.internalToOCamlException(raw_e);
       if (e.RE_EXN_ID === Exceptions.BrightIdError) {
         console.error("" + guildName + " : " + guildId + ": ", e._1.errorMessage);
+      } else if (e.RE_EXN_ID === Exceptions.VerifyCommandError) {
+        console.error("" + guildName + " : " + guildId + ": ", e._1);
+      } else if (e.RE_EXN_ID === Exceptions.InviteCommandError) {
+        console.error("" + guildName + " : " + guildId + ": ", e._1);
       } else if (e.RE_EXN_ID === $$Promise.JsError) {
         console.error("" + guildName + " : " + guildId + ": ", e._1);
       } else {
@@ -182,6 +186,12 @@ async function onInteraction(interaction) {
       var e$1 = Caml_js_exceptions.internalToOCamlException(raw_e$1);
       if (e$1.RE_EXN_ID === Exceptions.BrightIdError) {
         console.error("" + guildName + " : " + guildId + ": ", e$1._1.errorMessage);
+      } else if (e$1.RE_EXN_ID === Exceptions.PremiumSponsorButtonError) {
+        console.error("" + guildName + " : " + guildId + ": ", e$1._1);
+      } else if (e$1.RE_EXN_ID === Exceptions.SponsorButtonError) {
+        console.error("" + guildName + " : " + guildId + ": ", e$1._1);
+      } else if (e$1.RE_EXN_ID === Exceptions.ButtonVerifyHandlerError) {
+        console.error("" + guildName + " : " + guildId + ": ", e$1._1);
       } else if (e$1.RE_EXN_ID === $$Promise.JsError) {
         console.error("" + guildName + " : " + guildId + ": ", e$1._1);
       } else {

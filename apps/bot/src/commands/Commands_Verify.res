@@ -2,13 +2,12 @@ open Promise
 open Discord
 open Shared
 open NodeFetch
+open Exceptions
 
 let {brightIdVerificationEndpoint, brightIdAppDeeplink, brightIdLinkVerificationEndpoint} = module(
   Endpoints
 )
 let {context, contractAddressID} = module(Shared.Constants)
-
-exception VerifyHandlerError(string)
 
 @val @scope("globalThis")
 external fetch: (string, 'params) => Promise.t<Response.t<Js.Json.t>> = "fetch"
@@ -120,7 +119,7 @@ let getRolebyRoleId = (guildRoleManager, roleId) => {
 
   switch guildRole {
   | Some(guildRole) => guildRole
-  | None => VerifyHandlerError("Could not find a role with the id " ++ roleId)->raise
+  | None => VerifyCommandError("Could not find a role with the id " ++ roleId)->raise
   }
 }
 
@@ -216,11 +215,7 @@ let getAssignedSPFromAddress = async sponsorshipAddress => {
     ~address=sponsorshipAddress,
     ~formattedContext,
   ) {
-  | spBalance =>
-    if spBalance->Ethers.BigNumber.isZero {
-      NoAvailableSP->raise
-    }
-    spBalance
+  | spBalance => spBalance->Ethers.BigNumber.isZero ? NoAvailableSP->raise : spBalance
   | exception JsError(obj) =>
     switch Js.Exn.message(obj) {
     | Some(msg) =>
@@ -314,8 +309,10 @@ let execute = interaction => {
   ->then(_ => {
     open Shared.Decode
 
-    Gist.ReadGist.content(~config=gistConfig(), ~decoder=Decode_Gist.brightIdGuilds)
-    ->then(guilds => {
+    Gist.ReadGist.content(
+      ~config=gistConfig(),
+      ~decoder=Decode_Gist.brightIdGuilds,
+    )->then(guilds => {
       let guildId = guild->Guild.getGuildId
       let guildData = guilds->Js.Dict.get(guildId)
       switch guildData {
@@ -325,168 +322,151 @@ let execute = interaction => {
         }
         interaction
         ->Interaction.editReply(~options, ())
-        ->then(_ => VerifyHandlerError(`Guild could not be found in the database`)->reject)
+        ->then(_ => VerifyCommandError(`Guild could not be found in the database`)->reject)
 
-      | Some(guildData) => {
-          let roleId = guildData.roleId
-          switch roleId {
-          | None =>
-            let options = {
-              "content": "Hi, sorry about that. I couldn't retrieve the data for this server from BrightID. Try reinviting the bot. \n\n **Note: This will create a new role BrightID Role.**",
-            }
-            interaction
-            ->Interaction.editReply(~options, ())
-            ->then(_ => VerifyHandlerError(`Guild does not have a saved roleId`)->reject)
-          | Some(roleId) =>
-            let guildRole = guildRoleManager->getRolebyRoleId(roleId)
-            member
-            ->Services_VerificationInfo.getBrightIdVerification
-            ->then(
-              verificationInfo => {
-                switch verificationInfo {
-                | VerificationInfo({unique}) =>
-                  switch unique {
-                  | true =>
-                    guildRole
-                    ->addRoleToMember(member)
-                    ->then(
-                      _ => {
-                        let options = {
-                          "content": `Hey, I recognize you! I just gave you the \`${guildRole->Role.getName}\` role. You are now BrightID verified in ${guild->Guild.getGuildName} server!`,
-                          "ephemeral": true,
-                        }
-                        interaction->Interaction.editReply(~options, ())->then(_ => resolve())
-                      },
-                    )
-
-                  | false =>
-                    let options = {
-                      "content": `Hey, I recognize you, but your account seems to be linked to a sybil attack. You have multiple Discord accounts on the same BrightID. If this is a mistake, contact one of the support channels. `,
-                      "ephemeral": true,
-                    }
-                    interaction
-                    ->Interaction.editReply(~options, ())
-                    ->then(
-                      _ =>
-                        VerifyHandlerError(
-                          `Commands_Verify: User with contextId: ${uuid} is not unique `,
-                        )->reject,
-                    )
-                  }
-                }
-              },
-            )
-            ->catch(
-              async e => {
-                switch e {
-                | Exceptions.BrightIdError({errorNum, errorMessage}) =>
-                  let whitelist = envConfig["sponsorshipsWhitelist"]->Js.String2.split(",")
-                  let inWhitelist = whitelist->Js.Array2.includes(guild->Guild.getGuildId)
-                  switch await getAppUnusedSponsorships(context) {
-                  | None =>
-                    let _ = await noSponsorshipsMessage(interaction)
-                    VerifyHandlerError("No sponsorships available in Discord pool")->raise
-                  | Some(appUnusedSponsorships) =>
-                    let (
-                      totalDiscordAssignedSponsorships,
-                      totalDiscordUsedSponsorships,
-                    ) = getDiscordServerSponsorshipTotals(guilds)
-                    let unusedDiscordSponsorships =
-                      totalDiscordAssignedSponsorships->Ethers.BigNumber.sub(
-                        totalDiscordUsedSponsorships,
-                      )
-                    let unusedPremiumSponsorships =
-                      appUnusedSponsorships
-                      ->Belt.Float.toString
-                      ->Ethers.BigNumber.fromString
-                      ->Ethers.BigNumber.sub(unusedDiscordSponsorships)
-                    let hasPremium = hasPremium(guildData)
-                    let premiumCanBeUsed =
-                      unusedPremiumSponsorships->Ethers.BigNumber.gtWithString("0") && hasPremium
-                    switch (errorNum, premiumCanBeUsed, guildData.sponsorshipAddress, inWhitelist) {
-                    //Not in beta whitelist
-                    | (4, _, _, false) =>
-                      let _ = await noSponsorshipsMessage(interaction)
-                      VerifyHandlerError("Guild not in beta whitelist")->raise
-                    // Use Premium Sponsorships
-                    | (4, true, _, _) =>
-                      Js.log2(
-                        "Unused Sponsorships in premium pool: ",
-                        unusedPremiumSponsorships->Ethers.BigNumber.toString,
-                      )
-                      let options = await beforeSponsorMessageOptions(
-                        "before-premium-sponsor",
-                        uuid,
-                      )
-                      let _ = await Interaction.editReply(interaction, ~options, ())
-
-                    // Has Sponsorship Address
-                    | (4, false, Some(sponsorshipAddress), true) =>
-                      switch await getAssignedSPFromAddress(sponsorshipAddress) {
-                      | assignedSponsorships =>
-                        let usedSponsorships =
-                          guildData.usedSponsorships->Belt.Option.getWithDefault(
-                            Ethers.BigNumber.zero->Ethers.BigNumber.toString,
-                          )
-                        let availableSponsorships =
-                          assignedSponsorships->Ethers.BigNumber.subWithString(usedSponsorships)
-                        let assignedSponsorships = assignedSponsorships->Ethers.BigNumber.toString
-                        let updateAssignedSponsorships = await Utils.Gist.UpdateGist.updateEntry(
-                          ~config=gistConfig(),
-                          ~content=guilds,
-                          ~key=guildId,
-                          ~entry={...guildData, assignedSponsorships: Some(assignedSponsorships)},
-                        )
-                        let hasAvailableSponsorships = !Ethers.BigNumber.isZero(
-                          availableSponsorships,
-                        )
-                        switch (updateAssignedSponsorships, hasAvailableSponsorships) {
-                        | (Ok(_), false) =>
-                          let _ = await noSponsorshipsMessage(interaction)
-                        | (Ok(_), true) =>
-                          let options = await beforeSponsorMessageOptions("before-sponsor", uuid)
-                          let _ = await Interaction.editReply(interaction, ~options, ())
-                        | (Error(_), _) =>
-                          let _ = await noWriteToGistMessage(interaction)
-                        }
-                      | exception NoAvailableSP =>
-                        let _ = await noSponsorshipsMessage(interaction)
-                        VerifyHandlerError("This server has no usable sponsorships")->raise
-                      | exception JsError(obj) =>
-                        Js.Console.error(obj)
-                        VerifyHandlerError("Unknown JS Error")->raise
-                      }
-                    // No Sponsorship Address and No Premium
-                    | (4, false, None, true) =>
-                      let _ = await noSponsorshipsMessage(interaction)
-                      VerifyHandlerError("Does not have a sponsorship address set")->raise
-                    | (_, _, _, _) =>
-                      let _ = switch await handleUnverifiedGuildMember(
-                        errorNum,
-                        interaction,
-                        uuid,
-                      ) {
-                      | data => Some(data)
-                      | exception JsError(obj) =>
-                        Js.Console.error(obj)
-                        VerifyHandlerError("Unknown JS Error")->raise
-                      }
-                    }
-                  }
-                | _ => e->raise
-                }
-              },
-            )
+      | Some(guildData) =>
+        switch guildData.roleId {
+        | None =>
+          let options = {
+            "content": "Hi, sorry about that. I couldn't retrieve the data for this server from BrightID. Try reinviting the bot. \n\n **Note: This will create a new role BrightID Role.**",
           }
+          interaction
+          ->Interaction.editReply(~options, ())
+          ->then(_ => VerifyCommandError(`Guild does not have a saved roleId`)->reject)
+        | Some(roleId) =>
+          let guildRole = guildRoleManager->getRolebyRoleId(roleId)
+          Services_VerificationInfo.getBrightIdVerification(member)
+          ->then(
+            verificationInfo => {
+              switch verificationInfo {
+              | VerificationInfo({unique}) =>
+                switch unique {
+                | true =>
+                  guildRole
+                  ->addRoleToMember(member)
+                  ->then(
+                    _ => {
+                      let options = {
+                        "content": `Hey, I recognize you! I just gave you the \`${guildRole->Role.getName}\` role. You are now BrightID verified in ${guild->Guild.getGuildName} server!`,
+                        "ephemeral": true,
+                      }
+                      interaction->Interaction.editReply(~options, ())->then(_ => resolve())
+                    },
+                  )
+
+                | false =>
+                  let options = {
+                    "content": `Hey, I recognize you, but your account seems to be linked to a sybil attack. You have multiple Discord accounts on the same BrightID. If this is a mistake, contact one of the support channels. `,
+                    "ephemeral": true,
+                  }
+                  interaction
+                  ->Interaction.editReply(~options, ())
+                  ->then(
+                    _ =>
+                      VerifyCommandError(
+                        `Commands_Verify: User with contextId: ${uuid} is not unique `,
+                      )->reject,
+                  )
+                }
+              }
+            },
+          )
+          ->catch(
+            async e =>
+              switch e {
+              | Exceptions.BrightIdError({errorNum, errorMessage}) =>
+                let whitelist = envConfig["sponsorshipsWhitelist"]->Js.String2.split(",")
+                let inWhitelist = whitelist->Js.Array2.includes(guild->Guild.getGuildId)
+                switch await getAppUnusedSponsorships(context) {
+                | None =>
+                  let _ = await noSponsorshipsMessage(interaction)
+                  VerifyCommandError("No sponsorships available in Discord pool")->raise
+                | Some(appUnusedSponsorships) =>
+                  let (
+                    totalDiscordAssignedSponsorships,
+                    totalDiscordUsedSponsorships,
+                  ) = getDiscordServerSponsorshipTotals(guilds)
+                  let unusedDiscordSponsorships =
+                    totalDiscordAssignedSponsorships->Ethers.BigNumber.sub(
+                      totalDiscordUsedSponsorships,
+                    )
+                  let unusedPremiumSponsorships =
+                    appUnusedSponsorships
+                    ->Belt.Float.toString
+                    ->Ethers.BigNumber.fromString
+                    ->Ethers.BigNumber.sub(unusedDiscordSponsorships)
+                  let hasPremium = hasPremium(guildData)
+                  let premiumCanBeUsed =
+                    unusedPremiumSponsorships->Ethers.BigNumber.gtWithString("0") && hasPremium
+                  switch (errorNum, premiumCanBeUsed, guildData.sponsorshipAddress, inWhitelist) {
+                  //Not in beta whitelist
+                  | (4, _, _, false) =>
+                    let _ = await noSponsorshipsMessage(interaction)
+                    VerifyCommandError("Guild not in beta whitelist")->raise
+                  // Use Premium Sponsorships
+                  | (4, true, _, _) =>
+                    Js.log2(
+                      "Unused Sponsorships in premium pool: ",
+                      unusedPremiumSponsorships->Ethers.BigNumber.toString,
+                    )
+                    let options = await beforeSponsorMessageOptions("before-premium-sponsor", uuid)
+                    let _ = await Interaction.editReply(interaction, ~options, ())
+
+                  // Has Sponsorship Address
+                  | (4, false, Some(sponsorshipAddress), true) =>
+                    switch await getAssignedSPFromAddress(sponsorshipAddress) {
+                    | assignedSponsorships =>
+                      let usedSponsorships =
+                        guildData.usedSponsorships->Belt.Option.getWithDefault(
+                          Ethers.BigNumber.zero->Ethers.BigNumber.toString,
+                        )
+                      let availableSponsorships =
+                        assignedSponsorships->Ethers.BigNumber.subWithString(usedSponsorships)
+                      let assignedSponsorships = assignedSponsorships->Ethers.BigNumber.toString
+                      let updateAssignedSponsorships = await Utils.Gist.UpdateGist.updateEntry(
+                        ~config=gistConfig(),
+                        ~content=guilds,
+                        ~key=guildId,
+                        ~entry={...guildData, assignedSponsorships: Some(assignedSponsorships)},
+                      )
+                      let hasAvailableSponsorships = !Ethers.BigNumber.isZero(availableSponsorships)
+                      switch (updateAssignedSponsorships, hasAvailableSponsorships) {
+                      | (Ok(_), false) =>
+                        let _ = await noSponsorshipsMessage(interaction)
+                      | (Ok(_), true) =>
+                        let options = await beforeSponsorMessageOptions("before-sponsor", uuid)
+                        let _ = await Interaction.editReply(interaction, ~options, ())
+                      | (Error(_), _) =>
+                        let _ = await noWriteToGistMessage(interaction)
+                      }
+                    | exception NoAvailableSP =>
+                      let _ = await noSponsorshipsMessage(interaction)
+                      VerifyCommandError("This server has no usable sponsorships")->raise
+                    | exception JsError(obj) =>
+                      Js.Console.error(obj)
+                      VerifyCommandError("Unknown JS Error")->raise
+                    }
+                  // No Sponsorship Address and No Premium
+                  | (4, false, None, true) =>
+                    let _ = await noSponsorshipsMessage(interaction)
+                    VerifyCommandError("Does not have a sponsorship address set")->raise
+                  | (_, _, _, _) =>
+                    let _ = switch await handleUnverifiedGuildMember(errorNum, interaction, uuid) {
+                    | data => Some(data)
+                    | exception JsError(obj) =>
+                      Js.Console.error(obj)
+                      VerifyCommandError("Unknown JS Error")->raise
+                    }
+                  }
+                }
+              | _ => e->raise
+              },
+          )
         }
       }
     })
-    ->catch(e => {
-      switch e {
-      | _ => e->reject
-      }
-    })
   })
+  ->catch(reject)
 }
 
 let data =

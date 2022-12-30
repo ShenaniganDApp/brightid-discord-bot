@@ -1,13 +1,12 @@
 open Discord
 open Promise
 open Shared
+open Exceptions
 
 let {brightIdVerificationEndpoint, brightIdAppDeeplink, brightIdLinkVerificationEndpoint} = module(
   Endpoints
 )
 let {context} = module(Constants)
-
-exception ButtonVerifyHandlerError(string)
 
 Env.createEnv()
 

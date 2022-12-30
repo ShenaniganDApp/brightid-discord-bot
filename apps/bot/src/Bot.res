@@ -130,6 +130,10 @@ let onInteraction = async (interaction: Interaction.t) => {
           switch e {
           | Exceptions.BrightIdError({errorMessage}) =>
             Js.Console.error2(`${guildName} : ${guildId}: `, errorMessage)
+          | Exceptions.VerifyCommandError(msg) =>
+            Js.Console.error2(`${guildName} : ${guildId}: `, msg)
+          | Exceptions.InviteCommandError(msg) =>
+            Js.Console.error2(`${guildName} : ${guildId}: `, msg)
           | JsError(obj) => Js.Console.error2(`${guildName} : ${guildId}: `, obj)
           | _ => Js.Console.error2(`${guildName} : ${guildId}: `, e)
           }
@@ -153,6 +157,12 @@ let onInteraction = async (interaction: Interaction.t) => {
           switch e {
           | Exceptions.BrightIdError({errorMessage}) =>
             Js.Console.error2(`${guildName} : ${guildId}: `, errorMessage)
+          | Exceptions.PremiumSponsorButtonError(msg) =>
+            Js.Console.error2(`${guildName} : ${guildId}: `, msg)
+          | Exceptions.SponsorButtonError(msg) =>
+            Js.Console.error2(`${guildName} : ${guildId}: `, msg)
+          | Exceptions.ButtonVerifyHandlerError(msg) =>
+            Js.Console.error2(`${guildName} : ${guildId}: `, msg)
           | JsError(obj) => Js.Console.error2(`${guildName} : ${guildId}: `, obj)
           | _ => Js.Console.error2(`${guildName} : ${guildId}: `, e)
           }

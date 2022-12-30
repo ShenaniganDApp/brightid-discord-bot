@@ -21,8 +21,6 @@ import * as Caml_js_exceptions from "rescript/lib/es6/caml_js_exceptions.js";
 import * as Builders from "@discordjs/builders";
 import * as Services_VerificationInfo from "../services/Services_VerificationInfo.mjs";
 
-var VerifyHandlerError = /* @__PURE__ */Caml_exceptions.create("Commands_Verify.VerifyHandlerError");
-
 function sleep(ms) {
   return (new Promise((resolve) => setTimeout(resolve, ms)));
 }
@@ -110,7 +108,7 @@ function getRolebyRoleId(guildRoleManager, roleId) {
     return guildRole;
   }
   throw {
-        RE_EXN_ID: VerifyHandlerError,
+        RE_EXN_ID: Exceptions.VerifyCommandError,
         _1: "Could not find a role with the id " + roleId,
         Error: new Error()
       };
@@ -301,10 +299,10 @@ function execute(interaction) {
   var guildRoleManager = guild.roles;
   var memberId = member.id;
   var uuid = Uuid.v5(memberId, envConfig.uuidNamespace);
-  return interaction.deferReply({
-                ephemeral: true
-              }).then(function (param) {
-              return $$Promise.$$catch(Gist$Utils.ReadGist.content(gistConfig(undefined), Decode$Shared.Decode_Gist.brightIdGuilds).then(function (guilds) {
+  return $$Promise.$$catch(interaction.deferReply({
+                    ephemeral: true
+                  }).then(function (param) {
+                  return Gist$Utils.ReadGist.content(gistConfig(undefined), Decode$Shared.Decode_Gist.brightIdGuilds).then(function (guilds) {
                               var guildId = guild.id;
                               var guildData = Js_dict.get(guilds, guildId);
                               if (guildData !== undefined) {
@@ -329,7 +327,7 @@ function execute(interaction) {
                                                   };
                                                   return interaction.editReply(options).then(function (param) {
                                                               return Promise.reject({
-                                                                          RE_EXN_ID: VerifyHandlerError,
+                                                                          RE_EXN_ID: Exceptions.VerifyCommandError,
                                                                           _1: "Commands_Verify: User with contextId: " + uuid + " is not unique "
                                                                         });
                                                             });
@@ -358,7 +356,7 @@ function execute(interaction) {
                                                         if (obj.RE_EXN_ID === $$Promise.JsError) {
                                                           console.error(obj._1);
                                                           throw {
-                                                                RE_EXN_ID: VerifyHandlerError,
+                                                                RE_EXN_ID: Exceptions.VerifyCommandError,
                                                                 _1: "Unknown JS Error",
                                                                 Error: new Error()
                                                               };
@@ -385,7 +383,7 @@ function execute(interaction) {
                                                           if (obj$1.RE_EXN_ID === NoAvailableSP) {
                                                             await noSponsorshipsMessage(interaction);
                                                             throw {
-                                                                  RE_EXN_ID: VerifyHandlerError,
+                                                                  RE_EXN_ID: Exceptions.VerifyCommandError,
                                                                   _1: "This server has no usable sponsorships",
                                                                   Error: new Error()
                                                                 };
@@ -393,7 +391,7 @@ function execute(interaction) {
                                                           if (obj$1.RE_EXN_ID === $$Promise.JsError) {
                                                             console.error(obj$1._1);
                                                             throw {
-                                                                  RE_EXN_ID: VerifyHandlerError,
+                                                                  RE_EXN_ID: Exceptions.VerifyCommandError,
                                                                   _1: "Unknown JS Error",
                                                                   Error: new Error()
                                                                 };
@@ -429,21 +427,21 @@ function execute(interaction) {
                                                       }
                                                       await noSponsorshipsMessage(interaction);
                                                       throw {
-                                                            RE_EXN_ID: VerifyHandlerError,
+                                                            RE_EXN_ID: Exceptions.VerifyCommandError,
                                                             _1: "Does not have a sponsorship address set",
                                                             Error: new Error()
                                                           };
                                                     }
                                                     await noSponsorshipsMessage(interaction);
                                                     throw {
-                                                          RE_EXN_ID: VerifyHandlerError,
+                                                          RE_EXN_ID: Exceptions.VerifyCommandError,
                                                           _1: "Guild not in beta whitelist",
                                                           Error: new Error()
                                                         };
                                                   }
                                                   await noSponsorshipsMessage(interaction);
                                                   throw {
-                                                        RE_EXN_ID: VerifyHandlerError,
+                                                        RE_EXN_ID: Exceptions.VerifyCommandError,
                                                         _1: "No sponsorships available in Discord pool",
                                                         Error: new Error()
                                                       };
@@ -456,7 +454,7 @@ function execute(interaction) {
                                 };
                                 return interaction.editReply(options).then(function (param) {
                                             return Promise.reject({
-                                                        RE_EXN_ID: VerifyHandlerError,
+                                                        RE_EXN_ID: Exceptions.VerifyCommandError,
                                                         _1: "Guild does not have a saved roleId"
                                                       });
                                           });
@@ -466,14 +464,14 @@ function execute(interaction) {
                               };
                               return interaction.editReply(options$1).then(function (param) {
                                           return Promise.reject({
-                                                      RE_EXN_ID: VerifyHandlerError,
+                                                      RE_EXN_ID: Exceptions.VerifyCommandError,
                                                       _1: "Guild could not be found in the database"
                                                     });
                                         });
-                            }), (function (e) {
-                            return Promise.reject(e);
-                          }));
-            });
+                            });
+                }), (function (prim) {
+                return Promise.reject(prim);
+              }));
 }
 
 var data = new Builders.SlashCommandBuilder().setName("verify").setDescription("Sends a BrightID QR code for users to connect with their BrightId");
@@ -494,7 +492,6 @@ export {
   brightIdLinkVerificationEndpoint ,
   context ,
   contractAddressID ,
-  VerifyHandlerError ,
   sleep ,
   abi ,
   Canvas$1 as Canvas,

@@ -5,7 +5,6 @@ open Shared
 let {context} = module(Constants)
 
 let {brightIdAppsEndpoint} = module(Endpoints)
-//@TODO move all top level exceptions to a new file
 
 module UUID = {
   type t = string

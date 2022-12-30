@@ -8,11 +8,8 @@ import * as Exceptions from "../Exceptions.mjs";
 import * as Gist$Utils from "@brightidbot/utils/src/Gist.mjs";
 import * as Caml_option from "rescript/lib/es6/caml_option.js";
 import * as Decode$Shared from "@brightidbot/shared/src/Decode.mjs";
-import * as Caml_exceptions from "rescript/lib/es6/caml_exceptions.js";
 import * as Constants$Shared from "@brightidbot/shared/src/Constants.mjs";
 import * as Services_VerificationInfo from "../services/Services_VerificationInfo.mjs";
-
-var ButtonVerifyHandlerError = /* @__PURE__ */Caml_exceptions.create("Buttons_Verify.ButtonVerifyHandlerError");
 
 Env.createEnv(undefined);
 
@@ -36,7 +33,7 @@ function getRolebyRoleId(guildRoleManager, roleId) {
     return guildRole;
   }
   throw {
-        RE_EXN_ID: ButtonVerifyHandlerError,
+        RE_EXN_ID: Exceptions.ButtonVerifyHandlerError,
         _1: "Could not find a role with the id " + roleId,
         Error: new Error()
       };
@@ -51,7 +48,7 @@ function getGuildDataFromGist(guilds, guildId, interaction) {
         content: "Failed to retreive data for this Discord Guild"
       });
   throw {
-        RE_EXN_ID: ButtonVerifyHandlerError,
+        RE_EXN_ID: Exceptions.ButtonVerifyHandlerError,
         _1: "Failed to retreive data for this Discord Guild",
         Error: new Error()
       };
@@ -69,7 +66,7 @@ function noMultipleContextIds(member, interaction) {
   };
   return interaction.followUp(options).then(function (param) {
               return Promise.reject({
-                          RE_EXN_ID: ButtonVerifyHandlerError,
+                          RE_EXN_ID: Exceptions.ButtonVerifyHandlerError,
                           _1: "" + member.displayName + ": Verification Info can not be retrieved from more than one Discord account."
                         });
             });
@@ -147,7 +144,7 @@ function execute(interaction) {
                                               };
                                               return interaction.followUp(options).then(function (param) {
                                                           return Promise.reject({
-                                                                      RE_EXN_ID: ButtonVerifyHandlerError,
+                                                                      RE_EXN_ID: Exceptions.ButtonVerifyHandlerError,
                                                                       _1: "" + member.displayName + " is not unique"
                                                                     });
                                                         });
@@ -184,7 +181,7 @@ function execute(interaction) {
                           };
                           return interaction.editReply(options).then(function (param) {
                                       return Promise.reject({
-                                                  RE_EXN_ID: ButtonVerifyHandlerError,
+                                                  RE_EXN_ID: Exceptions.ButtonVerifyHandlerError,
                                                   _1: "Guild does not have a saved roleId"
                                                 });
                                     });
@@ -207,7 +204,6 @@ export {
   brightIdAppDeeplink ,
   brightIdLinkVerificationEndpoint ,
   context ,
-  ButtonVerifyHandlerError ,
   config$1 as config,
   getRolebyRoleId ,
   getGuildDataFromGist ,

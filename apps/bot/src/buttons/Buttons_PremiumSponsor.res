@@ -2,6 +2,7 @@ open Discord
 open Promise
 open Shared
 open NodeFetch
+open Exceptions
 
 let {brightIdVerificationEndpoint, brightIdAppDeeplink, brightIdLinkVerificationEndpoint} = module(
   Endpoints
@@ -14,8 +15,6 @@ let {
   makeBeforeSponsorActionRow,
   unknownErrorMessage,
 } = module(Commands_Verify)
-
-exception ButtonSponsorHandlerError(string)
 
 @val @scope("globalThis")
 external fetch: (string, 'params) => Promise.t<Response.t<Js.Json.t>> = "fetch"
@@ -293,12 +292,7 @@ let execute = async interaction => {
   let memberId = member->GuildMember.getGuildMemberId
   let uuid = memberId->UUID.v5(envConfig["uuidNamespace"])
   switch await Interaction.deferReply(interaction, ~options={"ephemeral": true}, ()) {
-  | exception JsError(obj) =>
-    switch Js.Exn.message(obj) {
-    | Some(msg) => Js.Console.error(msg)
-
-    | None => Js.Console.error("Must be some non-error value")
-    }
+  | exception e => e->raise
   | _ =>
     switch await Gist.ReadGist.content(~config=gistConfig(), ~decoder=Decode_Gist.brightIdGuilds) {
     | exception JsError(msg) =>
@@ -312,8 +306,10 @@ let execute = async interaction => {
     | guilds =>
       switch guilds->Js.Dict.get(guildId) {
       | None =>
-        Js.Console.error(`Buttons_Sponsor: Guild with guildId: ${guildId} not found in gist`)
-        let _ = noWriteToGistMessage(interaction)
+        let _ = await noWriteToGistMessage(interaction)
+        PremiumSponsorButtonError(
+          `Buttons_PremiumSponsor: Guild with guildId: ${guildId} not found in gist`,
+        )->raise
       | Some(guildData) =>
         let _ = switch await handleSponsor(interaction, uuid) {
         | SponsorshipUsed =>

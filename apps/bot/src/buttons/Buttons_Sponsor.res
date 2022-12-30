@@ -2,6 +2,7 @@ open Discord
 open Promise
 open Shared
 open NodeFetch
+open Exceptions
 
 let {brightIdVerificationEndpoint, brightIdAppDeeplink, brightIdLinkVerificationEndpoint} = module(
   Endpoints
@@ -14,8 +15,6 @@ let {
   makeBeforeSponsorActionRow,
   unknownErrorMessage,
 } = module(Commands_Verify)
-
-exception ButtonSponsorHandlerError(string)
 
 @val @scope("globalThis")
 external fetch: (string, 'params) => Promise.t<Response.t<Js.Json.t>> = "fetch"
@@ -300,8 +299,10 @@ let execute = async interaction => {
     | guilds =>
       switch guilds->Js.Dict.get(guildId) {
       | None =>
-        Js.Console.error(`Buttons_Sponsor: Guild with guildId: ${guildId} not found in gist`)
-        let _ = noWriteToGistMessage(interaction)
+        let _ = await noWriteToGistMessage(interaction)
+        SponsorButtonError(
+          `Buttons_Sponsor: Guild with guildId: ${guildId} not found in gist`,
+        )->raise
       | Some(guildData) =>
         let _ = switch await handleSponsor(interaction, uuid) {
         | exception e => e->raise

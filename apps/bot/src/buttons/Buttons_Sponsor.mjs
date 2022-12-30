@@ -21,8 +21,6 @@ import * as Caml_js_exceptions from "rescript/lib/es6/caml_js_exceptions.js";
 import * as Json$JsonCombinators from "@glennsl/rescript-json-combinators/src/Json.mjs";
 import * as Json_Decode$JsonCombinators from "@glennsl/rescript-json-combinators/src/Json_Decode.mjs";
 
-var ButtonSponsorHandlerError = /* @__PURE__ */Caml_exceptions.create("Buttons_Sponsor.ButtonSponsorHandlerError");
-
 function sleep(ms) {
   return (new Promise((resolve) => setTimeout(resolve, ms)));
 }
@@ -449,9 +447,12 @@ async function execute(interaction) {
         }
         return ;
       }
-      console.error("Buttons_Sponsor: Guild with guildId: " + guildId + " not found in gist");
-      noWriteToGistMessage(interaction);
-      return ;
+      await noWriteToGistMessage(interaction);
+      throw {
+            RE_EXN_ID: Exceptions.SponsorButtonError,
+            _1: "Buttons_Sponsor: Guild with guildId: " + guildId + " not found in gist",
+            Error: new Error()
+          };
     }
     
   }
@@ -485,7 +486,6 @@ export {
   createMessageAttachmentFromCanvas ,
   makeBeforeSponsorActionRow ,
   unknownErrorMessage ,
-  ButtonSponsorHandlerError ,
   sleep ,
   envConfig ,
   noUnusedSponsorshipsOptions ,
