@@ -31,7 +31,7 @@ let {notFoundCode, errorCode, canNotBeVerified} = module(Services_ResponseCodes)
 let verificationPollingEvery = 3000
 let requestTimeout = 60000
 
-let rec fetchVerificationInfo = (~retry=5, id): Promise.t<verificationInfo> => {
+let rec fetchVerificationInfo = (~retry=5, id) => {
   let uuid = id->UUID.v5(config["uuidNamespace"])
   let endpoint = `${brightIdVerificationEndpoint}/${context}/${uuid}?timestamp=seconds`
 

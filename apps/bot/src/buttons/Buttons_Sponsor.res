@@ -128,7 +128,7 @@ let rec handleSponsor = async (interaction, ~maybeHash=None, ~attempts=30, uuid)
   open Shared.BrightId
   open Shared.Decode
   let guildId = interaction->Interaction.getGuild->Guild.getGuildId
-  let secondsBetweenAttempts = 30
+  let secondsBetweenAttempts = 29
   switch attempts {
   | 0 => TimedOut
   | _ =>

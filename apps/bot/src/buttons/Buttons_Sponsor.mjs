@@ -182,7 +182,7 @@ async function handleSponsor(interaction, maybeHashOpt, attemptsOpt, uuid) {
               catch (raw_obj){
                 var obj = Caml_js_exceptions.internalToOCamlException(raw_obj);
                 if (obj.RE_EXN_ID === Exceptions.BrightIdError) {
-                  await sleep(30000);
+                  await sleep(29000);
                   return await handleSponsor(interaction, Caml_option.some(maybeHash), attempts - 1 | 0, uuid);
                 }
                 if (obj.RE_EXN_ID === $$Promise.JsError) {
@@ -210,7 +210,7 @@ async function handleSponsor(interaction, maybeHashOpt, attemptsOpt, uuid) {
                   await interaction.editReply(options);
                   return /* SponsorshipUsed */0;
                 }
-                await sleep(30000);
+                await sleep(29000);
                 return await handleSponsor(interaction, Caml_option.some(maybeHash), attempts - 1 | 0, uuid);
               }
               break;
@@ -237,7 +237,7 @@ async function handleSponsor(interaction, maybeHashOpt, attemptsOpt, uuid) {
               catch (raw_obj$1){
                 var obj$2 = Caml_js_exceptions.internalToOCamlException(raw_obj$1);
                 if (obj$2.RE_EXN_ID === Exceptions.BrightIdError) {
-                  await sleep(30000);
+                  await sleep(29000);
                   return await handleSponsor(interaction, Caml_option.some(maybeHash), attempts - 1 | 0, uuid);
                 }
                 if (obj$2.RE_EXN_ID === $$Promise.JsError) {
@@ -265,7 +265,7 @@ async function handleSponsor(interaction, maybeHashOpt, attemptsOpt, uuid) {
                   await interaction.editReply(options$1);
                   return /* SponsorshipUsed */0;
                 }
-                await sleep(30000);
+                await sleep(29000);
                 return await handleSponsor(interaction, Caml_option.some(maybeHash), attempts - 1 | 0, uuid);
               }
               break;
@@ -289,7 +289,7 @@ async function handleSponsor(interaction, maybeHashOpt, attemptsOpt, uuid) {
               catch (raw_obj$2){
                 var obj$4 = Caml_js_exceptions.internalToOCamlException(raw_obj$2);
                 if (obj$4.RE_EXN_ID === Exceptions.BrightIdError) {
-                  await sleep(30000);
+                  await sleep(29000);
                   return await handleSponsor(interaction, Caml_option.some(maybeHash), attempts - 1 | 0, uuid);
                 }
                 if (obj$4.RE_EXN_ID === $$Promise.JsError) {
@@ -317,7 +317,7 @@ async function handleSponsor(interaction, maybeHashOpt, attemptsOpt, uuid) {
                   await interaction.editReply(options$3);
                   return /* SponsorshipUsed */0;
                 }
-                await sleep(30000);
+                await sleep(29000);
                 return await handleSponsor(interaction, Caml_option.some(maybeHash), attempts - 1 | 0, uuid);
               }
               break;

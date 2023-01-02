@@ -54,7 +54,7 @@ let sponsorRequestSubmittedMessageOptions = async uuid => {
   let attachment = await createMessageAttachmentFromCanvas(canvas)
   let nowInSeconds = Js.Math.round(Js.Date.now() /. 1000.)
   let fifteenMinutesAfter = 15. *. 60. +. nowInSeconds
-  let content = `You sponsor request has been submitted! \n\n Make sure you have scanned this QR code in the BrightID mobile app to confirm your sponsor and link Discord to BrightID. \n This process will timeout <t:${fifteenMinutesAfter->Belt.Float.toString}:R>.\n\nPlease be patient until time expires \n`
+  let content = `You sponsor request has been submitted! \n\n Make sure you have scanned this QR code in the BrightID mobile app to confirm your sponsor and link Discord to BrightID. \n This process will timeout <t:${fifteenMinutesAfter->Belt.Float.toString}:R>.\n\n`
   {
     "content": content,
     "files": [attachment],
@@ -128,7 +128,7 @@ let rec handleSponsor = async (interaction, ~maybeHash=None, ~attempts=30, uuid)
   open Shared.BrightId
   open Shared.Decode
   let guildId = interaction->Interaction.getGuild->Guild.getGuildId
-  let secondsBetweenAttempts = 30
+  let secondsBetweenAttempts = 29 //29 seconds between attempts to leave time for timeout message
   switch attempts {
   | 0 => TimedOut
   | _ =>
