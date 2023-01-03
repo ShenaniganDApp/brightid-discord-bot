@@ -292,16 +292,12 @@ let execute = async interaction => {
   let memberId = member->GuildMember.getGuildMemberId
   let uuid = memberId->UUID.v5(envConfig["uuidNamespace"])
   switch await Interaction.deferReply(interaction, ~options={"ephemeral": true}, ()) {
-  | exception e => e->raise
+  | exception e => raise(e)
   | _ =>
     switch await Gist.ReadGist.content(~config=gistConfig(), ~decoder=Decode_Gist.brightIdGuilds) {
-    | exception JsError(msg) =>
-      Js.Console.error(msg)
+    | exception e =>
       let _ = await unknownErrorMessage(interaction)
-
-    | exception Json.Decode.DecodeError(msg) =>
-      Js.Console.error(msg)
-      let _ = await unknownErrorMessage(interaction)
+      raise(e)
 
     | guilds =>
       switch guilds->Js.Dict.get(guildId) {

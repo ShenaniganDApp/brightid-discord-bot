@@ -386,19 +386,9 @@ async function execute(interaction) {
       guilds = await Gist$Utils.ReadGist.content(gistConfig(undefined), Decode$Shared.Decode_Gist.brightIdGuilds);
       exit$1 = 2;
     }
-    catch (raw_msg){
-      var msg = Caml_js_exceptions.internalToOCamlException(raw_msg);
-      if (msg.RE_EXN_ID === $$Promise.JsError) {
-        console.error(msg._1);
-        await Commands_Verify.unknownErrorMessage(interaction);
-        return ;
-      }
-      if (msg.RE_EXN_ID === Json_Decode$JsonCombinators.DecodeError) {
-        console.error(msg._1);
-        await Commands_Verify.unknownErrorMessage(interaction);
-        return ;
-      }
-      throw msg;
+    catch (e$1){
+      await Commands_Verify.unknownErrorMessage(interaction);
+      throw e$1;
     }
     if (exit$1 === 2) {
       var guildData = Js_dict.get(guilds, guildId);
