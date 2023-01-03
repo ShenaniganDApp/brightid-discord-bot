@@ -115,21 +115,41 @@ async function onGuildCreate(guild) {
   var roleManager = guild.roles;
   var guildId = guild.id;
   var guildName = guild.name;
-  var role = await roleManager.create({
+  var createRole = await roleManager.create({
         name: "Verified",
         color: "ORANGE",
         reason: "Create a role to mark verified users with BrightID"
       });
-  var val;
+  var exit = 0;
+  var role;
   try {
-    val = await updateGistOnGuildCreate(guild, role.id);
+    role = createRole;
+    exit = 1;
   }
   catch (raw_e){
     var e = Caml_js_exceptions.internalToOCamlException(raw_e);
     console.error("" + guildName + " : " + guildId + ": ", e);
     return ;
   }
-  console.log("" + guildName + " : " + guildId + ": Successfully added to the database");
+  if (exit === 1) {
+    var exit$1 = 0;
+    var val;
+    try {
+      val = await updateGistOnGuildCreate(guild, role.id);
+      exit$1 = 2;
+    }
+    catch (raw_e$1){
+      var e$1 = Caml_js_exceptions.internalToOCamlException(raw_e$1);
+      console.error("" + guildName + " : " + guildId + ": ", e$1);
+      return ;
+    }
+    if (exit$1 === 2) {
+      console.log("" + guildName + " : " + guildId + ": Successfully added to the database");
+      return ;
+    }
+    
+  }
+  
 }
 
 async function onInteraction(interaction) {
@@ -168,7 +188,7 @@ async function onInteraction(interaction) {
       }
       return ;
     }
-    console.log("" + guildName + ": Successfully served the command " + commandName + " for " + user.username + "");
+    console.log("" + guildName + " : " + guildId + ": Successfully served the command " + commandName + " for " + user.username + "");
     return ;
   }
   if (isButton) {
@@ -199,49 +219,58 @@ async function onInteraction(interaction) {
       }
       return ;
     }
-    console.log("" + guildName + ": Successfully served button press \"" + buttonCustomId + "\" for " + user.username + "");
+    console.log("" + guildName + " : " + guildId + ": Successfully served button press \"" + buttonCustomId + "\" for " + user.username + "");
     return ;
   }
   console.error("Bot.res: Unknown interaction");
 }
 
 async function onGuildDelete(guild) {
-  var config = Gist$Utils.makeGistConfig(envConfig$1.gistId, "guildData.json", envConfig$1.githubAccessToken);
   var guildId = guild.id;
-  var tmp;
+  var guildName = guild.name;
+  var config = Gist$Utils.makeGistConfig(envConfig$1.gistId, "guildData.json", envConfig$1.githubAccessToken);
   var exit = 0;
-  var data;
+  var guilds;
   try {
-    data = await Gist$Utils.ReadGist.content(config, Decode$Shared.Decode_Gist.brightIdGuilds);
+    guilds = await Gist$Utils.ReadGist.content(config, Decode$Shared.Decode_Gist.brightIdGuilds);
     exit = 1;
   }
-  catch (raw_exn){
-    var exn = Caml_js_exceptions.internalToOCamlException(raw_exn);
-    if (exn.RE_EXN_ID === $$Promise.JsError) {
-      tmp = undefined;
-    } else {
-      throw exn;
-    }
-  }
-  if (exit === 1) {
-    tmp = Caml_option.some(data);
-  }
-  var content = Belt_Option.getExn(tmp);
-  var brightIdGuild = Js_dict.get(content, guildId);
-  if (brightIdGuild === undefined) {
-    return Caml_option.some((console.log("No role to delete for guild " + guildId + ""), undefined));
-  }
-  try {
-    await Gist$Utils.UpdateGist.removeEntry(content, guildId, config);
-    return Caml_option.some(undefined);
-  }
-  catch (raw_exn$1){
-    var exn$1 = Caml_js_exceptions.internalToOCamlException(raw_exn$1);
-    if (exn$1.RE_EXN_ID === $$Promise.JsError) {
+  catch (raw_e){
+    var e = Caml_js_exceptions.internalToOCamlException(raw_e);
+    if (e.RE_EXN_ID === $$Promise.JsError) {
+      console.error("" + guildName + " : " + guildId + ": ", e._1);
       return ;
     }
-    throw exn$1;
+    throw e;
   }
+  if (exit === 1) {
+    var match = Js_dict.get(guilds, guildId);
+    if (match !== undefined) {
+      var exit$1 = 0;
+      var val;
+      try {
+        val = await Gist$Utils.UpdateGist.removeEntry(guilds, guildId, config);
+        exit$1 = 2;
+      }
+      catch (raw_e$1){
+        var e$1 = Caml_js_exceptions.internalToOCamlException(raw_e$1);
+        if (e$1.RE_EXN_ID === $$Promise.JsError) {
+          console.error("" + guildName + " : " + guildId + ": ", e$1._1);
+          return ;
+        }
+        throw e$1;
+      }
+      if (exit$1 === 2) {
+        console.log("" + guildName + " : " + guildId + ": Successfully removed guild data");
+        return ;
+      }
+      
+    } else {
+      console.error("" + guildName + " : " + guildId + ": Could not find guild data to delete");
+      return ;
+    }
+  }
+  
 }
 
 async function onGuildMemberAdd(guildMember) {
@@ -274,7 +303,7 @@ async function onGuildMemberAdd(guildMember) {
       }
       catch (raw_e$1){
         var e$1 = Caml_js_exceptions.internalToOCamlException(raw_e$1);
-        console.error("" + guildName + " with guildId: " + guildId + "", e$1);
+        console.error("" + guildName + " : " + guildId + ": ", e$1);
       }
       if (exit$1 === 2) {
         var guild = guildMember.guild;
@@ -291,36 +320,25 @@ async function onGuildMemberAdd(guildMember) {
               val$1 = await guildMemberRoleManager.add(role, "User is already verified by BrightID");
               exit$2 = 3;
             }
-            catch (e$2){
-              throw e$2;
+            catch (raw_e$2){
+              var e$2 = Caml_js_exceptions.internalToOCamlException(raw_e$2);
+              console.error("" + guildName + " : " + guildId$1 + ": ", e$2);
             }
             if (exit$2 === 3) {
-              Uuid.v5(guildMember.id, envConfig$1.uuidNamespace);
-              
+              var uuid = Uuid.v5(guildMember.id, envConfig$1.uuidNamespace);
+              console.log("" + guildName + " : " + guildId$1 + " verified the user with contextId: " + uuid + "");
             }
             
           } else {
-            throw {
-                  RE_EXN_ID: RequestHandlerError,
-                  _1: "Guild does not have a saved roleId",
-                  Error: new Error()
-                };
+            console.error("" + guildName + " : " + guildId$1 + ": ", "Guild does not have a saved roleId");
           }
         } else {
-          throw {
-                RE_EXN_ID: GuildNotInGist,
-                _1: "Guild does not exist in Gist",
-                Error: new Error()
-              };
+          console.error("" + guildName + " : " + guildId$1 + ": ", "Guild does not exist in Gist");
         }
       }
       
     } else {
-      throw {
-            RE_EXN_ID: RequestHandlerError,
-            _1: "User " + guildMember.displayName + " is not unique",
-            Error: new Error()
-          };
+      console.error("" + guildName + " : " + guildId + ": ", "User " + guildMember.displayName + " is not unique");
     }
   }
   
@@ -388,18 +406,12 @@ async function onRoleUpdate(role) {
         }
         
       } else {
-        throw {
-              RE_EXN_ID: RequestHandlerError,
-              _1: "Guild does not have a saved roleId",
-              Error: new Error()
-            };
+        console.error("" + guildName + " : " + guildId + ": ", "Guild does not have a saved roleId");
+        return ;
       }
     } else {
-      throw {
-            RE_EXN_ID: GuildNotInGist,
-            _1: "Guild does not exist in Gist",
-            Error: new Error()
-          };
+      console.error("" + guildName + " : " + guildId + ": ", "Guild does not exist in Gist");
+      return ;
     }
   }
   
