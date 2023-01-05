@@ -9,6 +9,11 @@ module ContextId = {
   type data = {data: t}
 }
 
+module Verifications = {
+  type t = {contextIds: array<string>, count: int}
+  type data = {data: t}
+}
+
 module App = {
   type t = {
     id: string,

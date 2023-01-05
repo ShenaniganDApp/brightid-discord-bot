@@ -26,7 +26,28 @@ var ContextId = {
   data: data$1
 };
 
+function verification(field) {
+  return {
+          contextIds: field.required("contextIds", Json_Decode$JsonCombinators.array(Json_Decode$JsonCombinators.string)),
+          count: field.required("count", Json_Decode$JsonCombinators.$$int)
+        };
+}
+
 function data$2(field) {
+  var __x = Json_Decode$JsonCombinators.object(verification);
+  return {
+          data: field.required("data", __x)
+        };
+}
+
+var data$3 = Json_Decode$JsonCombinators.object(data$2);
+
+var Verifications = {
+  verification: verification,
+  data: data$3
+};
+
+function data$4(field) {
   return {
           error: field.required("error", Json_Decode$JsonCombinators.bool),
           errorNum: field.required("errorNum", Json_Decode$JsonCombinators.$$int),
@@ -35,10 +56,10 @@ function data$2(field) {
         };
 }
 
-var data$3 = Json_Decode$JsonCombinators.object(data$2);
+var data$5 = Json_Decode$JsonCombinators.object(data$4);
 
 var $$Error = {
-  data: data$3
+  data: data$5
 };
 
 function sponsor(field) {
@@ -58,20 +79,20 @@ function sponsorship(field) {
         };
 }
 
-function data$4(field) {
+function data$6(field) {
   var __x = Json_Decode$JsonCombinators.object(sponsorship);
   return {
           data: field.required("data", __x)
         };
 }
 
-var data$5 = Json_Decode$JsonCombinators.object(data$4);
+var data$7 = Json_Decode$JsonCombinators.object(data$6);
 
 var Sponsorships = {
   availableSponsorships: Json_Decode$JsonCombinators.$$int,
   sponsor: sponsor$1,
   sponsorship: sponsorship,
-  data: data$5
+  data: data$7
 };
 
 function result(field) {
@@ -90,19 +111,19 @@ function operation(field) {
         };
 }
 
-function data$6(field) {
+function data$8(field) {
   var __x = Json_Decode$JsonCombinators.object(operation);
   return {
           data: field.required("data", __x)
         };
 }
 
-var data$7 = Json_Decode$JsonCombinators.object(data$6);
+var data$9 = Json_Decode$JsonCombinators.object(data$8);
 
 var Operations = {
   result: result$1,
   operation: operation,
-  data: data$7
+  data: data$9
 };
 
 function app(field) {
@@ -121,22 +142,23 @@ function app(field) {
         };
 }
 
-function data$8(field) {
+function data$10(field) {
   var __x = Json_Decode$JsonCombinators.object(app);
   return {
           data: field.required("data", __x)
         };
 }
 
-var data$9 = Json_Decode$JsonCombinators.object(data$8);
+var data$11 = Json_Decode$JsonCombinators.object(data$10);
 
 var App = {
   app: app,
-  data: data$9
+  data: data$11
 };
 
 var Decode_BrightId = {
   ContextId: ContextId,
+  Verifications: Verifications,
   $$Error: $$Error,
   Sponsorships: Sponsorships,
   Operations: Operations,

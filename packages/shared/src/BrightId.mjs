@@ -3,6 +3,8 @@
 
 var ContextId = {};
 
+var Verifications = {};
+
 var App = {};
 
 var $$Error = {};
@@ -17,6 +19,7 @@ var SPContract = {};
 
 export {
   ContextId ,
+  Verifications ,
   App ,
   $$Error ,
   Gist ,
