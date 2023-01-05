@@ -111,6 +111,7 @@ async function action(param) {
   var entry_inviteLink = Belt_Option.isSome(inviteLink) ? inviteLink : prevEntry.inviteLink;
   var entry_roleId = prevEntry.roleId;
   var entry_sponsorshipAddress = Belt_Option.isSome(sponsorshipAddress) ? sponsorshipAddress : prevEntry.sponsorshipAddress;
+  var entry_sponsorshipAddressEth = prevEntry.sponsorshipAddressEth;
   var entry_usedSponsorships = prevEntry.usedSponsorships;
   var entry_assignedSponsorships = prevEntry.assignedSponsorships;
   var entry_premiumSponsorshipsUsed = prevEntry.premiumSponsorshipsUsed;
@@ -121,6 +122,7 @@ async function action(param) {
     inviteLink: entry_inviteLink,
     roleId: entry_roleId,
     sponsorshipAddress: entry_sponsorshipAddress,
+    sponsorshipAddressEth: entry_sponsorshipAddressEth,
     usedSponsorships: entry_usedSponsorships,
     assignedSponsorships: entry_assignedSponsorships,
     premiumSponsorshipsUsed: entry_premiumSponsorshipsUsed,

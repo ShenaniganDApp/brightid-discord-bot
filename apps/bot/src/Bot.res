@@ -82,6 +82,7 @@ let updateGistOnGuildCreate = async (guild: Guild.t, roleId) => {
       roleId: Some(roleId),
       inviteLink: None,
       sponsorshipAddress: None,
+      sponsorshipAddressEth: None,
       usedSponsorships: None,
       assignedSponsorships: None,
       premiumSponsorshipsUsed: None,
