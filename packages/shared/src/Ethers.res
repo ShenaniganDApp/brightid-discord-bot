@@ -40,4 +40,5 @@ module BigNumber = {
 
   @send external gt: (t, t) => bool = "gt"
   @send external gtWithString: (t, string) => bool = "gt"
+  @send external lte: (t, t) => bool = "lte"
 }

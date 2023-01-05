@@ -103,6 +103,7 @@ async function updateGistOnGuildCreate(guild, roleId) {
     inviteLink: undefined,
     roleId: entry_roleId,
     sponsorshipAddress: undefined,
+    sponsorshipAddressEth: undefined,
     usedSponsorships: undefined,
     assignedSponsorships: undefined,
     premiumSponsorshipsUsed: undefined,
@@ -374,6 +375,7 @@ async function onRoleUpdate(role) {
         var entry_inviteLink = brightIdGuild.inviteLink;
         var entry_roleId = brightIdGuild.roleId;
         var entry_sponsorshipAddress = brightIdGuild.sponsorshipAddress;
+        var entry_sponsorshipAddressEth = brightIdGuild.sponsorshipAddressEth;
         var entry_usedSponsorships = brightIdGuild.usedSponsorships;
         var entry_assignedSponsorships = brightIdGuild.assignedSponsorships;
         var entry_premiumSponsorshipsUsed = brightIdGuild.premiumSponsorshipsUsed;
@@ -384,6 +386,7 @@ async function onRoleUpdate(role) {
           inviteLink: entry_inviteLink,
           roleId: entry_roleId,
           sponsorshipAddress: entry_sponsorshipAddress,
+          sponsorshipAddressEth: entry_sponsorshipAddressEth,
           usedSponsorships: entry_usedSponsorships,
           assignedSponsorships: entry_assignedSponsorships,
           premiumSponsorshipsUsed: entry_premiumSponsorshipsUsed,

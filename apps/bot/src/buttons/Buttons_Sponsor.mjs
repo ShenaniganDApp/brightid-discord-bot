@@ -412,6 +412,7 @@ async function execute(interaction) {
                       inviteLink: guildData.inviteLink,
                       roleId: guildData.roleId,
                       sponsorshipAddress: guildData.sponsorshipAddress,
+                      sponsorshipAddressEth: guildData.sponsorshipAddressEth,
                       usedSponsorships: usedSponsorships$1,
                       assignedSponsorships: guildData.assignedSponsorships,
                       premiumSponsorshipsUsed: guildData.premiumSponsorshipsUsed,

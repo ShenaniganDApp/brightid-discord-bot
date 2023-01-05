@@ -96,14 +96,22 @@ module Decode_BrightId = {
 }
 module Decode_Gist = {
   open BrightId.Gist
+  let assignedSponsorship = field => {
+    address: field.required(. "address", string),
+    amount: field.required(. "amount", string),
+    timestamp: field.required(. "timestamp", float),
+  }
+
+  let assignedSponsorships = assignedSponsorship->object->array
   let brightIdGuild = object(field => {
     role: field.optional(. "role", string),
     name: field.optional(. "name", string),
     inviteLink: field.optional(. "inviteLink", string),
     roleId: field.optional(. "roleId", string),
     sponsorshipAddress: field.optional(. "sponsorshipAddress", string),
+    sponsorshipAddressEth: field.optional(. "sponsorshipAddressEth", string),
     usedSponsorships: field.optional(. "usedSponsorships", string),
-    assignedSponsorships: field.optional(. "assignedSponsorships", string),
+    assignedSponsorships: field.optional(. "assignedSponsorships", assignedSponsorships),
     premiumSponsorshipsUsed: field.optional(. "premiumSponsorshipsUsed", string),
     premiumExpirationTimestamp: field.optional(. "premiumExpirationTimestamp", float),
   })

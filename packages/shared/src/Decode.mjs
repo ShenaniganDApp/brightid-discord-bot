@@ -143,6 +143,16 @@ var Decode_BrightId = {
   App: App
 };
 
+function assignedSponsorship(field) {
+  return {
+          address: field.required("address", Json_Decode$JsonCombinators.string),
+          amount: field.required("amount", Json_Decode$JsonCombinators.string),
+          timestamp: field.required("timestamp", Json_Decode$JsonCombinators.$$float)
+        };
+}
+
+var assignedSponsorships = Json_Decode$JsonCombinators.array(Json_Decode$JsonCombinators.object(assignedSponsorship));
+
 var brightIdGuild = Json_Decode$JsonCombinators.object(function (field) {
       return {
               role: field.optional("role", Json_Decode$JsonCombinators.string),
@@ -150,8 +160,9 @@ var brightIdGuild = Json_Decode$JsonCombinators.object(function (field) {
               inviteLink: field.optional("inviteLink", Json_Decode$JsonCombinators.string),
               roleId: field.optional("roleId", Json_Decode$JsonCombinators.string),
               sponsorshipAddress: field.optional("sponsorshipAddress", Json_Decode$JsonCombinators.string),
+              sponsorshipAddressEth: field.optional("sponsorshipAddressEth", Json_Decode$JsonCombinators.string),
               usedSponsorships: field.optional("usedSponsorships", Json_Decode$JsonCombinators.string),
-              assignedSponsorships: field.optional("assignedSponsorships", Json_Decode$JsonCombinators.string),
+              assignedSponsorships: field.optional("assignedSponsorships", assignedSponsorships),
               premiumSponsorshipsUsed: field.optional("premiumSponsorshipsUsed", Json_Decode$JsonCombinators.string),
               premiumExpirationTimestamp: field.optional("premiumExpirationTimestamp", Json_Decode$JsonCombinators.$$float)
             };
@@ -160,6 +171,8 @@ var brightIdGuild = Json_Decode$JsonCombinators.object(function (field) {
 var brightIdGuilds = Json_Decode$JsonCombinators.dict(brightIdGuild);
 
 var Decode_Gist = {
+  assignedSponsorship: assignedSponsorship,
+  assignedSponsorships: assignedSponsorships,
   brightIdGuild: brightIdGuild,
   brightIdGuilds: brightIdGuilds
 };
