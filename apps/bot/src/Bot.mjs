@@ -491,7 +491,6 @@ async function onRoleUpdate(role) {
         var entry_inviteLink = brightIdGuild.inviteLink
         var entry_roleId = brightIdGuild.roleId
         var entry_sponsorshipAddress = brightIdGuild.sponsorshipAddress
-        var entry_sponsorshipAddressEth = brightIdGuild.sponsorshipAddressEth
         var entry_usedSponsorships = brightIdGuild.usedSponsorships
         var entry_assignedSponsorships = brightIdGuild.assignedSponsorships
         var entry_premiumSponsorshipsUsed =
