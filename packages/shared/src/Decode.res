@@ -18,6 +18,20 @@ module Decode_BrightId = {
     let data = data->object
   }
 
+  module Verifications = {
+    open BrightId.Verifications
+    let verification = field => {
+      contextIds: field.required(. "contextIds", array(string)),
+      count: field.required(. "count", int),
+    }
+
+    let data = field => {
+      data: verification->object->field.required(. "data", _),
+    }
+
+    let data = data->object
+  }
+
   module Error = {
     open BrightId.Error
     let data = field => {

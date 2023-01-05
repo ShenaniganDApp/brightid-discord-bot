@@ -42,6 +42,13 @@ let client = Client.createDiscordClient(~options)
 let commands: Collection.t<string, module(Command)> = Collection.make()
 let buttons: Collection.t<string, module(Button)> = Collection.make()
 
+let makeGistConfig = () =>
+  Utils.Gist.makeGistConfig(
+    ~id=envConfig["gistId"],
+    ~name="guildData.json",
+    ~token=envConfig["githubAccessToken"],
+  )
+
 // One by one is the only way I can find to do this atm. Hopefully we find a better way
 let _ =
   commands
@@ -62,17 +69,10 @@ let _ =
   ->Collection.set(Buttons_Sponsor.customId, module(Buttons_Sponsor))
   ->Collection.set(Buttons_PremiumSponsor.customId, module(Buttons_PremiumSponsor))
 
-let updateGistOnGuildCreate = async (guild: Guild.t, roleId) => {
+let updateGistOnGuildCreate = async (guild, roleId, content) => {
   open Utils
-  open Shared.Decode
-  let id = envConfig["gistId"]
-  let name = "guildData.json"
-  let token = envConfig["githubAccessToken"]
-  let config = Gist.makeGistConfig(~id, ~name, ~token)
 
   let guildId = guild->Guild.getGuildId
-
-  let content = await Gist.ReadGist.content(~config, ~decoder=Decode_Gist.brightIdGuilds)
 
   let entry = {
     open Shared.BrightId.Gist
@@ -90,15 +90,88 @@ let updateGistOnGuildCreate = async (guild: Guild.t, roleId) => {
     }
   }
 
-  await Gist.UpdateGist.addEntry(~content, ~config, ~key=guildId, ~entry)
+  await Gist.UpdateGist.addEntry(~content, ~config=makeGistConfig(), ~key=guildId, ~entry)
+}
+
+let rec fetchContextIds = async (~retry=5, ()) => {
+  open Decode.Decode_BrightId
+  let requestTimeout = 60000
+  let endpoint = `${brightIdVerificationEndpoint}/${context}`
+  let params = {
+    "method": "GET",
+    "headers": {
+      "Accept": "application/json",
+      "Content-Type": "application/json",
+    },
+    "timestamp": requestTimeout,
+  }
+  let res = await fetch(endpoint, params)
+  let json = await Response.json(res)
+  switch (json->Json.decode(Verifications.data), json->Json.decode(Error.data)) {
+  | (Ok({data}), _) => Belt.Set.String.fromArray(data.contextIds)
+  | (_, Ok(error)) =>
+    let retry = retry - 1
+    switch retry {
+    | 0 => error->Exceptions.BrightIdError->raise
+    | _ => await fetchContextIds(~retry, ())
+    }
+  | (Error(error), _) =>
+    let retry = retry - 1
+    switch retry {
+    | 0 => error->Json.Decode.DecodeError->raise
+    | _ => await fetchContextIds(~retry, ())
+    }
+  }
+}
+
+let assignRoleOnCreate = async (guild, role) => {
+  let maybeMembers = switch await guild->Guild.getGuildMemberManager->GuildMemberManager.fetchAll {
+  | exception _ => None
+  | members => Some(members)
+  }
+  let contextIds = await fetchContextIds()
+
+  let filterVerifiedMembers = (guildMember, contextIds) =>
+    guildMember
+    ->GuildMember.getGuildMemberId
+    ->UUID.v5(envConfig["uuidNamespace"])
+    ->Belt.Set.String.has(contextIds, _)
+
+  let assignRoleToGuildMember = (guildMember, role) => {
+    guildMember->GuildMember.getGuildMemberRoleManager->GuildMemberRoleManager.add(role, ())
+  }
+
+  let makeAddRolePromises = members => {
+    Collection.filter(members, filterVerifiedMembers(_, contextIds))
+    ->Collection.mapValues(assignRoleToGuildMember(_, role))
+    ->Collection.values
+  }
+
+  let addRolePromises = Belt.Option.map(maybeMembers, makeAddRolePromises)
+
+  switch addRolePromises {
+  | None => 0
+  | Some(promises) =>
+    switch await Promise.all(promises) {
+    | exception e => raise(e)
+    | results => Belt.Array.length(results)
+    }
+  }
 }
 
 let onGuildCreate = async guild => {
+  open Utils
+  open Shared.Decode
   let roleManager = guild->Guild.getGuildRoleManager
   let guildId = guild->Guild.getGuildId
   let guildName = guild->Guild.getGuildName
 
-  let createRole = await RoleManager.create(
+  let id = envConfig["gistId"]
+  let name = "guildData.json"
+  let token = envConfig["githubAccessToken"]
+  let config = Gist.makeGistConfig(~id, ~name, ~token)
+
+  let role = await RoleManager.create(
     roleManager,
     {
       name: "Verified",
@@ -106,13 +179,25 @@ let onGuildCreate = async guild => {
       reason: "Create a role to mark verified users with BrightID",
     },
   )
-
-  switch createRole {
+  switch role {
   | exception e => Js.Console.error2(`${guildName} : ${guildId}: `, e)
   | role =>
-    switch await updateGistOnGuildCreate(guild, role->Role.getRoleId) {
+    let content = await Gist.ReadGist.content(~config, ~decoder=Decode_Gist.brightIdGuilds)
+
+    switch await updateGistOnGuildCreate(guild, role->Role.getRoleId, content) {
     | exception e => Js.Console.error2(`${guildName} : ${guildId}: `, e)
-    | _ => Js.log(`${guildName} : ${guildId}: Successfully added to the database`)
+    | _ =>
+      Js.log(`${guildName} : ${guildId}: Successfully added to the database`)
+
+      switch await assignRoleOnCreate(guild, role) {
+      | exception e => Js.Console.error2(`${guildName} : ${guildId}: `, e)
+      | verifiedMembersCount =>
+        Js.log(
+          `${guildName} : ${guildId}: Successfully assigned role to ${Belt.Int.toString(
+              verifiedMembersCount,
+            )} current members`,
+        )
+      }
     }
   }
 }
