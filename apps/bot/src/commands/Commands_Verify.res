@@ -7,7 +7,7 @@ open Exceptions
 let {brightIdVerificationEndpoint, brightIdAppDeeplink, brightIdLinkVerificationEndpoint} = module(
   Endpoints
 )
-let {context, contractAddressID} = module(Shared.Constants)
+let {context, contractAddressID, contractAddressETH} = module(Shared.Constants)
 
 @val @scope("globalThis")
 external fetch: (string, 'params) => Promise.t<Response.t<Js.Json.t>> = "fetch"
@@ -203,29 +203,24 @@ let noWriteToGistMessage = async interaction => {
 }
 
 exception NoAvailableSP
-let getAssignedSPFromAddress = async sponsorshipAddress => {
-  let provider = Ethers.Providers.jsonRpcProvider(~url="https://idchain.one/rpc")
-  let contract = Ethers.Contract.make(~provider, ~address=contractAddressID, ~abi)
+let getAssignedSPFromAddress = (maybeSponsorshipAddress, contractAddress, url) => {
+  let getBalance = sponsorshipAddress => {
+    let provider = Ethers.Providers.jsonRpcProvider(~url)
+    let contract = Ethers.Contract.make(~provider, ~address=contractAddress, ~abi)
 
-  let formattedContext = Ethers.Utils.formatBytes32String("Discord")
-  let contract = BrightId.SPContract.make(contract)
-
-  switch await BrightId.SPContract.contextBalance(
-    contract,
-    ~address=sponsorshipAddress,
-    ~formattedContext,
-  ) {
-  | spBalance => spBalance->Ethers.BigNumber.isZero ? NoAvailableSP->raise : spBalance
-  | exception JsError(obj) =>
-    switch Js.Exn.message(obj) {
-    | Some(msg) =>
-      Js.Console.error(msg)
-      NoAvailableSP->raise
-    | None =>
-      Js.Console.error(obj)
-      NoAvailableSP->raise
-    }
+    let formattedContext = Ethers.Utils.formatBytes32String("Discord")
+    let contract = BrightId.SPContract.make(contract)
+    BrightId.SPContract.contextBalance(contract, ~address=sponsorshipAddress, ~formattedContext)
   }
+  Belt.Option.mapWithDefault(maybeSponsorshipAddress, resolve(Ethers.BigNumber.zero), getBalance)
+}
+
+let totalUnusedSponsorships = (usedSponsorships, assignedSponsorships, assignedSponsorshipsEth) => {
+  open Ethers.BigNumber
+  let totalAssignedSponsorships = assignedSponsorshipsEth->add(assignedSponsorships)
+  let unusedSponsorships = totalAssignedSponsorships->sub(usedSponsorships)
+
+  unusedSponsorships->lte(zero) ? raise(NoAvailableSP) : unusedSponsorships
 }
 
 let noSponsorshipsMessage = async interaction => {
@@ -271,24 +266,35 @@ let getAppUnusedSponsorships = async context => {
   | data => Some(data.unusedSponsorships)
   }
 }
-let getDiscordServerSponsorshipTotals = (guilds: BrightId.Gist.brightIdGuilds) => {
-  guilds
-  ->Js.Dict.keys
-  ->Belt.Array.reduce((Ethers.BigNumber.zero, Ethers.BigNumber.zero), (acc, key) => {
+let getServerAssignedSponsorships = guildData => {
+  open Shared.BrightId.Gist
+  open Ethers.BigNumber
+
+  let sumAmounts = (acc, {amount}) => {
+    amount->fromString->add(acc)
+  }
+
+  switch guildData.assignedSponsorships {
+  | None => zero
+  | Some(assignedSponsorships) => Belt.Array.reduce(assignedSponsorships, zero, sumAmounts)
+  }
+}
+
+let getGuildSponsorshipTotals = guilds => {
+  open Ethers.BigNumber
+  open Shared.BrightId.Gist
+
+  let calculateAssignedAndUnusedTotals = (acc, key) => {
     let (totalAssignedSponsorships, totalUsedSponsorships) = acc
     let guild = guilds->Js.Dict.unsafeGet(key)
-    let assignedSponsorships = guild.assignedSponsorships->Belt.Option.getWithDefault("0")
-    let usedSponsorships = guild.usedSponsorships->Belt.Option.getWithDefault("0")
-    let totalAssignedSponsorships = Ethers.BigNumber.addWithString(
-      totalAssignedSponsorships,
-      assignedSponsorships,
-    )
-    let totalUsedSponsorships = Ethers.BigNumber.addWithString(
-      totalUsedSponsorships,
-      usedSponsorships,
-    )
+    let assignedSponsorships = getServerAssignedSponsorships(guild)
+    let usedSponsorships = guild.usedSponsorships->Belt.Option.getWithDefault("0")->fromString
+    let totalAssignedSponsorships = add(totalAssignedSponsorships, assignedSponsorships)
+    let totalUsedSponsorships = add(totalUsedSponsorships, usedSponsorships)
     (totalAssignedSponsorships, totalUsedSponsorships)
-  })
+  }
+
+  guilds->Js.Dict.keys->Belt.Array.reduce((zero, zero), calculateAssignedAndUnusedTotals)
 }
 
 let execute = interaction => {
@@ -371,83 +377,92 @@ let execute = interaction => {
           ->catch(
             async e =>
               switch e {
-              | Exceptions.BrightIdError({errorNum, errorMessage}) =>
-                let whitelist = envConfig["sponsorshipsWhitelist"]->Js.String2.split(",")
-                let inWhitelist = whitelist->Js.Array2.includes(guild->Guild.getGuildId)
+              | Exceptions.BrightIdError({errorNum}) =>
+                let inWhitelist =
+                  envConfig["sponsorshipsWhitelist"]
+                  ->Js.String2.split(",")
+                  ->Js.Array2.includes(guild->Guild.getGuildId)
                 switch await getAppUnusedSponsorships(context) {
                 | None =>
                   let _ = await noSponsorshipsMessage(interaction)
                   VerifyCommandError("No sponsorships available in Discord pool")->raise
                 | Some(appUnusedSponsorships) =>
                   let (
-                    totalDiscordAssignedSponsorships,
-                    totalDiscordUsedSponsorships,
-                  ) = getDiscordServerSponsorshipTotals(guilds)
-                  let unusedDiscordSponsorships =
-                    totalDiscordAssignedSponsorships->Ethers.BigNumber.sub(
-                      totalDiscordUsedSponsorships,
-                    )
+                    totalGuildAssignedSponsorships,
+                    totalGuildUsedSponsorships,
+                  ) = getGuildSponsorshipTotals(guilds)
+                  let unusedGuildSponsorships =
+                    totalGuildAssignedSponsorships->Ethers.BigNumber.sub(totalGuildUsedSponsorships)
                   let unusedPremiumSponsorships =
                     appUnusedSponsorships
                     ->Belt.Float.toString
                     ->Ethers.BigNumber.fromString
-                    ->Ethers.BigNumber.sub(unusedDiscordSponsorships)
-                  let hasPremium = hasPremium(guildData)
-                  let premiumCanBeUsed =
-                    unusedPremiumSponsorships->Ethers.BigNumber.gtWithString("0") && hasPremium
-                  switch (errorNum, premiumCanBeUsed, guildData.sponsorshipAddress, inWhitelist) {
+                    ->Ethers.BigNumber.sub(unusedGuildSponsorships)
+
+                  let isPremiumActive =
+                    unusedPremiumSponsorships->Ethers.BigNumber.gt(Ethers.BigNumber.zero) &&
+                      hasPremium(guildData)
+
+                  switch (errorNum, isPremiumActive, inWhitelist) {
                   //Not in beta whitelist
-                  | (4, _, _, false) =>
+                  | (4, _, false) =>
                     let _ = await noSponsorshipsMessage(interaction)
                     VerifyCommandError("Guild not in beta whitelist")->raise
-                  // Use Premium Sponsorships
-                  | (4, true, _, _) =>
+                  // Premium is active
+                  | (4, true, _) =>
                     Js.log2(
                       "Unused Sponsorships in premium pool: ",
-                      unusedPremiumSponsorships->Ethers.BigNumber.toString,
+                      Ethers.BigNumber.toString(unusedPremiumSponsorships),
                     )
                     let options = await beforeSponsorMessageOptions("before-premium-sponsor", uuid)
                     let _ = await Interaction.editReply(interaction, ~options, ())
 
-                  // Has Sponsorship Address
-                  | (4, false, Some(sponsorshipAddress), true) =>
-                    switch await getAssignedSPFromAddress(sponsorshipAddress) {
-                    | assignedSponsorships =>
-                      let usedSponsorships =
-                        guildData.usedSponsorships->Belt.Option.getWithDefault(
-                          Ethers.BigNumber.zero->Ethers.BigNumber.toString,
-                        )
-                      let availableSponsorships =
-                        assignedSponsorships->Ethers.BigNumber.subWithString(usedSponsorships)
-                      let assignedSponsorships = assignedSponsorships->Ethers.BigNumber.toString
-                      let updateAssignedSponsorships = await Utils.Gist.UpdateGist.updateEntry(
-                        ~config=gistConfig(),
-                        ~content=guilds,
-                        ~key=guildId,
-                        ~entry={...guildData, assignedSponsorships: Some(assignedSponsorships)},
-                      )
-                      let hasAvailableSponsorships = !Ethers.BigNumber.isZero(availableSponsorships)
-                      switch (updateAssignedSponsorships, hasAvailableSponsorships) {
-                      | (Ok(_), false) =>
-                        let _ = await noSponsorshipsMessage(interaction)
-                      | (Ok(_), true) =>
-                        let options = await beforeSponsorMessageOptions("before-sponsor", uuid)
-                        let _ = await Interaction.editReply(interaction, ~options, ())
-                      | (Error(_), _) =>
-                        let _ = await noWriteToGistMessage(interaction)
-                      }
+                  // Use server sponsor
+                  | (4, false, true) =>
+                    let assignedSponsorshipsID = await getAssignedSPFromAddress(
+                      guildData.sponsorshipAddress,
+                      contractAddressID,
+                      "https://idchain.one/rpc",
+                    )
+                    let assignedSponsorshipsEth = await getAssignedSPFromAddress(
+                      guildData.sponsorshipAddressEth,
+                      contractAddressETH,
+                      "https://rpc.ankr.com/eth",
+                    )
+                    let totalUnusedSponsorships = totalUnusedSponsorships(
+                      assignedSponsorshipsID,
+                      assignedSponsorshipsEth,
+                    )
+                    switch totalUnusedSponsorships {
                     | exception NoAvailableSP =>
                       let _ = await noSponsorshipsMessage(interaction)
                       VerifyCommandError("This server has no usable sponsorships")->raise
-                    | exception JsError(obj) =>
-                      Js.Console.error(obj)
-                      VerifyCommandError("Unknown JS Error")->raise
+                    | exception e => raise(e)
+                    | _ =>
+                      open Ethers.BigNumber
+                      let usedSponsorships =
+                        guildData.usedSponsorships->Belt.Option.mapWithDefault(zero, fromString)
+
+                      let assignedSponsorships =
+                        assignedSponsorshipsID->add(assignedSponsorshipsEth)
+                      let availableSponsorships = assignedSponsorships->sub(usedSponsorships)
+
+                      let hasAvailableSponsorships = !isZero(availableSponsorships)
+                      switch hasAvailableSponsorships {
+                      | false =>
+                        //@TODO: Error no available SP
+                        let _ = await noSponsorshipsMessage(interaction)
+                      | true =>
+                        let options = await beforeSponsorMessageOptions("before-sponsor", uuid)
+                        let _ = await Interaction.editReply(interaction, ~options, ())
+                      }
                     }
                   // No Sponsorship Address and No Premium
-                  | (4, false, None, true) =>
-                    let _ = await noSponsorshipsMessage(interaction)
-                    VerifyCommandError("Does not have a sponsorship address set")->raise
-                  | (_, _, _, _) =>
+                  // | (4, false, true) =>
+                  //   let _ = await noSponsorshipsMessage(interaction)
+                  //   VerifyCommandError("Does not have a sponsorship address set")->raise
+                  //Non sponsorship error
+                  | (_, _, _) =>
                     let _ = switch await handleUnverifiedGuildMember(errorNum, interaction, uuid) {
                     | data => Some(data)
                     | exception JsError(obj) =>

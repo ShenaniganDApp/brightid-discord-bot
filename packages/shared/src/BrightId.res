@@ -36,14 +36,21 @@ module Error = {
 }
 
 module Gist = {
+  type assignedSponsorship = {
+    address: string,
+    amount: string,
+    timestamp: float,
+  }
+
   type brightIdGuild = {
     role: option<string>,
     name: option<string>,
     inviteLink: option<string>,
     roleId: option<string>,
     sponsorshipAddress: option<string>,
+    sponsorshipAddressEth: option<string>,
     usedSponsorships: option<string>,
-    assignedSponsorships: option<string>,
+    assignedSponsorships: option<array<assignedSponsorship>>,
     premiumSponsorshipsUsed: option<string>,
     premiumExpirationTimestamp: option<float>,
   }
