@@ -70,7 +70,7 @@ let handleUnverifiedGuildMember = (errorNum, interaction) => {
 
   | 3 =>
     let options = {
-      "content": "I haven't seen you at a Bright ID Connection Party yet, so your brightid is not verified. You can join a party in any timezone at https://meet.brightid.org",
+      "content": "Please scan the above QR code in the BrightID mobile app",
       "ephemeral": true,
     }
     interaction->Interaction.followUp(~options, ())->then(_ => resolve())

@@ -229,24 +229,16 @@ async function noSponsorshipsMessage(interaction) {
 }
 
 async function handleUnverifiedGuildMember(errorNum, interaction, uuid) {
-  if (errorNum !== 2) {
-    if (errorNum !== 3) {
-      var options = {
-        content: "Something unexpected happened. Please try again later.",
-        ephemeral: true
-      };
-      await interaction.editReply(options);
-      return ;
-    }
-    var options$1 = {
-      content: "I haven't seen you at a Bright ID Connection Party yet, so your brightid is not verified. You can join a party in any timezone at https://meet.brightid.org",
-      ephemeral: true
-    };
-    await interaction.editReply(options$1);
+  if (errorNum === 3 || errorNum === 2) {
+    var options = await makeLinkOptions(uuid);
+    await interaction.editReply(options);
     return ;
   }
-  var options$2 = await makeLinkOptions(uuid);
-  await interaction.editReply(options$2);
+  var options$1 = {
+    content: "Something unexpected happened. Please try again later.",
+    ephemeral: true
+  };
+  await interaction.editReply(options$1);
 }
 
 function hasPremium(guildData) {

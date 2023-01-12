@@ -244,10 +244,7 @@ let handleUnverifiedGuildMember = async (errorNum, interaction, uuid) => {
     let _ = await Interaction.editReply(interaction, ~options, ())
 
   | 3 =>
-    let options = {
-      "content": "I haven't seen you at a Bright ID Connection Party yet, so your brightid is not verified. You can join a party in any timezone at https://meet.brightid.org",
-      "ephemeral": true,
-    }
+    let options = await makeLinkOptions(uuid)
     let _ = await Interaction.editReply(interaction, ~options, ())
 
   | _ =>
