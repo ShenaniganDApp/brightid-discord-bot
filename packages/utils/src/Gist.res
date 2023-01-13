@@ -72,26 +72,17 @@ module ReadGist = {
       "Authorization": `Bearer ${token}`,
     }
 
-    `https://api.github.com/gists/${id}`
+    `https://gist.githubusercontent.com/youngkidwarrior/${id}/raw/${name}`
     ->fetch(params)
     ->then(res => res->Response.json)
-    ->then(data =>
-      switch data->Json.decode(Decode.gist) {
-      | Ok(gist) => {
-          let json = gist.files->Js.Dict.get(name)->Belt.Option.getExn
-          let content = json["content"]->Json.parseExn->Json.decode(decoder)
-          switch content {
-          | Ok(content) => content->resolve
-          | Error(err) => err->Json.Decode.DecodeError->raise
-          }
-        }
-
-      | Error(err) => err->Json.Decode.DecodeError->reject
+    ->then(data => {
+      switch data->Json.decode(decoder) {
+      | Ok(content) => content->resolve
+      | Error(err) => err->Json.Decode.DecodeError->raise
       }
-    )
+    })
   }
 }
-
 module UpdateGist = {
   exception UpdateGistError(exn)
   exception DuplicateKey(string)
