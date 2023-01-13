@@ -71,22 +71,13 @@ function makeGistConfig(id, name, token) {
 }
 
 function content$1(config, decoder) {
-  var name = config.name;
   var params = {
     Authorization: "Bearer " + config.token + ""
   };
-  return globalThis.fetch("https://api.github.com/gists/" + config.id + "", params).then(function (res) {
+  return globalThis.fetch("https://gist.githubusercontent.com/youngkidwarrior/" + config.id + "/raw/" + config.name + "", params).then(function (res) {
                 return res.json();
               }).then(function (data) {
-              var gist$1 = Json$JsonCombinators.decode(data, gist);
-              if (gist$1.TAG !== /* Ok */0) {
-                return Promise.reject({
-                            RE_EXN_ID: Json_Decode$JsonCombinators.DecodeError,
-                            _1: gist$1._0
-                          });
-              }
-              var json = Belt_Option.getExn(Js_dict.get(gist$1._0.files, name));
-              var content = Json$JsonCombinators.decode(Json$JsonCombinators.parseExn(json.content), decoder);
+              var content = Json$JsonCombinators.decode(data, decoder);
               if (content.TAG === /* Ok */0) {
                 return Promise.resolve(content._0);
               }
