@@ -9,8 +9,6 @@ import * as Endpoints from "./Endpoints.mjs";
 import * as Exceptions from "./Exceptions.mjs";
 import * as Gist$Utils from "@brightidbot/utils/src/Gist.mjs";
 import * as DiscordJs from "discord.js";
-import * as Belt_Option from "rescript/lib/es6/belt_Option.js";
-import * as Caml_option from "rescript/lib/es6/caml_option.js";
 import * as Commands_Help from "./commands/Commands_Help.mjs";
 import * as Decode$Shared from "@brightidbot/shared/src/Decode.mjs";
 import * as Buttons_Verify from "./buttons/Buttons_Verify.mjs";
@@ -47,6 +45,12 @@ if (envConfig.TAG === /* Ok */0) {
         _1: envConfig._0,
         Error: new Error()
       };
+}
+
+function gistConfig(param) {
+  var id = envConfig$1.gistId;
+  var token = envConfig$1.githubAccessToken;
+  return Gist$Utils.makeGistConfig(id, "guildData.json", token);
 }
 
 var options = {
@@ -89,11 +93,8 @@ buttons.set(Buttons_Verify.customId, {
     });
 
 async function updateGistOnGuildCreate(guild, roleId) {
-  var id = envConfig$1.gistId;
-  var token = envConfig$1.githubAccessToken;
-  var config = Gist$Utils.makeGistConfig(id, "guildData.json", token);
   var guildId = guild.id;
-  var content = await Gist$Utils.ReadGist.content(config, Decode$Shared.Decode_Gist.brightIdGuilds);
+  var content = await Gist$Utils.ReadGist.content(gistConfig(undefined), Decode$Shared.Decode_Gist.brightIdGuilds);
   var entry_role = "Verified";
   var entry_name = guild.name;
   var entry_roleId = roleId;
@@ -108,7 +109,7 @@ async function updateGistOnGuildCreate(guild, roleId) {
     premiumSponsorshipsUsed: undefined,
     premiumExpirationTimestamp: undefined
   };
-  return await Gist$Utils.UpdateGist.addEntry(content, guildId, entry, config);
+  return await Gist$Utils.UpdateGist.addEntry(content, guildId, entry, gistConfig(undefined));
 }
 
 async function onGuildCreate(guild) {
@@ -228,11 +229,10 @@ async function onInteraction(interaction) {
 async function onGuildDelete(guild) {
   var guildId = guild.id;
   var guildName = guild.name;
-  var config = Gist$Utils.makeGistConfig(envConfig$1.gistId, "guildData.json", envConfig$1.githubAccessToken);
   var exit = 0;
   var guilds;
   try {
-    guilds = await Gist$Utils.ReadGist.content(config, Decode$Shared.Decode_Gist.brightIdGuilds);
+    guilds = await Gist$Utils.ReadGist.content(gistConfig(undefined), Decode$Shared.Decode_Gist.brightIdGuilds);
     exit = 1;
   }
   catch (raw_e){
@@ -249,7 +249,7 @@ async function onGuildDelete(guild) {
       var exit$1 = 0;
       var val;
       try {
-        val = await Gist$Utils.UpdateGist.removeEntry(guilds, guildId, config);
+        val = await Gist$Utils.UpdateGist.removeEntry(guilds, guildId, gistConfig(undefined));
         exit$1 = 2;
       }
       catch (raw_e$1){
@@ -274,7 +274,6 @@ async function onGuildDelete(guild) {
 }
 
 async function onGuildMemberAdd(guildMember) {
-  var config = Gist$Utils.makeGistConfig(envConfig$1.gistId, "guildData.json", envConfig$1.githubAccessToken);
   var guildName = guildMember.guild.name;
   var guildId = guildMember.guild.id;
   var exit = 0;
@@ -298,7 +297,7 @@ async function onGuildMemberAdd(guildMember) {
       var exit$1 = 0;
       var guilds;
       try {
-        guilds = await Gist$Utils.ReadGist.content(config, Decode$Shared.Decode_Gist.brightIdGuilds);
+        guilds = await Gist$Utils.ReadGist.content(gistConfig(undefined), Decode$Shared.Decode_Gist.brightIdGuilds);
         exit$1 = 2;
       }
       catch (raw_e$1){
@@ -312,23 +311,27 @@ async function onGuildMemberAdd(guildMember) {
         if (brightIdGuild !== undefined) {
           var roleId = brightIdGuild.roleId;
           if (roleId !== undefined) {
-            var role = Belt_Option.getExn(Caml_option.nullable_to_opt(guild.roles.cache.get(roleId)));
-            var guildMemberRoleManager = guildMember.roles;
-            var exit$2 = 0;
-            var val$1;
-            try {
-              val$1 = await guildMemberRoleManager.add(role, "User is already verified by BrightID");
-              exit$2 = 3;
+            var role = guild.roles.cache.get(roleId);
+            if (role == null) {
+              console.error("" + guildName + " : " + guildId$1 + ": ", "Role does not exist");
+            } else {
+              var guildMemberRoleManager = guildMember.roles;
+              var exit$2 = 0;
+              var val$1;
+              try {
+                val$1 = await guildMemberRoleManager.add(role, "User is already verified by BrightID");
+                exit$2 = 3;
+              }
+              catch (raw_e$2){
+                var e$2 = Caml_js_exceptions.internalToOCamlException(raw_e$2);
+                console.error("" + guildName + " : " + guildId$1 + ": ", e$2);
+              }
+              if (exit$2 === 3) {
+                var uuid = Uuid.v5(guildMember.id, envConfig$1.uuidNamespace);
+                console.log("" + guildName + " : " + guildId$1 + " verified the user with contextId: " + uuid + "");
+              }
+              
             }
-            catch (raw_e$2){
-              var e$2 = Caml_js_exceptions.internalToOCamlException(raw_e$2);
-              console.error("" + guildName + " : " + guildId$1 + ": ", e$2);
-            }
-            if (exit$2 === 3) {
-              var uuid = Uuid.v5(guildMember.id, envConfig$1.uuidNamespace);
-              console.log("" + guildName + " : " + guildId$1 + " verified the user with contextId: " + uuid + "");
-            }
-            
           } else {
             console.error("" + guildName + " : " + guildId$1 + ": ", "Guild does not have a saved roleId");
           }
@@ -347,11 +350,10 @@ async function onGuildMemberAdd(guildMember) {
 async function onRoleUpdate(role) {
   var guildId = role.guild.id;
   var guildName = role.guild.name;
-  var config = Gist$Utils.makeGistConfig(envConfig$1.gistId, "guildData.json", envConfig$1.githubAccessToken);
   var exit = 0;
   var content;
   try {
-    content = await Gist$Utils.ReadGist.content(config, Decode$Shared.Decode_Gist.brightIdGuilds);
+    content = await Gist$Utils.ReadGist.content(gistConfig(undefined), Decode$Shared.Decode_Gist.brightIdGuilds);
     exit = 1;
   }
   catch (raw_e){
@@ -392,7 +394,7 @@ async function onRoleUpdate(role) {
         var exit$1 = 0;
         var val;
         try {
-          val = await Gist$Utils.UpdateGist.updateEntry(content, guildId, entry, config);
+          val = await Gist$Utils.UpdateGist.updateEntry(content, guildId, entry, gistConfig(undefined));
           exit$1 = 2;
         }
         catch (raw_e$1){
@@ -412,6 +414,156 @@ async function onRoleUpdate(role) {
     } else {
       console.error("" + guildName + " : " + guildId + ": ", "Guild does not exist in Gist");
       return ;
+    }
+  }
+  
+}
+
+function hasRoleChanged(oldMember, newMember) {
+  var oldRoles = oldMember.roles.cache;
+  var newRoles = newMember.roles.cache;
+  return !oldRoles.equals(newRoles);
+}
+
+function roleAddedOrRemoved(oldMember, newMember, roleId) {
+  var oldRoles = oldMember.roles.cache;
+  var newRoles = newMember.roles.cache;
+  var oldRoleIds = oldRoles.mapValues(function (role) {
+        return role.id;
+      });
+  var newRoleIds = newRoles.mapValues(function (role) {
+        return role.id;
+      });
+  var addedRoleIds = newRoleIds.filter(function (roleId) {
+        return !oldRoleIds.has(roleId);
+      });
+  var removedRoleIds = oldRoleIds.filter(function (roleId) {
+        return !newRoleIds.has(roleId);
+      });
+  if (addedRoleIds.has(roleId)) {
+    return /* RoleAdded */0;
+  } else if (removedRoleIds.has(roleId)) {
+    return /* RoleRemoved */1;
+  } else {
+    return /* NoChange */2;
+  }
+}
+
+async function onGuildMemberUpdate(oldMember, newMember) {
+  var guild = newMember.guild;
+  var guildName = guild.name;
+  var guildId = guild.id;
+  if (!hasRoleChanged(oldMember, newMember)) {
+    return ;
+  }
+  var exit = 0;
+  var guilds;
+  try {
+    guilds = await Gist$Utils.ReadGist.content(gistConfig(undefined), Decode$Shared.Decode_Gist.brightIdGuilds);
+    exit = 1;
+  }
+  catch (raw_e){
+    var e = Caml_js_exceptions.internalToOCamlException(raw_e);
+    console.error("" + guildName + " : " + guildId + ": ", e);
+  }
+  if (exit === 1) {
+    var match = Js_dict.get(guilds, guildId);
+    if (match !== undefined) {
+      var roleId = match.roleId;
+      if (roleId !== undefined) {
+        var match$1 = roleAddedOrRemoved(oldMember, newMember, roleId);
+        switch (match$1) {
+          case /* RoleAdded */0 :
+              var exit$1 = 0;
+              var val;
+              try {
+                val = await Services_VerificationInfo.getBrightIdVerification(newMember);
+                exit$1 = 2;
+              }
+              catch (raw_e$1){
+                var e$1 = Caml_js_exceptions.internalToOCamlException(raw_e$1);
+                if (e$1.RE_EXN_ID === Exceptions.BrightIdError) {
+                  console.error("" + guildName + " : " + guildId + ": ", e$1._1.errorMessage);
+                } else if (e$1.RE_EXN_ID === $$Promise.JsError) {
+                  console.error("" + guildName + " : " + guildId + ": ", e$1._1);
+                } else {
+                  console.error("" + guildName + " : " + guildId + ": ", e$1);
+                }
+              }
+              if (exit$1 === 2 && !val._0.unique) {
+                var role = guild.roles.cache.get(roleId);
+                var guildMemberRoleManager = newMember.roles;
+                if (role == null) {
+                  console.error("" + guildName + " : " + guildId + ": ", "Role does not exist");
+                } else {
+                  var exit$2 = 0;
+                  var val$1;
+                  try {
+                    val$1 = await guildMemberRoleManager.remove(role, "User is not verified by BrightID");
+                    exit$2 = 3;
+                  }
+                  catch (raw_e$2){
+                    var e$2 = Caml_js_exceptions.internalToOCamlException(raw_e$2);
+                    console.error("" + guildName + " : " + guildId + ": ", e$2);
+                  }
+                  if (exit$2 === 3) {
+                    var uuid = Uuid.v5(newMember.id, envConfig$1.uuidNamespace);
+                    console.log("" + guildName + " : " + guildId + " removed the role with contextId: " + uuid + " because the user is not verified but was manually assigned the role");
+                  }
+                  
+                }
+              }
+              break;
+          case /* RoleRemoved */1 :
+              var exit$3 = 0;
+              var val$2;
+              try {
+                val$2 = await Services_VerificationInfo.getBrightIdVerification(newMember);
+                exit$3 = 2;
+              }
+              catch (raw_e$3){
+                var e$3 = Caml_js_exceptions.internalToOCamlException(raw_e$3);
+                if (e$3.RE_EXN_ID === Exceptions.BrightIdError) {
+                  console.error("" + guildName + " : " + guildId + ": ", e$3._1.errorMessage);
+                } else if (e$3.RE_EXN_ID === $$Promise.JsError) {
+                  console.error("" + guildName + " : " + guildId + ": ", e$3._1);
+                } else {
+                  console.error("" + guildName + " : " + guildId + ": ", e$3);
+                }
+              }
+              if (exit$3 === 2 && val$2._0.unique) {
+                var role$1 = guild.roles.cache.get(roleId);
+                var guildMemberRoleManager$1 = newMember.roles;
+                if (role$1 == null) {
+                  console.error("" + guildName + " : " + guildId + ": ", "Role does not exist");
+                } else {
+                  var exit$4 = 0;
+                  var val$3;
+                  try {
+                    val$3 = await guildMemberRoleManager$1.add(role$1, "User is verified by BrightID");
+                    exit$4 = 3;
+                  }
+                  catch (raw_e$4){
+                    var e$4 = Caml_js_exceptions.internalToOCamlException(raw_e$4);
+                    console.error("" + guildName + " : " + guildId + ": ", e$4);
+                  }
+                  if (exit$4 === 3) {
+                    var uuid$1 = Uuid.v5(newMember.id, envConfig$1.uuidNamespace);
+                    console.log("" + guildName + " : " + guildId + " added the role with contextId: " + uuid$1 + " because the user is verified but was not assigned the role");
+                  }
+                  
+                }
+              }
+              break;
+          case /* NoChange */2 :
+              break;
+          
+        }
+      } else {
+        console.error("" + guildName + " : " + guildId + ": ", "Guild does not have a saved roleId");
+      }
+    } else {
+      console.error("" + guildName + " : " + guildId + ": ", "Guild does not exist in Gist");
     }
   }
   
@@ -441,6 +593,10 @@ client.on("roleUpdate", (function (param, newRole) {
         onRoleUpdate(newRole);
       }));
 
+client.on("guildMemberUpdate", (function (oldMember, newMember) {
+        onGuildMemberUpdate(oldMember, newMember);
+      }));
+
 client.login(envConfig$1.discordApiToken);
 
 var brightIdVerificationEndpoint = Endpoints.brightIdVerificationEndpoint;
@@ -454,6 +610,7 @@ export {
   GuildNotInGist ,
   updateGist ,
   envConfig$1 as envConfig,
+  gistConfig ,
   options ,
   client ,
   commands ,
@@ -464,5 +621,8 @@ export {
   onGuildDelete ,
   onGuildMemberAdd ,
   onRoleUpdate ,
+  hasRoleChanged ,
+  roleAddedOrRemoved ,
+  onGuildMemberUpdate ,
 }
 /*  Not a pure module */

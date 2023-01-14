@@ -12,7 +12,7 @@
     "dotenv": "^8.2.0",
     "find-up": "^6.3.0",
     "rescript": "^10.1.0-rc.5",
-    "rescript-discordjs": "^0.2.4",
+    "rescript-discordjs": "^0.2.9",
     "uuid": "^8.3.0"
   },
   "scripts": {

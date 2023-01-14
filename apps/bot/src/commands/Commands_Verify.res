@@ -295,7 +295,6 @@ let execute = interaction => {
   open Utils
 
   let guild = interaction->Interaction.getGuild
-  let guildName = guild->Guild.getGuildName
   let member = interaction->Interaction.getGuildMember
   let guildRoleManager = guild->Guild.getGuildRoleManager
   let memberId = member->GuildMember.getGuildMemberId
@@ -371,7 +370,7 @@ let execute = interaction => {
           ->catch(
             async e =>
               switch e {
-              | Exceptions.BrightIdError({errorNum, errorMessage}) =>
+              | Exceptions.BrightIdError({errorNum}) =>
                 let whitelist = envConfig["sponsorshipsWhitelist"]->Js.String2.split(",")
                 let inWhitelist = whitelist->Js.Array2.includes(guild->Guild.getGuildId)
                 switch await getAppUnusedSponsorships(context) {
