@@ -158,7 +158,6 @@ let execute = interaction => {
                       `${member->GuildMember.getDisplayName} is not unique`,
                     )->reject,
                 )
-              | (_, _) => member->noMultipleContextIds(interaction)
               }
             }
           },

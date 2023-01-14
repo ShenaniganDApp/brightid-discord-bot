@@ -301,7 +301,6 @@ let execute = interaction => {
   open Utils
 
   let guild = interaction->Interaction.getGuild
-  let guildName = guild->Guild.getGuildName
   let member = interaction->Interaction.getGuildMember
   let guildRoleManager = guild->Guild.getGuildRoleManager
   let memberId = member->GuildMember.getGuildMemberId

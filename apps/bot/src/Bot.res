@@ -33,6 +33,13 @@ let envConfig = switch envConfig {
 | Error(err) => err->Env.EnvError->raise
 }
 
+let gistConfig = () => {
+  let id = envConfig["gistId"]
+  let name = "guildData.json"
+  let token = envConfig["githubAccessToken"]
+  Utils.Gist.makeGistConfig(~id, ~name, ~token)
+}
+
 let options: Client.clientOptions = {
   intents: ["GUILDS", "GUILD_MESSAGES", "GUILD_MEMBERS"],
 }
@@ -275,18 +282,16 @@ let onGuildDelete = async guild => {
   let guildId = Guild.getGuildId(guild)
   let guildName = Guild.getGuildName(guild)
 
-  let config = Gist.makeGistConfig(
-    ~id=envConfig["gistId"],
-    ~name="guildData.json",
-    ~token=envConfig["githubAccessToken"],
-  )
-
-  switch await Gist.ReadGist.content(~config, ~decoder=Decode_Gist.brightIdGuilds) {
+  switch await Gist.ReadGist.content(~config=gistConfig(), ~decoder=Decode_Gist.brightIdGuilds) {
   | exception JsError(e) => Js.Console.error2(`${guildName} : ${guildId}: `, e)
   | guilds =>
     switch guilds->Js.Dict.get(guildId) {
     | Some(_) =>
-      switch await Gist.UpdateGist.removeEntry(~content=guilds, ~key=guildId, ~config) {
+      switch await Gist.UpdateGist.removeEntry(
+        ~content=guilds,
+        ~key=guildId,
+        ~config=gistConfig(),
+      ) {
       | _ => Js.log(`${guildName} : ${guildId}: Successfully removed guild data`)
       | exception JsError(e) => Js.Console.error2(`${guildName} : ${guildId}: `, e)
       }
@@ -299,18 +304,17 @@ let onGuildDelete = async guild => {
 let onGuildMemberAdd = async guildMember => {
   open Utils
   open Services_VerificationInfo
-  let config = Gist.makeGistConfig(
-    ~id=envConfig["gistId"],
-    ~name="guildData.json",
-    ~token=envConfig["githubAccessToken"],
-  )
+
   let guildName = guildMember->GuildMember.getGuild->Guild.getGuildName
   let guildId = guildMember->GuildMember.getGuild->Guild.getGuildId
   let _ = switch await getBrightIdVerification(guildMember) {
   | VerificationInfo({unique}) =>
     switch unique {
     | true =>
-      switch await Gist.ReadGist.content(~config, ~decoder=Decode.Decode_Gist.brightIdGuilds) {
+      switch await Gist.ReadGist.content(
+        ~config=gistConfig(),
+        ~decoder=Decode.Decode_Gist.brightIdGuilds,
+      ) {
       | exception e => Js.Console.error2(`${guildName} : ${guildId}: `, e)
       | guilds =>
         let guild = guildMember->GuildMember.getGuild
@@ -327,24 +331,25 @@ let onGuildMemberAdd = async guildMember => {
             ->RoleManager.getCache
             ->Collection.get(roleId)
             ->Js.Nullable.toOption
-            ->Belt.Option.getExn
-
-          let guildMemberRoleManager = guildMember->GuildMember.getGuildMemberRoleManager
-          let _ = switch await GuildMemberRoleManager.add(
-            guildMemberRoleManager,
-            role,
-            ~reason="User is already verified by BrightID",
-            (),
-          ) {
-          | exception e => Js.Console.error2(`${guildName} : ${guildId}: `, e)
-          | _ =>
-            let uuid =
-              guildMember->GuildMember.getGuildMemberId->UUID.v5(envConfig["uuidNamespace"])
-            Js.log(`${guildName} : ${guildId} verified the user with contextId: ${uuid}`)
+          switch role {
+          | None => Js.Console.error2(`${guildName} : ${guildId}: `, `Role does not exist`)
+          | Some(role) =>
+            let guildMemberRoleManager = guildMember->GuildMember.getGuildMemberRoleManager
+            let _ = switch await GuildMemberRoleManager.add(
+              guildMemberRoleManager,
+              role,
+              ~reason="User is already verified by BrightID",
+              (),
+            ) {
+            | exception e => Js.Console.error2(`${guildName} : ${guildId}: `, e)
+            | _ =>
+              let uuid =
+                guildMember->GuildMember.getGuildMemberId->UUID.v5(envConfig["uuidNamespace"])
+              Js.log(`${guildName} : ${guildId} verified the user with contextId: ${uuid}`)
+            }
           }
         }
       }
-
     | false =>
       Js.Console.error2(
         `${guildName} : ${guildId}: `,
@@ -365,12 +370,11 @@ let onRoleUpdate = async role => {
   open Utils
   let guildId = role->Role.getGuild->Guild.getGuildId
   let guildName = role->Role.getGuild->Guild.getGuildName
-  let config = Gist.makeGistConfig(
-    ~id=envConfig["gistId"],
-    ~name="guildData.json",
-    ~token=envConfig["githubAccessToken"],
-  )
-  switch await Gist.ReadGist.content(~config, ~decoder=Decode.Decode_Gist.brightIdGuilds) {
+
+  switch await Gist.ReadGist.content(
+    ~config=gistConfig(),
+    ~decoder=Decode.Decode_Gist.brightIdGuilds,
+  ) {
   | exception e => Js.Console.error2(`${guildName} : ${guildId}: `, e)
   | content =>
     let brightIdGuild = content->Js.Dict.get(guildId)
@@ -389,11 +393,152 @@ let onRoleUpdate = async role => {
             ...brightIdGuild,
             role: Some(roleName),
           }
-          switch await Gist.UpdateGist.updateEntry(~content, ~entry, ~key=guildId, ~config) {
+          switch await Gist.UpdateGist.updateEntry(
+            ~content,
+            ~entry,
+            ~key=guildId,
+            ~config=gistConfig(),
+          ) {
           | exception e => Js.Console.error2(`${guildName} : ${guildId}: `, e)
           | _ => Js.log(`${guildName} : ${guildId} updated the role name to ${roleName}`)
           }
         | false => ()
+        }
+      }
+    }
+  }
+}
+
+let hasRoleChanged = (oldMember, newMember) => {
+  let oldRoles = oldMember->GuildMember.getGuildMemberRoleManager->GuildMemberRoleManager.getCache
+  let newRoles = newMember->GuildMember.getGuildMemberRoleManager->GuildMemberRoleManager.getCache
+  !Collection.equals(oldRoles, newRoles)
+}
+
+type roleAddedOrRemoved =
+  | RoleAdded
+  | RoleRemoved
+  | NoChange
+let roleAddedOrRemoved = (oldMember, newMember, roleId) => {
+  open Collection
+
+  let oldRoles = oldMember->GuildMember.getGuildMemberRoleManager->GuildMemberRoleManager.getCache
+  let newRoles = newMember->GuildMember.getGuildMemberRoleManager->GuildMemberRoleManager.getCache
+
+  let oldRoleIds = oldRoles->mapValues(role => role->Role.getRoleId)
+  let newRoleIds = newRoles->mapValues(role => role->Role.getRoleId)
+
+  let addedRoleIds = newRoleIds->filter(roleId => !has(oldRoleIds, roleId))
+  let removedRoleIds = oldRoleIds->filter(roleId => !has(newRoleIds, roleId))
+  if addedRoleIds->has(roleId) {
+    RoleAdded
+  } else if removedRoleIds->has(roleId) {
+    RoleRemoved
+  } else {
+    NoChange
+  }
+}
+
+let onGuildMemberUpdate = async (oldMember, newMember) => {
+  open Utils
+  open Services_VerificationInfo
+  let guild = newMember->GuildMember.getGuild
+  let guildName = guild->Guild.getGuildName
+  let guildId = guild->Guild.getGuildId
+  if hasRoleChanged(oldMember, newMember) {
+    let _ = switch await Gist.ReadGist.content(
+      ~config=gistConfig(),
+      ~decoder=Decode.Decode_Gist.brightIdGuilds,
+    ) {
+    | exception e => Js.Console.error2(`${guildName} : ${guildId}: `, e)
+    | guilds =>
+      switch guilds->Js.Dict.get(guildId) {
+      | None => Js.Console.error2(`${guildName} : ${guildId}: `, `Guild does not exist in Gist`)
+      | Some({roleId: None}) =>
+        Js.Console.error2(`${guildName} : ${guildId}: `, `Guild does not have a saved roleId`)
+      | Some({roleId: Some(roleId)}) =>
+        switch roleAddedOrRemoved(oldMember, newMember, roleId) {
+        | NoChange => ()
+        | RoleAdded =>
+          let _ = switch await getBrightIdVerification(newMember) {
+          | VerificationInfo({unique}) =>
+            switch unique {
+            | true => ()
+            | false =>
+              let role =
+                guild
+                ->Guild.getGuildRoleManager
+                ->RoleManager.getCache
+                ->Collection.get(roleId)
+                ->Js.Nullable.toOption
+              let guildMemberRoleManager = newMember->GuildMember.getGuildMemberRoleManager
+              switch role {
+              | None => Js.Console.error2(`${guildName} : ${guildId}: `, `Role does not exist`)
+              | Some(role) =>
+                let _ = switch await GuildMemberRoleManager.removeRole(
+                  guildMemberRoleManager,
+                  role,
+                  ~reason="User is not verified by BrightID",
+                  (),
+                ) {
+                | exception e => Js.Console.error2(`${guildName} : ${guildId}: `, e)
+                | _ =>
+                  let uuid =
+                    newMember->GuildMember.getGuildMemberId->UUID.v5(envConfig["uuidNamespace"])
+                  Js.log(
+                    `${guildName} : ${guildId} removed the role with contextId: ${uuid} because the user is not verified but was manually assigned the role`,
+                  )
+                }
+              }
+            }
+          | exception e =>
+            switch e {
+            | Exceptions.BrightIdError({errorMessage}) =>
+              Js.Console.error2(`${guildName} : ${guildId}: `, errorMessage)
+            | JsError(obj) => Js.Console.error2(`${guildName} : ${guildId}: `, obj)
+            | _ => Js.Console.error2(`${guildName} : ${guildId}: `, e)
+            }
+          }
+        | RoleRemoved =>
+          let _ = switch await getBrightIdVerification(newMember) {
+          | VerificationInfo({unique}) =>
+            switch unique {
+            | false => ()
+            | true =>
+              let role =
+                guild
+                ->Guild.getGuildRoleManager
+                ->RoleManager.getCache
+                ->Collection.get(roleId)
+                ->Js.Nullable.toOption
+              let guildMemberRoleManager = newMember->GuildMember.getGuildMemberRoleManager
+              switch role {
+              | None => Js.Console.error2(`${guildName} : ${guildId}: `, `Role does not exist`)
+              | Some(role) =>
+                let _ = switch await GuildMemberRoleManager.add(
+                  guildMemberRoleManager,
+                  role,
+                  ~reason="User is verified by BrightID",
+                  (),
+                ) {
+                | exception e => Js.Console.error2(`${guildName} : ${guildId}: `, e)
+                | _ =>
+                  let uuid =
+                    newMember->GuildMember.getGuildMemberId->UUID.v5(envConfig["uuidNamespace"])
+                  Js.log(
+                    `${guildName} : ${guildId} added the role with contextId: ${uuid} because the user is verified but was not assigned the role`,
+                  )
+                }
+              }
+            }
+          | exception e =>
+            switch e {
+            | Exceptions.BrightIdError({errorMessage}) =>
+              Js.Console.error2(`${guildName} : ${guildId}: `, errorMessage)
+            | JsError(obj) => Js.Console.error2(`${guildName} : ${guildId}: `, obj)
+            | _ => Js.Console.error2(`${guildName} : ${guildId}: `, e)
+            }
+          }
         }
       }
     }
@@ -417,5 +562,9 @@ client->Client.on(#guildDelete(guild => guild->onGuildDelete->ignore))
 client->Client.on(#guildMemberAdd(member => member->onGuildMemberAdd->ignore))
 
 client->Client.on(#roleUpdate((~oldRole as _, ~newRole) => newRole->onRoleUpdate->ignore))
+
+client->Client.on(
+  #guildMemberUpdate((~oldMember, ~newMember) => onGuildMemberUpdate(oldMember, newMember)->ignore),
+)
 
 client->Client.login(envConfig["discordApiToken"])->ignore
