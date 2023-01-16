@@ -493,8 +493,32 @@ let onGuildMemberUpdate = async (oldMember, newMember) => {
             }
           | exception e =>
             switch e {
-            | Exceptions.BrightIdError({errorMessage}) =>
-              Js.Console.error2(`${guildName} : ${guildId}: `, errorMessage)
+            | Exceptions.BrightIdError(_) =>
+              let role =
+                guild
+                ->Guild.getGuildRoleManager
+                ->RoleManager.getCache
+                ->Collection.get(roleId)
+                ->Js.Nullable.toOption
+              let guildMemberRoleManager = newMember->GuildMember.getGuildMemberRoleManager
+              switch role {
+              | None => Js.Console.error2(`${guildName} : ${guildId}: `, `Role does not exist`)
+              | Some(role) =>
+                let _ = switch await GuildMemberRoleManager.removeRole(
+                  guildMemberRoleManager,
+                  role,
+                  ~reason="User is not verified by BrightID",
+                  (),
+                ) {
+                | exception e => Js.Console.error2(`${guildName} : ${guildId}: `, e)
+                | _ =>
+                  let uuid =
+                    newMember->GuildMember.getGuildMemberId->UUID.v5(envConfig["uuidNamespace"])
+                  Js.log(
+                    `${guildName} : ${guildId} removed the role with contextId: ${uuid} because the user is not verified but was manually assigned the role`,
+                  )
+                }
+              }
             | JsError(obj) => Js.Console.error2(`${guildName} : ${guildId}: `, obj)
             | _ => Js.Console.error2(`${guildName} : ${guildId}: `, e)
             }
