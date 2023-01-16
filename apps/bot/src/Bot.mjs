@@ -11,7 +11,6 @@ import * as Gist$Utils from '@brightidbot/utils/src/Gist.mjs'
 import * as DiscordJs from 'discord.js'
 import * as Commands_Help from './commands/Commands_Help.mjs'
 import * as Decode$Shared from '@brightidbot/shared/src/Decode.mjs'
-import * as Belt_SetString from 'rescript/lib/es6/belt_SetString.js'
 import * as Buttons_Verify from './buttons/Buttons_Verify.mjs'
 import * as Commands_Guild from './commands/Commands_Guild.mjs'
 import * as Buttons_Sponsor from './buttons/Buttons_Sponsor.mjs'
@@ -20,11 +19,9 @@ import * as Commands_Invite from './commands/Commands_Invite.mjs'
 import * as Commands_Verify from './commands/Commands_Verify.mjs'
 import * as Constants$Shared from '@brightidbot/shared/src/Constants.mjs'
 import * as Caml_js_exceptions from 'rescript/lib/es6/caml_js_exceptions.js'
-import * as Json$JsonCombinators from '@glennsl/rescript-json-combinators/src/Json.mjs'
 import * as UpdateOrReadGistMjs from './updateOrReadGist.mjs'
 import * as Buttons_PremiumSponsor from './buttons/Buttons_PremiumSponsor.mjs'
 import * as Services_VerificationInfo from './services/Services_VerificationInfo.mjs'
-import * as Json_Decode$JsonCombinators from '@glennsl/rescript-json-combinators/src/Json_Decode.mjs'
 
 var RequestHandlerError = /* @__PURE__ */ Caml_exceptions.create(
   'Bot.RequestHandlerError',
@@ -69,13 +66,7 @@ var commands = new DiscordJs.Collection()
 
 var buttons = new DiscordJs.Collection()
 
-function makeGistConfig(param) {
-  return Gist$Utils.makeGistConfig(
-    envConfig$1.gistId,
-    'guildData.json',
-    envConfig$1.githubAccessToken,
-  )
-}
+var buttons = new DiscordJs.Collection()
 
 commands
   .set(Commands_Help.data.name, {
@@ -110,12 +101,9 @@ buttons
   })
 
 async function updateGistOnGuildCreate(guild, roleId) {
-  var id = envConfig$1.gistId
-  var token = envConfig$1.githubAccessToken
-  var config = Gist$Utils.makeGistConfig(id, 'guildData.json', token)
   var guildId = guild.id
   var content = await Gist$Utils.ReadGist.content(
-    config,
+    gistConfig(undefined),
     Decode$Shared.Decode_Gist.brightIdGuilds,
   )
   var entry_role = 'Verified'
@@ -133,25 +121,27 @@ async function updateGistOnGuildCreate(guild, roleId) {
     premiumSponsorshipsUsed: undefined,
     premiumExpirationTimestamp: undefined,
   }
-  return await Gist$Utils.UpdateGist.addEntry(content, guildId, entry, config)
+  return await Gist$Utils.UpdateGist.addEntry(
+    content,
+    guildId,
+    entry,
+    gistConfig(undefined),
+  )
 }
 
 async function onGuildCreate(guild) {
   var roleManager = guild.roles
   var guildId = guild.id
   var guildName = guild.name
-  var id = envConfig$1.gistId
-  var token = envConfig$1.githubAccessToken
-  var config = Gist$Utils.makeGistConfig(id, 'guildData.json', token)
-  var role = await roleManager.create({
+  var createRole = await roleManager.create({
     name: 'Verified',
     color: 'ORANGE',
     reason: 'Create a role to mark verified users with BrightID',
   })
   var exit = 0
-  var role$1
+  var role
   try {
-    role$1 = role
+    role = createRole
     exit = 1
   } catch (raw_e) {
     var e = Caml_js_exceptions.internalToOCamlException(raw_e)
@@ -159,14 +149,10 @@ async function onGuildCreate(guild) {
     return
   }
   if (exit === 1) {
-    var content = await Gist$Utils.ReadGist.content(
-      config,
-      Decode$Shared.Decode_Gist.brightIdGuilds,
-    )
     var exit$1 = 0
     var val
     try {
-      val = await updateGistOnGuildCreate(guild, role$1.id, content)
+      val = await updateGistOnGuildCreate(guild, role.id)
       exit$1 = 2
     } catch (raw_e$1) {
       var e$1 = Caml_js_exceptions.internalToOCamlException(raw_e$1)
@@ -181,28 +167,7 @@ async function onGuildCreate(guild) {
           guildId +
           ': Successfully added to the database',
       )
-      var exit$2 = 0
-      var verifiedMembersCount
-      try {
-        verifiedMembersCount = await assignRoleOnCreate(guild, role$1)
-        exit$2 = 3
-      } catch (raw_e$2) {
-        var e$2 = Caml_js_exceptions.internalToOCamlException(raw_e$2)
-        console.error('' + guildName + ' : ' + guildId + ': ', e$2)
-        return
-      }
-      if (exit$2 === 3) {
-        console.log(
-          '' +
-            guildName +
-            ' : ' +
-            guildId +
-            ': Successfully assigned role to ' +
-            String(verifiedMembersCount) +
-            ' current members',
-        )
-        return
-      }
+      return
     }
   }
 }
@@ -787,10 +752,7 @@ export {
   client,
   commands,
   buttons,
-  makeGistConfig,
   updateGistOnGuildCreate,
-  fetchContextIds,
-  assignRoleOnCreate,
   onGuildCreate,
   onInteraction,
   onGuildDelete,
