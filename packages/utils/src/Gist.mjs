@@ -72,7 +72,9 @@ function makeGistConfig(id, name, token) {
 
 function content$1(config, decoder) {
   var params = {
-    Authorization: "Bearer " + config.token + ""
+    Authorization: "Bearer " + config.token + "",
+    Accept: "application/vnd.github+json",
+    "X-GitHub-Api-Version": "2022-11-28"
   };
   return globalThis.fetch("https://gist.githubusercontent.com/youngkidwarrior/" + config.id + "/raw/" + config.name + "", params).then(function (res) {
                 return res.json();
