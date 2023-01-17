@@ -7520,10 +7520,10 @@ require-main-filename@^2.0.0:
   resolved "https://registry.yarnpkg.com/require-main-filename/-/require-main-filename-2.0.0.tgz#d0b329ecc7cc0f61649f62215be69af54aa8989b"
   integrity sha512-NKN5kMDylKuldxYLSUfrbo5Tuzh4hd+2E8NPPX02mZtn1VuREQToYe/ZdlJy+J3uCpfaiGF05e7B8W0iXbQHmg==
 
-rescript-discordjs@^0.2.9:
-  version "0.2.9"
-  resolved "https://registry.yarnpkg.com/rescript-discordjs/-/rescript-discordjs-0.2.9.tgz#511568d258bae2a07450fcb55feba6859cd709fa"
-  integrity sha512-o7M0wTmy7fls8LDnD1G6hUkvHq00SNleNcXu1R9lu9V36tTyFPIccIVmaPRlu7uSJbkYmOlSxrpd7FpBAPKQ3Q==
+rescript-discordjs@^0.2.10:
+  version "0.2.10"
+  resolved "https://registry.yarnpkg.com/rescript-discordjs/-/rescript-discordjs-0.2.10.tgz#a413187ad20eee532c68a32f70a93e39b6ea1969"
+  integrity sha512-BdMW1COAB8SUfgmXeDktVuhXmbemhPUApneGmYBXGBr6HtcjrH5Bljquvm+ssCMf9OmeNycnge/u5EWN9Je64Q==
   dependencies:
     discord.js "^13.8.1"
     rescript "*"
