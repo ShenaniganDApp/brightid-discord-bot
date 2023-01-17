@@ -42,6 +42,7 @@ let gistConfig = () => {
 
 let options: Client.clientOptions = {
   intents: ["GUILDS", "GUILD_MESSAGES", "GUILD_MEMBERS"],
+  partials: ["GUILD_MEMBER"],
 }
 
 let client = Client.createDiscordClient(~options)
@@ -515,7 +516,7 @@ let onGuildMemberUpdate = async (oldMember, newMember) => {
                   let uuid =
                     newMember->GuildMember.getGuildMemberId->UUID.v5(envConfig["uuidNamespace"])
                   Js.log(
-                    `${guildName} : ${guildId} removed the role with contextId: ${uuid} because the user is not verified but was manually assigned the role`,
+                    `${guildName} : ${guildId} removed the role with contextId: ${uuid} because the user is not verified, but was assigned the role`,
                   )
                 }
               }
@@ -550,15 +551,14 @@ let onGuildMemberUpdate = async (oldMember, newMember) => {
                   let uuid =
                     newMember->GuildMember.getGuildMemberId->UUID.v5(envConfig["uuidNamespace"])
                   Js.log(
-                    `${guildName} : ${guildId} added the role with contextId: ${uuid} because the user is verified but was not assigned the role`,
+                    `${guildName} : ${guildId} added the role with contextId: ${uuid} because the user is verified, but was not assigned the role`,
                   )
                 }
               }
             }
           | exception e =>
             switch e {
-            | Exceptions.BrightIdError({errorMessage}) =>
-              Js.Console.error2(`${guildName} : ${guildId}: `, errorMessage)
+            | Exceptions.BrightIdError(_) => ()
             | JsError(obj) => Js.Console.error2(`${guildName} : ${guildId}: `, obj)
             | _ => Js.Console.error2(`${guildName} : ${guildId}: `, e)
             }

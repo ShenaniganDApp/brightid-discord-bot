@@ -58,12 +58,17 @@ function gistConfig(param) {
   return Gist$Utils.makeGistConfig(id, "guildData.json", token);
 }
 
+var options_intents = [
+  "GUILDS",
+  "GUILD_MESSAGES",
+  "GUILD_MEMBERS"
+];
+
+var options_partials = ["GUILD_MEMBER"];
+
 var options = {
-  intents: [
-    "GUILDS",
-    "GUILD_MESSAGES",
-    "GUILD_MEMBERS"
-  ]
+  intents: options_intents,
+  partials: options_partials
 };
 
 var client = new DiscordJs.Client(options);
@@ -606,7 +611,7 @@ async function onGuildMemberUpdate(oldMember, newMember) {
                     }
                     if (exit$2 === 3) {
                       var uuid = Uuid.v5(newMember.id, envConfig$1.uuidNamespace);
-                      console.log("" + guildName + " : " + guildId + " removed the role with contextId: " + uuid + " because the user is not verified but was manually assigned the role");
+                      console.log("" + guildName + " : " + guildId + " removed the role with contextId: " + uuid + " because the user is not verified, but was assigned the role");
                     }
                     
                   }
@@ -650,7 +655,7 @@ async function onGuildMemberUpdate(oldMember, newMember) {
               catch (raw_e$4){
                 var e$4 = Caml_js_exceptions.internalToOCamlException(raw_e$4);
                 if (e$4.RE_EXN_ID === Exceptions.BrightIdError) {
-                  console.error("" + guildName + " : " + guildId + ": ", e$4._1.errorMessage);
+                  
                 } else if (e$4.RE_EXN_ID === $$Promise.JsError) {
                   console.error("" + guildName + " : " + guildId + ": ", e$4._1);
                 } else {
@@ -675,7 +680,7 @@ async function onGuildMemberUpdate(oldMember, newMember) {
                   }
                   if (exit$5 === 3) {
                     var uuid$2 = Uuid.v5(newMember.id, envConfig$1.uuidNamespace);
-                    console.log("" + guildName + " : " + guildId + " added the role with contextId: " + uuid$2 + " because the user is verified but was not assigned the role");
+                    console.log("" + guildName + " : " + guildId + " added the role with contextId: " + uuid$2 + " because the user is verified, but was not assigned the role");
                   }
                   
                 }
