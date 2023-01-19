@@ -311,7 +311,8 @@ function execute(interaction) {
                                                     var match = getGuildSponsorshipTotals(guilds);
                                                     var unusedGuildSponsorships = match[0].sub(match[1]);
                                                     var unusedPremiumSponsorships = Ethers.BigNumber.from(String(appUnusedSponsorships)).sub(unusedGuildSponsorships);
-                                                    var isPremiumActive = unusedPremiumSponsorships.gt(Ethers.constants.Zero) && hasPremium(guildData);
+                                                    var premiumSponsorshipsUsed = Ethers.BigNumber.from(Belt_Option.getWithDefault(guildData.premiumSponsorshipsUsed, "0"));
+                                                    var shouldUsePremiumSponsorships = unusedPremiumSponsorships.gt(Ethers.constants.Zero) && premiumSponsorshipsUsed.lt("10") || unusedPremiumSponsorships.gt(Ethers.constants.Zero) && hasPremium(guildData) || inWhitelist;
                                                     if (errorNum !== 4) {
                                                       var exit = 0;
                                                       var data;
@@ -334,54 +335,46 @@ function execute(interaction) {
                                                       exit === 1;
                                                       return ;
                                                     }
-                                                    if (inWhitelist) {
-                                                      if (isPremiumActive) {
-                                                        console.log("Unused Sponsorships in premium pool: ", unusedPremiumSponsorships.toString());
-                                                        var options = await beforeSponsorMessageOptions("before-premium-sponsor", uuid);
-                                                        await interaction.editReply(options);
-                                                        return ;
+                                                    if (shouldUsePremiumSponsorships) {
+                                                      console.log("Unused Sponsorships in premium pool: ", unusedPremiumSponsorships.toString());
+                                                      var options = await beforeSponsorMessageOptions("before-premium-sponsor", uuid);
+                                                      await interaction.editReply(options);
+                                                      return ;
+                                                    }
+                                                    var assignedSponsorshipsID = await getAssignedSPFromAddress(guildData.sponsorshipAddress, Constants$Shared.contractAddressID, "https://idchain.one/rpc");
+                                                    var assignedSponsorshipsEth = await getAssignedSPFromAddress(guildData.sponsorshipAddressEth, Constants$Shared.contractAddressETH, "https://rpc.ankr.com/eth");
+                                                    var totalUnusedSponsorships$1 = function (param) {
+                                                      return totalUnusedSponsorships(assignedSponsorshipsID, assignedSponsorshipsEth, param);
+                                                    };
+                                                    var val;
+                                                    try {
+                                                      val = totalUnusedSponsorships$1;
+                                                    }
+                                                    catch (raw_e){
+                                                      var e$1 = Caml_js_exceptions.internalToOCamlException(raw_e);
+                                                      if (e$1.RE_EXN_ID === NoAvailableSP) {
+                                                        await noSponsorshipsMessage(interaction);
+                                                        throw {
+                                                              RE_EXN_ID: Exceptions.VerifyCommandError,
+                                                              _1: "This server has no usable sponsorships",
+                                                              Error: new Error()
+                                                            };
                                                       }
-                                                      var assignedSponsorshipsID = await getAssignedSPFromAddress(guildData.sponsorshipAddress, Constants$Shared.contractAddressID, "https://idchain.one/rpc");
-                                                      var assignedSponsorshipsEth = await getAssignedSPFromAddress(guildData.sponsorshipAddressEth, Constants$Shared.contractAddressETH, "https://rpc.ankr.com/eth");
-                                                      var totalUnusedSponsorships$1 = function (param) {
-                                                        return totalUnusedSponsorships(assignedSponsorshipsID, assignedSponsorshipsEth, param);
-                                                      };
-                                                      var val;
-                                                      try {
-                                                        val = totalUnusedSponsorships$1;
-                                                      }
-                                                      catch (raw_e){
-                                                        var e$1 = Caml_js_exceptions.internalToOCamlException(raw_e);
-                                                        if (e$1.RE_EXN_ID === NoAvailableSP) {
-                                                          await noSponsorshipsMessage(interaction);
-                                                          throw {
-                                                                RE_EXN_ID: Exceptions.VerifyCommandError,
-                                                                _1: "This server has no usable sponsorships",
-                                                                Error: new Error()
-                                                              };
-                                                        }
-                                                        throw e$1;
-                                                      }
-                                                      var usedSponsorships = Belt_Option.mapWithDefault(guildData.usedSponsorships, Ethers.constants.Zero, (function (prim) {
-                                                              return Ethers.BigNumber.from(prim);
-                                                            }));
-                                                      var assignedSponsorships = assignedSponsorshipsID.add(assignedSponsorshipsEth);
-                                                      var availableSponsorships = assignedSponsorships.sub(usedSponsorships);
-                                                      var hasAvailableSponsorships = !availableSponsorships.isZero();
-                                                      if (hasAvailableSponsorships) {
-                                                        var options$1 = await beforeSponsorMessageOptions("before-sponsor", uuid);
-                                                        await interaction.editReply(options$1);
-                                                        return ;
-                                                      }
-                                                      await noSponsorshipsMessage(interaction);
+                                                      throw e$1;
+                                                    }
+                                                    var usedSponsorships = Belt_Option.mapWithDefault(guildData.usedSponsorships, Ethers.constants.Zero, (function (prim) {
+                                                            return Ethers.BigNumber.from(prim);
+                                                          }));
+                                                    var assignedSponsorships = assignedSponsorshipsID.add(assignedSponsorshipsEth);
+                                                    var availableSponsorships = assignedSponsorships.sub(usedSponsorships);
+                                                    var hasAvailableSponsorships = !availableSponsorships.isZero();
+                                                    if (hasAvailableSponsorships) {
+                                                      var options$1 = await beforeSponsorMessageOptions("before-sponsor", uuid);
+                                                      await interaction.editReply(options$1);
                                                       return ;
                                                     }
                                                     await noSponsorshipsMessage(interaction);
-                                                    throw {
-                                                          RE_EXN_ID: Exceptions.VerifyCommandError,
-                                                          _1: "Guild not in beta whitelist",
-                                                          Error: new Error()
-                                                        };
+                                                    return ;
                                                   }
                                                   await noSponsorshipsMessage(interaction);
                                                   throw {

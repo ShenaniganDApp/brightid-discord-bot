@@ -377,18 +377,22 @@ let execute = interaction => {
                     ->Belt.Float.toString
                     ->Ethers.BigNumber.fromString
                     ->Ethers.BigNumber.sub(unusedGuildSponsorships)
+                  let premiumSponsorshipsUsed =
+                    guildData.premiumSponsorshipsUsed
+                    ->Belt.Option.getWithDefault("0")
+                    ->Ethers.BigNumber.fromString
 
-                  let isPremiumActive =
-                    unusedPremiumSponsorships->Ethers.BigNumber.gt(Ethers.BigNumber.zero) &&
-                      hasPremium(guildData)
+                  let shouldUsePremiumSponsorships = {
+                    open Ethers.BigNumber
+                    (unusedPremiumSponsorships->gt(zero) &&
+                      premiumSponsorshipsUsed->ltWithString("10")) ||
+                    unusedPremiumSponsorships->gt(zero) && hasPremium(guildData) ||
+                    inWhitelist
+                  }
 
-                  switch (errorNum, isPremiumActive, inWhitelist) {
-                  //Not in beta whitelist
-                  | (4, _, false) =>
-                    let _ = await noSponsorshipsMessage(interaction)
-                    VerifyCommandError("Guild not in beta whitelist")->raise
+                  switch (errorNum, shouldUsePremiumSponsorships) {
                   // Premium is active
-                  | (4, true, _) =>
+                  | (4, true) =>
                     Js.log2(
                       "Unused Sponsorships in premium pool: ",
                       Ethers.BigNumber.toString(unusedPremiumSponsorships),
@@ -397,7 +401,7 @@ let execute = interaction => {
                     let _ = await Interaction.editReply(interaction, ~options, ())
 
                   // Use server sponsor
-                  | (4, false, true) =>
+                  | (4, false) =>
                     let assignedSponsorshipsID = await getAssignedSPFromAddress(
                       guildData.sponsorshipAddress,
                       contractAddressID,
@@ -437,7 +441,7 @@ let execute = interaction => {
                       }
                     }
 
-                  | (_, _, _) =>
+                  | (_, _) =>
                     let _ = switch await handleUnverifiedGuildMember(errorNum, interaction, uuid) {
                     | data => Some(data)
                     | exception JsError(obj) =>
