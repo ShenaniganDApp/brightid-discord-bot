@@ -21,5 +21,6 @@
     "@brightidbot/shared"
   ],
   "pinned-dependencies": ["@brightidbot/utils", "@brightidbot/shared"],
-  "bsc-flags": ["-open JsonCombinators"]
+  "bsc-flags": ["-open JsonCombinators"],
+  "reanalyze": { "analysis": ["dce", "exception"] }
 }

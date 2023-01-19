@@ -6,9 +6,6 @@ open Shared
 let {brightIdVerificationEndpoint} = module(Endpoints)
 let {context} = module(Constants)
 
-exception RequestHandlerError(string)
-exception GuildNotInGist(string)
-
 module type Command = {
   let data: SlashCommandBuilder.t
   let execute: Interaction.t => Js.Promise.t<unit>
@@ -21,18 +18,17 @@ module type Button = {
 @val @scope("globalThis")
 external fetch: (string, 'params) => Promise.t<Response.t<Js.Json.t>> = "fetch"
 
-@module("./updateOrReadGist.mjs")
-external updateGist: (string, 'a) => Js.Promise.t<unit> = "updateGist"
-
 Env.createEnv()
 
 let envConfig = Env.getConfig()
 
+@raises([Env.Error])
 let envConfig = switch envConfig {
 | Ok(envConfig) => envConfig
 | Error(err) => err->Env.EnvError->raise
 }
 
+@raises([Env.Error])
 let gistConfig = () => {
   let id = envConfig["gistId"]
   let name = "guildData.json"
@@ -49,13 +45,6 @@ let client = Client.createDiscordClient(~options)
 
 let commands: Collection.t<string, module(Command)> = Collection.make()
 let buttons: Collection.t<string, module(Button)> = Collection.make()
-
-let makeGistConfig = () =>
-  Utils.Gist.makeGistConfig(
-    ~id=envConfig["gistId"],
-    ~name="guildData.json",
-    ~token=envConfig["githubAccessToken"],
-  )
 
 // One by one is the only way I can find to do this atm. Hopefully we find a better way
 let _ =
@@ -98,7 +87,7 @@ let updateGistOnGuildCreate = async (guild, roleId, content) => {
     }
   }
 
-  await Gist.UpdateGist.addEntry(~content, ~config=makeGistConfig(), ~key=guildId, ~entry)
+  await Gist.UpdateGist.addEntry(~content, ~config=gistConfig(), ~key=guildId, ~entry)
 }
 
 let rec fetchContextIds = async (~retry=5, ()) => {
@@ -451,15 +440,17 @@ let onGuildMemberUpdate = async (_, newMember) => {
               ~reason="User is not verified by BrightID",
               (),
             ) {
-            | exception e => Js.Console.error2(`${guildName} : ${guildId}: `, e)
-            | _ =>
-              let uuid =
-                newMember->GuildMember.getGuildMemberId->UUID.v5(envConfig["uuidNamespace"])
-              Js.log(
-                `${guildName} : ${guildId} removed the role with contextId: ${uuid} because the user is not verified but was manually assigned the role`,
-              )
+            | exception e =>
+              switch e {
+              | Js.Exn.Error(obj) =>
+                switch Js.Exn.message(obj) {
+                | Some(m) => Js.Console.error2(`${guildName} : ${guildId}: `, m)
+                | None => ()
+                }
+              | _ => ()
+              }
+            | _ => ()
             }
-
           | (Some(role), false, true) =>
             let guildMemberRoleManager = member->GuildMember.getGuildMemberRoleManager
             let _ = switch await GuildMemberRoleManager.add(
@@ -468,13 +459,16 @@ let onGuildMemberUpdate = async (_, newMember) => {
               ~reason="User is verified by BrightID",
               (),
             ) {
-            | exception e => Js.Console.error2(`${guildName} : ${guildId}: `, e)
-            | _ =>
-              let uuid =
-                newMember->GuildMember.getGuildMemberId->UUID.v5(envConfig["uuidNamespace"])
-              Js.log(
-                `${guildName} : ${guildId} added the role with contextId: ${uuid} because the user is verified, but was not assigned the role`,
-              )
+            | exception e =>
+              switch e {
+              | Js.Exn.Error(obj) =>
+                switch Js.Exn.message(obj) {
+                | Some(m) => Js.Console.error2(`${guildName} : ${guildId}: `, m)
+                | None => ()
+                }
+              | _ => ()
+              }
+            | _ => ()
             }
 
           | (_, _, _) => ()
@@ -498,15 +492,23 @@ let onGuildMemberUpdate = async (_, newMember) => {
                 ~reason="User is not verified by BrightID",
                 (),
               ) {
-              | exception e => Js.Console.error2(`${guildName} : ${guildId}: `, e)
-              | _ =>
-                let uuid = member->GuildMember.getGuildMemberId->UUID.v5(envConfig["uuidNamespace"])
-                Js.log(
-                  `${guildName} : ${guildId} removed the role with contextId: ${uuid} because the user is not verified, but was assigned the role`,
-                )
+              | exception e =>
+                switch e {
+                | Js.Exn.Error(obj) =>
+                  switch Js.Exn.message(obj) {
+                  | Some(m) => Js.Console.error2(`${guildName} : ${guildId}: `, m)
+                  | None => ()
+                  }
+                | _ => ()
+                }
+              | _ => ()
               }
             }
-          | JsError(obj) => Js.Console.error2(`${guildName} : ${guildId}: `, obj)
+          | Js.Exn.Error(obj) =>
+            switch Js.Exn.message(obj) {
+            | Some(m) => Js.Console.error2(`${guildName} : ${guildId}: `, m)
+            | None => ()
+            }
           | _ => Js.Console.error2(`${guildName} : ${guildId}: `, e)
           }
         }

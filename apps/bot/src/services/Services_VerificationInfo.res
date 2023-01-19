@@ -6,7 +6,6 @@ type verificationInfo = VerificationInfo(BrightId.ContextId.t)
 
 module UUID = {
   type t = string
-  type name = UUIDName(string)
   @module("uuid") external v5: (string, string) => t = "v5"
 }
 
@@ -26,9 +25,6 @@ external fetch: (string, 'params) => Promise.t<Response.t<Js.Json.t>> = "default
 let {context} = module(Constants)
 let {brightIdVerificationEndpoint} = module(Endpoints)
 
-let {notFoundCode, errorCode, canNotBeVerified} = module(Services_ResponseCodes)
-
-let verificationPollingEvery = 3000
 let requestTimeout = 60000
 
 let rec fetchVerificationInfo = (~retry=5, id) => {
@@ -61,11 +57,7 @@ let rec fetchVerificationInfo = (~retry=5, id) => {
     | _ =>
       let retry = retry - 1
       switch retry {
-      | 0 =>
-        switch e {
-        | _ => e->raise
-        }
-
+      | 0 => e->raise
       | _ => fetchVerificationInfo(~retry, id)
       }
     }

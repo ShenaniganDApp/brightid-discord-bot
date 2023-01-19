@@ -9,7 +9,6 @@ import NodeFetch from "node-fetch";
 import * as Decode$Shared from "@brightidbot/shared/src/Decode.mjs";
 import * as Constants$Shared from "@brightidbot/shared/src/Constants.mjs";
 import * as Json$JsonCombinators from "@glennsl/rescript-json-combinators/src/Json.mjs";
-import * as Services_ResponseCodes from "./Services_ResponseCodes.mjs";
 import * as Json_Decode$JsonCombinators from "@glennsl/rescript-json-combinators/src/Json_Decode.mjs";
 
 var UUID = {};
@@ -83,14 +82,6 @@ var context = Constants$Shared.context;
 
 var brightIdVerificationEndpoint = Endpoints.brightIdVerificationEndpoint;
 
-var notFoundCode = Services_ResponseCodes.notFoundCode;
-
-var errorCode = Services_ResponseCodes.errorCode;
-
-var canNotBeVerified = Services_ResponseCodes.canNotBeVerified;
-
-var verificationPollingEvery = 3000;
-
 var requestTimeout = 60000;
 
 export {
@@ -98,10 +89,6 @@ export {
   config$1 as config,
   context ,
   brightIdVerificationEndpoint ,
-  notFoundCode ,
-  errorCode ,
-  canNotBeVerified ,
-  verificationPollingEvery ,
   requestTimeout ,
   fetchVerificationInfo ,
   getBrightIdVerification ,

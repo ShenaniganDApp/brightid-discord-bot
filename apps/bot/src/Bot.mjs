@@ -3,6 +3,7 @@
 import * as Env from "./Env.mjs";
 import * as Uuid from "uuid";
 import * as Curry from "rescript/lib/es6/curry.js";
+import * as Js_exn from "rescript/lib/es6/js_exn.js";
 import * as Js_dict from "rescript/lib/es6/js_dict.js";
 import * as $$Promise from "@ryyppy/rescript-promise/src/Promise.mjs";
 import * as Endpoints from "./Endpoints.mjs";
@@ -17,24 +18,14 @@ import * as Belt_SetString from "rescript/lib/es6/belt_SetString.js";
 import * as Buttons_Verify from "./buttons/Buttons_Verify.mjs";
 import * as Commands_Guild from "./commands/Commands_Guild.mjs";
 import * as Buttons_Sponsor from "./buttons/Buttons_Sponsor.mjs";
-import * as Caml_exceptions from "rescript/lib/es6/caml_exceptions.js";
 import * as Commands_Invite from "./commands/Commands_Invite.mjs";
 import * as Commands_Verify from "./commands/Commands_Verify.mjs";
 import * as Constants$Shared from "@brightidbot/shared/src/Constants.mjs";
 import * as Caml_js_exceptions from "rescript/lib/es6/caml_js_exceptions.js";
 import * as Json$JsonCombinators from "@glennsl/rescript-json-combinators/src/Json.mjs";
-import * as UpdateOrReadGistMjs from "./updateOrReadGist.mjs";
 import * as Buttons_PremiumSponsor from "./buttons/Buttons_PremiumSponsor.mjs";
 import * as Services_VerificationInfo from "./services/Services_VerificationInfo.mjs";
 import * as Json_Decode$JsonCombinators from "@glennsl/rescript-json-combinators/src/Json_Decode.mjs";
-
-var RequestHandlerError = /* @__PURE__ */Caml_exceptions.create("Bot.RequestHandlerError");
-
-var GuildNotInGist = /* @__PURE__ */Caml_exceptions.create("Bot.GuildNotInGist");
-
-function updateGist(prim0, prim1) {
-  return UpdateOrReadGistMjs.updateGist(prim0, prim1);
-}
 
 Env.createEnv(undefined);
 
@@ -76,10 +67,6 @@ var client = new DiscordJs.Client(options);
 var commands = new DiscordJs.Collection();
 
 var buttons = new DiscordJs.Collection();
-
-function makeGistConfig(param) {
-  return Gist$Utils.makeGistConfig(envConfig$1.gistId, "guildData.json", envConfig$1.githubAccessToken);
-}
 
 commands.set(Commands_Help.data.name, {
             data: Commands_Help.data,
@@ -123,7 +110,7 @@ async function updateGistOnGuildCreate(guild, roleId, content) {
     premiumSponsorshipsUsed: undefined,
     premiumExpirationTimestamp: undefined
   };
-  return await Gist$Utils.UpdateGist.addEntry(content, guildId, entry, makeGistConfig(undefined));
+  return await Gist$Utils.UpdateGist.addEntry(content, guildId, entry, gistConfig(undefined));
 }
 
 async function fetchContextIds(retryOpt, param) {
@@ -572,25 +559,28 @@ async function onGuildMemberUpdate(param, newMember) {
               var role = guild.roles.cache.get(roleId);
               var guildMemberRoleManager = newMember.roles;
               if (!(role == null)) {
-                var exit$3 = 0;
-                var val$1;
                 try {
-                  val$1 = await guildMemberRoleManager.remove(role, "User is not verified by BrightID");
-                  exit$3 = 4;
+                  await guildMemberRoleManager.remove(role, "User is not verified by BrightID");
                 }
                 catch (raw_e$3){
                   var e$3 = Caml_js_exceptions.internalToOCamlException(raw_e$3);
-                  console.error("" + guildName + " : " + guildId + ": ", e$3);
+                  if (e$3.RE_EXN_ID === Js_exn.$$Error) {
+                    var m = e$3._1.message;
+                    if (m !== undefined) {
+                      console.error("" + guildName + " : " + guildId + ": ", m);
+                    }
+                    
+                  }
+                  
                 }
-                if (exit$3 === 4) {
-                  var uuid = Uuid.v5(member.id, envConfig$1.uuidNamespace);
-                  console.log("" + guildName + " : " + guildId + " removed the role with contextId: " + uuid + " because the user is not verified, but was assigned the role");
-                }
-                
               }
               
-            } else if (e$2.RE_EXN_ID === $$Promise.JsError) {
-              console.error("" + guildName + " : " + guildId + ": ", e$2._1);
+            } else if (e$2.RE_EXN_ID === Js_exn.$$Error) {
+              var m$1 = e$2._1.message;
+              if (m$1 !== undefined) {
+                console.error("" + guildName + " : " + guildId + ": ", m$1);
+              }
+              
             } else {
               console.error("" + guildName + " : " + guildId + ": ", e$2);
             }
@@ -604,40 +594,38 @@ async function onGuildMemberUpdate(param, newMember) {
             if (!(role$1 == null)) {
               if (match$1) {
                 if (!unique) {
-                  var exit$4 = 0;
-                  var val$2;
                   try {
-                    val$2 = await guildMemberRoleManager$1.remove(role$1, "User is not verified by BrightID");
-                    exit$4 = 4;
+                    await guildMemberRoleManager$1.remove(role$1, "User is not verified by BrightID");
                   }
                   catch (raw_e$4){
                     var e$4 = Caml_js_exceptions.internalToOCamlException(raw_e$4);
-                    console.error("" + guildName + " : " + guildId + ": ", e$4);
+                    if (e$4.RE_EXN_ID === Js_exn.$$Error) {
+                      var m$2 = e$4._1.message;
+                      if (m$2 !== undefined) {
+                        console.error("" + guildName + " : " + guildId + ": ", m$2);
+                      }
+                      
+                    }
+                    
                   }
-                  if (exit$4 === 4) {
-                    var uuid$1 = Uuid.v5(newMember.id, envConfig$1.uuidNamespace);
-                    console.log("" + guildName + " : " + guildId + " removed the role with contextId: " + uuid$1 + " because the user is not verified but was manually assigned the role");
-                  }
-                  
                 }
                 
               } else if (unique) {
                 var guildMemberRoleManager$2 = member.roles;
-                var exit$5 = 0;
-                var val$3;
                 try {
-                  val$3 = await guildMemberRoleManager$2.add(role$1, "User is verified by BrightID");
-                  exit$5 = 4;
+                  await guildMemberRoleManager$2.add(role$1, "User is verified by BrightID");
                 }
                 catch (raw_e$5){
                   var e$5 = Caml_js_exceptions.internalToOCamlException(raw_e$5);
-                  console.error("" + guildName + " : " + guildId + ": ", e$5);
+                  if (e$5.RE_EXN_ID === Js_exn.$$Error) {
+                    var m$3 = e$5._1.message;
+                    if (m$3 !== undefined) {
+                      console.error("" + guildName + " : " + guildId + ": ", m$3);
+                    }
+                    
+                  }
+                  
                 }
-                if (exit$5 === 4) {
-                  var uuid$2 = Uuid.v5(newMember.id, envConfig$1.uuidNamespace);
-                  console.log("" + guildName + " : " + guildId + " added the role with contextId: " + uuid$2 + " because the user is verified, but was not assigned the role");
-                }
-                
               }
               
             }
@@ -691,16 +679,12 @@ var context = Constants$Shared.context;
 export {
   brightIdVerificationEndpoint ,
   context ,
-  RequestHandlerError ,
-  GuildNotInGist ,
-  updateGist ,
   envConfig$1 as envConfig,
   gistConfig ,
   options ,
   client ,
   commands ,
   buttons ,
-  makeGistConfig ,
   updateGistOnGuildCreate ,
   fetchContextIds ,
   assignRoleOnCreate ,
