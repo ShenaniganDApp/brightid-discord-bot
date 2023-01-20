@@ -27,7 +27,7 @@ let {brightIdVerificationEndpoint} = module(Endpoints)
 
 let requestTimeout = 60000
 
-let rec fetchVerificationInfo = (~retry=5, id) => {
+let rec fetchVerificationInfo = (~retry=10, id) => {
   let uuid = id->UUID.v5(config["uuidNamespace"])
   let endpoint = `${brightIdVerificationEndpoint}/${context}/${uuid}?timestamp=seconds`
 

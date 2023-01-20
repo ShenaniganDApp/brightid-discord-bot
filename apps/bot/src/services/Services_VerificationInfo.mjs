@@ -30,7 +30,7 @@ if (config.TAG === /* Ok */0) {
 }
 
 function fetchVerificationInfo(retryOpt, id) {
-  var retry = retryOpt !== undefined ? retryOpt : 5;
+  var retry = retryOpt !== undefined ? retryOpt : 10;
   var uuid = Uuid.v5(id, config$1.uuidNamespace);
   var endpoint = "" + Endpoints.brightIdVerificationEndpoint + "/" + Constants$Shared.context + "/" + uuid + "?timestamp=seconds";
   var params = {
