@@ -60,28 +60,63 @@ let makeGistConfig = (~id, ~name, ~token) => {
   name,
   token,
 }
+
+module XRay = {
+  type t
+  type element = {title?: string, link?: string, image?: string, href?: string}
+  type x = (string, string, option<array<element>>) => t
+
+  exception XRayError(string)
+
+  @module("x-ray") external make: unit => x = "default"
+  @send external toArray: t => array<element> = "%identity"
+}
+
+let scrapeGistRawUrl = async url => {
+  let x = XRay.make()
+  x(
+    url,
+    "div.file-actions",
+    Some([
+      {
+        href: "a @href",
+      },
+    ]),
+  )
+}
 module ReadGist = {
   @val @scope("globalThis")
   external fetch: (string, 'params) => Promise.t<Response.t<Js.Json.t>> = "fetch"
 
-  @raises([Json.Decode.DecodeError, Not_found, Env.EnvError])
+  @raises([Json.Decode.DecodeError, Not_found, Env.EnvError, XRay.XRayError])
   let content = (~config, ~decoder) => {
     let {id, name, token} = config
-
-    let params = {
-      "Authorization": `Bearer ${token}`,
-      "Accept": "application/vnd.github+json",
-      "X-GitHub-Api-Version": "2022-11-28",
-    }
-
-    `https://gist.githubusercontent.com/youngkidwarrior/${id}/raw/${name}`
-    ->fetch(params)
-    ->then(res => res->Response.json)
-    ->then(data => {
-      switch data->Json.decode(decoder) {
-      | Ok(content) => content->resolve
-      | Error(err) => err->Json.Decode.DecodeError->raise
+    scrapeGistRawUrl(`https://gist.github.com/${id}`)
+    ->then(items => items->XRay.toArray->Belt.Array.get(0)->resolve)
+    ->then(maybeRawButton => {
+      let href = switch maybeRawButton {
+      | Some(rawButton) =>
+        rawButton.href->Belt.Option.getWithDefault(
+          `https://gist.githubusercontent.com/raw/${id}/${name}`,
+        )
+      | None => XRay.XRayError("Raw Button Scrape Failed")->raise
       }
+
+      let params = {
+        "Authorization": `Bearer ${token}`,
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+      }
+
+      href
+      ->fetch(params)
+      ->then(res => res->Response.json)
+      ->then(data => {
+        switch data->Json.decode(decoder) {
+        | Ok(content) => content->resolve
+        | Error(err) => err->Json.Decode.DecodeError->raise
+        }
+      })
     })
   }
 }
