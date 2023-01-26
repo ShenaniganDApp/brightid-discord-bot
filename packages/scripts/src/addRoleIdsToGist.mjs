@@ -32,11 +32,16 @@ var githubAccessToken = envConfig$1.githubAccessToken;
 
 var id = envConfig$1.gistId;
 
+var options_intents = [
+  "GUILDS",
+  "GUILD_MESSAGES"
+];
+
+var options_partials = [];
+
 var options = {
-  intents: [
-    "GUILDS",
-    "GUILD_MESSAGES"
-  ]
+  intents: options_intents,
+  partials: options_partials
 };
 
 var client = new DiscordJs.Client(options);

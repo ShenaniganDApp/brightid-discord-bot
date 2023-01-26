@@ -40,6 +40,7 @@ let config = Gist.makeGistConfig(~token=githubAccessToken, ~id, ~name="guildData
 
 let options: Client.clientOptions = {
   intents: ["GUILDS", "GUILD_MESSAGES"],
+  partials: [],
 }
 
 let client = Client.createDiscordClient(~options)

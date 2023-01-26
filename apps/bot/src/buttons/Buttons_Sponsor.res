@@ -1,5 +1,4 @@
 open Discord
-open Promise
 open Shared
 open NodeFetch
 open Exceptions
@@ -118,16 +117,21 @@ type handleSponsor =
   | NoUnusedSponsorships
   | TimedOut
 
+@raises([HandleSponsorError, Js.Exn.Error, Json.Decode.DecodeError])
 let rec handleSponsor = async (interaction, ~maybeHash=None, ~attempts=30, uuid) => {
   open Shared.BrightId
   open Shared.Decode
   let guildId = interaction->Interaction.getGuild->Guild.getGuildId
-  let secondsBetweenAttempts = 29
+  let secondsBetweenAttempts = 29 //29 seconds between attempts to leave time for timeout message
   switch attempts {
   | 0 => TimedOut
   | _ =>
-    switch await sponsor(~key=envConfig["sponsorshipKey"], ~context="Discord", ~contextId=uuid) {
-    | json =>
+    try {
+      let json = await sponsor(
+        ~key=envConfig["sponsorshipKey"],
+        ~context="Discord",
+        ~contextId=uuid,
+      )
       switch json->Json.decode(Decode_BrightId.Sponsorships.sponsor) {
       | Ok({hash}) =>
         let options = await sponsorRequestSubmittedMessageOptions(uuid)
@@ -136,10 +140,12 @@ let rec handleSponsor = async (interaction, ~maybeHash=None, ~attempts=30, uuid)
           `A sponsor request has been submitted`,
           {"guild": guildId, "contextId": uuid, "hash": hash},
         )
+        let _ = await CustomMessages.sponsorshipRequested(interaction, hash, uuid)
         await handleSponsor(interaction, uuid, ~maybeHash=Some(hash), ~attempts=30)
       | Error(err) => Json.Decode.DecodeError(err)->raise
       }
-    | exception Js.Exn.Error(error) =>
+    } catch {
+    | Js.Exn.Error(error) =>
       let json = switch Js.Json.stringifyAny(error) {
       | Some(json) => json->Js.Json.parseExn
       | None =>
@@ -147,123 +153,68 @@ let rec handleSponsor = async (interaction, ~maybeHash=None, ~attempts=30, uuid)
           "Handle Sponsor Error: There was a problem JSON parsing the error from sponsor()",
         )->raise
       }
-      switch json->Json.decode(Decode_BrightId.Error.data) {
-      | Error(err) => err->Json.Decode.DecodeError->raise
-      | Ok({errorNum, errorMessage}) =>
-        switch errorNum {
-        //No Sponsorships in the Discord App
-        | 38 => NoUnusedSponsorships
-        //Sponsorship already assigned
-        | 39 =>
-          switch maybeHash {
-          | Some(hash) =>
-            switch await checkSponsor(uuid) {
-            | Sponsorship({spendRequested}) =>
-              if spendRequested {
-                let options = successfulSponsorMessageOptions(uuid)
-                let _ = await Interaction.editReply(interaction, ~options, ())
-                SponsorshipUsed
-              } else {
-                let _ = await sleep(secondsBetweenAttempts * 1000)
-                await handleSponsor(
-                  interaction,
-                  uuid,
-                  ~maybeHash=Some(hash),
-                  ~attempts=attempts - 1,
-                )
-              }
-            | exception Exceptions.BrightIdError(_) =>
+      try {
+        switch json->Json.decode(Decode_BrightId.Error.data) {
+        | Error(err) => err->Json.Decode.DecodeError->raise
+        | Ok({errorNum, errorMessage}) =>
+          switch (errorNum, maybeHash) {
+          //No Sponsorships in the Discord App
+          | (38, _) => NoUnusedSponsorships
+          //Sponsorship already assigned
+          | (_, None) => RetriedCommandDuring
+          | (39, Some(_)) =>
+            let Sponsorship({spendRequested}) = await checkSponsor(uuid)
+            if spendRequested {
+              let options = successfulSponsorMessageOptions(uuid)
+              let _ = await Interaction.editReply(interaction, ~options, ())
+              SponsorshipUsed
+            } else {
               let _ = await sleep(secondsBetweenAttempts * 1000)
-              await handleSponsor(interaction, uuid, ~maybeHash=Some(hash), ~attempts=attempts - 1)
-            | exception JsError(obj) =>
-              switch Js.Exn.message(obj) {
-              | Some(msg) => HandleSponsorError(msg)->raise
-
-              | None =>
-                Js.Console.error(obj)
-                HandleSponsorError("Handle Sponsor: Unknown Error")->raise
-              }
+              await handleSponsor(interaction, uuid, ~maybeHash, ~attempts=attempts - 1)
             }
-          | None => RetriedCommandDuring
-          }
-        //App authorized before
-        | 45 =>
-          switch maybeHash {
-          | Some(hash) =>
-            switch await checkSponsor(uuid) {
-            | Sponsorship({spendRequested}) =>
-              if spendRequested {
-                let options = successfulSponsorMessageOptions(uuid)
-                let _ = await Interaction.editReply(interaction, ~options, ())
-                SponsorshipUsed
-              } else {
-                let _ = await sleep(secondsBetweenAttempts * 1000)
-                await handleSponsor(
-                  interaction,
-                  uuid,
-                  ~maybeHash=Some(hash),
-                  ~attempts=attempts - 1,
-                )
-              }
-            | exception Exceptions.BrightIdError(_) =>
+          //App authorized before
+          | (45, Some(_)) =>
+            let Sponsorship({spendRequested}) = await checkSponsor(uuid)
+            if spendRequested {
+              let options = successfulSponsorMessageOptions(uuid)
+              let _ = await Interaction.editReply(interaction, ~options, ())
+              SponsorshipUsed
+            } else {
               let _ = await sleep(secondsBetweenAttempts * 1000)
-              await handleSponsor(interaction, uuid, ~maybeHash=Some(hash), ~attempts=attempts - 1)
-            | exception JsError(obj) =>
-              switch Js.Exn.message(obj) {
-              | Some(msg) => HandleSponsorError(msg)->raise
-
-              | None =>
-                Js.Console.error(obj)
-                HandleSponsorError("Handle Sponsor: Unknown Error")->raise
-              }
+              await handleSponsor(interaction, uuid, ~maybeHash, ~attempts=attempts - 1)
             }
-          | None => RetriedCommandDuring
-          }
 
-        // // Spend Request Submitted
-        | 46 =>
-          switch maybeHash {
-          | Some(_) =>
+          // Spend Request Submitted
+          | (46, Some(_)) =>
             let options = await successfulSponsorMessageOptions(uuid)
             let _ = await interaction->Interaction.editReply(~options, ())
             SponsorshipUsed
-          | None => RetriedCommandDuring
-          }
-        // Sponsored Request Recently
-        | 47 =>
-          switch maybeHash {
-          | Some(hash) =>
-            switch await checkSponsor(uuid) {
-            | Sponsorship({spendRequested}) =>
-              if spendRequested {
-                let options = successfulSponsorMessageOptions(uuid)
-                let _ = await Interaction.editReply(interaction, ~options, ())
-                SponsorshipUsed
-              } else {
-                let _ = await sleep(secondsBetweenAttempts * 1000)
-                await handleSponsor(
-                  interaction,
-                  uuid,
-                  ~maybeHash=Some(hash),
-                  ~attempts=attempts - 1,
-                )
-              }
-            | exception Exceptions.BrightIdError(_) =>
+
+          // Sponsored Request Recently
+          | (47, Some(_)) =>
+            let Sponsorship({spendRequested}) = await checkSponsor(uuid)
+            if spendRequested {
+              let options = successfulSponsorMessageOptions(uuid)
+              let _ = await Interaction.editReply(interaction, ~options, ())
+              SponsorshipUsed
+            } else {
               let _ = await sleep(secondsBetweenAttempts * 1000)
-              await handleSponsor(interaction, uuid, ~maybeHash=Some(hash), ~attempts=attempts - 1)
-            | exception JsError(obj) =>
-              switch Js.Exn.message(obj) {
-              | Some(msg) => HandleSponsorError(msg)->raise
-
-              | None =>
-                Js.Console.error(obj)
-                HandleSponsorError("Handle Sponsor: Unknown Error")->raise
-              }
+              await handleSponsor(interaction, uuid, ~maybeHash, ~attempts=attempts - 1)
             }
-          | None => RetriedCommandDuring
-          }
 
-        | _ => HandleSponsorError(errorMessage)->raise
+          | _ => HandleSponsorError(errorMessage)->raise
+          }
+        }
+      } catch {
+      | Exceptions.BrightIdError(_) =>
+        let _ = await sleep(secondsBetweenAttempts * 1000)
+        await handleSponsor(interaction, uuid, ~maybeHash, ~attempts=attempts - 1)
+      | Js.Exn.Error(obj) =>
+        switch Js.Exn.message(obj) {
+        | Some(msg) => HandleSponsorError(msg)->raise
+        | None =>
+          Js.Console.error(obj)
+          HandleSponsorError("Handle Sponsor: Unknown Error")->raise
         }
       }
     }
