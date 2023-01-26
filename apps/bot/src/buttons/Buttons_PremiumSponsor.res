@@ -19,8 +19,8 @@ let {
 @val @scope("globalThis")
 external fetch: (string, 'params) => Promise.t<Response.t<Js.Json.t>> = "fetch"
 
-let sleep: int => Js.Promise.t<unit> = ms =>
-  %raw(` new Promise((resolve) => setTimeout(resolve, ms))`)
+let sleep: int => Js.Promise.t<unit> = _ms =>
+  %raw(` new Promise((resolve) => setTimeout(resolve, _ms))`)
 
 Env.createEnv()
 

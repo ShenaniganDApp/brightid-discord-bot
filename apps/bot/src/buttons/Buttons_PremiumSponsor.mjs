@@ -21,8 +21,8 @@ import * as Caml_js_exceptions from "rescript/lib/es6/caml_js_exceptions.js";
 import * as Json$JsonCombinators from "@glennsl/rescript-json-combinators/src/Json.mjs";
 import * as Json_Decode$JsonCombinators from "@glennsl/rescript-json-combinators/src/Json_Decode.mjs";
 
-function sleep(ms) {
-  return (new Promise((resolve) => setTimeout(resolve, ms)));
+function sleep(_ms) {
+  return (new Promise((resolve) => setTimeout(resolve, _ms)));
 }
 
 Env.createEnv(undefined);
