@@ -21,10 +21,6 @@ import * as Caml_js_exceptions from "rescript/lib/es6/caml_js_exceptions.js";
 import * as Builders from "@discordjs/builders";
 import * as Services_VerificationInfo from "../services/Services_VerificationInfo.mjs";
 
-function sleep(ms) {
-  return (new Promise((resolve) => setTimeout(resolve, ms)));
-}
-
 var abi = (import("../../../../packages/shared/src/abi/SP.json", {assert: {type: "json"}}).then((module) => module.default));
 
 var Canvas$1 = {};
@@ -54,13 +50,6 @@ function gistConfig(param) {
 function addRoleToMember(guildRole, member) {
   var guildMemberRoleManager = member.roles;
   return guildMemberRoleManager.add(guildRole, undefined);
-}
-
-function noUnusedSponsorshipsOptions(param) {
-  return {
-          content: "There are no sponsorships available in the Discord pool. Please try again later.",
-          ephemeral: true
-        };
 }
 
 function embedFields(verifyUrl) {
@@ -431,8 +420,6 @@ function execute(interaction) {
 
 var data = new Builders.SlashCommandBuilder().setName("verify").setDescription("Sends a BrightID QR code for users to connect with their BrightId");
 
-var brightIdVerificationEndpoint = Endpoints.brightIdVerificationEndpoint;
-
 var brightIdAppDeeplink = Endpoints.brightIdAppDeeplink;
 
 var brightIdLinkVerificationEndpoint = Endpoints.brightIdLinkVerificationEndpoint;
@@ -444,20 +431,17 @@ var contractAddressID = Constants$Shared.contractAddressID;
 var contractAddressETH = Constants$Shared.contractAddressETH;
 
 export {
-  brightIdVerificationEndpoint ,
   brightIdAppDeeplink ,
   brightIdLinkVerificationEndpoint ,
   context ,
   contractAddressID ,
   contractAddressETH ,
-  sleep ,
   abi ,
   Canvas$1 as Canvas,
   QRCode ,
   envConfig ,
   gistConfig ,
   addRoleToMember ,
-  noUnusedSponsorshipsOptions ,
   embedFields ,
   makeEmbed ,
   makeCanvasFromUri ,

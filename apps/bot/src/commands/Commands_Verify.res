@@ -4,16 +4,11 @@ open Shared
 open NodeFetch
 open Exceptions
 
-let {brightIdVerificationEndpoint, brightIdAppDeeplink, brightIdLinkVerificationEndpoint} = module(
-  Endpoints
-)
+let {brightIdAppDeeplink, brightIdLinkVerificationEndpoint} = module(Endpoints)
 let {context, contractAddressID, contractAddressETH} = module(Shared.Constants)
 
 @val @scope("globalThis")
 external fetch: (string, 'params) => Promise.t<Response.t<Js.Json.t>> = "fetch"
-
-let sleep: int => Js.Promise.t<unit> = ms =>
-  %raw(` new Promise((resolve) => setTimeout(resolve, ms))`)
 
 let abi: Shared.ABI.t = %raw(`import("../../../../packages/shared/src/abi/SP.json", {assert: {type: "json"}}).then((module) => module.default)`)
 
@@ -47,12 +42,6 @@ let addRoleToMember = (guildRole, member) => {
   let guildMemberRoleManager = member->GuildMember.getGuildMemberRoleManager
   guildMemberRoleManager->GuildMemberRoleManager.add(guildRole, ())
 }
-
-let noUnusedSponsorshipsOptions = () =>
-  {
-    "content": "There are no sponsorships available in the Discord pool. Please try again later.",
-    "ephemeral": true,
-  }
 
 let embedFields = verifyUrl => {
   open MessageEmbed
