@@ -13,6 +13,7 @@ import * as DiscordJs from "discord.js";
 import * as Belt_Option from "rescript/lib/es6/belt_Option.js";
 import * as Caml_option from "rescript/lib/es6/caml_option.js";
 import * as Decode$Shared from "@brightidbot/shared/src/Decode.mjs";
+import * as CustomMessages from "../CustomMessages.mjs";
 import * as Caml_exceptions from "rescript/lib/es6/caml_exceptions.js";
 import * as Commands_Verify from "../commands/Commands_Verify.mjs";
 import * as Brightid_sdk_v5 from "brightid_sdk_v5";
@@ -144,9 +145,26 @@ async function handleSponsor(interaction, maybeHashOpt, attemptsOpt, uuid) {
   if (attempts === 0) {
     return /* TimedOut */3;
   }
-  var json;
   try {
-    json = await Brightid_sdk_v5.sponsor(envConfig.sponsorshipKey, "Discord", uuid);
+    var json = await Brightid_sdk_v5.sponsor(envConfig.sponsorshipKey, "Discord", uuid);
+    var err = Json$JsonCombinators.decode(json, Decode$Shared.Decode_BrightId.Sponsorships.sponsor);
+    if (err.TAG === /* Ok */0) {
+      var hash = err._0.hash;
+      var options = await sponsorRequestSubmittedMessageOptions(uuid);
+      await interaction.editReply(options);
+      console.log("A sponsor request has been submitted", {
+            guild: guildId,
+            contextId: uuid,
+            hash: hash
+          });
+      await CustomMessages.sponsorshipRequested(interaction, hash, uuid);
+      return await handleSponsor(interaction, Caml_option.some(hash), 30, uuid);
+    }
+    throw {
+          RE_EXN_ID: Json_Decode$JsonCombinators.DecodeError,
+          _1: err._0,
+          Error: new Error()
+        };
   }
   catch (raw_error){
     var error = Caml_js_exceptions.internalToOCamlException(raw_error);
@@ -162,200 +180,119 @@ async function handleSponsor(interaction, maybeHashOpt, attemptsOpt, uuid) {
               Error: new Error()
             };
       }
-      var err = Json$JsonCombinators.decode(json$2, Decode$Shared.Decode_BrightId.$$Error.data);
-      if (err.TAG === /* Ok */0) {
-        var match = err._0;
-        var errorMessage = match.errorMessage;
-        switch (match.errorNum) {
-          case 38 :
-              return /* NoUnusedSponsorships */2;
-          case 39 :
-              if (maybeHash === undefined) {
-                return /* RetriedCommandDuring */1;
-              }
-              var exit = 0;
-              var val;
-              try {
-                val = await checkSponsor(uuid);
-                exit = 2;
-              }
-              catch (raw_obj){
-                var obj = Caml_js_exceptions.internalToOCamlException(raw_obj);
-                if (obj.RE_EXN_ID === Exceptions.BrightIdError) {
+      try {
+        var err$1 = Json$JsonCombinators.decode(json$2, Decode$Shared.Decode_BrightId.$$Error.data);
+        if (err$1.TAG === /* Ok */0) {
+          var match = err$1._0;
+          var exit = 0;
+          switch (match.errorNum) {
+            case 38 :
+                return /* NoUnusedSponsorships */2;
+            case 39 :
+                if (maybeHash !== undefined) {
+                  var match$1 = await checkSponsor(uuid);
+                  if (match$1._0.spendRequested) {
+                    var options$1 = successfulSponsorMessageOptions(uuid);
+                    await interaction.editReply(options$1);
+                    return /* SponsorshipUsed */0;
+                  }
                   await sleep(29000);
                   return await handleSponsor(interaction, Caml_option.some(maybeHash), attempts - 1 | 0, uuid);
                 }
-                if (obj.RE_EXN_ID === $$Promise.JsError) {
-                  var obj$1 = obj._1;
-                  var msg = obj$1.message;
-                  if (msg !== undefined) {
-                    throw {
-                          RE_EXN_ID: HandleSponsorError,
-                          _1: msg,
-                          Error: new Error()
-                        };
+                exit = 1;
+                break;
+            case 40 :
+            case 41 :
+            case 42 :
+            case 43 :
+            case 44 :
+                exit = 1;
+                break;
+            case 45 :
+                if (maybeHash !== undefined) {
+                  var match$2 = await checkSponsor(uuid);
+                  if (match$2._0.spendRequested) {
+                    var options$2 = successfulSponsorMessageOptions(uuid);
+                    await interaction.editReply(options$2);
+                    return /* SponsorshipUsed */0;
                   }
-                  console.error(obj$1);
-                  throw {
-                        RE_EXN_ID: HandleSponsorError,
-                        _1: "Handle Sponsor: Unknown Error",
-                        Error: new Error()
-                      };
-                }
-                throw obj;
-              }
-              if (exit === 2) {
-                if (val._0.spendRequested) {
-                  var options = successfulSponsorMessageOptions(uuid);
-                  await interaction.editReply(options);
-                  return /* SponsorshipUsed */0;
-                }
-                await sleep(29000);
-                return await handleSponsor(interaction, Caml_option.some(maybeHash), attempts - 1 | 0, uuid);
-              }
-              break;
-          case 40 :
-          case 41 :
-          case 42 :
-          case 43 :
-          case 44 :
-              throw {
-                    RE_EXN_ID: HandleSponsorError,
-                    _1: errorMessage,
-                    Error: new Error()
-                  };
-          case 45 :
-              if (maybeHash === undefined) {
-                return /* RetriedCommandDuring */1;
-              }
-              var exit$1 = 0;
-              var val$1;
-              try {
-                val$1 = await checkSponsor(uuid);
-                exit$1 = 2;
-              }
-              catch (raw_obj$1){
-                var obj$2 = Caml_js_exceptions.internalToOCamlException(raw_obj$1);
-                if (obj$2.RE_EXN_ID === Exceptions.BrightIdError) {
                   await sleep(29000);
                   return await handleSponsor(interaction, Caml_option.some(maybeHash), attempts - 1 | 0, uuid);
                 }
-                if (obj$2.RE_EXN_ID === $$Promise.JsError) {
-                  var obj$3 = obj$2._1;
-                  var msg$1 = obj$3.message;
-                  if (msg$1 !== undefined) {
-                    throw {
-                          RE_EXN_ID: HandleSponsorError,
-                          _1: msg$1,
-                          Error: new Error()
-                        };
-                  }
-                  console.error(obj$3);
-                  throw {
-                        RE_EXN_ID: HandleSponsorError,
-                        _1: "Handle Sponsor: Unknown Error",
-                        Error: new Error()
-                      };
-                }
-                throw obj$2;
-              }
-              if (exit$1 === 2) {
-                if (val$1._0.spendRequested) {
-                  var options$1 = successfulSponsorMessageOptions(uuid);
-                  await interaction.editReply(options$1);
-                  return /* SponsorshipUsed */0;
-                }
-                await sleep(29000);
-                return await handleSponsor(interaction, Caml_option.some(maybeHash), attempts - 1 | 0, uuid);
-              }
-              break;
-          case 46 :
-              if (maybeHash === undefined) {
-                return /* RetriedCommandDuring */1;
-              }
-              var options$2 = await successfulSponsorMessageOptions(uuid);
-              await interaction.editReply(options$2);
-              return /* SponsorshipUsed */0;
-          case 47 :
-              if (maybeHash === undefined) {
-                return /* RetriedCommandDuring */1;
-              }
-              var exit$2 = 0;
-              var val$2;
-              try {
-                val$2 = await checkSponsor(uuid);
-                exit$2 = 2;
-              }
-              catch (raw_obj$2){
-                var obj$4 = Caml_js_exceptions.internalToOCamlException(raw_obj$2);
-                if (obj$4.RE_EXN_ID === Exceptions.BrightIdError) {
-                  await sleep(29000);
-                  return await handleSponsor(interaction, Caml_option.some(maybeHash), attempts - 1 | 0, uuid);
-                }
-                if (obj$4.RE_EXN_ID === $$Promise.JsError) {
-                  var obj$5 = obj$4._1;
-                  var msg$2 = obj$5.message;
-                  if (msg$2 !== undefined) {
-                    throw {
-                          RE_EXN_ID: HandleSponsorError,
-                          _1: msg$2,
-                          Error: new Error()
-                        };
-                  }
-                  console.error(obj$5);
-                  throw {
-                        RE_EXN_ID: HandleSponsorError,
-                        _1: "Handle Sponsor: Unknown Error",
-                        Error: new Error()
-                      };
-                }
-                throw obj$4;
-              }
-              if (exit$2 === 2) {
-                if (val$2._0.spendRequested) {
-                  var options$3 = successfulSponsorMessageOptions(uuid);
+                exit = 1;
+                break;
+            case 46 :
+                if (maybeHash !== undefined) {
+                  var options$3 = await successfulSponsorMessageOptions(uuid);
                   await interaction.editReply(options$3);
                   return /* SponsorshipUsed */0;
                 }
-                await sleep(29000);
-                return await handleSponsor(interaction, Caml_option.some(maybeHash), attempts - 1 | 0, uuid);
-              }
-              break;
-          default:
+                exit = 1;
+                break;
+            case 47 :
+                if (maybeHash !== undefined) {
+                  var match$3 = await checkSponsor(uuid);
+                  if (match$3._0.spendRequested) {
+                    var options$4 = successfulSponsorMessageOptions(uuid);
+                    await interaction.editReply(options$4);
+                    return /* SponsorshipUsed */0;
+                  }
+                  await sleep(29000);
+                  return await handleSponsor(interaction, Caml_option.some(maybeHash), attempts - 1 | 0, uuid);
+                }
+                exit = 1;
+                break;
+            default:
+              exit = 1;
+          }
+          if (exit === 1) {
+            if (maybeHash === undefined) {
+              return /* RetriedCommandDuring */1;
+            }
             throw {
                   RE_EXN_ID: HandleSponsorError,
-                  _1: errorMessage,
+                  _1: match.errorMessage,
                   Error: new Error()
                 };
+          }
+          
+        } else {
+          throw {
+                RE_EXN_ID: Json_Decode$JsonCombinators.DecodeError,
+                _1: err$1._0,
+                Error: new Error()
+              };
         }
-      } else {
-        throw {
-              RE_EXN_ID: Json_Decode$JsonCombinators.DecodeError,
-              _1: err._0,
-              Error: new Error()
-            };
+      }
+      catch (raw_obj){
+        var obj = Caml_js_exceptions.internalToOCamlException(raw_obj);
+        if (obj.RE_EXN_ID === Exceptions.BrightIdError) {
+          await sleep(29000);
+          return await handleSponsor(interaction, Caml_option.some(maybeHash), attempts - 1 | 0, uuid);
+        }
+        if (obj.RE_EXN_ID === Js_exn.$$Error) {
+          var obj$1 = obj._1;
+          var msg = obj$1.message;
+          if (msg !== undefined) {
+            throw {
+                  RE_EXN_ID: HandleSponsorError,
+                  _1: msg,
+                  Error: new Error()
+                };
+          }
+          console.error(obj$1);
+          throw {
+                RE_EXN_ID: HandleSponsorError,
+                _1: "Handle Sponsor: Unknown Error",
+                Error: new Error()
+              };
+        }
+        throw obj;
       }
     } else {
       throw error;
     }
   }
-  var err$1 = Json$JsonCombinators.decode(json, Decode$Shared.Decode_BrightId.Sponsorships.sponsor);
-  if (err$1.TAG === /* Ok */0) {
-    var hash = err$1._0.hash;
-    var options$4 = await sponsorRequestSubmittedMessageOptions(uuid);
-    await interaction.editReply(options$4);
-    console.log("A sponsor request has been submitted", {
-          guild: guildId,
-          contextId: uuid,
-          hash: hash
-        });
-    return await handleSponsor(interaction, Caml_option.some(hash), 30, uuid);
-  }
-  throw {
-        RE_EXN_ID: Json_Decode$JsonCombinators.DecodeError,
-        _1: err$1._0,
-        Error: new Error()
-      };
 }
 
 function gistConfig(param) {

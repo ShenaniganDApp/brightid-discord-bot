@@ -17,6 +17,7 @@ let id = envConfig["gistId"]
 
 let options: Client.clientOptions = {
   intents: ["GUILDS", "GUILD_MESSAGES"],
+  partials: [],
 }
 
 let client = Client.createDiscordClient(~options)
