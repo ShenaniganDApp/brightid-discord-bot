@@ -15,7 +15,8 @@
     "@ryyppy/rescript-promise": "^2.1.0",
     "dotenv": "^16.0.1",
     "find-up": "^6.3.0",
-    "node-fetch": "^3.2.8"
+    "node-fetch": "^3.2.8",
+    "x-ray": "^2.3.4"
   },
   "devDependencies": {}
 }
