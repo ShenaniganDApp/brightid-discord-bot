@@ -193,15 +193,6 @@ let beforeSponsorMessageOptions = async (customId, uuid) => {
   }
 }
 
-let noWriteToGistMessage = async interaction => {
-  let options = {
-    "content": "It seems like I can't write to my database at the moment. Please try again or contact the BrightID support.",
-    "ephemeral": true,
-  }
-
-  await Interaction.followUp(interaction, ~options, ())
-}
-
 exception NoAvailableSP
 let getAssignedSPFromAddress = (maybeSponsorshipAddress, contractAddress, url) => {
   let getBalance = sponsorshipAddress => {
@@ -456,11 +447,7 @@ let execute = interaction => {
                         let _ = await Interaction.editReply(interaction, ~options, ())
                       }
                     }
-                  // No Sponsorship Address and No Premium
-                  // | (4, false, true) =>
-                  //   let _ = await noSponsorshipsMessage(interaction)
-                  //   VerifyCommandError("Does not have a sponsorship address set")->raise
-                  //Non sponsorship error
+
                   | (_, _, _) =>
                     let _ = switch await handleUnverifiedGuildMember(errorNum, interaction, uuid) {
                     | data => Some(data)

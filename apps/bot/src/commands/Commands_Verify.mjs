@@ -173,14 +173,6 @@ async function beforeSponsorMessageOptions(customId, uuid) {
         };
 }
 
-async function noWriteToGistMessage(interaction) {
-  var options = {
-    content: "It seems like I can't write to my database at the moment. Please try again or contact the BrightID support.",
-    ephemeral: true
-  };
-  return await interaction.followUp(options);
-}
-
 var NoAvailableSP = /* @__PURE__ */Caml_exceptions.create("Commands_Verify.NoAvailableSP");
 
 function getAssignedSPFromAddress(maybeSponsorshipAddress, contractAddress, url) {
@@ -477,7 +469,6 @@ export {
   makeLinkOptions ,
   unknownErrorMessage ,
   beforeSponsorMessageOptions ,
-  noWriteToGistMessage ,
   NoAvailableSP ,
   getAssignedSPFromAddress ,
   totalUnusedSponsorships ,
