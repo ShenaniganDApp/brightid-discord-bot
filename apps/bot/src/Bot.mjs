@@ -16,7 +16,6 @@ import * as Commands_Help from "./commands/Commands_Help.mjs";
 import * as Decode$Shared from "@brightidbot/shared/src/Decode.mjs";
 import * as Belt_SetString from "rescript/lib/es6/belt_SetString.js";
 import * as Buttons_Verify from "./buttons/Buttons_Verify.mjs";
-import * as Commands_Guild from "./commands/Commands_Guild.mjs";
 import * as Buttons_Sponsor from "./buttons/Buttons_Sponsor.mjs";
 import * as Commands_Invite from "./commands/Commands_Invite.mjs";
 import * as Commands_Verify from "./commands/Commands_Verify.mjs";
@@ -69,17 +68,14 @@ var commands = new DiscordJs.Collection();
 var buttons = new DiscordJs.Collection();
 
 commands.set(Commands_Help.data.name, {
-            data: Commands_Help.data,
-            execute: Commands_Help.execute
-          }).set(Commands_Verify.data.name, {
-          data: Commands_Verify.data,
-          execute: Commands_Verify.execute
-        }).set(Commands_Invite.data.name, {
-        data: Commands_Invite.data,
-        execute: Commands_Invite.execute
-      }).set(Commands_Guild.data.name, {
-      data: Commands_Guild.data,
-      execute: Commands_Guild.execute
+          data: Commands_Help.data,
+          execute: Commands_Help.execute
+        }).set(Commands_Verify.data.name, {
+        data: Commands_Verify.data,
+        execute: Commands_Verify.execute
+      }).set(Commands_Invite.data.name, {
+      data: Commands_Invite.data,
+      execute: Commands_Invite.execute
     });
 
 buttons.set(Buttons_Verify.customId, {
