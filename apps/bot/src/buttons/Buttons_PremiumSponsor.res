@@ -153,17 +153,19 @@ let rec handleSponsor = async (interaction, ~maybeHash=None, ~attempts=30, uuid)
       }
     } catch {
     | Js.Exn.Error(error) =>
-      let json = switch Js.Json.stringifyAny(error) {
-      | Some(json) => json->Js.Json.parseExn
-      | None =>
-        HandleSponsorError(
-          "Handle Sponsor Error: There was a problem JSON parsing the error from sponsor()",
-        )->raise
-      }
       try {
-        switch json->Json.decode(Decode_BrightId.Error.data) {
-        | Error(err) => err->Json.Decode.DecodeError->raise
-        | Ok({errorNum, errorMessage}) =>
+        let brightIdError =
+          Js.Json.stringifyAny(error)
+          ->Belt.Option.map(Js.Json.parseExn)
+          ->Belt.Option.map(Json.decode(_, Decode_BrightId.Error.data))
+
+        switch brightIdError {
+        | None =>
+          HandleSponsorError(
+            "Handle Sponsor Error: There was a problem JSON parsing the error from sponsor()",
+          )->raise
+        | Some(Error(err)) => err->Json.Decode.DecodeError->raise
+        | Some(Ok({errorNum, errorMessage})) =>
           switch (errorNum, maybeHash) {
           //No Sponsorships in the Discord App
           | (38, _) => NoUnusedSponsorships
