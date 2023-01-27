@@ -104,7 +104,7 @@ let rec fetchContextIds = async (~retry=5, ()) => {
   let res = await fetch(endpoint, params)
   let json = await Response.json(res)
   switch (json->Json.decode(Verifications.data), json->Json.decode(Error.data)) {
-  | (Ok({data}), _) => Belt.Set.String.fromArray(data.contextIds)
+  | (Ok({data}), _) => Set.String.fromArray(data.contextIds)
   | (_, Ok(error)) =>
     let retry = retry - 1
     switch retry {
@@ -131,7 +131,7 @@ let assignRoleOnCreate = async (guild, role) => {
     guildMember
     ->GuildMember.getGuildMemberId
     ->UUID.v5(envConfig["uuidNamespace"])
-    ->Belt.Set.String.has(contextIds, _)
+    ->Set.String.has(contextIds, _)
 
   let assignRoleToGuildMember = (guildMember, role) => {
     guildMember->GuildMember.getGuildMemberRoleManager->GuildMemberRoleManager.add(role, ())
@@ -143,14 +143,14 @@ let assignRoleOnCreate = async (guild, role) => {
     ->Collection.values
   }
 
-  let addRolePromises = Belt.Option.map(maybeMembers, makeAddRolePromises)
+  let addRolePromises = Option.map(maybeMembers, makeAddRolePromises)
 
   switch addRolePromises {
   | None => 0
   | Some(promises) =>
     switch await Promise.all(promises) {
     | exception e => raise(e)
-    | results => Belt.Array.length(results)
+    | results => Array.length(results)
     }
   }
 }
@@ -189,7 +189,7 @@ let onGuildCreate = async guild => {
       | exception e => Js.Console.error2(`${guildName} : ${guildId}: `, e)
       | verifiedMembersCount =>
         Js.log(
-          `${guildName} : ${guildId}: Successfully assigned role to ${Belt.Int.toString(
+          `${guildName} : ${guildId}: Successfully assigned role to ${Int.toString(
               verifiedMembersCount,
             )} current members`,
         )
