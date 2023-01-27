@@ -58,7 +58,6 @@ let _ =
     Commands_Invite.data->SlashCommandBuilder.getCommandName,
     module(Commands_Invite),
   )
-  ->Collection.set(Commands_Guild.data->SlashCommandBuilder.getCommandName, module(Commands_Guild))
 
 let _ =
   buttons
