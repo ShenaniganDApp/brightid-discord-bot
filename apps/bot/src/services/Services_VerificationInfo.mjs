@@ -29,6 +29,10 @@ if (config.TAG === /* Ok */0) {
       };
 }
 
+function sleep(_ms) {
+  return (new Promise((resolve) => setTimeout(resolve, _ms)));
+}
+
 function fetchVerificationInfo(retryOpt, id) {
   var retry = retryOpt !== undefined ? retryOpt : 10;
   var uuid = Uuid.v5(id, config$1.uuidNamespace);
@@ -67,7 +71,13 @@ function fetchVerificationInfo(retryOpt, id) {
                 }
                 var retry$1 = retry - 1 | 0;
                 if (retry$1 !== 0) {
-                  return fetchVerificationInfo(retry$1, id);
+                  if (retry$1 !== 1) {
+                    return fetchVerificationInfo(retry$1, id);
+                  } else {
+                    return sleep(1000).then(function (param) {
+                                return fetchVerificationInfo(retry$1, id);
+                              });
+                  }
                 }
                 throw e;
               }));
@@ -87,6 +97,7 @@ var requestTimeout = 60000;
 export {
   UUID ,
   config$1 as config,
+  sleep ,
   context ,
   brightIdVerificationEndpoint ,
   requestTimeout ,
