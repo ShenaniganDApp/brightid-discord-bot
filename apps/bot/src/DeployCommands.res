@@ -36,9 +36,8 @@ let clientId = envConfig["discordClientId"]
 let helpCommand = Commands_Help.data->SlashCommandBuilder.toJSON
 let verifyCommand = Commands_Verify.data->SlashCommandBuilder.toJSON
 let inviteCommand = Commands_Invite.data->SlashCommandBuilder.toJSON
-let guildCommand = Commands_Guild.data->SlashCommandBuilder.toJSON
 
-let commands = [helpCommand, verifyCommand, inviteCommand, guildCommand]
+let commands = [helpCommand, verifyCommand, inviteCommand]
 
 let rest = Rest.make({"version": 9})->Rest.setToken(token)
 
@@ -59,11 +58,11 @@ rest
 })
 ->ignore
 
-// delete role command
+// delete guilds command
 // rest
-// ->Rest.delete(Routes.applicationCommand(~clientId, ~commandId="1010421714498359306"))
+// ->Rest.delete(Routes.applicationCommand(~clientId, ~commandId="981007485634748511"))
 // ->then(_ => {
-//   Js.log("Successfully deleted role command.")->resolve
+//   Js.log("Successfully deleted guilds command.")->resolve
 // })
 // ->catch(e => {
 //   Js.log(e)
