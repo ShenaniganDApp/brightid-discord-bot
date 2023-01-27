@@ -169,97 +169,98 @@ async function handleSponsor(interaction, maybeHashOpt, attemptsOpt, uuid) {
   catch (raw_error){
     var error = Caml_js_exceptions.internalToOCamlException(raw_error);
     if (error.RE_EXN_ID === Js_exn.$$Error) {
-      var json$1 = JSON.stringify(error._1);
-      var json$2;
-      if (json$1 !== undefined) {
-        json$2 = JSON.parse(json$1);
-      } else {
-        throw {
-              RE_EXN_ID: HandleSponsorError,
-              _1: "Handle Sponsor Error: There was a problem JSON parsing the error from sponsor()",
-              Error: new Error()
-            };
-      }
       try {
-        var err$1 = Json$JsonCombinators.decode(json$2, Decode$Shared.Decode_BrightId.$$Error.data);
-        if (err$1.TAG === /* Ok */0) {
-          var match = err$1._0;
-          var exit = 0;
-          switch (match.errorNum) {
-            case 38 :
-                return /* NoUnusedSponsorships */2;
-            case 39 :
-                if (maybeHash !== undefined) {
-                  var match$1 = await checkSponsor(uuid);
-                  if (match$1._0.spendRequested) {
-                    var options$1 = successfulSponsorMessageOptions(uuid);
-                    await interaction.editReply(options$1);
+        var brightIdError = Belt_Option.map(Belt_Option.map(JSON.stringify(error._1), (function (prim) {
+                    return JSON.parse(prim);
+                  })), (function (__x) {
+                return Json$JsonCombinators.decode(__x, Decode$Shared.Decode_BrightId.$$Error.data);
+              }));
+        if (brightIdError !== undefined) {
+          if (brightIdError.TAG === /* Ok */0) {
+            var match = brightIdError._0;
+            var exit = 0;
+            switch (match.errorNum) {
+              case 38 :
+                  return /* NoUnusedSponsorships */2;
+              case 39 :
+                  if (maybeHash !== undefined) {
+                    var match$1 = await checkSponsor(uuid);
+                    if (match$1._0.spendRequested) {
+                      var options$1 = successfulSponsorMessageOptions(uuid);
+                      await interaction.editReply(options$1);
+                      return /* SponsorshipUsed */0;
+                    }
+                    await sleep(29000);
+                    return await handleSponsor(interaction, Caml_option.some(maybeHash), attempts - 1 | 0, uuid);
+                  }
+                  exit = 1;
+                  break;
+              case 40 :
+              case 41 :
+              case 42 :
+              case 43 :
+              case 44 :
+                  exit = 1;
+                  break;
+              case 45 :
+                  if (maybeHash !== undefined) {
+                    var match$2 = await checkSponsor(uuid);
+                    if (match$2._0.spendRequested) {
+                      var options$2 = successfulSponsorMessageOptions(uuid);
+                      await interaction.editReply(options$2);
+                      return /* SponsorshipUsed */0;
+                    }
+                    await sleep(29000);
+                    return await handleSponsor(interaction, Caml_option.some(maybeHash), attempts - 1 | 0, uuid);
+                  }
+                  exit = 1;
+                  break;
+              case 46 :
+                  if (maybeHash !== undefined) {
+                    var options$3 = await successfulSponsorMessageOptions(uuid);
+                    await interaction.editReply(options$3);
                     return /* SponsorshipUsed */0;
                   }
-                  await sleep(29000);
-                  return await handleSponsor(interaction, Caml_option.some(maybeHash), attempts - 1 | 0, uuid);
-                }
-                exit = 1;
-                break;
-            case 40 :
-            case 41 :
-            case 42 :
-            case 43 :
-            case 44 :
-                exit = 1;
-                break;
-            case 45 :
-                if (maybeHash !== undefined) {
-                  var match$2 = await checkSponsor(uuid);
-                  if (match$2._0.spendRequested) {
-                    var options$2 = successfulSponsorMessageOptions(uuid);
-                    await interaction.editReply(options$2);
-                    return /* SponsorshipUsed */0;
+                  exit = 1;
+                  break;
+              case 47 :
+                  if (maybeHash !== undefined) {
+                    var match$3 = await checkSponsor(uuid);
+                    if (match$3._0.spendRequested) {
+                      var options$4 = successfulSponsorMessageOptions(uuid);
+                      await interaction.editReply(options$4);
+                      return /* SponsorshipUsed */0;
+                    }
+                    await sleep(29000);
+                    return await handleSponsor(interaction, Caml_option.some(maybeHash), attempts - 1 | 0, uuid);
                   }
-                  await sleep(29000);
-                  return await handleSponsor(interaction, Caml_option.some(maybeHash), attempts - 1 | 0, uuid);
-                }
+                  exit = 1;
+                  break;
+              default:
                 exit = 1;
-                break;
-            case 46 :
-                if (maybeHash !== undefined) {
-                  var options$3 = await successfulSponsorMessageOptions(uuid);
-                  await interaction.editReply(options$3);
-                  return /* SponsorshipUsed */0;
-                }
-                exit = 1;
-                break;
-            case 47 :
-                if (maybeHash !== undefined) {
-                  var match$3 = await checkSponsor(uuid);
-                  if (match$3._0.spendRequested) {
-                    var options$4 = successfulSponsorMessageOptions(uuid);
-                    await interaction.editReply(options$4);
-                    return /* SponsorshipUsed */0;
-                  }
-                  await sleep(29000);
-                  return await handleSponsor(interaction, Caml_option.some(maybeHash), attempts - 1 | 0, uuid);
-                }
-                exit = 1;
-                break;
-            default:
-              exit = 1;
-          }
-          if (exit === 1) {
-            if (maybeHash === undefined) {
-              return /* RetriedCommandDuring */1;
             }
+            if (exit === 1) {
+              if (maybeHash === undefined) {
+                return /* RetriedCommandDuring */1;
+              }
+              throw {
+                    RE_EXN_ID: HandleSponsorError,
+                    _1: match.errorMessage,
+                    Error: new Error()
+                  };
+            }
+            
+          } else {
             throw {
-                  RE_EXN_ID: HandleSponsorError,
-                  _1: match.errorMessage,
+                  RE_EXN_ID: Json_Decode$JsonCombinators.DecodeError,
+                  _1: brightIdError._0,
                   Error: new Error()
                 };
           }
-          
         } else {
           throw {
-                RE_EXN_ID: Json_Decode$JsonCombinators.DecodeError,
-                _1: err$1._0,
+                RE_EXN_ID: HandleSponsorError,
+                _1: "Handle Sponsor Error: There was a problem JSON parsing the error from sponsor()",
                 Error: new Error()
               };
         }
