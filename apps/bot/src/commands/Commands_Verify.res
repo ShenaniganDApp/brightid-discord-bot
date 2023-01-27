@@ -192,7 +192,7 @@ let getAssignedSPFromAddress = (maybeSponsorshipAddress, contractAddress, url) =
     let contract = BrightId.SPContract.make(contract)
     BrightId.SPContract.contextBalance(contract, ~address=sponsorshipAddress, ~formattedContext)
   }
-  Belt.Option.mapWithDefault(maybeSponsorshipAddress, resolve(Ethers.BigNumber.zero), getBalance)
+  Option.mapWithDefault(maybeSponsorshipAddress, resolve(Ethers.BigNumber.zero), getBalance)
 }
 
 let totalUnusedSponsorships = (usedSponsorships, assignedSponsorships, assignedSponsorshipsEth) => {
@@ -256,7 +256,7 @@ let getServerAssignedSponsorships = guildData => {
 
   switch guildData.assignedSponsorships {
   | None => zero
-  | Some(assignedSponsorships) => Belt.Array.reduce(assignedSponsorships, zero, sumAmounts)
+  | Some(assignedSponsorships) => Array.reduce(assignedSponsorships, zero, sumAmounts)
   }
 }
 
@@ -268,13 +268,13 @@ let getGuildSponsorshipTotals = guilds => {
     let (totalAssignedSponsorships, totalUsedSponsorships) = acc
     let guild = guilds->Js.Dict.unsafeGet(key)
     let assignedSponsorships = getServerAssignedSponsorships(guild)
-    let usedSponsorships = guild.usedSponsorships->Belt.Option.getWithDefault("0")->fromString
+    let usedSponsorships = guild.usedSponsorships->Option.getWithDefault("0")->fromString
     let totalAssignedSponsorships = add(totalAssignedSponsorships, assignedSponsorships)
     let totalUsedSponsorships = add(totalUsedSponsorships, usedSponsorships)
     (totalAssignedSponsorships, totalUsedSponsorships)
   }
 
-  guilds->Js.Dict.keys->Belt.Array.reduce((zero, zero), calculateAssignedAndUnusedTotals)
+  guilds->Js.Dict.keys->Array.reduce((zero, zero), calculateAssignedAndUnusedTotals)
 }
 
 let execute = interaction => {
@@ -374,12 +374,12 @@ let execute = interaction => {
                     totalGuildAssignedSponsorships->Ethers.BigNumber.sub(totalGuildUsedSponsorships)
                   let unusedPremiumSponsorships =
                     appUnusedSponsorships
-                    ->Belt.Float.toString
+                    ->Float.toString
                     ->Ethers.BigNumber.fromString
                     ->Ethers.BigNumber.sub(unusedGuildSponsorships)
                   let premiumSponsorshipsUsed =
                     guildData.premiumSponsorshipsUsed
-                    ->Belt.Option.getWithDefault("0")
+                    ->Option.getWithDefault("0")
                     ->Ethers.BigNumber.fromString
 
                   let shouldUsePremiumSponsorships = {
@@ -424,7 +424,7 @@ let execute = interaction => {
                     | _ =>
                       open Ethers.BigNumber
                       let usedSponsorships =
-                        guildData.usedSponsorships->Belt.Option.mapWithDefault(zero, fromString)
+                        guildData.usedSponsorships->Option.mapWithDefault(zero, fromString)
 
                       let assignedSponsorships =
                         assignedSponsorshipsID->add(assignedSponsorshipsEth)

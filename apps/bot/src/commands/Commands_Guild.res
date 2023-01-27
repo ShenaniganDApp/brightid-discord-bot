@@ -29,15 +29,13 @@ let getGuildDataFromGist = (guilds, guildId, interaction) => {
 
 let generateEmbed = (guilds, interaction, offset) => {
   open MessageEmbed
-  let current = guilds->Belt.Array.slice(~offset, ~len=offset + 10)
+  let current = guilds->Array.slice(~offset, ~len=offset + 10)
   let embedTitle = `Showing guilds ${(offset + 1)->Js.Int.toString}-${(offset +
-    current->Belt.Array.length)->Js.Int.toString} out of ${guilds
-    ->Belt.Array.length
-    ->Js.Int.toString}`
+    current->Array.length)->Js.Int.toString} out of ${guilds->Array.length->Js.Int.toString}`
   let embed = createMessageEmbed()->setTitle(embedTitle)
 
   readGist()->then(guilds => {
-    current->Belt.Array.forEach(g => {
+    current->Array.forEach(g => {
       let guildData = guilds->getGuildDataFromGist(g->Guild.getGuildId, interaction)
       let guildLink = switch guildData.inviteLink->Js.Nullable.toOption {
       | None => "No Invite Link Available"
@@ -69,7 +67,7 @@ let execute = interaction => {
       interaction->Interaction.editReply(~options={"embeds": [embed]}, ())
     })
     ->then(guildsMessage => {
-      switch guilds->Belt.Array.length < 1 {
+      switch guilds->Array.length < 1 {
       | true => ()
       | false => {
           // react with the right arrow (so that the user can click it) (left arrow isn't needed because it is the start)
@@ -79,7 +77,7 @@ let execute = interaction => {
             let emoji = reaction->Reaction.getReactionEmoji
             Js.log2("emoji: ", emoji)
             let name = emoji->Emoji.getEmojiName
-            ([`⬅️`, `➡️`]->Belt.Array.some(arrow => name === arrow) &&
+            ([`⬅️`, `➡️`]->Array.some(arrow => name === arrow) &&
               user->User.getUserId === member->GuildMember.getGuildMemberId)->resolve
           }
           let collector = guildsMessage->ReactionCollector.createReactionCollector({
@@ -101,8 +99,8 @@ let execute = interaction => {
                 let currentIndex = name === `⬅️` ? currentIndex - 10 : currentIndex + 10
                 guilds
                 ->generateEmbed(interaction, currentIndex)
-                ->then(embed =>
-                  interaction->Interaction.editReply(~options={"embeds": [embed]}, ())
+                ->then(
+                  embed => interaction->Interaction.editReply(~options={"embeds": [embed]}, ()),
                 )
                 ->ignore
                 switch currentIndex {
@@ -110,7 +108,7 @@ let execute = interaction => {
                   // react with the left arrow (so that the user can click it)
                   guildsMessage->Message.react(`⬅️`)->ignore
                 | _ =>
-                  currentIndex + 10 < guilds->Belt.Array.length
+                  currentIndex + 10 < guilds->Array.length
                     ? guildsMessage->Message.react(`➡️`)->ignore
                     : () //react with the right arrow (so that the user can click it) (left arrow isn't needed because it is the start)
                 }

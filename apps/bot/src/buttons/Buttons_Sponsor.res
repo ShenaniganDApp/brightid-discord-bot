@@ -47,7 +47,7 @@ let sponsorRequestSubmittedMessageOptions = async uuid => {
   let attachment = await createMessageAttachmentFromCanvas(canvas)
   let nowInSeconds = Js.Math.round(Js.Date.now() /. 1000.)
   let fifteenMinutesAfter = 15. *. 60. +. nowInSeconds
-  let content = `You sponsor request has been submitted! \n\n Make sure you have scanned this QR code in the BrightID mobile app to confirm your sponsor and link Discord to BrightID. \n This process will timeout <t:${fifteenMinutesAfter->Belt.Float.toString}:R>.\n\nPlease be patient until time expires \n`
+  let content = `You sponsor request has been submitted! \n\n Make sure you have scanned this QR code in the BrightID mobile app to confirm your sponsor and link Discord to BrightID. \n This process will timeout <t:${fifteenMinutesAfter->Float.toString}:R>.\n\nPlease be patient until time expires \n`
   {
     "content": content,
     "files": [attachment],
@@ -149,8 +149,8 @@ let rec handleSponsor = async (interaction, ~maybeHash=None, ~attempts=30, uuid)
       try {
         let brightIdError =
           Js.Json.stringifyAny(error)
-          ->Belt.Option.map(Js.Json.parseExn)
-          ->Belt.Option.map(Json.decode(_, Decode_BrightId.Error.data))
+          ->Option.map(Js.Json.parseExn)
+          ->Option.map(Json.decode(_, Decode_BrightId.Error.data))
 
         switch brightIdError {
         | None =>
@@ -255,7 +255,7 @@ let execute = async interaction => {
         | exception e => e->raise
         | SponsorshipUsed =>
           let usedSponsorships =
-            guildData.usedSponsorships->Belt.Option.getWithDefault(
+            guildData.usedSponsorships->Option.getWithDefault(
               Ethers.BigNumber.zero->Ethers.BigNumber.toString,
             )
           let usedSponsorships =

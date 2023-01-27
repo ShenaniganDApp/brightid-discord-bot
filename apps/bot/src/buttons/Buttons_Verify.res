@@ -123,7 +123,7 @@ let execute = interaction => {
           verificationInfo => {
             switch verificationInfo {
             | VerificationInfo({contextIds, unique}) =>
-              let contextIdsLength = contextIds->Belt.Array.length
+              let contextIdsLength = contextIds->Array.length
               switch (contextIdsLength, unique) {
               | (_, true) =>
                 let guildRole = roleId->getRolebyRoleId(guildRoleManager, _)
