@@ -22,6 +22,9 @@ let config = switch config {
 @module("node-fetch")
 external fetch: (string, 'params) => Promise.t<Response.t<Js.Json.t>> = "default"
 
+let sleep: int => Js.Promise.t<unit> = _ms =>
+  %raw(` new Promise((resolve) => setTimeout(resolve, _ms))`)
+
 let {context} = module(Constants)
 let {brightIdVerificationEndpoint} = module(Endpoints)
 
@@ -58,6 +61,7 @@ let rec fetchVerificationInfo = (~retry=10, id) => {
       let retry = retry - 1
       switch retry {
       | 0 => e->raise
+      | 1 => sleep(1000)->then(_ => fetchVerificationInfo(~retry, id))
       | _ => fetchVerificationInfo(~retry, id)
       }
     }
