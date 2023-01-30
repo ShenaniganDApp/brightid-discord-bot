@@ -248,17 +248,17 @@ let default = () => {
                     <div> {"This server is not using BrightID"->React.string} </div>
                   </div>
                 | Some(brightIdGuild) =>
-                  <div className="flex flex-col flex-1 justify-center items-start gap-4">
+                  <div className="flex flex-col flex-1 justify-center items-start gap-6">
                     <label className="flex flex-col gap-2">
                       {"Role Name"->React.string}
                       <input
-                        className="text-white p-2 rounded bg-extraDark cursor-not-allowed"
+                        className="text-white p-2 rounded bg-dark cursor-not-allowed"
                         type_="text"
                         name="role"
                         placeholder={brightIdGuild.role->Belt.Option.getWithDefault("No Role Name")}
                         value={state.role->Belt.Option.getWithDefault("")}
                         onChange={onRoleChanged}
-                        disabled={true}
+                        readOnly={true}
                       />
                     </label>
                     <label className="flex flex-col gap-2">
@@ -276,7 +276,7 @@ let default = () => {
                     </label>
                     <label className="flex flex-col gap-2">
                       {"Sponsorship Address"->React.string}
-                      <div className="flex flex-row gap-4 bg-transparent">
+                      <div className="flex flex-row gap-6 bg-transparent">
                         <input
                           className="text-white p-2 bg-dark"
                           name="sponsorshipAddress"

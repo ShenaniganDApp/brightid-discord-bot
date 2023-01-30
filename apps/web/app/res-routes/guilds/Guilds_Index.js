@@ -185,8 +185,8 @@ async function action(param) {
 }
 
 var state = {
-  guild: undefined,
-  brightIdGuild: undefined,
+  maybeDiscordGuild: undefined,
+  maybeBrightIdGuild: undefined,
   loading: true,
   submitting: false,
   oauthGuild: undefined
@@ -196,40 +196,40 @@ function reducer(state, action) {
   switch (action.TAG | 0) {
     case /* SetGuild */0 :
         return {
-                guild: action._0,
-                brightIdGuild: state.brightIdGuild,
+                maybeDiscordGuild: action._0,
+                maybeBrightIdGuild: state.maybeBrightIdGuild,
                 loading: state.loading,
                 submitting: state.submitting,
                 oauthGuild: state.oauthGuild
               };
     case /* SetBrightIdGuild */1 :
         return {
-                guild: state.guild,
-                brightIdGuild: action._0,
+                maybeDiscordGuild: state.maybeDiscordGuild,
+                maybeBrightIdGuild: action._0,
                 loading: state.loading,
                 submitting: state.submitting,
                 oauthGuild: state.oauthGuild
               };
     case /* SetLoading */2 :
         return {
-                guild: state.guild,
-                brightIdGuild: state.brightIdGuild,
+                maybeDiscordGuild: state.maybeDiscordGuild,
+                maybeBrightIdGuild: state.maybeBrightIdGuild,
                 loading: action._0,
                 submitting: state.submitting,
                 oauthGuild: state.oauthGuild
               };
     case /* SetSubmitting */3 :
         return {
-                guild: state.guild,
-                brightIdGuild: state.brightIdGuild,
+                maybeDiscordGuild: state.maybeDiscordGuild,
+                maybeBrightIdGuild: state.maybeBrightIdGuild,
                 loading: state.loading,
                 submitting: action._0,
                 oauthGuild: state.oauthGuild
               };
     case /* SetOAuthGuild */4 :
         return {
-                guild: state.guild,
-                brightIdGuild: state.brightIdGuild,
+                maybeDiscordGuild: state.maybeDiscordGuild,
+                maybeBrightIdGuild: state.maybeBrightIdGuild,
                 loading: state.loading,
                 submitting: state.submitting,
                 oauthGuild: action._0
@@ -250,7 +250,7 @@ function $$default(param) {
   var match$2 = React.useReducer(reducer, state);
   var dispatch = match$2[1];
   var state$1 = match$2[0];
-  var guild = state$1.guild;
+  var guild = state$1.maybeDiscordGuild;
   var getGuildName = guild !== undefined ? guild.name : "No Guild";
   var sign = Wagmi.useSignMessage({
         message: "I consent that the SP in this address is able to be used by members of " + getGuildName + " Discord Server",
@@ -310,12 +310,13 @@ function $$default(param) {
                 } else {
                   Curry._1(dispatch, {
                         TAG: /* SetGuild */0,
-                        _0: data$1.guild
+                        _0: data$1.maybeDiscordGuild
                       });
                   Curry._1(dispatch, {
                         TAG: /* SetBrightIdGuild */1,
-                        _0: data$1.brightIdGuild
+                        _0: data$1.maybeBrightIdGuild
                       });
+                  console.log(data$1);
                   Curry._1(dispatch, {
                         TAG: /* SetLoading */2,
                         _0: false
@@ -370,6 +371,8 @@ function $$default(param) {
           }
           
         }), []);
+  var guild$2 = state$1.maybeBrightIdGuild;
+  var hasSponsorshipAddress = guild$2 !== undefined ? Belt_Option.isSome(guild$2.sponsorshipAddress) : false;
   return React.createElement("div", {
               className: "flex-1"
             }, React.createElement(ReactHotToast$1.Toaster, {}), React.createElement("div", {
@@ -389,10 +392,10 @@ function $$default(param) {
                                 className: "width-full flex flex-col md:flex-row justify-around items-center w-full"
                               }, React.createElement("p", {
                                     className: "text-6xl text-slate-400 font-extrabold"
-                                  }, "Server Stats Coming Soon")), React.createElement(SponsorshipsPopup.make, {
-                                isAdmin: isAdmin,
-                                sign: handleSign
-                              }))) : React.createElement("div", {
+                                  }, "Server Stats Coming Soon")), hasSponsorshipAddress ? React.createElement(React.Fragment, undefined) : React.createElement(SponsorshipsPopup.make, {
+                                  isAdmin: isAdmin,
+                                  sign: handleSign
+                                }))) : React.createElement("div", {
                         className: "flex flex-col items-center justify-center h-full gap-4"
                       }, React.createElement("p", {
                             className: "text-3xl text-white font-poppins"

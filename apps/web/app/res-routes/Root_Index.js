@@ -182,6 +182,7 @@ async function loader(param) {
           };
   }
   var contextId = Uuid.v5(maybeDiscordId, process.env.UUID_NAMESPACE);
+  console.log(contextId);
   var deepLink = Brightid_sdk.generateDeeplink(Constants$Shared.context, contextId, undefined);
   return {
           maybeUser: maybeUser,

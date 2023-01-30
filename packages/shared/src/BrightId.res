@@ -107,4 +107,11 @@ module SPContract = {
     ~address: string,
     ~formattedContext: string,
   ) => Js.Promise.t<Ethers.BigNumber.t> = "contextBalance"
+
+  @send
+  external assignContext: (
+    t,
+    ~formattedContext: string,
+    ~amount: Ethers.BigNumber.t,
+  ) => Js.Promise.t<unit> = "assignContext"
 }

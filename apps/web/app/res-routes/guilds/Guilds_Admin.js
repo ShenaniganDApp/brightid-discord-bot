@@ -216,14 +216,14 @@ function Guilds_Admin$default(Props) {
                                   })), React.createElement("div", {
                                 className: "flex flex-1 justify-around flex-col items-center "
                               }, maybeBrightIdGuild !== undefined ? React.createElement("div", {
-                                      className: "flex flex-col flex-1 justify-center items-start gap-4"
+                                      className: "flex flex-col flex-1 justify-center items-start gap-6"
                                     }, React.createElement("label", {
                                           className: "flex flex-col gap-2"
                                         }, "Role Name", React.createElement("input", {
-                                              className: "text-white p-2 rounded bg-extraDark cursor-not-allowed",
-                                              disabled: true,
+                                              className: "text-white p-2 rounded bg-dark cursor-not-allowed",
                                               name: "role",
                                               placeholder: Belt_Option.getWithDefault(maybeBrightIdGuild.role, "No Role Name"),
+                                              readOnly: true,
                                               type: "text",
                                               value: Belt_Option.getWithDefault(state$1.role, ""),
                                               onChange: onRoleChanged
@@ -239,7 +239,7 @@ function Guilds_Admin$default(Props) {
                                             })), React.createElement("label", {
                                           className: "flex flex-col gap-2"
                                         }, "Sponsorship Address", React.createElement("div", {
-                                              className: "flex flex-row gap-4 bg-transparent"
+                                              className: "flex flex-row gap-6 bg-transparent"
                                             }, React.createElement("input", {
                                                   className: "text-white p-2 bg-dark",
                                                   name: "sponsorshipAddress",

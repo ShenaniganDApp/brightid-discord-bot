@@ -86,16 +86,16 @@ let action: Remix.actionFunction<'a> = async ({request, params}) => {
 }
 
 type state = {
-  guild: option<Types.guild>,
-  brightIdGuild: option<Shared.BrightId.Gist.brightIdGuild>,
+  maybeDiscordGuild: option<Types.guild>,
+  maybeBrightIdGuild: option<Shared.BrightId.Gist.brightIdGuild>,
   loading: bool,
   submitting: bool,
   oauthGuild: option<Types.oauthGuild>,
 }
 
 let state = {
-  guild: None,
-  brightIdGuild: None,
+  maybeDiscordGuild: None,
+  maybeBrightIdGuild: None,
   loading: true,
   submitting: false,
   oauthGuild: None,
@@ -110,13 +110,13 @@ type actions =
 
 let reducer = (state, action) =>
   switch action {
-  | SetGuild(guild) => {
+  | SetGuild(maybeDiscordGuild) => {
       ...state,
-      guild,
+      maybeDiscordGuild,
     }
-  | SetBrightIdGuild(brightIdGuild) => {
+  | SetBrightIdGuild(maybeBrightIdGuild) => {
       ...state,
-      brightIdGuild,
+      maybeBrightIdGuild,
     }
   | SetLoading(loading) => {...state, loading}
   | SetSubmitting(submitting) => {...state, submitting}
@@ -133,8 +133,7 @@ let default = () => {
   let fetcher = useFetcher()
 
   let (state, dispatch) = React.useReducer(reducer, state)
-
-  let getGuildName = switch state.guild {
+  let getGuildName = switch state.maybeDiscordGuild {
   | Some(guild) => guild.name
   | None => "No Guild"
   }
@@ -178,8 +177,9 @@ let default = () => {
       | None => SetLoading(false)->dispatch
 
       | Some(data) =>
-        data["guild"]->SetGuild->dispatch
-        data["brightIdGuild"]->SetBrightIdGuild->dispatch
+        data["maybeDiscordGuild"]->SetGuild->dispatch
+        data["maybeBrightIdGuild"]->SetBrightIdGuild->dispatch
+        Js.log(data)
         SetLoading(false)->dispatch
       }
     | _ => ()
@@ -240,6 +240,11 @@ let default = () => {
     None
   })
 
+  let hasSponsorshipAddress = switch state.maybeBrightIdGuild {
+  | Some(guild) => guild.sponsorshipAddress->Belt.Option.isSome
+  | None => false
+  }
+
   <div className="flex-1">
     <ReactHotToast.Toaster />
     <div className="flex flex-col h-screen">
@@ -296,7 +301,7 @@ let default = () => {
                 {"Server Stats Coming Soon"->React.string}
               </p>
             </section>
-            <SponsorshipsPopup isAdmin sign={handleSign} />
+            {!hasSponsorshipAddress ? <SponsorshipsPopup isAdmin sign={handleSign} /> : <> </>}
           </div>
         </>
       }}

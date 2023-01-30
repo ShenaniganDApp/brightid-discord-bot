@@ -354,6 +354,7 @@ let onGuildMemberAdd = async guildMember => {
     }
   }
 }
+}
 
 let onRoleUpdate = async role => {
   open Utils
