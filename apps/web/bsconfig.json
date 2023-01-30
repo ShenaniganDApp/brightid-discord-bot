@@ -10,9 +10,7 @@
     "in-source": true
   },
   "suffix": ".js",
-  "reason": {
-    "react-jsx": 3
-  },
+  "jsx": { "version": 4, "mode": "classic" },
   "bs-dependencies": [
     "@rescript/react",
     "rescript-remix",
@@ -20,7 +18,8 @@
     "@ryyppy/rescript-promise",
     "@brightidbot/utils",
     "@glennsl/rescript-json-combinators",
-    "@brightidbot/shared"
+    "@brightidbot/shared",
+    "rescript-nodejs"
   ],
   "pinned-dependencies": ["@brightidbot/utils", "@brightidbot/shared"],
   "bsc-flags": ["-open JsonCombinators"],

@@ -2,7 +2,6 @@
 
 import * as Curry from "../../../node_modules/rescript/lib/es6/curry.js";
 import * as React from "react";
-import * as Remix from "remix";
 import * as Wagmi from "wagmi";
 import * as $$Promise from "../../../node_modules/@ryyppy/rescript-promise/src/Promise.js";
 import * as Sidebar from "./components/Sidebar.js";
@@ -11,6 +10,7 @@ import * as Belt_Array from "../../../node_modules/rescript/lib/es6/belt_Array.j
 import * as Caml_option from "../../../node_modules/rescript/lib/es6/caml_option.js";
 import LodashMerge from "lodash.merge";
 import * as DiscordServer from "./DiscordServer.js";
+import * as React$1 from "@remix-run/react";
 import * as Rainbowkit from "@rainbow-me/rainbowkit";
 
 import rainbowKit from "@rainbow-me/rainbowkit/styles.css"
@@ -20,20 +20,23 @@ import proSidebar from "react-pro-sidebar/dist/css/styles.css"
 ;
 
 import {
-  apiProvider,
-  configureChains,
   getDefaultWallets,
 } from "@rainbow-me/rainbowkit";
-import { chain, createClient } from "wagmi"
+import { createClient, configureChains } from "wagmi"
+import { mainnet} from 'wagmi/chains'
+import { alchemyProvider } from 'wagmi/providers/alchemy'
+import { publicProvider } from 'wagmi/providers/public'
+import { jsonRpcProvider } from '@wagmi/core/providers/jsonRpc'
 ;
 
-var WagmiProvider = {};
+var WagmiConfig = {};
 
 var LodashMerge$1 = {};
 
 function meta(param) {
   return {
-          title: "Bright ID Unique Bot"
+          title: "Bright ID Discord Command Center",
+          viewport: "width=device-width,initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
         };
 }
 
@@ -72,8 +75,12 @@ var idChain = {
 };
 
 var chainConfig = (configureChains(
-  [idChain],
-  [apiProvider.jsonRpc((chain) => ({ rpcUrl: chain.rpcUrls.default }))]
+  [idChain, mainnet],
+  [
+     jsonRpcProvider({
+      rpc: (chain)  => ({ rpcUrl: chain.rpcUrls.default })}),
+
+    ]
 ));
 
 var defaultWallets = (getDefaultWallets({
@@ -113,10 +120,6 @@ var myTheme = LodashMerge(Rainbowkit.darkTheme(), {
         accentColor: "#ed7a5c"
       }
     });
-
-function unstable_shouldReload(param) {
-  return false;
-}
 
 var state_userGuilds = [];
 
@@ -165,14 +168,14 @@ function reducer(state, action) {
   }
 }
 
-function Root$default(Props) {
-  var match = Remix.useLoaderData();
+function Root$default(props) {
+  var match = React$1.useLoaderData();
   var maybeUser = match.maybeUser;
   var match$1 = React.useState(function () {
         return false;
       });
   var setToggled = match$1[1];
-  var fetcher = Remix.useFetcher();
+  var fetcher = React$1.useFetcher();
   var match$2 = React.useReducer(reducer, state);
   var dispatch = match$2[1];
   var state$1 = match$2[0];
@@ -258,9 +261,9 @@ function Root$default(Props) {
                     }), React.createElement("meta", {
                       content: "width=device-width,initial-scale=1",
                       name: "viewport"
-                    }), React.createElement(Remix.Meta, {}), React.createElement(Remix.Links, {})), React.createElement("body", {
+                    }), React.createElement(React$1.Meta, {}), React.createElement(React$1.Links, {})), React.createElement("body", {
                   className: "h-screen w-screen bg-dark"
-                }, React.createElement(Wagmi.WagmiProvider, {
+                }, React.createElement(Wagmi.WagmiConfig, {
                       client: wagmiClient,
                       children: React.createElement(Rainbowkit.RainbowKitProvider, {
                             chains: chainConfig.chains,
@@ -273,7 +276,7 @@ function Root$default(Props) {
                                         user: Caml_option.valFromOption(maybeUser),
                                         guilds: guilds,
                                         loadingGuilds: state$1.loadingGuilds
-                                      }) : React.createElement(React.Fragment, undefined), React.createElement(Remix.Outlet, {
+                                      }) : React.createElement(React.Fragment, undefined), React.createElement(React$1.Outlet, {
                                       context: {
                                         handleToggleSidebar: handleToggleSidebar,
                                         rateLimited: match.rateLimited,
@@ -281,32 +284,13 @@ function Root$default(Props) {
                                       }
                                     }))
                           })
-                    }), React.createElement(Remix.ScrollRestoration, {}), React.createElement(Remix.Scripts, {}), process.env.NODE_ENV === "development" ? React.createElement(Remix.LiveReload, {}) : null));
+                    }), React.createElement(React$1.ScrollRestoration, {}), React.createElement(React$1.Scripts, {}), process.env.NODE_ENV === "development" ? React.createElement(React$1.LiveReload, {}) : null));
 }
-
-export function ErrorBoundary({ error }) {
-  console.error(error);
-  return (
-    <html>
-      <head>
-        <title>Oh no!</title>
-        <Remix.Meta />
-        <Remix.Links />
-      </head>
-      <body>
-        <p className="text-center">Something went wrong!</p>
-        <p className="text-center">BrightID command center is still in Beta. Try reloading the page!</p>
-        <Remix.Scripts />
-      </body>
-    </html>
-  );
-}
-;
 
 var $$default = Root$default;
 
 export {
-  WagmiProvider ,
+  WagmiConfig ,
   LodashMerge$1 as LodashMerge,
   meta ,
   links ,
@@ -316,7 +300,6 @@ export {
   wagmiClient ,
   loader ,
   myTheme ,
-  unstable_shouldReload ,
   state ,
   reducer ,
   $$default ,

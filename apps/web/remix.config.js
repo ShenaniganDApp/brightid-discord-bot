@@ -13,7 +13,7 @@ module.exports = {
   devServerPort: 8002,
   ignoredRouteFiles: ['.*', '*.res'],
   transpileModules: ['rescript', 'rescript-webapi'],
-  serverDependenciesToBundle: ['@rainbow-me/rainbowkit'],
+  serverDependenciesToBundle: ['@rainbow-me/rainbowkit', /^@?wagmi.*/, '/.*/'],
   cacheDirectory: '../../node_modules/.cache/remix',
   routes(defineRoutes) {
     return defineRoutes(route => {

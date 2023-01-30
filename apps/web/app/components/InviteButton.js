@@ -2,7 +2,7 @@
 
 import * as React from "react";
 
-function InviteButton(Props) {
+function InviteButton(props) {
   return React.createElement("a", {
               href: "https://discord.com/oauth2/authorize?client_id=759128312030691328&permissions=2416045120&scope=applications.commands%20bot",
               target: "_blank"

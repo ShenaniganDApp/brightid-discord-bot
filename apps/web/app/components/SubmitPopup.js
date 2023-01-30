@@ -2,10 +2,8 @@
 
 import * as React from "react";
 
-function SubmitPopup(Props) {
-  var hasChangesToSave = Props.hasChangesToSave;
-  var reset = Props.reset;
-  var visibilty = hasChangesToSave ? "visible" : "invisible";
+function SubmitPopup(props) {
+  var visibilty = props.hasChangesToSave ? "visible" : "invisible";
   return React.createElement("div", {
               className: "p-4 w-full bottom-0 absolute bg-extraDark rounded-xl shadow-2xl " + visibilty + ""
             }, React.createElement("div", {
@@ -14,7 +12,7 @@ function SubmitPopup(Props) {
                       className: "flex flex-row items-center gap-4"
                     }, React.createElement("div", {
                           className: "text-xl",
-                          onClick: reset
+                          onClick: props.reset
                         }, "Reset"), React.createElement("button", {
                           className: "bg-brightid p-3 rounded-xl text-xl font-semibold",
                           type: "submit"

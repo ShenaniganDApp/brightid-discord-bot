@@ -2,7 +2,7 @@
 
 import * as React from "react";
 
-function Sponsorships_Index$default(Props) {
+function Sponsorships_Index$default(props) {
   return React.createElement("div", undefined, "Hello, world!");
 }
 

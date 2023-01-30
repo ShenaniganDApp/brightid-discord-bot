@@ -2,7 +2,6 @@
 
 import * as Curry from "../../../../../node_modules/rescript/lib/es6/curry.js";
 import * as React from "react";
-import * as Remix from "remix";
 import * as Wagmi from "wagmi";
 import * as Js_dict from "../../../../../node_modules/rescript/lib/es6/js_dict.js";
 import * as AuthServer from "../../AuthServer.js";
@@ -15,9 +14,11 @@ import * as DiscordServer from "../../DiscordServer.js";
 import * as Helpers_Guild from "../../helpers/Helpers_Guild.js";
 import * as SidebarToggle from "../../components/SidebarToggle.js";
 import * as WebUtils_Gist from "../../utils/WebUtils_Gist.js";
+import * as $$Node from "@remix-run/node";
 import * as Caml_exceptions from "../../../../../node_modules/rescript/lib/es6/caml_exceptions.js";
 import * as ReactHotToast from "react-hot-toast";
 import ReactHotToast$1 from "react-hot-toast";
+import * as React$1 from "@remix-run/react";
 import * as DiscordLoginButton from "../../components/DiscordLoginButton.js";
 import * as Rainbowkit from "@rainbow-me/rainbowkit";
 
@@ -28,7 +29,7 @@ function loader(param) {
   var guildId = Belt_Option.getWithDefault(Js_dict.get(param.params, "guildId"), "");
   return AuthServer.authenticator.isAuthenticated(param.request).then(function (maybeUser) {
               if (maybeUser == null) {
-                Remix.redirect("/guilds/" + guildId + "");
+                $$Node.redirect("/guilds/" + guildId + "");
                 return Promise.resolve({
                             maybeUser: undefined,
                             maybeBrightIdGuild: undefined,
@@ -94,13 +95,13 @@ function reducer(state, action) {
   }
 }
 
-function Guilds_Admin$default(Props) {
-  var context = Remix.useOutletContext();
-  var match = Remix.useLoaderData();
+function Guilds_Admin$default(props) {
+  var context = React$1.useOutletContext();
+  var match = React$1.useLoaderData();
   var maybeDiscordGuild = match.maybeDiscordGuild;
   var maybeBrightIdGuild = match.maybeBrightIdGuild;
   var maybeUser = match.maybeUser;
-  var match$1 = Remix.useParams();
+  var match$1 = React$1.useParams();
   var guildId = match$1.guildId;
   var account = Wagmi.useAccount(undefined);
   var match$2 = React.useReducer(reducer, state);
@@ -199,13 +200,13 @@ function Guilds_Admin$default(Props) {
                               }, React.createElement(SidebarToggle.make, {
                                     handleToggleSidebar: context.handleToggleSidebar,
                                     maybeUser: maybeUser
-                                  }), React.createElement(Remix.Link, {
+                                  }), React.createElement(React$1.Link, {
                                     className: "p-2 bg-transparent font-semibold rounded-3xl text-4xl text-white",
                                     to: "/guilds/" + guildId + "",
                                     children: "⬅️"
                                   })), React.createElement(Rainbowkit.ConnectButton, {
                                 className: "h-full"
-                              })), React.createElement(Remix.Form, {
+                              })), React.createElement(React$1.Form, {
                             className: " flex-1 text-white text-2xl font-semibold justify-center  items-center relative",
                             children: null,
                             method: "post",
@@ -267,7 +268,7 @@ function Guilds_Admin$default(Props) {
                     }, React.createElement(SidebarToggle.make, {
                           handleToggleSidebar: context.handleToggleSidebar,
                           maybeUser: maybeUser
-                        }), React.createElement(Remix.Link, {
+                        }), React.createElement(React$1.Link, {
                           className: "p-2 bg-transparent font-semibold rounded-3xl text-4xl text-white",
                           to: "/guilds/" + guildId + "",
                           children: "⬅️"

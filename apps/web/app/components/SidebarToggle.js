@@ -5,10 +5,9 @@ import * as React from "react";
 import * as Belt_Option from "../../../../node_modules/rescript/lib/es6/belt_Option.js";
 import * as Fa from "react-icons/fa";
 
-function SidebarToggle(Props) {
-  var handleToggleSidebar = Props.handleToggleSidebar;
-  var maybeUser = Props.maybeUser;
-  var visibility = Belt_Option.isSome(maybeUser) ? "visible" : "invisible";
+function SidebarToggle(props) {
+  var handleToggleSidebar = props.handleToggleSidebar;
+  var visibility = Belt_Option.isSome(props.maybeUser) ? "visible" : "invisible";
   return React.createElement("div", {
               className: "" + visibility + " md:hidden cursor-pointer w-12 h-12 bg-dark text-center text-white rounded-full flex justify-center items-center font-xl",
               onClick: (function (param) {

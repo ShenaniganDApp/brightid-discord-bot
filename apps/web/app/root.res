@@ -2,26 +2,33 @@
 %%raw(`import proSidebar from "react-pro-sidebar/dist/css/styles.css"`)
 %%raw(`
 import {
-  apiProvider,
-  configureChains,
   getDefaultWallets,
 } from "@rainbow-me/rainbowkit";
-import { chain, createClient } from "wagmi"`)
+import { createClient, configureChains } from "wagmi"
+import { mainnet} from 'wagmi/chains'
+import { alchemyProvider } from 'wagmi/providers/alchemy'
+import { publicProvider } from 'wagmi/providers/public'
+import { jsonRpcProvider } from '@wagmi/core/providers/jsonRpc'
 
-module WagmiProvider = {
+`)
+
+module WagmiConfig = {
   @react.component @module("wagmi")
-  external make: (~client: 'a, ~children: React.element) => React.element = "WagmiProvider"
+  external make: (~client: 'a, ~children: React.element) => React.element = "WagmiConfig"
 }
 
 module LodashMerge = {
   @module("lodash.merge") external merge: ('a, 'b) => 'a = "default"
 }
 
+@live
 let meta = () =>
   {
-    "title": "Bright ID Unique Bot",
+    "title": "Bright ID Discord Command Center",
+    "viewport": "width=device-width,initial-scale=1.0, maximum-scale=1.0, user-scalable=no",
   }
 
+@live
 let links = () => {
   [
     {
@@ -39,6 +46,7 @@ let links = () => {
   ]
 }
 
+@live
 let idChain = {
   "id": 74,
   "name": "ID Chain",
@@ -55,8 +63,12 @@ let idChain = {
 }
 
 let chainConfig = %raw(`configureChains(
-  [idChain],
-  [apiProvider.jsonRpc((chain) => ({ rpcUrl: chain.rpcUrls.default }))]
+  [idChain, mainnet],
+  [
+     jsonRpcProvider({
+      rpc: (chain)  => ({ rpcUrl: chain.rpcUrls.default })}),
+
+    ]
 )`)
 
 let defaultWallets = %raw(`getDefaultWallets({
@@ -72,6 +84,7 @@ let wagmiClient = %raw(`createClient({
 
 type loaderData = {maybeUser: option<RemixAuth.User.t>, rateLimited: bool}
 
+@live
 let loader: Remix.loaderFunction<loaderData> = ({request}) => {
   open DiscordServer
   open Promise
@@ -93,8 +106,6 @@ let myTheme = LodashMerge.merge(
   RainbowKit.Themes.darkTheme(),
   {"colors": {"accentColor": "#ed7a5c"}},
 )
-
-let unstable_shouldReload = () => false
 
 type state = {
   userGuilds: array<Types.oauthGuild>,
@@ -127,7 +138,7 @@ let reducer = (state, action) =>
   | SetLoadingGuilds(loadingGuilds) => {...state, loadingGuilds}
   }
 
-@react.component
+@live @react.component
 let default = () => {
   open RainbowKit
   let {maybeUser, rateLimited} = Remix.useLoaderData()
@@ -193,7 +204,7 @@ let default = () => {
       <Remix.Links />
     </head>
     <body className="h-screen w-screen bg-dark">
-      <WagmiProvider client={wagmiClient}>
+      <WagmiConfig client={wagmiClient}>
         <RainbowKitProvider chains={chainConfig["chains"]} theme={myTheme}>
           <div className="flex h-screen w-screen">
             {switch maybeUser {
@@ -212,7 +223,7 @@ let default = () => {
             />
           </div>
         </RainbowKitProvider>
-      </WagmiProvider>
+      </WagmiConfig>
       <Remix.ScrollRestoration />
       <Remix.Scripts />
       {if Remix.process["env"]["NODE_ENV"] === "development" {
@@ -224,21 +235,21 @@ let default = () => {
   </html>
 }
 
-%%raw(`
-export function ErrorBoundary({ error }) {
-  console.error(error);
-  return (
-    <html>
-      <head>
-        <title>Oh no!</title>
-        <Remix.Meta />
-        <Remix.Links />
-      </head>
-      <body>
-        <p className="text-center">Something went wrong!</p>
-        <p className="text-center">BrightID command center is still in Beta. Try reloading the page!</p>
-        <Remix.Scripts />
-      </body>
-    </html>
-  );
-}`)
+// %%raw(`
+// export function ErrorBoundary({ error }) {
+//   console.error(error);
+//   return (
+//     <html>
+//       <head>
+//         <title>Oh no!</title>
+//         <React$1.Meta />
+//         <React$1.Links />
+//       </head>
+//       <body>
+//         <p className="text-center">Something went wrong!</p>
+//         <p className="text-center">BrightID command center is still in Beta. Try reloading the page!</p>
+//         <React$1.Scripts />
+//       </body>
+//     </html>
+//   );
+// }`)
