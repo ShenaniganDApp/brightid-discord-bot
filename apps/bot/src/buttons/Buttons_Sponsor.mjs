@@ -155,7 +155,7 @@ async function handleSponsor(interaction, maybeHashOpt, attemptsOpt, uuid) {
             contextId: uuid,
             hash: hash
           });
-      await CustomMessages.sponsorshipRequested(interaction, hash, uuid);
+      await CustomMessages.sponsorshipRequested(interaction, uuid, hash);
       return await handleSponsor(interaction, Caml_option.some(hash), 30, uuid);
     }
     throw {

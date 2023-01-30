@@ -24,17 +24,17 @@ let sponsorshipRequested = async (interaction, contextId, sponsorHash) => {
         name: "__Server__",
         value: `**Server Name:** ${interaction
           ->Interaction.getGuild
-          ->Guild.getGuildName}\n\n **Server ID:** ${interaction
+          ->Guild.getGuildName}\n **Server ID:** ${interaction
           ->Interaction.getGuild
           ->Guild.getGuildId}`,
       },
       {
         name: "__Bright ID Verification Status__",
-        value: `**Context ID:** ${contextId} \n\n [API Link](${verificationStatusUrl} "${verificationStatusUrl}")`,
+        value: `**Context ID:** [${contextId}](${verificationStatusUrl} "${verificationStatusUrl}")`,
       },
       {
         name: "__Sponsorship Operation Status__",
-        value: `**Request Hash:** ${sponsorHash}\n\n [API Link](${sponsorshipStatusUrl} "${sponsorshipStatusUrl}")`,
+        value: `**Request Hash:** [${sponsorHash}](${sponsorshipStatusUrl} "${sponsorshipStatusUrl}")`,
       },
     ]
   }

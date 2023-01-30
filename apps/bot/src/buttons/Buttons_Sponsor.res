@@ -140,7 +140,7 @@ let rec handleSponsor = async (interaction, ~maybeHash=None, ~attempts=30, uuid)
           `A sponsor request has been submitted`,
           {"guild": guildId, "contextId": uuid, "hash": hash},
         )
-        let _ = await CustomMessages.sponsorshipRequested(interaction, hash, uuid)
+        let _ = await CustomMessages.sponsorshipRequested(interaction, uuid, hash)
         await handleSponsor(interaction, uuid, ~maybeHash=Some(hash), ~attempts=30)
       | Error(err) => Json.Decode.DecodeError(err)->raise
       }

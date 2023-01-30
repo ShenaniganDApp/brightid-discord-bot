@@ -33,15 +33,15 @@ async function sponsorshipRequested(interaction, contextId, sponsorHash) {
     },
     {
       name: "__Server__",
-      value: "**Server Name:** " + interaction.guild.name + "\n\n **Server ID:** " + interaction.guild.id + ""
+      value: "**Server Name:** " + interaction.guild.name + "\n **Server ID:** " + interaction.guild.id + ""
     },
     {
       name: "__Bright ID Verification Status__",
-      value: "**Context ID:** " + contextId + " \n\n [API Link](" + verificationStatusUrl + " \"" + verificationStatusUrl + "\")"
+      value: "**Context ID:** [" + contextId + "](" + verificationStatusUrl + " \"" + verificationStatusUrl + "\")"
     },
     {
       name: "__Sponsorship Operation Status__",
-      value: "**Request Hash:** " + sponsorHash + "\n\n [API Link](" + sponsorshipStatusUrl + " \"" + sponsorshipStatusUrl + "\")"
+      value: "**Request Hash:** [" + sponsorHash + "](" + sponsorshipStatusUrl + " \"" + sponsorshipStatusUrl + "\")"
     }
   ];
   var messageEmbed = new DiscordJs.MessageEmbed().setColor("#fb8b60").setTitle("A Sponsorship Has Been Requested").setURL(verificationStatusUrl).setAuthor("BrightID Bot", "https://media.discordapp.net/attachments/708186850359246859/760681364163919994/1601430947224.png", "https://www.brightid.org/").setDescription("A member of " + interaction.guild.name + " is attempting to get sponsored").setThumbnail("https://media.discordapp.net/attachments/708186850359246859/760681364163919994/1601430947224.png").addFields(embedFields).setTimestamp();
