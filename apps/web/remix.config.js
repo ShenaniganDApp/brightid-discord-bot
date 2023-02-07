@@ -1,5 +1,3 @@
-const { registerRoutes } = require('rescript-remix/registerRoutes')
-
 /**
  * @type {import('@remix-run/dev/config').AppConfig}
  */
@@ -17,7 +15,6 @@ module.exports = {
   cacheDirectory: '../../node_modules/.cache/remix',
   routes(defineRoutes) {
     return defineRoutes(route => {
-      registerRoutes(route)
       route('/Root_FetchGuilds', './res-routes/Root_FetchGuilds.js')
       route(
         '/Root_FetchBrightIDDiscord',

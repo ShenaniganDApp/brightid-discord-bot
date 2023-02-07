@@ -2,13 +2,16 @@
 
 import * as Uuid from "uuid";
 import * as React from "react";
-import * as Remix from "remix";
 import * as AuthServer from "../AuthServer.js";
+import * as Belt_Option from "../../../../node_modules/rescript/lib/es6/belt_Option.js";
 import * as Caml_option from "../../../../node_modules/rescript/lib/es6/caml_option.js";
+import * as InviteButton from "../components/InviteButton.js";
 import * as Brightid_sdk from "brightid_sdk";
 import * as QrcodeReact from "qrcode.react";
 import * as SidebarToggle from "../components/SidebarToggle.js";
-import * as Constants$Shared from "../../node_modules/@brightidbot/shared/src/Constants.js";
+import * as React$1 from "@remix-run/react";
+import * as Constants$Shared from "../../../../node_modules/@brightidbot/shared/src/Constants.js";
+import * as JsxRuntime from "react/jsx-runtime";
 import * as Caml_js_exceptions from "../../../../node_modules/rescript/lib/es6/caml_js_exceptions.js";
 import * as DiscordLoginButton from "../components/DiscordLoginButton.js";
 import * as DiscordLogoutButton from "../components/DiscordLogoutButton.js";
@@ -16,66 +19,66 @@ import * as Rainbowkit from "@rainbow-me/rainbowkit";
 
 var QRCodeSvg = {};
 
-function Root_Index$StatusToolTip(Props) {
-  var statusMessage = Props.statusMessage;
-  var color = Props.color;
-  return React.createElement("div", {
-              className: "" + color + " w-full text-center py-1"
-            }, React.createElement("p", {
-                  className: "text-xl font-semibold text-white"
-                }, statusMessage));
+function Root_Index$StatusToolTip(props) {
+  return JsxRuntime.jsx("div", {
+              children: JsxRuntime.jsx("p", {
+                    children: props.statusMessage,
+                    className: "text-xl font-semibold text-white"
+                  }),
+              className: "" + props.color + " w-full text-center py-1"
+            });
 }
 
 var StatusToolTip = {
   make: Root_Index$StatusToolTip
 };
 
-function Root_Index$BrightIdToolTip(Props) {
-  var fetcher = Props.fetcher;
+function Root_Index$BrightIdToolTip(props) {
+  var fetcher = props.fetcher;
   var match = fetcher.type;
   switch (match) {
     case "done" :
         var data = fetcher.data;
         if (data == null) {
-          return React.createElement(React.Fragment, undefined);
+          return JsxRuntime.jsx(JsxRuntime.Fragment, {});
         }
         var match$1 = data.user;
         if (match$1 == null) {
-          return React.createElement(React.Fragment, undefined);
+          return JsxRuntime.jsx(JsxRuntime.Fragment, {});
         }
         var match$2 = data.verifyStatus;
         switch (match$2) {
           case /* Unknown */0 :
-              return React.createElement(Root_Index$StatusToolTip, {
+              return JsxRuntime.jsx(Root_Index$StatusToolTip, {
                           statusMessage: "Something went wrong when checking your BrightId status",
                           color: "bg-red-600"
                         });
           case /* NotLinked */1 :
-              return React.createElement(Root_Index$StatusToolTip, {
+              return JsxRuntime.jsx(Root_Index$StatusToolTip, {
                           statusMessage: "You have not linked BrightId to Discord",
                           color: "bg-red-600"
                         });
           case /* NotVerified */2 :
-              return React.createElement(Root_Index$StatusToolTip, {
+              return JsxRuntime.jsx(Root_Index$StatusToolTip, {
                           statusMessage: "You are not Verified",
                           color: "bg-red-600"
                         });
           case /* NotSponsored */3 :
-              return React.createElement(Root_Index$StatusToolTip, {
+              return JsxRuntime.jsx(Root_Index$StatusToolTip, {
                           statusMessage: "You are not Sponsored",
                           color: "bg-red-600"
                         });
           case /* Unique */4 :
-              return React.createElement(Root_Index$StatusToolTip, {
+              return JsxRuntime.jsx(Root_Index$StatusToolTip, {
                           statusMessage: "Verified with BrightID",
                           color: "bg-green-600"
                         });
           
         }
     case "normalLoad" :
-        return React.createElement(React.Fragment, undefined);
+        return JsxRuntime.jsx(JsxRuntime.Fragment, {});
     default:
-      return React.createElement(React.Fragment, undefined);
+      return JsxRuntime.jsx(JsxRuntime.Fragment, {});
   }
 }
 
@@ -83,71 +86,82 @@ var BrightIdToolTip = {
   make: Root_Index$BrightIdToolTip
 };
 
-function Root_Index$BrightIdVerificationActions(Props) {
-  var fetcher = Props.fetcher;
-  var maybeUser = Props.maybeUser;
-  var maybeDeeplink = Props.maybeDeeplink;
-  if (maybeUser === undefined) {
-    return React.createElement(DiscordLoginButton.make, {
+function Root_Index$BrightIdVerificationActions(props) {
+  if (props.maybeUser === undefined) {
+    return JsxRuntime.jsx(DiscordLoginButton.make, {
                 label: "Login to Discord"
               });
   }
+  var maybeDeeplink = props.maybeDeeplink;
+  var fetcher = props.fetcher;
   var match = fetcher.type;
   switch (match) {
     case "done" :
         var data = fetcher.data;
         if (data == null) {
-          return React.createElement(React.Fragment, undefined);
+          return JsxRuntime.jsx(JsxRuntime.Fragment, {});
         }
         var match$1 = data.verifyStatus;
         switch (match$1) {
           case /* NotLinked */1 :
               if (maybeDeeplink !== undefined) {
-                return React.createElement("div", {
+                return JsxRuntime.jsxs("div", {
+                            children: [
+                              JsxRuntime.jsx("p", {
+                                    children: "Scan this code in the BrightID App",
+                                    className: "text-2xl text-white"
+                                  }),
+                              JsxRuntime.jsx(QrcodeReact.QRCodeSVG, {
+                                    value: maybeDeeplink
+                                  }),
+                              JsxRuntime.jsx("a", {
+                                    children: "Click here for mobile",
+                                    className: "text-white",
+                                    href: maybeDeeplink
+                                  })
+                            ],
                             className: "flex flex-col gap-3 items-center justify-around"
-                          }, React.createElement("p", {
-                                className: "text-2xl text-white"
-                              }, "Scan this code in the BrightID App"), React.createElement(QrcodeReact.QRCodeSVG, {
-                                value: maybeDeeplink
-                              }), React.createElement("a", {
-                                className: "text-white",
-                                href: maybeDeeplink
-                              }, "Click here for mobile"));
+                          });
               } else {
-                return React.createElement(Remix.Form, {
-                            children: React.createElement("button", {
+                return JsxRuntime.jsx(React$1.Form, {
+                            children: JsxRuntime.jsx("button", {
+                                  children: "Link BrightID to Discord",
                                   className: "p-3 bg-transparent border-2 border-brightid font-semibold rounded-3xl text-xl text-white",
                                   type: "submit"
-                                }, "Link BrightID to Discord"),
+                                }),
                             method: "get",
                             action: "/"
                           });
               }
           case /* NotVerified */2 :
-              return React.createElement("a", {
+              return JsxRuntime.jsx("a", {
+                          children: JsxRuntime.jsx("button", {
+                                children: "Attend a Verification Party to get Verified",
+                                className: "p-3 bg-transparent border-2 border-brightid font-semibold rounded-3xl text-xl text-white"
+                              }),
                           className: "text-2xl",
                           href: "https://meet.brightid.org/#/",
                           target: "_blank"
-                        }, React.createElement("button", {
-                              className: "p-3 bg-transparent border-2 border-brightid font-semibold rounded-3xl text-xl text-white"
-                            }, "Attend a Verification Party to get Verified"));
+                        });
           case /* NotSponsored */3 :
-              return React.createElement("a", {
+              return JsxRuntime.jsx("a", {
+                          children: JsxRuntime.jsx("button", {
+                                children: "Get Sponsored by a BrightID App",
+                                className: "p-3 bg-transparent border-2 border-brightid font-semibold rounded-3xl text-xl text-white"
+                              }),
                           className: "text-2xl",
                           href: "https://apps.brightid.org/",
                           target: "_blank"
-                        }, React.createElement("button", {
-                              className: "p-3 bg-transparent border-2 border-brightid font-semibold rounded-3xl text-xl text-white"
-                            }, "Get Sponsored by a BrightID App"));
+                        });
           case /* Unknown */0 :
           case /* Unique */4 :
-              return React.createElement(React.Fragment, undefined);
+              return JsxRuntime.jsx(JsxRuntime.Fragment, {});
           
         }
     case "normalLoad" :
-        return React.createElement(React.Fragment, undefined);
+        return JsxRuntime.jsx(JsxRuntime.Fragment, {});
     default:
-      return React.createElement(React.Fragment, undefined);
+      return JsxRuntime.jsx(JsxRuntime.Fragment, {});
   }
 }
 
@@ -182,7 +196,6 @@ async function loader(param) {
           };
   }
   var contextId = Uuid.v5(maybeDiscordId, process.env.UUID_NAMESPACE);
-  console.log(contextId);
   var deepLink = Brightid_sdk.generateDeeplink(Constants$Shared.context, contextId, undefined);
   return {
           maybeUser: maybeUser,
@@ -190,10 +203,10 @@ async function loader(param) {
         };
 }
 
-function Root_Index$default(Props) {
-  var context = Remix.useOutletContext();
-  var fetcher = Remix.useFetcher();
-  var match = Remix.useLoaderData();
+function Root_Index$default(props) {
+  var context = React$1.useOutletContext();
+  var fetcher = React$1.useFetcher();
+  var match = React$1.useLoaderData();
   var maybeUser = match.maybeUser;
   React.useEffect((function () {
           if (fetcher.type === "init") {
@@ -206,125 +219,189 @@ function Root_Index$default(Props) {
   switch (match$1) {
     case "done" :
         var data = fetcher.data;
-        unusedSponsorships = (data == null) ? React.createElement("p", {
+        unusedSponsorships = (data == null) ? JsxRuntime.jsx("p", {
+                children: "N/A",
                 className: "text-white"
-              }, "N/A") : React.createElement("p", {
+              }) : JsxRuntime.jsx("p", {
+                children: String(data.unusedSponsorships),
                 className: "text-3xl font-semibold text-transparent bg-clip-text bg-gradient-to-l from-brightid to-white"
-              }, String(data.unusedSponsorships));
+              });
         break;
     case "normalLoad" :
-        unusedSponsorships = React.createElement("div", {
+        unusedSponsorships = JsxRuntime.jsx("div", {
+              children: JsxRuntime.jsx("div", {
+                    className: "h-8 bg-gray-300 w-8 rounded-md "
+                  }),
               className: " animate-pulse  "
-            }, React.createElement("div", {
-                  className: "h-8 bg-gray-300 w-8 rounded-md "
-                }));
+            });
         break;
     default:
-      unusedSponsorships = React.createElement("div", {
+      unusedSponsorships = JsxRuntime.jsx("div", {
+            children: JsxRuntime.jsx("div", {
+                  className: "h-8 bg-gray-300 w-8 rounded-md "
+                }),
             className: " animate-pulse  "
-          }, React.createElement("div", {
-                className: "h-8 bg-gray-300 w-8 rounded-md "
-              }));
+          });
   }
   var match$2 = fetcher.type;
   var usedSponsorships;
   switch (match$2) {
     case "done" :
         var data$1 = fetcher.data;
-        usedSponsorships = (data$1 == null) ? React.createElement("p", {
+        usedSponsorships = (data$1 == null) ? JsxRuntime.jsx("p", {
+                children: "N/A",
                 className: "text-white"
-              }, "N/A") : React.createElement("p", {
+              }) : JsxRuntime.jsx("p", {
+                children: String(data$1.unusedSponsorships - data$1.assignedSponsorships | 0),
                 className: "text-3xl font-semibold text-transparent bg-clip-text bg-gradient-to-l from-brightid to-white"
-              }, String(data$1.unusedSponsorships - data$1.assignedSponsorships | 0));
+              });
         break;
     case "normalLoad" :
-        usedSponsorships = React.createElement("div", {
+        usedSponsorships = JsxRuntime.jsx("div", {
+              children: JsxRuntime.jsx("div", {
+                    className: "h-8 bg-gray-300 w-8 rounded-md "
+                  }),
               className: " animate-pulse  "
-            }, React.createElement("div", {
-                  className: "h-8 bg-gray-300 w-8 rounded-md "
-                }));
+            });
         break;
     default:
-      usedSponsorships = React.createElement("div", {
+      usedSponsorships = JsxRuntime.jsx("div", {
+            children: JsxRuntime.jsx("div", {
+                  className: "h-8 bg-gray-300 w-8 rounded-md "
+                }),
             className: " animate-pulse  "
-          }, React.createElement("div", {
-                className: "h-8 bg-gray-300 w-8 rounded-md "
-              }));
+          });
   }
   var match$3 = fetcher.type;
   var verificationCount;
   switch (match$3) {
     case "done" :
         var data$2 = fetcher.data;
-        verificationCount = (data$2 == null) ? React.createElement("p", {
+        verificationCount = (data$2 == null) ? JsxRuntime.jsx("p", {
+                children: "N/A",
                 className: "text-white"
-              }, "N/A") : React.createElement("p", {
+              }) : JsxRuntime.jsx("p", {
+                children: String(data$2.verificationCount),
                 className: "text-3xl font-semibold text-transparent bg-clip-text bg-gradient-to-l from-brightid to-white"
-              }, String(data$2.verificationCount));
+              });
         break;
     case "normalLoad" :
-        verificationCount = React.createElement("div", {
+        verificationCount = JsxRuntime.jsx("div", {
+              children: JsxRuntime.jsx("div", {
+                    className: "h-8 bg-gray-300 w-8 rounded-md "
+                  }),
               className: " animate-pulse  "
-            }, React.createElement("div", {
-                  className: "h-8 bg-gray-300 w-8 rounded-md "
-                }));
+            });
         break;
     default:
-      verificationCount = React.createElement("div", {
+      verificationCount = JsxRuntime.jsx("div", {
+            children: JsxRuntime.jsx("div", {
+                  className: "h-8 bg-gray-300 w-8 rounded-md "
+                }),
             className: " animate-pulse  "
-          }, React.createElement("div", {
-                className: "h-8 bg-gray-300 w-8 rounded-md "
-              }));
+          });
   }
-  var discordLogoutButton = maybeUser !== undefined ? React.createElement(DiscordLogoutButton.make, {
+  var discordLogoutButton = maybeUser !== undefined ? JsxRuntime.jsx(DiscordLogoutButton.make, {
           label: "Log out of Discord"
-        }) : React.createElement(React.Fragment, undefined);
-  return React.createElement("div", {
+        }) : JsxRuntime.jsx(JsxRuntime.Fragment, {});
+  return JsxRuntime.jsxs("div", {
+              children: [
+                JsxRuntime.jsx("section", {
+                      children: JsxRuntime.jsx(Root_Index$BrightIdToolTip, {
+                            fetcher: fetcher
+                          }),
+                      className: "flex justify-center items-center flex-col w-full gap-4 relative"
+                    }),
+                JsxRuntime.jsxs("header", {
+                      children: [
+                        JsxRuntime.jsx(SidebarToggle.make, {
+                              handleToggleSidebar: context.handleToggleSidebar,
+                              maybeUser: maybeUser
+                            }),
+                        JsxRuntime.jsxs("div", {
+                              children: [
+                                JsxRuntime.jsx("div", {
+                                      children: discordLogoutButton
+                                    }),
+                                JsxRuntime.jsx(Rainbowkit.ConnectButton, {
+                                      className: "h-full"
+                                    })
+                              ],
+                              className: "flex flex-col-reverse md:flex-row items-center justify-center gap-4 "
+                            })
+                      ],
+                      className: "flex flex-row justify-between md:justify-end m-4"
+                    }),
+                JsxRuntime.jsx("div", {
+                      children: JsxRuntime.jsxs("div", {
+                            children: [
+                              JsxRuntime.jsxs("div", {
+                                    children: [
+                                      JsxRuntime.jsx("span", {
+                                            children: "Unique Discord  ",
+                                            className: "px-2 text-4xl md:text-6xl lg:text-8xl lg:leading-loose font-poppins font-extrabold text-transparent bg-[size:1000px_100%] bg-clip-text bg-gradient-to-l from-brightid to-white animate-textscroll "
+                                          }),
+                                      JsxRuntime.jsx("p", {
+                                            children: "Dashboard",
+                                            className: " text-slate-300 text-4xl md:text-6xl lg:text-8xl font-poppins font-bold"
+                                          })
+                                    ]
+                                  }),
+                              Belt_Option.isSome(maybeUser) ? JsxRuntime.jsx(JsxRuntime.Fragment, {}) : JsxRuntime.jsx(InviteButton.make, {}),
+                              JsxRuntime.jsxs("section", {
+                                    children: [
+                                      JsxRuntime.jsxs("div", {
+                                            children: [
+                                              JsxRuntime.jsx("div", {
+                                                    children: "Available Sponsorships",
+                                                    className: "text-2xl font-bold text-white p-2"
+                                                  }),
+                                              unusedSponsorships
+                                            ],
+                                            className: "flex flex-col  rounded-xl justify-around items-center text-center "
+                                          }),
+                                      JsxRuntime.jsxs("div", {
+                                            children: [
+                                              JsxRuntime.jsx("div", {
+                                                    children: "Verifications",
+                                                    className: "text-2xl font-bold text-white p-2"
+                                                  }),
+                                              verificationCount
+                                            ],
+                                            className: "flex flex-col rounded-xl justify-around items-center text-center px-6 py-10"
+                                          }),
+                                      JsxRuntime.jsxs("div", {
+                                            children: [
+                                              JsxRuntime.jsx("div", {
+                                                    children: "Total Used Sponsors",
+                                                    className: "text-2xl font-bold text-white p-2"
+                                                  }),
+                                              JsxRuntime.jsx("div", {
+                                                    children: usedSponsorships,
+                                                    className: "text-2xl font-semibold text-transparent bg-clip-text bg-gradient-to-l from-brightid to-white"
+                                                  })
+                                            ],
+                                            className: "flex flex-col rounded-xl justify-around items-center text-center"
+                                          })
+                                    ],
+                                    className: "width-full flex flex-col md:flex-row justify-around items-center w-full py-2"
+                                  }),
+                              JsxRuntime.jsx("section", {
+                                    children: JsxRuntime.jsx(Root_Index$BrightIdVerificationActions, {
+                                          fetcher: fetcher,
+                                          maybeUser: maybeUser,
+                                          maybeDeeplink: match.maybeDeeplink
+                                        }),
+                                    className: "flex flex-col justify-center items-center pb-2 gap-8"
+                                  })
+                            ],
+                            className: "flex flex-1 flex-col justify-around items-center text-center h-full"
+                          }),
+                      className: "flex flex-1 w-full justify-center "
+                    })
+              ],
               className: "flex flex-col flex-1"
-            }, React.createElement("section", {
-                  className: "flex justify-center items-center flex-col w-full gap-4 relative"
-                }, React.createElement(Root_Index$BrightIdToolTip, {
-                      fetcher: fetcher
-                    })), React.createElement("header", {
-                  className: "flex flex-row justify-between md:justify-end m-4"
-                }, React.createElement(SidebarToggle.make, {
-                      handleToggleSidebar: context.handleToggleSidebar,
-                      maybeUser: maybeUser
-                    }), React.createElement("div", {
-                      className: "flex flex-col-reverse md:flex-row items-center justify-center gap-4 "
-                    }, React.createElement("div", undefined, discordLogoutButton), React.createElement(Rainbowkit.ConnectButton, {
-                          className: "h-full"
-                        }))), React.createElement("div", {
-                  className: "flex flex-1 w-full justify-center "
-                }, React.createElement("div", {
-                      className: "flex flex-1 flex-col justify-around items-center text-center h-full"
-                    }, React.createElement("div", undefined, React.createElement("span", {
-                              className: "px-2 text-4xl md:text-6xl lg:text-8xl lg:leading-loose font-poppins font-extrabold text-transparent bg-[size:1000px_100%] bg-clip-text bg-gradient-to-l from-brightid to-white animate-textscroll "
-                            }, "Unique Discord  "), React.createElement("p", {
-                              className: " text-slate-300 text-4xl md:text-6xl lg:text-8xl font-poppins font-bold"
-                            }, "Dashboard")), React.createElement("section", {
-                          className: "width-full flex flex-col md:flex-row justify-around items-center w-full py-2"
-                        }, React.createElement("div", {
-                              className: "flex flex-col  rounded-xl justify-around items-center text-center "
-                            }, React.createElement("div", {
-                                  className: "text-2xl font-bold text-white p-2"
-                                }, "Available Sponsorships"), unusedSponsorships), React.createElement("div", {
-                              className: "flex flex-col rounded-xl justify-around items-center text-center px-6 py-10"
-                            }, React.createElement("div", {
-                                  className: "text-2xl font-bold text-white p-2"
-                                }, "Verifications"), verificationCount), React.createElement("div", {
-                              className: "flex flex-col rounded-xl justify-around items-center text-center"
-                            }, React.createElement("div", {
-                                  className: "text-2xl font-bold text-white p-2"
-                                }, "Total Used Sponsors"), React.createElement("div", {
-                                  className: "text-2xl font-semibold text-transparent bg-clip-text bg-gradient-to-l from-brightid to-white"
-                                }, usedSponsorships))), React.createElement("section", {
-                          className: "flex justify-center items-center pb-3"
-                        }, React.createElement(Root_Index$BrightIdVerificationActions, {
-                              fetcher: fetcher,
-                              maybeUser: maybeUser,
-                              maybeDeeplink: match.maybeDeeplink
-                            })))));
+            });
 }
 
 var $$default = Root_Index$default;

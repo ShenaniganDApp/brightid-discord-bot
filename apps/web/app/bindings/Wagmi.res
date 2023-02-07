@@ -1,18 +1,44 @@
-// type queryArgs = {
-//   "onSuccess": option<unit => unit>,
-//   "onSettled": option<unit => unit>,
-//   "onError": option<unit => unit>,
-//   "onMutate": option<unit => unit>,
-// }
-type queryResult<'data> = {
-  "data": Js.Nullable.t<'data>,
-  "error": Js.Nullable.t<string>,
-  "isError": bool,
-  "isLoading": bool,
-  "isSuccess": bool,
+type client
+type chain
+type connector
+type account = {
+  address: option<string>,
+  connector: option<connector>,
+  isConnecting: bool,
+  isReconnecting: bool,
+  isConnected: bool,
+  isDisconnected: bool,
+  status: [#connecting | #reconnecting | #connected | #disconnected],
 }
+
+type queryResult<'data> = {
+  "data": option<'data>,
+  "error": option<Js.Exn.t>,
+  "isIdle": bool,
+  "isLoading": bool,
+  "isFetching": bool,
+  "isSuccess": bool,
+  "isError": bool,
+  "isFetched": bool,
+  "isFetchedAfterMount": bool,
+  "isRefetching": bool,
+}
+
+type balanceData = {
+  "decimals": int,
+  "formatted": string,
+  "symbol": string,
+  "value": Shared.Ethers.BigNumber.t,
+}
+
+type balance = {...queryResult<balanceData>, "status": [#idle | #error | #loading | #success]}
+module WagmiConfig = {
+  @react.component @module("wagmi")
+  external make: (~client: client, ~children: React.element) => React.element = "WagmiConfig"
+}
+
 @module("wagmi")
-external useAccount: 'a => queryResult<{"address": Js.Nullable.t<string>}> = "useAccount"
+external useAccount: 'a => account = "useAccount"
 @module("wagmi")
 external useSignMessage: 'a => {
   ...queryResult<{
@@ -20,3 +46,6 @@ external useSignMessage: 'a => {
   }>,
   "signMessage": unit => unit,
 } = "useSignMessage"
+
+@module("wagmi")
+external useBalance: 'a => balance = "useBalance"

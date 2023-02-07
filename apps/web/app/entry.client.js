@@ -3,13 +3,14 @@
 import * as React from "react";
 import * as React$1 from "@remix-run/react";
 import * as Client from "react-dom/client";
+import * as JsxRuntime from "react/jsx-runtime";
 
 var ReactDOM = {};
 
 function hydrate(param) {
   React.startTransition(function (param) {
-        Client.hydrateRoot(document, React.createElement(React.StrictMode, {
-                  children: React.createElement(React$1.RemixBrowser, {})
+        Client.hydrateRoot(document, JsxRuntime.jsx(React.StrictMode, {
+                  children: JsxRuntime.jsx(React$1.RemixBrowser, {})
                 }));
       });
 }

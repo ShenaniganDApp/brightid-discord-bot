@@ -1,3 +1,3 @@
-import { loader } from '~/res-routes/guilds/Guilds_FetchGuild.js'
+import { loader } from '~/res-routes/guilds/GuildId_FetchGuild.js'
 
 export { loader }

@@ -2,12 +2,12 @@
 
 import * as Curry from "../../../node_modules/rescript/lib/es6/curry.js";
 import Isbot from "isbot";
-import * as React from "react";
 import * as Stream from "stream";
 import * as Belt_Option from "../../../node_modules/rescript/lib/es6/belt_Option.js";
 import * as Caml_option from "../../../node_modules/rescript/lib/es6/caml_option.js";
-import * as React$1 from "@remix-run/react";
+import * as React from "@remix-run/react";
 import * as Server from "react-dom/server";
+import * as JsxRuntime from "react/jsx-runtime";
 
 var ResponseInit = {};
 
@@ -69,7 +69,7 @@ function $$default(request, responseStatusCode, responseHeaders, remixContext) {
                         };
                 };
                 if (Belt_Option.getWithDefault(maybeCallbackName, "") === "onAllReady") {
-                  var allStream = Server.renderToPipeableStream(React.createElement(React$1.RemixServer, {
+                  var allStream = Server.renderToPipeableStream(JsxRuntime.jsx(React.RemixServer, {
                             context: remixContext,
                             url: request.url
                           }), onAllReadyOptions(allStream.pipe));
@@ -79,7 +79,7 @@ function $$default(request, responseStatusCode, responseHeaders, remixContext) {
                 if (Belt_Option.getWithDefault(maybeCallbackName, "") !== "onShellReady") {
                   return ;
                 }
-                var match = Server.renderToPipeableStream(React.createElement(React$1.RemixServer, {
+                var match = Server.renderToPipeableStream(JsxRuntime.jsx(React.RemixServer, {
                           context: remixContext,
                           url: request.url
                         }), onShellReadyOptions(pipe));

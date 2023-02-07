@@ -51,7 +51,7 @@ module BrightIdVerificationActions = {
   let make = (~fetcher, ~maybeUser, ~maybeDeeplink) => {
     switch maybeUser {
     | None => <DiscordLoginButton label="Login to Discord" />
-    | Some(user) =>
+    | Some(_) =>
       switch fetcher->Remix.Fetcher._type {
       | "done" =>
         switch fetcher->Remix.Fetcher.data->Js.Nullable.toOption {
@@ -106,7 +106,7 @@ module BrightIdVerificationActions = {
 
 type loaderData = {maybeUser: option<RemixAuth.User.t>, maybeDeeplink: option<string>}
 
-let loader: Remix.loaderFunction<loaderData> = async ({request, params}) => {
+let loader: Remix.loaderFunction<loaderData> = async ({request}) => {
   let maybeUser = switch await RemixAuth.Authenticator.isAuthenticated(
     AuthServer.authenticator,
     request,
@@ -121,7 +121,6 @@ let loader: Remix.loaderFunction<loaderData> = async ({request, params}) => {
   switch maybeDiscordId {
   | Some(discordId) =>
     let contextId = UUID.v5(discordId, Remix.process["env"]["UUID_NAMESPACE"])
-    Js.log(contextId)
     let deepLink = BrightId.generateDeeplink(~context=Shared.Constants.context, ~contextId, ())
     {maybeUser, maybeDeeplink: Some(deepLink)}
   | None => {maybeUser, maybeDeeplink: None}
@@ -231,6 +230,7 @@ let default = () => {
             {"Dashboard"->React.string}
           </p>
         </div>
+        {maybeUser->Belt.Option.isSome ? <> </> : <InviteButton />}
         <section
           className="width-full flex flex-col md:flex-row justify-around items-center w-full py-2">
           <div className="flex flex-col  rounded-xl justify-around items-center text-center ">
@@ -256,7 +256,7 @@ let default = () => {
             </div>
           </div>
         </section>
-        <section className="flex justify-center items-center pb-3">
+        <section className="flex flex-col justify-center items-center pb-2 gap-8">
           <BrightIdVerificationActions fetcher maybeUser maybeDeeplink />
         </section>
       </div>

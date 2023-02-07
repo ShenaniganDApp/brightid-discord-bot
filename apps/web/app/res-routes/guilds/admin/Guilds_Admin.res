@@ -136,13 +136,8 @@ let default = () => {
         | _ => ReactHotToast.Toaster.makeToaster->ReactHotToast.Toaster.error(e["message"], ())
         },
       "onSuccess": _ => {
-        switch account["data"]->Js.Nullable.toOption {
-        | None => Js.log(account)
-        | Some(data) => {
-            data["address"]->Js.Nullable.toOption->SponsorshipAddressChanged->dispatch
-            ReactHotToast.Toaster.makeToaster->ReactHotToast.Toaster.success("Signed", ())
-          }
-        }
+        account.address->SponsorshipAddressChanged->dispatch
+        ReactHotToast.Toaster.makeToaster->ReactHotToast.Toaster.success("Signed", ())
       },
     })->Some
   }
@@ -203,14 +198,13 @@ let default = () => {
     switch isAdmin {
     | false =>
       <div className="flex flex-1">
-        <header className="flex flex-row justify-between md:justify-end m-4">
-          <SidebarToggle handleToggleSidebar={context["handleToggleSidebar"]} maybeUser />
-          <Link
-            className="p-2 bg-transparent font-semibold rounded-3xl text-4xl text-white"
-            to={`/guilds/${guildId}`}>
-            {`⬅️`->React.string}
-          </Link>
-        </header>
+        // <header className="flex flex-row justify-between md:justify-end m-4">
+        //   <Link
+        //     className="p-2 bg-transparent font-semibold rounded-3xl text-4xl text-white"
+        //     to={`/guilds/${guildId}`}>
+        //     {`⬅️`->React.string}
+        //   </Link>
+        // </header>
         <div className="flex justify-center items-center text-white text-3xl font-bold">
           <div> {"You are not an admin in this server"->React.string} </div>
         </div>
@@ -218,29 +212,14 @@ let default = () => {
     | true =>
       switch maybeDiscordGuild {
       | None => <> </>
-      | Some(guild) =>
+      | Some(_) =>
         <div className="flex-1 p-4">
           <ReactHotToast.Toaster />
           <div className="flex flex-col flex-1 h-full">
-            <header className="flex flex-row justify-between m-4">
-              <div className="flex flex-col md:flex-row gap-3">
-                <SidebarToggle handleToggleSidebar={context["handleToggleSidebar"]} maybeUser />
-                <Link
-                  className="p-2 bg-transparent font-semibold rounded-3xl text-4xl text-white"
-                  to={`/guilds/${guildId}`}>
-                  {`⬅️`->React.string}
-                </Link>
-              </div>
-              <RainbowKit.ConnectButton className="h-full" />
-            </header>
             <Remix.Form
               method={#post}
               action={`/guilds/${guildId}/${roleId}/adminSubmit`}
               className=" flex-1 text-white text-2xl font-semibold justify-center  items-center relative">
-              <div>
-                <div> {"Admin Commands"->React.string} </div>
-                <img className=" w-48 h-48 p-5 rounded" src={guild->Helpers_Guild.iconUri} />
-              </div>
               <div className="flex flex-1 justify-around flex-col items-center ">
                 {switch maybeBrightIdGuild {
                 | None =>

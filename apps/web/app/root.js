@@ -11,6 +11,7 @@ import * as Caml_option from "../../../node_modules/rescript/lib/es6/caml_option
 import LodashMerge from "lodash.merge";
 import * as DiscordServer from "./DiscordServer.js";
 import * as React$1 from "@remix-run/react";
+import * as JsxRuntime from "react/jsx-runtime";
 import * as Rainbowkit from "@rainbow-me/rainbowkit";
 
 import rainbowKit from "@rainbow-me/rainbowkit/styles.css"
@@ -29,12 +30,11 @@ import { publicProvider } from 'wagmi/providers/public'
 import { jsonRpcProvider } from '@wagmi/core/providers/jsonRpc'
 ;
 
-var WagmiConfig = {};
-
 var LodashMerge$1 = {};
 
 function meta(param) {
   return {
+          charset: "utf-8",
           title: "Bright ID Discord Command Center",
           viewport: "width=device-width,initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
         };
@@ -57,7 +57,7 @@ function links(param) {
         ];
 }
 
-var idChain = {
+var _idChain = {
   id: 74,
   name: "ID Chain",
   nativeCurrency: {
@@ -66,33 +66,15 @@ var idChain = {
     decimals: 18
   },
   rpcUrls: {
-    default: "https://idchain.one/rpc"
+    default: {
+      http: "https://idchain.one/rpc"
+    }
   },
   blockExplorers: [{
       name: "Blockscout",
       url: "https://explorer.idchain.one/"
     }]
 };
-
-var chainConfig = (configureChains(
-  [idChain, mainnet],
-  [
-     jsonRpcProvider({
-      rpc: (chain)  => ({ rpcUrl: chain.rpcUrls.default })}),
-
-    ]
-));
-
-var defaultWallets = (getDefaultWallets({
-  appName: "Bright ID Unique Bot",
-  chains:chainConfig.chains,
-}));
-
-var wagmiClient = (createClient({
-  autoConnect: true,
-  connectors: defaultWallets.connectors,
-  provider:chainConfig.provider,
-  }));
 
 function loader(param) {
   return $$Promise.$$catch(AuthServer.authenticator.isAuthenticated(param.request).then(function (user) {
@@ -121,17 +103,49 @@ var myTheme = LodashMerge(Rainbowkit.darkTheme(), {
       }
     });
 
+var chainConfig = (configureChains(
+    [mainnet, _idChain],
+    [
+      alchemyProvider({
+        apiKey: "Klcw92W_rTgV55TL0zq972TFXTI1FieU",
+        stallTimeout: 5_000
+      }),
+      jsonRpcProvider({
+        rpc: (chain)  => ({ http: chain.rpcUrls.default.http })
+      }),
+
+    ]
+
+  ));
+
+var _defaultWallets = (getDefaultWallets({
+    appName: "Bright ID Discord Command Center",
+    chains: chainConfig.chains,
+  }));
+
+var wagmiClient = (createClient({
+    autoConnect: true,
+    connectors: _defaultWallets.connectors,
+    provider: chainConfig.provider,
+  }));
+
 var state_userGuilds = [];
 
 var state_botGuilds = [];
 
 var state_after = "0";
 
+var state_wagmiClient = Caml_option.some(wagmiClient);
+
+var state_chains = chainConfig.chains;
+
 var state = {
   userGuilds: state_userGuilds,
   botGuilds: state_botGuilds,
   after: state_after,
-  loadingGuilds: true
+  loadingGuilds: true,
+  wagmiClient: state_wagmiClient,
+  chains: state_chains
 };
 
 function reducer(state, action) {
@@ -141,28 +155,54 @@ function reducer(state, action) {
                 userGuilds: state.userGuilds,
                 botGuilds: Belt_Array.concat(state.botGuilds, action._0),
                 after: state.after,
-                loadingGuilds: state.loadingGuilds
+                loadingGuilds: state.loadingGuilds,
+                wagmiClient: state.wagmiClient,
+                chains: state.chains
               };
     case /* UserGuilds */1 :
         return {
                 userGuilds: action._0,
                 botGuilds: state.botGuilds,
                 after: state.after,
-                loadingGuilds: state.loadingGuilds
+                loadingGuilds: state.loadingGuilds,
+                wagmiClient: state.wagmiClient,
+                chains: state.chains
               };
     case /* SetAfter */2 :
         return {
                 userGuilds: state.userGuilds,
                 botGuilds: state.botGuilds,
                 after: action._0,
-                loadingGuilds: state.loadingGuilds
+                loadingGuilds: state.loadingGuilds,
+                wagmiClient: state.wagmiClient,
+                chains: state.chains
               };
     case /* SetLoadingGuilds */3 :
         return {
                 userGuilds: state.userGuilds,
                 botGuilds: state.botGuilds,
                 after: state.after,
-                loadingGuilds: action._0
+                loadingGuilds: action._0,
+                wagmiClient: state.wagmiClient,
+                chains: state.chains
+              };
+    case /* SetWagmiClient */4 :
+        return {
+                userGuilds: state.userGuilds,
+                botGuilds: state.botGuilds,
+                after: state.after,
+                loadingGuilds: state.loadingGuilds,
+                wagmiClient: action._0,
+                chains: state.chains
+              };
+    case /* SetChains */5 :
+        return {
+                userGuilds: state.userGuilds,
+                botGuilds: state.botGuilds,
+                after: state.after,
+                loadingGuilds: state.loadingGuilds,
+                wagmiClient: state.wagmiClient,
+                chains: action._0
               };
     
   }
@@ -170,11 +210,11 @@ function reducer(state, action) {
 
 function Root$default(props) {
   var match = React$1.useLoaderData();
-  var maybeUser = match.maybeUser;
   var match$1 = React.useState(function () {
         return false;
       });
-  var setToggled = match$1[1];
+  var setIsSidebarVisible = match$1[1];
+  var isSidebarVisible = match$1[0];
   var fetcher = React$1.useFetcher();
   var match$2 = React.useReducer(reducer, state);
   var dispatch = match$2[1];
@@ -251,55 +291,97 @@ function Root$default(props) {
                     return botGuild.id === userGuild.id;
                   }) !== -1;
       });
-  var handleToggleSidebar = function (value) {
-    Curry._1(setToggled, (function (_prev) {
+  var handleIsSidebarVisible = function (value) {
+    Curry._1(setIsSidebarVisible, (function (_prev) {
             return value;
           }));
   };
-  return React.createElement("html", undefined, React.createElement("head", undefined, React.createElement("meta", {
-                      charSet: "utf-8"
-                    }), React.createElement("meta", {
-                      content: "width=device-width,initial-scale=1",
-                      name: "viewport"
-                    }), React.createElement(React$1.Meta, {}), React.createElement(React$1.Links, {})), React.createElement("body", {
-                  className: "h-screen w-screen bg-dark"
-                }, React.createElement(Wagmi.WagmiConfig, {
-                      client: wagmiClient,
-                      children: React.createElement(Rainbowkit.RainbowKitProvider, {
-                            chains: chainConfig.chains,
-                            theme: myTheme,
-                            children: React.createElement("div", {
-                                  className: "flex h-screen w-screen"
-                                }, maybeUser !== undefined ? React.createElement(Sidebar.make, {
-                                        toggled: match$1[0],
-                                        handleToggleSidebar: handleToggleSidebar,
-                                        user: Caml_option.valFromOption(maybeUser),
-                                        guilds: guilds,
-                                        loadingGuilds: state$1.loadingGuilds
-                                      }) : React.createElement(React.Fragment, undefined), React.createElement(React$1.Outlet, {
-                                      context: {
-                                        handleToggleSidebar: handleToggleSidebar,
-                                        rateLimited: match.rateLimited,
-                                        guilds: guilds
-                                      }
-                                    }))
-                          })
-                    }), React.createElement(React$1.ScrollRestoration, {}), React.createElement(React$1.Scripts, {}), process.env.NODE_ENV === "development" ? React.createElement(React$1.LiveReload, {}) : null));
+  var match$3 = state$1.wagmiClient;
+  var match$4 = state$1.chains;
+  return JsxRuntime.jsxs("html", {
+              children: [
+                JsxRuntime.jsxs("head", {
+                      children: [
+                        JsxRuntime.jsx("meta", {
+                              charSet: "utf-8"
+                            }),
+                        JsxRuntime.jsx("meta", {
+                              content: "width=device-width,initial-scale=1",
+                              name: "viewport"
+                            }),
+                        JsxRuntime.jsx(React$1.Meta, {}),
+                        JsxRuntime.jsx(React$1.Links, {})
+                      ]
+                    }),
+                JsxRuntime.jsxs("body", {
+                      children: [
+                        match$3 !== undefined && match$4 !== undefined ? JsxRuntime.jsx(Wagmi.WagmiConfig, {
+                                client: Caml_option.valFromOption(match$3),
+                                children: JsxRuntime.jsx(Rainbowkit.RainbowKitProvider, {
+                                      chains: match$4,
+                                      theme: myTheme,
+                                      children: JsxRuntime.jsxs("div", {
+                                            children: [
+                                              match.maybeUser !== undefined ? JsxRuntime.jsx(Sidebar.make, {
+                                                      isSidebarVisible: isSidebarVisible,
+                                                      handleIsSidebarVisible: handleIsSidebarVisible,
+                                                      guilds: guilds,
+                                                      loadingGuilds: state$1.loadingGuilds
+                                                    }) : JsxRuntime.jsx(JsxRuntime.Fragment, {}),
+                                              JsxRuntime.jsx(React$1.Outlet, {
+                                                    context: {
+                                                      isSidebarVisible: isSidebarVisible,
+                                                      handleIsSidebarVisible: handleIsSidebarVisible,
+                                                      rateLimited: match.rateLimited,
+                                                      guilds: guilds
+                                                    }
+                                                  })
+                                            ],
+                                            className: "flex h-screen w-screen"
+                                          })
+                                    })
+                              }) : JsxRuntime.jsx(JsxRuntime.Fragment, {}),
+                        JsxRuntime.jsx(React$1.ScrollRestoration, {}),
+                        JsxRuntime.jsx(React$1.Scripts, {}),
+                        process.env.NODE_ENV === "development" ? JsxRuntime.jsx(React$1.LiveReload, {}) : null
+                      ],
+                      className: "h-screen w-screen bg-dark"
+                    })
+              ]
+            });
 }
+
+export function ErrorBoundary({ error }) {
+  console.error(error);
+  return (
+    <html>
+      <head>
+        <title>Oh no!</title>
+        <React$1.Meta />
+        <React$1.Links />
+      </head>
+      <body>
+        <p className="text-center">Something went wrong!</p>
+        <p className="text-center">BrightID command center is still in Beta. Try reloading the page!</p>
+        <React$1.Scripts />
+      </body>
+    </html>
+  );
+}
+;
 
 var $$default = Root$default;
 
 export {
-  WagmiConfig ,
   LodashMerge$1 as LodashMerge,
   meta ,
   links ,
-  idChain ,
-  chainConfig ,
-  defaultWallets ,
-  wagmiClient ,
+  _idChain ,
   loader ,
   myTheme ,
+  chainConfig ,
+  _defaultWallets ,
+  wagmiClient ,
   state ,
   reducer ,
   $$default ,
