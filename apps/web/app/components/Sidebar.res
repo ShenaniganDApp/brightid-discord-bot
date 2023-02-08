@@ -8,7 +8,7 @@ module ConnectButton = {
 }
 
 @react.component
-let make = (~toggled, ~handleToggleSidebar, ~user, ~guilds, ~loadingGuilds) => {
+let make = (~isSidebarVisible, ~handleIsSidebarVisible, ~guilds, ~loadingGuilds) => {
   open ReactProSidebar
 
   let icon = ({id, icon}: Types.oauthGuild) => {
@@ -75,7 +75,10 @@ let make = (~toggled, ~handleToggleSidebar, ~user, ~guilds, ~loadingGuilds) => {
   }
 
   <ProSidebar
-    className="bg-dark scrollbar-hide" breakPoint="md" onToggle={handleToggleSidebar} toggled>
+    className="bg-dark scrollbar-hide"
+    breakPoint="md"
+    onToggle={handleIsSidebarVisible}
+    toggled={isSidebarVisible}>
     <SidebarHeader
       className="p-2 flex justify-around items-center top-0 sticky bg-dark z-10 scrollbar-hide">
       <InviteButton />

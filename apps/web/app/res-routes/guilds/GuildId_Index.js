@@ -2,26 +2,32 @@
 
 import * as Curry from "../../../../../node_modules/rescript/lib/es6/curry.js";
 import * as React from "react";
-import * as Remix from "remix";
 import * as Wagmi from "wagmi";
+import * as Js_exn from "../../../../../node_modules/rescript/lib/es6/js_exn.js";
 import * as Js_dict from "../../../../../node_modules/rescript/lib/es6/js_dict.js";
 import * as $$Promise from "../../../../../node_modules/@ryyppy/rescript-promise/src/Promise.js";
 import * as AuthServer from "../../AuthServer.js";
 import * as Belt_Array from "../../../../../node_modules/rescript/lib/es6/belt_Array.js";
+import * as Caml_array from "../../../../../node_modules/rescript/lib/es6/caml_array.js";
 import * as AdminButton from "../../components/AdminButton.js";
 import * as Belt_Option from "../../../../../node_modules/rescript/lib/es6/belt_Option.js";
 import * as Caml_option from "../../../../../node_modules/rescript/lib/es6/caml_option.js";
-import * as Decode$Shared from "../../../node_modules/@brightidbot/shared/src/Decode.js";
+import * as Decode$Shared from "../../../../../node_modules/@brightidbot/shared/src/Decode.js";
 import * as DiscordServer from "../../DiscordServer.js";
 import * as SidebarToggle from "../../components/SidebarToggle.js";
 import * as WebUtils_Gist from "../../utils/WebUtils_Gist.js";
-import ReactHotToast from "react-hot-toast";
-import * as ReactHotToast$1 from "react-hot-toast";
+import * as $$Node from "@remix-run/node";
+import * as ReactHotToast from "react-hot-toast";
+import ReactHotToast$1 from "react-hot-toast";
+import * as React$1 from "@remix-run/react";
 import * as SponsorshipsPopup from "../../components/SponsorshipsPopup.js";
+import * as JsxRuntime from "react/jsx-runtime";
 import * as Caml_js_exceptions from "../../../../../node_modules/rescript/lib/es6/caml_js_exceptions.js";
 import * as DiscordLoginButton from "../../components/DiscordLoginButton.js";
-import * as Guilds_AdminSubmit from "./Guilds_AdminSubmit.js";
+import * as Guilds_AdminSubmit from "./admin/Guilds_AdminSubmit.js";
 import * as Rainbowkit from "@rainbow-me/rainbowkit";
+
+var Await = {};
 
 async function loader(param) {
   var guildId = Belt_Option.getWithDefault(Js_dict.get(param.params, "guildId"), "");
@@ -46,65 +52,47 @@ async function loader(param) {
   if (maybeUser === undefined) {
     return {
             maybeUser: maybeUser,
-            isAdmin: false
+            isAdmin: false,
+            maybeDiscordGuild: Promise.resolve(undefined)
           };
   }
-  var maybeDiscordGuild;
-  var exit$1 = 0;
-  var data$1;
   try {
-    data$1 = await DiscordServer.fetchDiscordGuildFromId(guildId);
-    exit$1 = 1;
-  }
-  catch (raw_exn){
-    var exn = Caml_js_exceptions.internalToOCamlException(raw_exn);
-    if (exn.RE_EXN_ID === $$Promise.JsError) {
-      maybeDiscordGuild = undefined;
-    } else {
-      throw exn;
+    var discordGuild = await DiscordServer.fetchDiscordGuildFromId(guildId);
+    var userId = Caml_option.valFromOption(maybeUser).profile.id;
+    var guildMember = await DiscordServer.fetchGuildMemberFromId(guildId, userId);
+    var memberRoles = (guildMember == null) ? [] : guildMember.roles;
+    var guildRoles;
+    try {
+      guildRoles = await DiscordServer.fetchGuildRoles(guildId);
     }
-  }
-  if (exit$1 === 1) {
-    maybeDiscordGuild = (data$1 == null) ? undefined : Caml_option.some(data$1);
-  }
-  var userId = Caml_option.valFromOption(maybeUser).profile.id;
-  var guildMember;
-  var exit$2 = 0;
-  var data$2;
-  try {
-    data$2 = await DiscordServer.fetchGuildMemberFromId(guildId, userId);
-    exit$2 = 1;
-  }
-  catch (raw_exn$1){
-    var exn$1 = Caml_js_exceptions.internalToOCamlException(raw_exn$1);
-    if (exn$1.RE_EXN_ID === $$Promise.JsError) {
-      guildMember = undefined;
-    } else {
-      throw exn$1;
+    catch (raw_exn){
+      var exn = Caml_js_exceptions.internalToOCamlException(raw_exn);
+      if (exn.RE_EXN_ID === $$Promise.JsError) {
+        guildRoles = [];
+      } else {
+        throw exn;
+      }
     }
+    var isAdmin = DiscordServer.memberIsAdmin(guildRoles, memberRoles);
+    var isOwner = (discordGuild == null) ? false : discordGuild.owner_id === userId;
+    return $$Node.defer({
+                maybeUser: maybeUser,
+                isAdmin: isAdmin || isOwner,
+                maybeDiscordGuild: Promise.resolve((discordGuild == null) ? undefined : Caml_option.some(discordGuild))
+              });
   }
-  if (exit$2 === 1) {
-    guildMember = (data$2 == null) ? undefined : Caml_option.some(data$2);
-  }
-  var memberRoles = guildMember !== undefined ? guildMember.roles : [];
-  var guildRoles;
-  try {
-    guildRoles = await DiscordServer.fetchGuildRoles(guildId);
-  }
-  catch (raw_exn$2){
-    var exn$2 = Caml_js_exceptions.internalToOCamlException(raw_exn$2);
-    if (exn$2.RE_EXN_ID === $$Promise.JsError) {
-      guildRoles = [];
-    } else {
-      throw exn$2;
+  catch (raw_e$1){
+    var e$1 = Caml_js_exceptions.internalToOCamlException(raw_e$1);
+    if (e$1.RE_EXN_ID === Js_exn.$$Error) {
+      console.error(e$1._1);
+      return {
+              maybeUser: maybeUser,
+              isAdmin: false,
+              maybeDiscordGuild: Promise.resolve(undefined)
+            };
     }
+    throw e$1;
   }
-  var isAdmin = DiscordServer.memberIsAdmin(guildRoles, memberRoles);
-  var isOwner = maybeDiscordGuild !== undefined ? maybeDiscordGuild.owner_id === userId : false;
-  return {
-          maybeUser: maybeUser,
-          isAdmin: isAdmin || isOwner
-        };
 }
 
 async function action(param) {
@@ -239,40 +227,36 @@ function reducer(state, action) {
 }
 
 function $$default(param) {
-  var match = Remix.useParams();
+  var match = React$1.useParams();
   var guildId = match.guildId;
-  var match$1 = Remix.useLoaderData();
+  var match$1 = React$1.useLoaderData();
   var isAdmin = match$1.isAdmin;
   var maybeUser = match$1.maybeUser;
-  var context = Remix.useOutletContext();
+  var discordGuild = React$1.useAsyncValue();
+  var context = React$1.useOutletContext();
   var account = Wagmi.useAccount(undefined);
-  var fetcher = Remix.useFetcher();
-  var match$2 = React.useReducer(reducer, state);
-  var dispatch = match$2[1];
-  var state$1 = match$2[0];
-  var guild = state$1.maybeDiscordGuild;
-  var getGuildName = guild !== undefined ? guild.name : "No Guild";
-  var sign = Wagmi.useSignMessage({
+  var matches = React$1.useMatches();
+  var match$2 = Caml_array.get(matches, matches.length - 1 | 0);
+  var fetcher = React$1.useFetcher();
+  var match$3 = React.useReducer(reducer, state);
+  var dispatch = match$3[1];
+  var getGuildName = discordGuild !== undefined ? discordGuild.name : "No Guild";
+  Wagmi.useSignMessage({
         message: "I consent that the SP in this address is able to be used by members of " + getGuildName + " Discord Server",
         onError: (function (e) {
             var match = e.name;
             if (match === "ConnectorNotFoundError") {
-              ReactHotToast.error("No wallet found", undefined);
+              ReactHotToast$1.error("No wallet found", undefined);
               return ;
             }
-            ReactHotToast.error(e.message, undefined);
+            ReactHotToast$1.error(e.message, undefined);
           }),
         onSuccess: (function (param) {
-            var data = account.data;
-            if (data == null) {
-              console.log(account);
-              return ;
-            }
             var options = {
               method: "post"
             };
             fetcher.submit({
-                  sponsorshipAddress: Caml_option.nullable_to_opt(data.address)
+                  sponsorshipAddress: account.address
                 }, options);
           })
       });
@@ -280,19 +264,10 @@ function $$default(param) {
           var match = fetcher.type;
           switch (match) {
             case "actionReload" :
-                var data = fetcher.data;
-                if (data == null) {
-                  Curry._1(dispatch, {
-                        TAG: /* SetSubmitting */3,
-                        _0: false
-                      });
-                } else {
-                  console.log(data);
-                  Curry._1(dispatch, {
-                        TAG: /* SetSubmitting */3,
-                        _0: false
-                      });
-                }
+                Curry._1(dispatch, {
+                      TAG: /* SetSubmitting */3,
+                      _0: false
+                    });
                 break;
             case "actionSubmission" :
                 Curry._1(dispatch, {
@@ -301,8 +276,8 @@ function $$default(param) {
                     });
                 break;
             case "done" :
-                var data$1 = fetcher.data;
-                if (data$1 == null) {
+                var data = fetcher.data;
+                if (data == null) {
                   Curry._1(dispatch, {
                         TAG: /* SetLoading */2,
                         _0: false
@@ -310,13 +285,12 @@ function $$default(param) {
                 } else {
                   Curry._1(dispatch, {
                         TAG: /* SetGuild */0,
-                        _0: data$1.maybeDiscordGuild
+                        _0: data.maybeDiscordGuild
                       });
                   Curry._1(dispatch, {
                         TAG: /* SetBrightIdGuild */1,
-                        _0: data$1.maybeBrightIdGuild
+                        _0: data.maybeBrightIdGuild
                       });
-                  console.log(data$1);
                   Curry._1(dispatch, {
                         TAG: /* SetLoading */2,
                         _0: false
@@ -347,64 +321,98 @@ function $$default(param) {
           }
           
         }), [context]);
-  var handleSign = function (param) {
-    Curry._1(sign.signMessage, undefined);
-  };
-  var guild$1 = state$1.oauthGuild;
-  var guildHeader = guild$1 !== undefined ? React.createElement("div", {
-          className: "flex gap-6 w-full justify-start items-center p-4"
-        }, React.createElement("img", {
-              className: "rounded-full h-24",
-              src: Belt_Option.getWithDefault(Belt_Option.map(guild$1.icon, (function (icon) {
-                          return "https://cdn.discordapp.com/icons/" + guild$1.id + "/" + icon + ".png";
-                        })), "")
-            }), React.createElement("p", {
-              className: "text-4xl font-bold text-white"
-            }, guild$1.name), isAdmin ? React.createElement(AdminButton.make, {
-                guildId: guildId
-              }) : React.createElement(React.Fragment, undefined)) : React.createElement("p", {
-          className: "text-3xl text-white font-poppins p-4"
-        }, "Loading...");
+  var guildHeader = JsxRuntime.jsx(React.Suspense, {
+        children: Caml_option.some(JsxRuntime.jsx(React$1.Await, {
+                  children: (function (discordGuild) {
+                      return JsxRuntime.jsxs("div", {
+                                  children: [
+                                    JsxRuntime.jsx("img", {
+                                          className: "rounded-full h-24",
+                                          src: Belt_Option.getWithDefault(Belt_Option.map(discordGuild.icon, (function (icon) {
+                                                      return "https://cdn.discordapp.com/icons/" + discordGuild.id + "/" + icon + ".png";
+                                                    })), "")
+                                        }),
+                                    JsxRuntime.jsx("p", {
+                                          children: discordGuild.name,
+                                          className: "text-4xl font-bold text-white"
+                                        }),
+                                    isAdmin ? JsxRuntime.jsx(AdminButton.make, {
+                                            guildId: discordGuild.id
+                                          }) : JsxRuntime.jsx(JsxRuntime.Fragment, {})
+                                  ],
+                                  className: "flex gap-6 w-full justify-start items-center p-4"
+                                });
+                    }),
+                  resolve: match$1.maybeDiscordGuild
+                })),
+        fallback: Caml_option.some(JsxRuntime.jsx("p", {
+                  children: "Loading...",
+                  className: "text-3xl text-white font-poppins p-4"
+                }))
+      });
   React.useEffect((function () {
           if (context.rateLimited) {
-            ReactHotToast.error("The bot is being rate limited. Please try again later", undefined);
+            ReactHotToast$1.error("The bot is being rate limited. Please try again later", undefined);
           }
           
         }), []);
-  var guild$2 = state$1.maybeBrightIdGuild;
-  var hasSponsorshipAddress = guild$2 !== undefined ? Belt_Option.isSome(guild$2.sponsorshipAddress) : false;
-  return React.createElement("div", {
+  var showPopup = Belt_Option.getWithDefault(Belt_Array.get(Belt_Array.reverse(match$2.id.split("/")), 0), "") === "$guildId";
+  return JsxRuntime.jsxs("div", {
+              children: [
+                JsxRuntime.jsx(ReactHotToast.Toaster, {}),
+                JsxRuntime.jsxs("div", {
+                      children: [
+                        JsxRuntime.jsxs("header", {
+                              children: [
+                                JsxRuntime.jsx(SidebarToggle.make, {
+                                      handleToggleSidebar: context.handleToggleSidebar,
+                                      maybeUser: maybeUser
+                                    }),
+                                JsxRuntime.jsx("div", {
+                                      children: JsxRuntime.jsx(Rainbowkit.ConnectButton, {
+                                            className: "h-full"
+                                          }),
+                                      className: "flex flex-col md:flex-row gap-2 items-center justify-center"
+                                    })
+                              ],
+                              className: "flex flex-row justify-between md:justify-end items-center m-4"
+                            }),
+                        maybeUser !== undefined ? JsxRuntime.jsxs(JsxRuntime.Fragment, {
+                                children: [
+                                  guildHeader,
+                                  JsxRuntime.jsxs("div", {
+                                        children: [
+                                          JsxRuntime.jsx("section", {
+                                                children: JsxRuntime.jsx(React$1.Outlet, {}),
+                                                className: "width-full flex flex-col md:flex-row justify-around items-center w-full"
+                                              }),
+                                          showPopup ? JsxRuntime.jsx(SponsorshipsPopup.make, {}) : JsxRuntime.jsx(JsxRuntime.Fragment, {})
+                                        ],
+                                        className: "flex flex-1 flex-col  justify-around items-center text-center relative"
+                                      })
+                                ]
+                              }) : JsxRuntime.jsxs("div", {
+                                children: [
+                                  JsxRuntime.jsx("p", {
+                                        children: "Please login to continue",
+                                        className: "text-3xl text-white font-poppins"
+                                      }),
+                                  JsxRuntime.jsx(DiscordLoginButton.make, {
+                                        label: "Login To Discord"
+                                      })
+                                ],
+                                className: "flex flex-col items-center justify-center h-full gap-4"
+                              })
+                      ],
+                      className: "flex flex-col h-screen"
+                    })
+              ],
               className: "flex-1"
-            }, React.createElement(ReactHotToast$1.Toaster, {}), React.createElement("div", {
-                  className: "flex flex-col h-screen"
-                }, React.createElement("header", {
-                      className: "flex flex-row justify-between md:justify-end items-center m-4"
-                    }, React.createElement(SidebarToggle.make, {
-                          handleToggleSidebar: context.handleToggleSidebar,
-                          maybeUser: maybeUser
-                        }), React.createElement("div", {
-                          className: "flex flex-col md:flex-row gap-2 items-center justify-center"
-                        }, React.createElement(Rainbowkit.ConnectButton, {
-                              className: "h-full"
-                            }))), maybeUser !== undefined ? React.createElement(React.Fragment, undefined, guildHeader, React.createElement("div", {
-                            className: "flex flex-1 flex-col  justify-around items-center text-center relative"
-                          }, React.createElement("section", {
-                                className: "width-full flex flex-col md:flex-row justify-around items-center w-full"
-                              }, React.createElement("p", {
-                                    className: "text-6xl text-slate-400 font-extrabold"
-                                  }, "Server Stats Coming Soon")), hasSponsorshipAddress ? React.createElement(React.Fragment, undefined) : React.createElement(SponsorshipsPopup.make, {
-                                  isAdmin: isAdmin,
-                                  sign: handleSign
-                                }))) : React.createElement("div", {
-                        className: "flex flex-col items-center justify-center h-full gap-4"
-                      }, React.createElement("p", {
-                            className: "text-3xl text-white font-poppins"
-                          }, "Please login to continue"), React.createElement(DiscordLoginButton.make, {
-                            label: "Login To Discord"
-                          }))));
+            });
 }
 
 export {
+  Await ,
   loader ,
   action ,
   state ,

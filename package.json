@@ -5,7 +5,6 @@
     "patch-package": "^6.4.7"
   },
   "dependencies": {
-    "@remix-run/vercel": "1.6.1",
     "brightid_sdk": "^1.0.1",
     "canvas": "^2.9.0",
     "concurrently": "^7.1.0",

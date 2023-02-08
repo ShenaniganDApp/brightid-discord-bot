@@ -69,8 +69,8 @@ function mapRoleRecord(decodedRoles) {
               }));
 }
 
-function sleep(ms) {
-  return (new Promise((resolve) => setTimeout(resolve, ms)));
+function sleep(_ms) {
+  return (new Promise((resolve) => setTimeout(resolve, _ms)));
 }
 
 function fetchBotGuilds(afterOpt, allGuildsOpt, param) {

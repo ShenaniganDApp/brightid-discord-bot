@@ -4,7 +4,7 @@ module Themes = {
 }
 module RainbowKitProvider = {
   @react.component @module("@rainbow-me/rainbowkit")
-  external make: (~chains: 'a, ~theme: 'a, ~children: React.element) => React.element =
+  external make: (~chains: 'a, ~theme: 'b, ~children: React.element) => React.element =
     "RainbowKitProvider"
 }
 

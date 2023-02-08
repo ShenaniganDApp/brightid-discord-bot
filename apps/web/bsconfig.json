@@ -10,7 +10,7 @@
     "in-source": true
   },
   "suffix": ".js",
-  "jsx": { "version": 4, "mode": "classic" },
+  "jsx": { "version": 4, "mode": "automatic" },
   "bs-dependencies": [
     "@rescript/react",
     "rescript-remix",

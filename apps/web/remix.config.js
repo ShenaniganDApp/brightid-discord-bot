@@ -1,5 +1,3 @@
-const { registerRoutes } = require('rescript-remix/registerRoutes')
-
 /**
  * @type {import('@remix-run/dev/config').AppConfig}
  */
@@ -13,11 +11,12 @@ module.exports = {
   devServerPort: 8002,
   ignoredRouteFiles: ['.*', '*.res'],
   transpileModules: ['rescript', 'rescript-webapi'],
-  serverDependenciesToBundle: ['@rainbow-me/rainbowkit', /^@?wagmi.*/, '/.*/'],
-  cacheDirectory: '../../node_modules/.cache/remix',
+  future: {
+    v2_errorBoundary: false,
+  },
+  serverDependenciesToBundle: ['@rainbow-me/rainbowkit', /^@?wagmi.*/, /.*/],
   routes(defineRoutes) {
     return defineRoutes(route => {
-      registerRoutes(route)
       route('/Root_FetchGuilds', './res-routes/Root_FetchGuilds.js')
       route(
         '/Root_FetchBrightIDDiscord',

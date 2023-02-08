@@ -105,7 +105,7 @@ let mapRoleRecord = decodedRoles => {
   )
 }
 
-let sleep = ms => %raw(` new Promise((resolve) => setTimeout(resolve, ms))`)
+let sleep = _ms => %raw(` new Promise((resolve) => setTimeout(resolve, _ms))`)
 
 //fetch all bot and user guilds
 let rec fetchBotGuilds = (~after=0, ~allGuilds=[], ()): Promise.t<array<Types.oauthGuild>> => {
