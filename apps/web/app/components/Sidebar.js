@@ -21,7 +21,46 @@ function Sidebar(props) {
   };
   var sidebarElements;
   if (props.loadingGuilds) {
-    var intersection = Belt_Array.map(guilds, (function (guild) {
+    var intersection = guilds.map(function (guild) {
+          return JsxRuntime.jsx(ReactProSidebar.Menu, {
+                      children: Caml_option.some(JsxRuntime.jsx(ReactProSidebar.MenuItem, {
+                                children: Caml_option.some(JsxRuntime.jsx(React.Link, {
+                                          className: "font-semibold text-xl",
+                                          prefetch: "intent",
+                                          to: "/guilds/" + guild.id + "",
+                                          children: guild.name
+                                        })),
+                                className: "bg-extraDark",
+                                icon: Caml_option.some(JsxRuntime.jsx("img", {
+                                          className: " bg-extraDark rounded-lg border-1 border-white",
+                                          src: icon(guild)
+                                        }))
+                              })),
+                      iconShape: "square"
+                    }, guild.id);
+        });
+    var loading = Belt_Array.range(0, 4).map(function (i) {
+          return JsxRuntime.jsx(ReactProSidebar.Menu, {
+                      children: Caml_option.some(JsxRuntime.jsx(ReactProSidebar.MenuItem, {
+                                children: Caml_option.some(JsxRuntime.jsx("div", {
+                                          children: JsxRuntime.jsx("div", {
+                                                className: "w-36 bg-gray-300 h-6 rounded-md "
+                                              }),
+                                          className: "flex flex-col space-y-3"
+                                        })),
+                                className: "flex animate-pulse flex-row h-full bg-extraDark ",
+                                icon: Caml_option.some(JsxRuntime.jsx("img", {
+                                          className: " bg-extraDark  rounded-lg",
+                                          src: "/assets/brightid_logo_white.png"
+                                        }))
+                              })),
+                      iconShape: "square"
+                    }, (i + 1 | 0).toString());
+        });
+    sidebarElements = intersection.concat(loading);
+  } else if (guilds.length !== 0) {
+    var match = guilds.length;
+    sidebarElements = match !== 0 ? guilds.map(function (guild) {
             return JsxRuntime.jsx(ReactProSidebar.Menu, {
                         children: Caml_option.some(JsxRuntime.jsx(ReactProSidebar.MenuItem, {
                                   children: Caml_option.some(JsxRuntime.jsx(React.Link, {
@@ -38,46 +77,7 @@ function Sidebar(props) {
                                 })),
                         iconShape: "square"
                       }, guild.id);
-          }));
-    var loading = Belt_Array.map(Belt_Array.range(0, 4), (function (i) {
-            return JsxRuntime.jsx(ReactProSidebar.Menu, {
-                        children: Caml_option.some(JsxRuntime.jsx(ReactProSidebar.MenuItem, {
-                                  children: Caml_option.some(JsxRuntime.jsx("div", {
-                                            children: JsxRuntime.jsx("div", {
-                                                  className: "w-36 bg-gray-300 h-6 rounded-md "
-                                                }),
-                                            className: "flex flex-col space-y-3"
-                                          })),
-                                  className: "flex animate-pulse flex-row h-full bg-extraDark ",
-                                  icon: Caml_option.some(JsxRuntime.jsx("img", {
-                                            className: " bg-extraDark  rounded-lg",
-                                            src: "/assets/brightid_logo_white.png"
-                                          }))
-                                })),
-                        iconShape: "square"
-                      }, String(i + 1 | 0));
-          }));
-    sidebarElements = Belt_Array.concat(intersection, loading);
-  } else if (guilds.length !== 0) {
-    var match = guilds.length;
-    sidebarElements = match !== 0 ? Belt_Array.map(guilds, (function (guild) {
-              return JsxRuntime.jsx(ReactProSidebar.Menu, {
-                          children: Caml_option.some(JsxRuntime.jsx(ReactProSidebar.MenuItem, {
-                                    children: Caml_option.some(JsxRuntime.jsx(React.Link, {
-                                              className: "font-semibold text-xl",
-                                              prefetch: "intent",
-                                              to: "/guilds/" + guild.id + "",
-                                              children: guild.name
-                                            })),
-                                    className: "bg-extraDark",
-                                    icon: Caml_option.some(JsxRuntime.jsx("img", {
-                                              className: " bg-extraDark rounded-lg border-1 border-white",
-                                              src: icon(guild)
-                                            }))
-                                  })),
-                          iconShape: "square"
-                        }, guild.id);
-            })) : JsxRuntime.jsx("p", {
+          }) : JsxRuntime.jsx("p", {
             children: "No Guilds",
             className: "text-white"
           });
@@ -97,7 +97,7 @@ function Sidebar(props) {
                       children: [
                         JsxRuntime.jsx(ReactProSidebar.Menu, {
                               iconShape: "square"
-                            }, String(0)),
+                            }, (0).toString()),
                         sidebarElements
                       ],
                       className: "scrollbar-hide"

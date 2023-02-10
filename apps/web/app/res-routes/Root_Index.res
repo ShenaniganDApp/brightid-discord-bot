@@ -16,10 +16,10 @@ module BrightIdToolTip = {
   let make = (~fetcher) => {
     switch fetcher->Remix.Fetcher._type {
     | "done" =>
-      switch fetcher->Remix.Fetcher.data->Js.Nullable.toOption {
+      switch fetcher->Remix.Fetcher.data->Nullable.toOption {
       | None => <> </>
       | Some(data) =>
-        switch data["user"]->Js.Nullable.toOption {
+        switch data["user"]->Nullable.toOption {
         | None => <> </>
         | Some(_) =>
           switch data["verifyStatus"] {
@@ -54,7 +54,7 @@ module BrightIdVerificationActions = {
     | Some(_) =>
       switch fetcher->Remix.Fetcher._type {
       | "done" =>
-        switch fetcher->Remix.Fetcher.data->Js.Nullable.toOption {
+        switch fetcher->Remix.Fetcher.data->Nullable.toOption {
         | None => <> </>
         | Some(data) =>
           switch data["verifyStatus"] {
@@ -111,7 +111,7 @@ let loader: Remix.loaderFunction<loaderData> = async ({request}) => {
     AuthServer.authenticator,
     request,
   ) {
-  | maybeUser => maybeUser->Js.Nullable.toOption
+  | maybeUser => maybeUser->Nullable.toOption
   | exception JsError(_) => None
   }
   let maybeDiscordId = switch maybeUser {
@@ -143,12 +143,12 @@ let default = () => {
 
   let unusedSponsorships = switch fetcher->Remix.Fetcher._type {
   | "done" =>
-    switch fetcher->Remix.Fetcher.data->Js.Nullable.toOption {
+    switch fetcher->Remix.Fetcher.data->Nullable.toOption {
     | None => <p className="text-white"> {"N/A"->React.string} </p>
     | Some(data) =>
       <p
         className="text-3xl font-semibold text-transparent bg-clip-text bg-gradient-to-l from-brightid to-white">
-        {data["unusedSponsorships"]->Belt.Int.toString->React.string}
+        {data["unusedSponsorships"]->Int.toString->React.string}
       </p>
     }
   | "normalLoad" =>
@@ -163,13 +163,13 @@ let default = () => {
 
   let usedSponsorships = switch fetcher->Remix.Fetcher._type {
   | "done" =>
-    switch fetcher->Remix.Fetcher.data->Js.Nullable.toOption {
+    switch fetcher->Remix.Fetcher.data->Nullable.toOption {
     | None => <p className="text-white"> {"N/A"->React.string} </p>
     | Some(data) =>
       <p
         className="text-3xl font-semibold text-transparent bg-clip-text bg-gradient-to-l from-brightid to-white">
         {(data["unusedSponsorships"] - data["assignedSponsorships"])
-        ->Belt.Int.toString
+        ->Int.toString
         ->React.string}
       </p>
     }
@@ -185,12 +185,12 @@ let default = () => {
 
   let verificationCount = switch fetcher->Remix.Fetcher._type {
   | "done" =>
-    switch fetcher->Remix.Fetcher.data->Js.Nullable.toOption {
+    switch fetcher->Remix.Fetcher.data->Nullable.toOption {
     | None => <p className="text-white"> {"N/A"->React.string} </p>
     | Some(data) =>
       <p
         className="text-3xl font-semibold text-transparent bg-clip-text bg-gradient-to-l from-brightid to-white">
-        {data["verificationCount"]->Belt.Int.toString->React.string}
+        {data["verificationCount"]->Int.toString->React.string}
       </p>
     }
   | "normalLoad" =>
@@ -230,7 +230,7 @@ let default = () => {
             {"Dashboard"->React.string}
           </p>
         </div>
-        {maybeUser->Belt.Option.isSome ? <> </> : <InviteButton />}
+        {maybeUser->Option.isSome ? <> </> : <InviteButton />}
         <section
           className="width-full flex flex-col md:flex-row justify-around items-center w-full py-2">
           <div className="flex flex-col  rounded-xl justify-around items-center text-center ">

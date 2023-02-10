@@ -2,21 +2,19 @@ type params = {guildId: string}
 type loaderData = {
   maybeUser: option<RemixAuth.User.t>,
   isAdmin: bool,
-  maybeDiscordGuild: Js.Promise.t<option<Types.guild>>,
+  maybeDiscordGuild: promise<option<Types.guild>>,
 }
-
-@module("@remix-run/node") external defer: loaderData => loaderData = "defer"
-@module("@remix-run/react") external useAsyncValue: unit => 'a = "useAsyncValue"
 
 type routeMatch<'a, 'b> = {
   id: string,
   pathname: string,
-  params: Js.Dict.t<string>,
+  params: Dict.t<string>,
   data: 'a,
   handle: option<'b>,
 }
-
 @module("@remix-run/react") external useMatches: unit => array<routeMatch<'a, 'b>> = "useMatches"
+@module("@remix-run/node") external defer: loaderData => loaderData = "defer"
+@module("@remix-run/react") external useAsyncValue: unit => 'a = "useAsyncValue"
 
 module Await = {
   type t
@@ -26,15 +24,14 @@ module Await = {
 
 let loader: Remix.loaderFunction<loaderData> = async ({request, params}) => {
   open DiscordServer
-  open Promise
 
-  let guildId = params->Js.Dict.get("guildId")->Belt.Option.getWithDefault("")
+  let guildId = params->Dict.get("guildId")->Option.getWithDefault("")
 
   let maybeUser = switch await RemixAuth.Authenticator.isAuthenticated(
     AuthServer.authenticator,
     request,
   ) {
-  | data => data->Js.Nullable.toOption
+  | data => data->Nullable.toOption
   | exception JsError(e) => None
   }
 
@@ -47,7 +44,7 @@ let loader: Remix.loaderFunction<loaderData> = async ({request, params}) => {
       let userId = user->RemixAuth.User.getProfile->RemixAuth.User.getId
       let guildMember = await fetchGuildMemberFromId(~guildId, ~userId)
 
-      let memberRoles = switch guildMember->Js.Nullable.toOption {
+      let memberRoles = switch guildMember->Nullable.toOption {
       | None => []
       | Some(guildMember) => guildMember.roles
       }
@@ -56,18 +53,18 @@ let loader: Remix.loaderFunction<loaderData> = async ({request, params}) => {
       | exception JsError(_) => []
       }
       let isAdmin = memberIsAdmin(~guildRoles, ~memberRoles)
-      let isOwner = switch discordGuild->Js.Nullable.toOption {
+      let isOwner = switch discordGuild->Nullable.toOption {
       | None => false
       | Some(guild) => guild.owner_id === userId
       }
       defer({
         maybeUser,
         isAdmin: isAdmin || isOwner,
-        maybeDiscordGuild: discordGuild->Js.Nullable.toOption->Promise.resolve,
+        maybeDiscordGuild: discordGuild->Nullable.toOption->Promise.resolve,
       })
     } catch {
-    | Js.Exn.Error(e) =>
-      Js.Console.error(e)
+    | Exn.Error(e) =>
+      Console.error(e)
       {maybeUser, isAdmin: false, maybeDiscordGuild: Promise.resolve(None)}
     }
   }
@@ -79,7 +76,7 @@ let action: Remix.actionFunction<'a> = async ({request, params}) => {
   open WebUtils_Gist
   open Shared.Decode
 
-  let guildId = params->Js.Dict.get("guildId")->Belt.Option.getWithDefault("")
+  let guildId = params->Dict.get("guildId")->Option.getWithDefault("")
 
   let _ = switch await RemixAuth.Authenticator.isAuthenticated(AuthServer.authenticator, request) {
   | data => Some(data)
@@ -96,7 +93,7 @@ let action: Remix.actionFunction<'a> = async ({request, params}) => {
     ~token=Remix.process["env"]["GITHUB_ACCESS_TOKEN"],
   )
   let content = await ReadGist.content(~config, ~decoder=Decode_Gist.brightIdGuilds)
-  let prevEntry = switch content->Js.Dict.get(guildId) {
+  let prevEntry = switch content->Dict.get(guildId) {
   | Some(entry) => entry
   | None => GuildDoesNotExist(guildId)->raise
   }
@@ -158,7 +155,7 @@ let default = () => {
   let account = Wagmi.useAccount()
   let matches = useMatches()
 
-  let {id} = matches[matches->Belt.Array.length - 1]
+  let id = matches[matches->Array.length - 1]->Option.map(match => match.id)
 
   let fetcher = useFetcher()
 
@@ -189,12 +186,12 @@ let default = () => {
       SetLoading(true)->dispatch
     | "actionSubmission" => SetSubmitting(true)->dispatch
     | "actionReload" =>
-      switch fetcher->Remix.Fetcher.data->Js.Nullable.toOption {
+      switch fetcher->Remix.Fetcher.data->Nullable.toOption {
       | None => SetSubmitting(false)->dispatch
       | Some(_) => SetSubmitting(false)->dispatch
       }
     | "done" =>
-      switch fetcher->Remix.Fetcher.data->Js.Nullable.toOption {
+      switch fetcher->Remix.Fetcher.data->Nullable.toOption {
       | None => SetLoading(false)->dispatch
 
       | Some(data) =>
@@ -210,9 +207,9 @@ let default = () => {
 
   React.useEffect1(() => {
     let contextGuilds: array<Types.oauthGuild> = context["guilds"]
-    switch contextGuilds->Belt.Array.getIndexBy(guild => guild.id === guildId) {
+    switch contextGuilds->Array.findIndexOpt(guild => guild.id === guildId) {
     | None => ()
-    | Some(index) => contextGuilds->Belt.Array.get(index)->SetOAuthGuild->dispatch
+    | Some(index) => contextGuilds->Array.get(index)->SetOAuthGuild->dispatch
     }
     None
   }, [context])
@@ -242,10 +239,10 @@ let default = () => {
             <img
               className="rounded-full h-24"
               src={discordGuild.icon
-              ->Belt.Option.map(icon =>
+              ->Option.map(icon =>
                 `https://cdn.discordapp.com/icons/${discordGuild.id}/${icon}.png`
               )
-              ->Belt.Option.getWithDefault("")}
+              ->Option.getWithDefault("")}
             />
             <p className="text-4xl font-bold text-white"> {discordGuild.name->React.string} </p>
             {isAdmin ? <AdminButton guildId={discordGuild.id} /> : <> </>}
@@ -273,10 +270,11 @@ let default = () => {
 
   let showPopup =
     id
-    ->Js.String2.split("/")
-    ->Belt.Array.reverse
-    ->Belt.Array.get(0)
-    ->Belt.Option.getWithDefault("") === "$guildId"
+    ->Option.getWithDefault("")
+    ->String.split("/")
+    ->Array.reverse
+    ->Array.get(0)
+    ->Option.getWithDefault("") === "$guildId"
 
   <div className="flex-1">
     <ReactHotToast.Toaster />

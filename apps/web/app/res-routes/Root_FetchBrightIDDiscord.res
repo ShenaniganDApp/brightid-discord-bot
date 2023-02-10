@@ -1,9 +1,9 @@
 open Types
 type loaderData = {
-  user: Js.Nullable.t<RemixAuth.User.t>,
-  verificationCount: Js.Nullable.t<float>,
-  unusedSponsorships: Js.Nullable.t<float>,
-  assignedSponsorships: Js.Nullable.t<float>,
+  user: Nullable.t<RemixAuth.User.t>,
+  verificationCount: Nullable.t<float>,
+  unusedSponsorships: Nullable.t<float>,
+  assignedSponsorships: Nullable.t<float>,
   verifyStatus: verifyStatus,
 }
 
@@ -22,45 +22,43 @@ let loader: Remix.loaderFunction<loaderData> = async ({request}) => {
   let req = Request.makeWithInit(brightIdVerificationEndpoint, init)
   let res = await fetchWithRequest(req)
   let json = await Response.json(res)
-  let data =
-    json->Js.Json.decodeObject->Belt.Option.getUnsafe->Js.Dict.get("data")->Belt.Option.getExn
+  let data = json->JSON.Decode.object->Option.getUnsafe->Dict.get("data")->Option.getExn
 
   let verificationCount =
     data
-    ->Js.Json.decodeObject
-    ->Belt.Option.getUnsafe
-    ->Js.Dict.get("count")
-    ->Belt.Option.flatMap(Js.Json.decodeNumber)
-    ->Js.Nullable.fromOption
+    ->JSON.Decode.object
+    ->Option.getUnsafe
+    ->Dict.get("count")
+    ->Option.flatMap(JSON.Decode.float)
+    ->Nullable.fromOption
 
   // fetch Sponsorship Data
   let req = Request.makeWithInit(brightIdAppEndpoint, init)
   let res = await fetchWithRequest(req)
   let json = await Response.json(res)
-  let data =
-    json->Js.Json.decodeObject->Belt.Option.getUnsafe->Js.Dict.get("data")->Belt.Option.getExn
+  let data = json->JSON.Decode.object->Option.getUnsafe->Dict.get("data")->Option.getExn
 
   let unusedSponsorships =
     data
-    ->Js.Json.decodeObject
-    ->Belt.Option.getUnsafe
-    ->Js.Dict.get("unusedSponsorships")
-    ->Belt.Option.flatMap(Js.Json.decodeNumber)
-    ->Js.Nullable.fromOption
+    ->JSON.Decode.object
+    ->Option.getUnsafe
+    ->Dict.get("unusedSponsorships")
+    ->Option.flatMap(JSON.Decode.float)
+    ->Nullable.fromOption
 
   let assignedSponsorships =
     data
-    ->Js.Json.decodeObject
-    ->Belt.Option.getUnsafe
-    ->Js.Dict.get("assignedSponsorships")
-    ->Belt.Option.flatMap(Js.Json.decodeNumber)
-    ->Js.Nullable.fromOption
+    ->JSON.Decode.object
+    ->Option.getUnsafe
+    ->Dict.get("assignedSponsorships")
+    ->Option.flatMap(JSON.Decode.float)
+    ->Nullable.fromOption
 
   let user = await RemixAuth.Authenticator.isAuthenticated(AuthServer.authenticator, request)
 
-  switch user->Js.Nullable.toOption {
+  switch user->Nullable.toOption {
   | None => {
-      user: Js.Nullable.null,
+      user: Nullable.null,
       verificationCount,
       unusedSponsorships,
       assignedSponsorships,
@@ -73,27 +71,22 @@ let loader: Remix.loaderFunction<loaderData> = async ({request}) => {
 
       let unique =
         json
-        ->Js.Json.decodeObject
-        ->Belt.Option.getUnsafe
-        ->Js.Dict.get("unique")
-        ->Belt.Option.flatMap(Js.Json.decodeBoolean)
+        ->JSON.Decode.object
+        ->Option.getUnsafe
+        ->Dict.get("unique")
+        ->Option.flatMap(JSON.Decode.bool)
 
       let verifyStatus = switch unique {
       | Some(_) => Unique
       | None => {
-          let data =
-            json
-            ->Js.Json.decodeObject
-            ->Belt.Option.getUnsafe
-            ->Js.Dict.get("data")
-            ->Belt.Option.getExn
+          let data = json->JSON.Decode.object->Option.getUnsafe->Dict.get("data")->Option.getExn
 
           let errorNum =
             data
-            ->Js.Json.decodeObject
-            ->Belt.Option.getUnsafe
-            ->Js.Dict.get("errorNum")
-            ->Belt.Option.flatMap(Js.Json.decodeNumber)
+            ->JSON.Decode.object
+            ->Option.getUnsafe
+            ->Dict.get("errorNum")
+            ->Option.flatMap(JSON.Decode.float)
           switch errorNum {
           | Some(2.) => NotLinked
 

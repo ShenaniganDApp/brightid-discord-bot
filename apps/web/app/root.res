@@ -69,7 +69,7 @@ let loader: Remix.loaderFunction<loaderData> = ({request}) => {
   AuthServer.authenticator
   ->RemixAuth.Authenticator.isAuthenticated(request)
   ->then(user => {
-    {maybeUser: user->Js.Nullable.toOption, rateLimited: false}->resolve
+    {maybeUser: user->Nullable.toOption, rateLimited: false}->resolve
   })
   ->catch(error => {
     switch error {
@@ -140,7 +140,7 @@ let reducer = (state, action) =>
   switch action {
   | AddBotGuilds(newBotGuilds) => {
       ...state,
-      botGuilds: state.botGuilds->Belt.Array.concat(newBotGuilds),
+      botGuilds: state.botGuilds->Array.concat(newBotGuilds),
     }
   | UserGuilds(userGuilds) => {...state, userGuilds}
   | SetAfter(after) => {...state, after}
@@ -170,7 +170,7 @@ let default = () => {
         SetLoadingGuilds(true)->dispatch
 
       | "done" =>
-        switch fetcher->Remix.Fetcher.data->Js.Nullable.toOption {
+        switch fetcher->Remix.Fetcher.data->Nullable.toOption {
         | None =>
           SetLoadingGuilds(false)->dispatch
           None->SetAfter->dispatch
@@ -199,8 +199,8 @@ let default = () => {
   }, [fetcher])
 
   let guilds =
-    state.userGuilds->Js.Array2.filter(userGuild =>
-      state.botGuilds->Js.Array2.findIndex(botGuild => botGuild.id === userGuild.id) !== -1
+    state.userGuilds->Array.filter(userGuild =>
+      state.botGuilds->Array.findIndex(botGuild => botGuild.id === userGuild.id) !== -1
     )
 
   let handleIsSidebarVisible = value => {

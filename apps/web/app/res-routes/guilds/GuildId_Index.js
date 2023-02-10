@@ -4,21 +4,18 @@ import * as Curry from "../../../../../node_modules/rescript/lib/es6/curry.js";
 import * as React from "react";
 import * as Wagmi from "wagmi";
 import * as Js_exn from "../../../../../node_modules/rescript/lib/es6/js_exn.js";
-import * as Js_dict from "../../../../../node_modules/rescript/lib/es6/js_dict.js";
-import * as $$Promise from "../../../../../node_modules/@ryyppy/rescript-promise/src/Promise.js";
 import * as AuthServer from "../../AuthServer.js";
-import * as Belt_Array from "../../../../../node_modules/rescript/lib/es6/belt_Array.js";
-import * as Caml_array from "../../../../../node_modules/rescript/lib/es6/caml_array.js";
 import * as AdminButton from "../../components/AdminButton.js";
-import * as Belt_Option from "../../../../../node_modules/rescript/lib/es6/belt_Option.js";
 import * as Caml_option from "../../../../../node_modules/rescript/lib/es6/caml_option.js";
-import * as Decode$Shared from "../../../../../node_modules/@brightidbot/shared/src/Decode.js";
+import * as Core__Array from "../../../../../node_modules/@rescript/core/src/Core__Array.js";
+import * as Core__Option from "../../../../../node_modules/@rescript/core/src/Core__Option.js";
+import * as Decode$Shared from "../../../node_modules/@brightidbot/shared/src/Decode.js";
 import * as DiscordServer from "../../DiscordServer.js";
 import * as SidebarToggle from "../../components/SidebarToggle.js";
 import * as WebUtils_Gist from "../../utils/WebUtils_Gist.js";
 import * as $$Node from "@remix-run/node";
-import * as ReactHotToast from "react-hot-toast";
-import ReactHotToast$1 from "react-hot-toast";
+import ReactHotToast from "react-hot-toast";
+import * as ReactHotToast$1 from "react-hot-toast";
 import * as React$1 from "@remix-run/react";
 import * as SponsorshipsPopup from "../../components/SponsorshipsPopup.js";
 import * as JsxRuntime from "react/jsx-runtime";
@@ -30,7 +27,7 @@ import * as Rainbowkit from "@rainbow-me/rainbowkit";
 var Await = {};
 
 async function loader(param) {
-  var guildId = Belt_Option.getWithDefault(Js_dict.get(param.params, "guildId"), "");
+  var guildId = Core__Option.getWithDefault(param.params["guildId"], "");
   var maybeUser;
   var exit = 0;
   var data;
@@ -40,7 +37,7 @@ async function loader(param) {
   }
   catch (raw_e){
     var e = Caml_js_exceptions.internalToOCamlException(raw_e);
-    if (e.RE_EXN_ID === $$Promise.JsError) {
+    if (e.RE_EXN_ID === "JsError") {
       maybeUser = undefined;
     } else {
       throw e;
@@ -67,7 +64,7 @@ async function loader(param) {
     }
     catch (raw_exn){
       var exn = Caml_js_exceptions.internalToOCamlException(raw_exn);
-      if (exn.RE_EXN_ID === $$Promise.JsError) {
+      if (exn.RE_EXN_ID === "JsError") {
         guildRoles = [];
       } else {
         throw exn;
@@ -97,7 +94,7 @@ async function loader(param) {
 
 async function action(param) {
   var request = param.request;
-  var guildId = Belt_Option.getWithDefault(Js_dict.get(param.params, "guildId"), "");
+  var guildId = Core__Option.getWithDefault(param.params["guildId"], "");
   var exit = 0;
   var data;
   try {
@@ -116,7 +113,7 @@ async function action(param) {
   var match = Guilds_AdminSubmit.Form.make(data$1);
   var config = WebUtils_Gist.makeGistConfig(process.env.GIST_ID, "guildData.json", process.env.GITHUB_ACCESS_TOKEN);
   var content = await WebUtils_Gist.ReadGist.content(config, Decode$Shared.Decode_Gist.brightIdGuilds);
-  var entry = Js_dict.get(content, guildId);
+  var entry = content[guildId];
   var prevEntry;
   if (entry !== undefined) {
     prevEntry = entry;
@@ -236,20 +233,22 @@ function $$default(param) {
   var context = React$1.useOutletContext();
   var account = Wagmi.useAccount(undefined);
   var matches = React$1.useMatches();
-  var match$2 = Caml_array.get(matches, matches.length - 1 | 0);
+  var id = Core__Option.map(matches[matches.length - 1 | 0], (function (match) {
+          return match.id;
+        }));
   var fetcher = React$1.useFetcher();
-  var match$3 = React.useReducer(reducer, state);
-  var dispatch = match$3[1];
+  var match$2 = React.useReducer(reducer, state);
+  var dispatch = match$2[1];
   var getGuildName = discordGuild !== undefined ? discordGuild.name : "No Guild";
   Wagmi.useSignMessage({
         message: "I consent that the SP in this address is able to be used by members of " + getGuildName + " Discord Server",
         onError: (function (e) {
             var match = e.name;
             if (match === "ConnectorNotFoundError") {
-              ReactHotToast$1.error("No wallet found", undefined);
+              ReactHotToast.error("No wallet found", undefined);
               return ;
             }
-            ReactHotToast$1.error(e.message, undefined);
+            ReactHotToast.error(e.message, undefined);
           }),
         onSuccess: (function (param) {
             var options = {
@@ -310,13 +309,13 @@ function $$default(param) {
         }), [fetcher]);
   React.useEffect((function () {
           var contextGuilds = context.guilds;
-          var index = Belt_Array.getIndexBy(contextGuilds, (function (guild) {
+          var index = Core__Array.findIndexOpt(contextGuilds, (function (guild) {
                   return guild.id === guildId;
                 }));
           if (index !== undefined) {
             Curry._1(dispatch, {
                   TAG: /* SetOAuthGuild */4,
-                  _0: Belt_Array.get(contextGuilds, index)
+                  _0: contextGuilds[index]
                 });
           }
           
@@ -328,7 +327,7 @@ function $$default(param) {
                                   children: [
                                     JsxRuntime.jsx("img", {
                                           className: "rounded-full h-24",
-                                          src: Belt_Option.getWithDefault(Belt_Option.map(discordGuild.icon, (function (icon) {
+                                          src: Core__Option.getWithDefault(Core__Option.map(discordGuild.icon, (function (icon) {
                                                       return "https://cdn.discordapp.com/icons/" + discordGuild.id + "/" + icon + ".png";
                                                     })), "")
                                         }),
@@ -352,14 +351,14 @@ function $$default(param) {
       });
   React.useEffect((function () {
           if (context.rateLimited) {
-            ReactHotToast$1.error("The bot is being rate limited. Please try again later", undefined);
+            ReactHotToast.error("The bot is being rate limited. Please try again later", undefined);
           }
           
         }), []);
-  var showPopup = Belt_Option.getWithDefault(Belt_Array.get(Belt_Array.reverse(match$2.id.split("/")), 0), "") === "$guildId";
+  var showPopup = Core__Option.getWithDefault(Core__Array.reverse(Core__Option.getWithDefault(id, "").split("/"))[0], "") === "$guildId";
   return JsxRuntime.jsxs("div", {
               children: [
-                JsxRuntime.jsx(ReactHotToast.Toaster, {}),
+                JsxRuntime.jsx(ReactHotToast$1.Toaster, {}),
                 JsxRuntime.jsxs("div", {
                       children: [
                         JsxRuntime.jsxs("header", {

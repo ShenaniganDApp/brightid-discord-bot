@@ -1,5 +1,3 @@
-open Types
-
 exception NoAccountAddress(string)
 
 module Modal = {
@@ -28,7 +26,7 @@ module Lottie = {
   @react.component @module("react-lottie")
   external make: (
     ~options: {
-      "animationData": Js.Json.t,
+      "animationData": JSON.t,
       "loop": bool,
       "autoplay": bool,
       "rendererSettings": {"preserveAspectRatio": string},
@@ -67,7 +65,7 @@ let default = () => {
   let transition = Remix.useTransition()
   let {address: maybeAddress} = Wagmi.useAccount()
 
-  let address = maybeAddress->Belt.Option.getWithDefault("")
+  let address = maybeAddress->Option.getWithDefault("")
 
   let mainnetSP = Wagmi.useBalance({
     "address": address,
@@ -83,7 +81,7 @@ let default = () => {
 
   let formattedMainnetSP = switch mainnetSP["status"] {
   | #success =>
-    mainnetSP["data"]->Belt.Option.map(data => data["formatted"])->Belt.Option.getWithDefault("0")
+    mainnetSP["data"]->Option.map(data => data["formatted"])->Option.getWithDefault("0")
   | #loading => "Loading"
   | #error => "Error"
   | _ => "unknown"
@@ -91,7 +89,7 @@ let default = () => {
 
   let formattedIDSP = switch idSP["status"] {
   | #success =>
-    idSP["data"]->Belt.Option.map(data => data["formatted"])->Belt.Option.getWithDefault("0")
+    idSP["data"]->Option.map(data => data["formatted"])->Option.getWithDefault("0")
   | #loading => "Loading"
   | #error => "Error"
   | _ => "unknown"
@@ -108,10 +106,10 @@ let default = () => {
     }
 
   //TODO This is too slow to use if we navigate here directly
-  // let guildName = switch context["guilds"]->Belt.Array.getIndexBy(guild => guild.id === guildId) {
+  // let guildName = switch context["guilds"]->Array.findIndexOpt(guild => guild.id === guildId) {
   // | None => ""
   // | Some(index) =>
-  //   switch context["guilds"]->Belt.Array.get(index) {
+  //   switch context["guilds"]->Array.get(index) {
   //   | Some({name: Some(name)}) => name
   //   | _ => ""
   //   }

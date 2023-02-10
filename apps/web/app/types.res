@@ -8,7 +8,7 @@ type guild = {
   id: string,
   name: string,
   icon: option<string>,
-  roles: array<Js.Json.t>,
+  roles: array<JSON.t>,
   owner_id: string,
 }
 

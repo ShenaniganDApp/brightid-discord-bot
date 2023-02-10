@@ -42,7 +42,7 @@ module DiscordStrategy = {
   @module("remix-auth-socials") @new
   external make: (
     CreateDiscordStategyOptions.t,
-    verifyFunctionParams<'a, 'b> => Js.Promise.t<'a>,
+    verifyFunctionParams<'a, 'b> => promise<'a>,
   ) => t = "DiscordStrategy"
 }
 
@@ -62,7 +62,7 @@ module Authenticator = {
   @module("remix-auth") @new external make: Remix.SessionStorage.t => t = "Authenticator"
   @send external use: (t, DiscordStrategy.t) => unit = "use"
   @send
-  external authenticate: (t, string, Webapi.Fetch.Request.t) => Js.Promise.t<User.t> =
+  external authenticate: (t, string, Webapi.Fetch.Request.t) => promise<User.t> =
     "authenticate"
 
   @send
@@ -71,17 +71,17 @@ module Authenticator = {
     string,
     Webapi.Fetch.Request.t,
     ~options: CreateAuthenticateOptions.t,
-  ) => Js.Promise.t<User.t> = "authenticate"
+  ) => promise<User.t> = "authenticate"
   @send
-  external isAuthenticated: (t, Webapi.Fetch.Request.t) => Js.Promise.t<Js.Nullable.t<User.t>> =
+  external isAuthenticated: (t, Webapi.Fetch.Request.t) => promise<Nullable.t<User.t>> =
     "isAuthenticated"
   @send
   external isAuthenticatedWithOptions: (
     t,
     Webapi.Fetch.Request.t,
     ~options: CreateAuthenticateOptions.t,
-  ) => Js.Promise.t<Js.Nullable.t<User.t>> = "isAuthenticated"
+  ) => promise<Nullable.t<User.t>> = "isAuthenticated"
 
   @send
-  external logout: (t, Webapi.Fetch.Request.t, ~options: 'option) => Js.Promise.t<unit> = "logout"
+  external logout: (t, Webapi.Fetch.Request.t, ~options: 'option) => promise<unit> = "logout"
 }

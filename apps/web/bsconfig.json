@@ -15,14 +15,15 @@
     "@rescript/react",
     "rescript-remix",
     "rescript-webapi",
-    "@ryyppy/rescript-promise",
     "@brightidbot/utils",
     "@glennsl/rescript-json-combinators",
     "@brightidbot/shared",
-    "rescript-nodejs"
+    "rescript-nodejs",
+    "@rescript/core",
+    "rescript-discordjs"
   ],
   "pinned-dependencies": ["@brightidbot/utils", "@brightidbot/shared"],
-  "bsc-flags": ["-open JsonCombinators"],
+  "bsc-flags": ["-open JsonCombinators", "-open RescriptCore"],
   "warnings": {
     "error": "+101"
   }

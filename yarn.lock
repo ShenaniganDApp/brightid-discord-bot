@@ -1793,21 +1793,6 @@
     source-map-support "^0.5.21"
     stream-slice "^0.1.2"
 
-"@remix-run/node@1.7.0":
-  version "1.7.0"
-  resolved "https://registry.yarnpkg.com/@remix-run/node/-/node-1.7.0.tgz#5b1e5f1ec58ba53aba452c0ff9915a60cdedba3f"
-  integrity sha512-zv27lye3UAS4gyUFlN9FLUGfYd6XwD/ZLnay6GBxyUK6SKS3/hbfkScb/bbhBrpCoh3KzPFcSP8Q/O2JDZR9aw==
-  dependencies:
-    "@remix-run/server-runtime" "1.7.0"
-    "@remix-run/web-fetch" "^4.1.3"
-    "@remix-run/web-file" "^3.0.2"
-    "@remix-run/web-stream" "^1.0.3"
-    "@web3-storage/multipart-parser" "^1.0.0"
-    abort-controller "^3.0.0"
-    cookie-signature "^1.1.0"
-    source-map-support "^0.5.21"
-    stream-slice "^0.1.2"
-
 "@remix-run/react@^1.11.1":
   version "1.11.1"
   resolved "https://registry.yarnpkg.com/@remix-run/react/-/react-1.11.1.tgz#78e9fe5042cf82380b2dd3bc4637c8dd436490c4"
@@ -1816,11 +1801,6 @@
     "@remix-run/router" "1.3.0"
     react-router-dom "6.7.0"
     use-sync-external-store "1.2.0"
-
-"@remix-run/router@1.2.1":
-  version "1.2.1"
-  resolved "https://registry.yarnpkg.com/@remix-run/router/-/router-1.2.1.tgz#812edd4104a15a493dda1ccac0b352270d7a188c"
-  integrity sha512-XiY0IsyHR+DXYS5vBxpoBe/8veTeoRpMHP+vDosLZxL5bnpetzI0igkxkLZS235ldLzyfkxF+2divEwWHP3vMQ==
 
 "@remix-run/router@1.3.0":
   version "1.3.0"
@@ -1849,24 +1829,12 @@
     set-cookie-parser "^2.4.8"
     source-map "^0.7.3"
 
-"@remix-run/server-runtime@1.7.0":
-  version "1.7.0"
-  resolved "https://registry.yarnpkg.com/@remix-run/server-runtime/-/server-runtime-1.7.0.tgz#df278c46757ebf6d7bdda144830428a0e93341a7"
-  integrity sha512-xP/422QACVA6wtnsbTXKABUqKtyMguST+vzJDjKbxVyk8/3k9La8OpF5NF4ovtLhLf0V6gus6WaR86k+HyC9Hg==
+"@remix-run/vercel@1.11.1":
+  version "1.11.1"
+  resolved "https://registry.yarnpkg.com/@remix-run/vercel/-/vercel-1.11.1.tgz#1098fb16ea5cfb43a28ebf2a2b7697b3036cbab1"
+  integrity sha512-eh7LDHcPGEDZ6lv1ES+dMz7Xdz0RnG3sYBxhhF+fSL/u6A5wUpHJeTmAGMTzKyrVliX31qV62ehb2KR0Zpn+mg==
   dependencies:
-    "@types/cookie" "^0.4.0"
-    "@web3-storage/multipart-parser" "^1.0.0"
-    cookie "^0.4.1"
-    react-router-dom "^6.2.2"
-    set-cookie-parser "^2.4.8"
-    source-map "^0.7.3"
-
-"@remix-run/vercel@1.7.0":
-  version "1.7.0"
-  resolved "https://registry.yarnpkg.com/@remix-run/vercel/-/vercel-1.7.0.tgz#5dc32dbc898b6f6e1c6dd829713987803961f00a"
-  integrity sha512-8allRAxRZc6YS2sAoYCpAdWCCP9nM09XM5XxjU8vuNz0KF1bNK6w439BQcXr8sjrkDbIthWPvSLLFnjLp/jqjA==
-  dependencies:
-    "@remix-run/node" "1.7.0"
+    "@remix-run/node" "1.11.1"
 
 "@remix-run/web-blob@^3.0.3", "@remix-run/web-blob@^3.0.4":
   version "3.0.4"
@@ -1876,7 +1844,7 @@
     "@remix-run/web-stream" "^1.0.0"
     web-encoding "1.1.5"
 
-"@remix-run/web-fetch@^4.1.3", "@remix-run/web-fetch@^4.3.2":
+"@remix-run/web-fetch@^4.3.2":
   version "4.3.2"
   resolved "https://registry.yarnpkg.com/@remix-run/web-fetch/-/web-fetch-4.3.2.tgz#193758bb7a301535540f0e3a86c743283f81cf56"
   integrity sha512-aRNaaa0Fhyegv/GkJ/qsxMhXvyWGjPNgCKrStCvAvV1XXphntZI0nQO/Fl02LIQg3cGL8lDiOXOS1gzqDOlG5w==
@@ -1909,6 +1877,11 @@
   integrity sha512-wlezlJaA5NF6SsNMiwQnnAW6tnPzQ5I8qk0Y0pSohm0eHKa2FQ1QhEKLVVcDDu02TmkfHgnux0igNfeYhDOXiA==
   dependencies:
     web-streams-polyfill "^3.1.1"
+
+"@rescript/core@^0.1.0":
+  version "0.1.0"
+  resolved "https://registry.yarnpkg.com/@rescript/core/-/core-0.1.0.tgz#fff0135d239cd202486a0d4bc0c8cfd7c8a04945"
+  integrity sha512-+nJiH67zp/CD6qwFv9VxlAknlYf/lIb6Q72Nqc0tvoMUizX+sRKQxQVUQSIqG+MSoxCUlSVye1wmZFwbNmJKpw==
 
 "@rescript/react@^0.11.0":
   version "0.11.0"
@@ -3998,7 +3971,7 @@ discord-api-types@^0.36.2:
   resolved "https://registry.yarnpkg.com/discord-api-types/-/discord-api-types-0.36.3.tgz#a931b7e57473a5c971d6937fa5f392eb30047579"
   integrity sha512-bz/NDyG0KBo/tY14vSkrwQ/n3HKPf87a0WFW/1M9+tXYK+vp5Z5EksawfCWo2zkAc6o7CClc0eff1Pjrqznlwg==
 
-discord.js@^13.7.0, discord.js@^13.8.1:
+discord.js@^13.8.1:
   version "13.12.0"
   resolved "https://registry.yarnpkg.com/discord.js/-/discord.js-13.12.0.tgz#e4839c14a02b1947e063b72f09a49b11336a58f5"
   integrity sha512-K5qhREsYcTHkEqt7+7LcSoXTeQYZpI+SQRs9ei/FhbhUpirmjqFtN99P8W2mrKUyhhy7WXWm7rnna0AooKtIpw==
@@ -7829,21 +7802,6 @@ react-router-dom@6.7.0:
     "@remix-run/router" "1.3.0"
     react-router "6.7.0"
 
-react-router-dom@^6.2.2:
-  version "6.6.2"
-  resolved "https://registry.yarnpkg.com/react-router-dom/-/react-router-dom-6.6.2.tgz#bbf1f9b45855b218d22fc2d294b79408a084740a"
-  integrity sha512-6SCDXxRQqW5af8ImOqKza7icmQ47/EMbz572uFjzvcArg3lZ+04PxSPp8qGs+p2Y+q+b+S/AjXv8m8dyLndIIA==
-  dependencies:
-    "@remix-run/router" "1.2.1"
-    react-router "6.6.2"
-
-react-router@6.6.2:
-  version "6.6.2"
-  resolved "https://registry.yarnpkg.com/react-router/-/react-router-6.6.2.tgz#556f7b56cff7fe32c5c02429fef3fcb2ecd08111"
-  integrity sha512-uJPG55Pek3orClbURDvfljhqFvMgJRo59Pktywkk8hUUkTY2aRfza8Yhl/vZQXs+TNQyr6tu+uqz/fLxPICOGQ==
-  dependencies:
-    "@remix-run/router" "1.2.1"
-
 react-router@6.7.0:
   version "6.7.0"
   resolved "https://registry.yarnpkg.com/react-router/-/react-router-6.7.0.tgz#db262684c13b5c2970694084ae9e8531718a0681"
@@ -8089,12 +8047,11 @@ require-main-filename@^2.0.0:
   resolved "https://registry.yarnpkg.com/require-main-filename/-/require-main-filename-2.0.0.tgz#d0b329ecc7cc0f61649f62215be69af54aa8989b"
   integrity sha512-NKN5kMDylKuldxYLSUfrbo5Tuzh4hd+2E8NPPX02mZtn1VuREQToYe/ZdlJy+J3uCpfaiGF05e7B8W0iXbQHmg==
 
-rescript-discordjs@^0.2.16:
-  version "0.2.16"
-  resolved "https://registry.yarnpkg.com/rescript-discordjs/-/rescript-discordjs-0.2.16.tgz#9a4c89322a3a5ccf9e2f7912e8a86569a4af7595"
-  integrity sha512-l7gR+T6Ij0qAVygNpcK393XaugjhxfiQiPKQBSifgyXrPtGSMLNzSzDktZIAT0FyPzl8jJgWiFkzibcCfGDj8w==
+rescript-discordjs@^0.3.0:
+  version "0.3.0"
+  resolved "https://registry.yarnpkg.com/rescript-discordjs/-/rescript-discordjs-0.3.0.tgz#0ed2ce9cbb6ec70d7024e94388c106da9102de01"
+  integrity sha512-11EUJf7NKrvR+UhwQTzubnYOzLWOpXVaRLW7us2TPsET8WLtiqqsEEbRkNm5L/ACA6tpQttIcWp+CWkXRU4sFA==
   dependencies:
-    discord.js "^13.8.1"
     rescript "*"
 
 rescript-nodejs@^14.3.1:
@@ -8104,7 +8061,7 @@ rescript-nodejs@^14.3.1:
 
 "rescript-remix@https://github.com/youngkidwarrior/rescript-remix":
   version "0.2.2"
-  resolved "https://github.com/youngkidwarrior/rescript-remix#b3eaaa4704203af7b5a622853716ddda91ba1a33"
+  resolved "https://github.com/youngkidwarrior/rescript-remix#d7371d2222e59534714382fdd7968e535ffacabd"
 
 rescript-webapi@^0.2.0:
   version "0.2.0"
@@ -8116,10 +8073,10 @@ rescript@*:
   resolved "https://registry.yarnpkg.com/rescript/-/rescript-10.0.1.tgz#5b2da8a8bcfb994bed1eb24820bf10cfb9d8c440"
   integrity sha512-XwO1GPDtoEU4H03xQE5bp0/qtSVR6YLaJRPxWKrfFgKc+LI36ODOCie7o9UJfgzQdoMYkkZyiTGZ4N9OQEaiUw==
 
-rescript@^10.1.0-rc.5:
-  version "10.1.1"
-  resolved "https://registry.yarnpkg.com/rescript/-/rescript-10.1.1.tgz#a9c765765d95d361f454163ec1135c4e36eb8f81"
-  integrity sha512-6rwFNt+A1VqD34L/9T95TKh22zyT0Cs5VUWCQnFblBNsUfz5mFdUSNvdOFf1Nbiz8NaQJGwhLKKjzxsF/pbbLg==
+rescript@^10.1.2:
+  version "10.1.2"
+  resolved "https://registry.yarnpkg.com/rescript/-/rescript-10.1.2.tgz#ed3b8c762d6e22139803c16e765356685693e38c"
+  integrity sha512-PPdhOiN+lwqxQ0qvzHc1KW0TL12LDy2X+qo/JIMIP3bMfiH0vxQH2e/lXuoutWWm04fGQGTv3hWH+gKW3/UyfA==
 
 resize-observer-polyfill@^1.5.1:
   version "1.5.1"
