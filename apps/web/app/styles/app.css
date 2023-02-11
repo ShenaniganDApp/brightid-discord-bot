@@ -568,10 +568,6 @@ video {
   margin: 1rem;
 }
 
-.m-2 {
-  margin: 0.5rem;
-}
-
 .my-6 {
   margin-top: 1.5rem;
   margin-bottom: 1.5rem;
@@ -613,10 +609,6 @@ video {
   height: 6rem;
 }
 
-.h-32 {
-  height: 8rem;
-}
-
 .w-screen {
   width: 100vw;
 }
@@ -639,10 +631,6 @@ video {
 
 .w-4 {
   width: 1rem;
-}
-
-.w-60 {
-  width: 15rem;
 }
 
 .w-auto {
@@ -785,10 +773,6 @@ video {
 
 .border-2 {
   border-width: 2px;
-}
-
-.border-solid {
-  border-style: solid;
 }
 
 .border-brightid {
@@ -1047,10 +1031,6 @@ video {
 
   .md\:hidden {
     display: none;
-  }
-
-  .md\:h-48 {
-    height: 12rem;
   }
 
   .md\:flex-row {

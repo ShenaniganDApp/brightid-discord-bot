@@ -110,6 +110,7 @@ let default = () => {
   open Remix
   let context = useOutletContext()
   let {maybeBrightIdGuild, isAdmin, maybeDiscordGuild, maybeUser} = useLoaderData()
+
   let {guildId} = useParams()
   let account = Wagmi.useAccount()
 

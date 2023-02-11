@@ -7,7 +7,7 @@ import * as Core__Option from "../../../../../../node_modules/@rescript/core/src
 import ReactLottie from "react-lottie";
 import * as Caml_exceptions from "../../../../../../node_modules/rescript/lib/es6/caml_exceptions.js";
 import * as React$1 from "@remix-run/react";
-import * as Constants$Shared from "../../../../node_modules/@brightidbot/shared/src/Constants.js";
+import * as Constants$Shared from "../../../../../../node_modules/@brightidbot/shared/src/Constants.js";
 import * as JsxRuntime from "react/jsx-runtime";
 import * as Rainbowkit from "@rainbow-me/rainbowkit";
 
@@ -47,13 +47,6 @@ var Modal = {
 };
 
 var Lottie = {};
-
-function links(param) {
-  return [{
-            rel: "stylesheet",
-            href: styles
-          }];
-}
 
 var assignSPYellow = (require("~/lotties/assignSPYellow.json"));
 
@@ -174,7 +167,6 @@ export {
   Lottie ,
   contractAddressID ,
   contractAddressETH ,
-  links ,
   assignSPYellow ,
   assignSPRed ,
   assignSPBlue ,

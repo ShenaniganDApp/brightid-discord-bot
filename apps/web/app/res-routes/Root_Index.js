@@ -10,7 +10,7 @@ import * as Brightid_sdk from "brightid_sdk";
 import * as QrcodeReact from "qrcode.react";
 import * as SidebarToggle from "../components/SidebarToggle.js";
 import * as React$1 from "@remix-run/react";
-import * as Constants$Shared from "../../node_modules/@brightidbot/shared/src/Constants.js";
+import * as Constants$Shared from "../../../../node_modules/@brightidbot/shared/src/Constants.js";
 import * as JsxRuntime from "react/jsx-runtime";
 import * as Caml_js_exceptions from "../../../../node_modules/rescript/lib/es6/caml_js_exceptions.js";
 import * as DiscordLoginButton from "../components/DiscordLoginButton.js";

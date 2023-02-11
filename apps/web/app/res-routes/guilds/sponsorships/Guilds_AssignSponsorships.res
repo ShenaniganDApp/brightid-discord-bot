@@ -38,15 +38,6 @@ module Lottie = {
 
 let {contractAddressID, contractAddressETH} = module(Shared.Constants)
 
-let links = () => {
-  [
-    {
-      "rel": "stylesheet",
-      "href": %raw(`styles`),
-    },
-  ]
-}
-
 type params = {guildId: string}
 
 let assignSPYellow = %raw(`require("~/lotties/assignSPYellow.json")`)

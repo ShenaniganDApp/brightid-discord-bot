@@ -8059,9 +8059,9 @@ rescript-nodejs@^14.3.1:
   resolved "https://registry.yarnpkg.com/rescript-nodejs/-/rescript-nodejs-14.3.1.tgz#a22c907f5fcf881bab37c8921b670029ed76b2a5"
   integrity sha512-oiQo2Rd6lb8TAkB6NT3IVFJcKanSoIC9+SrBTT6OKQtGvAIi6Dd9CNoGA4pbOUXcg8+lza6vhy/YWYzYBYKt3g==
 
-"rescript-remix@https://github.com/youngkidwarrior/rescript-remix":
+"rescript-remix@https://github.com/youngkidwarrior/rescript-remix#main":
   version "0.2.2"
-  resolved "https://github.com/youngkidwarrior/rescript-remix#d7371d2222e59534714382fdd7968e535ffacabd"
+  resolved "https://github.com/youngkidwarrior/rescript-remix#f4eda12a6a9ed8c2165b573359f02676331bd061"
 
 rescript-webapi@^0.2.0:
   version "0.2.0"
