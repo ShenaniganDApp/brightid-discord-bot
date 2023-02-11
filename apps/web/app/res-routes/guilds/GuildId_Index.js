@@ -167,8 +167,9 @@ async function action(param) {
 }
 
 function $$default(param) {
-  var data = React$1.useLoaderData().data;
-  console.log("data: ", data);
+  var match = React$1.useLoaderData();
+  var isAdmin = match.isAdmin;
+  var maybeUser = match.maybeUser;
   var context = React$1.useOutletContext();
   var matches = React$1.useMatches();
   var id = Core__Option.map(matches[matches.length - 1 | 0], (function (match) {
@@ -182,7 +183,7 @@ function $$default(param) {
         }), []);
   var guildHeader = JsxRuntime.jsx(React.Suspense, {
         children: Caml_option.some(JsxRuntime.jsx(React$1.Await, {
-                  resolve: data.discordGuildPromise,
+                  resolve: match.discordGuildPromise,
                   children: (function (maybeDiscordGuild) {
                       return Core__Option.mapWithDefault((maybeDiscordGuild == null) ? undefined : Caml_option.some(maybeDiscordGuild), JsxRuntime.jsx(JsxRuntime.Fragment, {}), (function (discordGuild) {
                                     return JsxRuntime.jsxs("div", {
@@ -197,7 +198,7 @@ function $$default(param) {
                                                         children: discordGuild.name,
                                                         className: "text-4xl font-bold text-white"
                                                       }),
-                                                  data.isAdmin ? JsxRuntime.jsx(AdminButton.make, {
+                                                  isAdmin ? JsxRuntime.jsx(AdminButton.make, {
                                                           guildId: discordGuild.id
                                                         }) : JsxRuntime.jsx(JsxRuntime.Fragment, {})
                                                 ],
@@ -212,7 +213,6 @@ function $$default(param) {
                 }))
       });
   var showPopup = Core__Option.getWithDefault(Core__Array.reverse(Core__Option.getWithDefault(id, "").split("/"))[0], "") === "$guildId";
-  var match = data.maybeUser;
   return JsxRuntime.jsxs("div", {
               children: [
                 JsxRuntime.jsx(ReactHotToast.Toaster, {}),
@@ -222,7 +222,7 @@ function $$default(param) {
                               children: [
                                 JsxRuntime.jsx(SidebarToggle.make, {
                                       handleToggleSidebar: context.handleToggleSidebar,
-                                      maybeUser: data.maybeUser
+                                      maybeUser: maybeUser
                                     }),
                                 JsxRuntime.jsx("div", {
                                       children: JsxRuntime.jsx(Rainbowkit.ConnectButton, {
@@ -233,7 +233,7 @@ function $$default(param) {
                               ],
                               className: "flex flex-row justify-between md:justify-end items-center m-4"
                             }),
-                        match !== undefined ? JsxRuntime.jsxs(JsxRuntime.Fragment, {
+                        maybeUser !== undefined ? JsxRuntime.jsxs(JsxRuntime.Fragment, {
                                 children: [
                                   guildHeader,
                                   JsxRuntime.jsxs("div", {

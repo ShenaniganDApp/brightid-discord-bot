@@ -120,8 +120,7 @@ let action: Remix.actionFunction<'a> = async ({request, params}) => {
 
 let default = () => {
   open Remix
-  let data = useLoaderData().data
-  Js.log2("data: ", data)
+  let {isAdmin, maybeUser, discordGuildPromise} = useLoaderData()
 
   let context = useOutletContext()
   let matches = useMatches()
@@ -146,7 +145,7 @@ let default = () => {
       fallback={<p className="text-3xl text-white font-poppins p-4">
         {"Loading..."->React.string}
       </p>}>
-      <Await resolve={data.discordGuildPromise}>
+      <Await resolve={discordGuildPromise}>
         {maybeDiscordGuild =>
           maybeDiscordGuild
           ->Nullable.toOption
@@ -161,7 +160,7 @@ let default = () => {
                 ->Option.getWithDefault("")}
               />
               <p className="text-4xl font-bold text-white"> {discordGuild.name->React.string} </p>
-              {data.isAdmin ? <AdminButton guildId={discordGuild.id} /> : <> </>}
+              {isAdmin ? <AdminButton guildId={discordGuild.id} /> : <> </>}
             </div>
           })}
       </Await>
@@ -179,14 +178,12 @@ let default = () => {
     <ReactHotToast.Toaster />
     <div className="flex flex-col h-screen">
       <header className="flex flex-row justify-between md:justify-end items-center m-4">
-        <SidebarToggle
-          handleToggleSidebar={context["handleToggleSidebar"]} maybeUser={data.maybeUser}
-        />
+        <SidebarToggle handleToggleSidebar={context["handleToggleSidebar"]} maybeUser />
         <div className="flex flex-col md:flex-row gap-2 items-center justify-center">
           <RainbowKit.ConnectButton className="h-full" />
         </div>
       </header>
-      {switch data.maybeUser {
+      {switch maybeUser {
       | None =>
         <div className="flex flex-col items-center justify-center h-full gap-4">
           <p className="text-3xl text-white font-poppins">
