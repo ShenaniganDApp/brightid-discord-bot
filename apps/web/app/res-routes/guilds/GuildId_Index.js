@@ -7,7 +7,7 @@ import * as AdminButton from "../../components/AdminButton.js";
 import * as Caml_option from "../../../../../node_modules/rescript/lib/es6/caml_option.js";
 import * as Core__Array from "../../../../../node_modules/@rescript/core/src/Core__Array.js";
 import * as Core__Option from "../../../../../node_modules/@rescript/core/src/Core__Option.js";
-import * as Decode$Shared from "../../../../../node_modules/@brightidbot/shared/src/Decode.js";
+import * as Decode$Shared from "../../../node_modules/@brightidbot/shared/src/Decode.js";
 import * as DiscordServer from "../../DiscordServer.js";
 import * as SidebarToggle from "../../components/SidebarToggle.js";
 import * as WebUtils_Gist from "../../utils/WebUtils_Gist.js";

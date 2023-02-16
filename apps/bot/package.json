@@ -16,7 +16,6 @@
   "author": "youngkidwarrior",
   "license": "GPL-3.0-or-later",
   "devDependencies": {
-    "nodemon": "^2.0.20",
     "prettier": "^2.1.2"
   },
   "dependencies": {

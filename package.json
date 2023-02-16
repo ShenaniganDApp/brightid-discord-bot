@@ -2,7 +2,7 @@
   "name": "root",
   "private": true,
   "devDependencies": {
-    "patch-package": "^6.4.7"
+    "nodemon": "^2.0.20"
   },
   "dependencies": {
     "@rescript/core": "^0.1.0",
