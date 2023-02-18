@@ -314,6 +314,17 @@ function Root$default(props) {
                     }),
                 JsxRuntime.jsxs("body", {
                       children: [
+                        JsxRuntime.jsxs("div", {
+                              children: [
+                                JsxRuntime.jsx("div", {
+                                      className: "absolute w-72 h-72 rounded-full top-[20vh] left-[-20vw] md:left-[15vw]  bg-gradient-to-b from-[#EC6041]  to-[#2F69FE]"
+                                    }),
+                                JsxRuntime.jsx("div", {
+                                      className: "absolute w-72 h-72 rounded-full top-[70vh] left-[95vw] bg-gradient-to-b from-[#EC6041]  to-[#2F69FE] overflow-hidden"
+                                    })
+                              ],
+                              className: "blur-[100px] md:blur-[150px]"
+                            }),
                         match$3 !== undefined && match$4 !== undefined ? JsxRuntime.jsx(Wagmi.WagmiConfig, {
                                 client: Caml_option.valFromOption(match$3),
                                 children: JsxRuntime.jsx(Rainbowkit.RainbowKitProvider, {
@@ -336,7 +347,7 @@ function Root$default(props) {
                                                     }
                                                   })
                                             ],
-                                            className: "flex h-screen w-screen"
+                                            className: "flex h-screen w-screen z-10"
                                           })
                                     })
                               }) : JsxRuntime.jsx(JsxRuntime.Fragment, {}),
@@ -344,7 +355,7 @@ function Root$default(props) {
                         JsxRuntime.jsx(React$1.Scripts, {}),
                         process.env.NODE_ENV === "development" ? JsxRuntime.jsx(React$1.LiveReload, {}) : null
                       ],
-                      className: "h-screen w-screen bg-dark"
+                      className: "h-screen w-screen bg-dark relative overflow-x-hidden"
                     })
               ]
             });

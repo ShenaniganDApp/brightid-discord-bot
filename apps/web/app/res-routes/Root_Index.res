@@ -11,6 +11,29 @@ module StatusToolTip = {
   }
 }
 
+@get external innerWidth: Dom.window => int = "innerWidth"
+// let getWindowDimensions = () => {
+//   let innerWidth = window()->innerWidth
+//   let innerHeight = window->React.Dom.innerHeight
+
+//   {innerWidth, innerHeight}
+// }
+
+// let useWindowDimensions = () => {
+//   let (windowDimensions, setWindowDimensions) = React.useState(_ => getWindowDimensions())
+
+//   React.useEffect0(() => {
+//     let handleResize = () => {
+//       setWindowDimensions(getWindowDimensions())
+//     }
+
+//     window.addEventListener("resize", handleResize)
+//     Some(() => window.removeEventListener("resize", handleResize))
+//   }, [])
+
+//   windowDimensions
+// }
+
 module BrightIdToolTip = {
   @react.component
   let make = (~fetcher) => {
@@ -141,45 +164,27 @@ let default = () => {
     None
   }, [fetcher])
 
+  let discordLogoutButton = switch maybeUser {
+  | None => <> </>
+  | Some(_) => <DiscordLogoutButton label={`Log out of Discord`} />
+  }
+
   let unusedSponsorships = switch fetcher->Remix.Fetcher._type {
   | "done" =>
     switch fetcher->Remix.Fetcher.data->Nullable.toOption {
     | None => <p className="text-white"> {"N/A"->React.string} </p>
     | Some(data) =>
-      <p
-        className="text-3xl font-semibold text-transparent bg-clip-text bg-gradient-to-l from-brightid to-white">
-        {data["unusedSponsorships"]->Int.toString->React.string}
+      <p className="text-3xl md:text-6xl font-semibold text-brightBlue">
+        {data["unusedSponsorships"]->Belt.Int.toString->React.string}
       </p>
     }
   | "normalLoad" =>
-    <div className=" animate-pulse  ">
-      <div className="h-8 bg-gray-300 w-8 rounded-md " />
+    <div className=" animate-pulse py-2 ">
+      <div className="h-12 bg-gray-300 w-16 rounded-md " />
     </div>
   | _ =>
-    <div className=" animate-pulse  ">
-      <div className="h-8 bg-gray-300 w-8 rounded-md " />
-    </div>
-  }
-
-  let usedSponsorships = switch fetcher->Remix.Fetcher._type {
-  | "done" =>
-    switch fetcher->Remix.Fetcher.data->Nullable.toOption {
-    | None => <p className="text-white"> {"N/A"->React.string} </p>
-    | Some(data) =>
-      <p
-        className="text-3xl font-semibold text-transparent bg-clip-text bg-gradient-to-l from-brightid to-white">
-        {(data["unusedSponsorships"] - data["assignedSponsorships"])
-        ->Int.toString
-        ->React.string}
-      </p>
-    }
-  | "normalLoad" =>
-    <div className=" animate-pulse  ">
-      <div className="h-8 bg-gray-300 w-8 rounded-md " />
-    </div>
-  | _ =>
-    <div className=" animate-pulse  ">
-      <div className="h-8 bg-gray-300 w-8 rounded-md " />
+    <div className=" animate-pulse py-2">
+      <div className="h-12 bg-gray-300 w-16 rounded-md " />
     </div>
   }
 
@@ -188,72 +193,100 @@ let default = () => {
     switch fetcher->Remix.Fetcher.data->Nullable.toOption {
     | None => <p className="text-white"> {"N/A"->React.string} </p>
     | Some(data) =>
-      <p
-        className="text-3xl font-semibold text-transparent bg-clip-text bg-gradient-to-l from-brightid to-white">
-        {data["verificationCount"]->Int.toString->React.string}
+      <p className="text-3xl md:text-6xl font-semibold text-brightOrange">
+        {data["verificationCount"]->Belt.Int.toString->React.string}
       </p>
     }
   | "normalLoad" =>
-    <div className=" animate-pulse  ">
-      <div className="h-8 bg-gray-300 w-8 rounded-md " />
+    <div className=" animate-pulse py-2 ">
+      <div className="h-12 bg-gray-300 w-16 rounded-md " />
     </div>
   | _ =>
-    <div className=" animate-pulse  ">
-      <div className="h-8 bg-gray-300 w-8 rounded-md " />
+    <div className=" animate-pulse py-2 ">
+      <div className="h-12 bg-gray-300 w-16 rounded-md " />
     </div>
   }
 
-  let discordLogoutButton = switch maybeUser {
-  | None => <> </>
-  | Some(_) => <DiscordLogoutButton label={`Log out of Discord`} />
+  let usedSponsorships = switch fetcher->Remix.Fetcher._type {
+  | "done" =>
+    switch fetcher->Remix.Fetcher.data->Nullable.toOption {
+    | None => <p className="text-white"> {"N/A"->React.string} </p>
+    | Some(data) =>
+      <p className="text-3xl md:text-6xl font-semibold  text-brightGreen">
+        {(data["assignedSponsorships"] - data["unusedSponsorships"])
+        ->Belt.Int.toString
+        ->React.string}
+      </p>
+    }
+  | "normalLoad" =>
+    <div className=" animate-pulse  py-2">
+      <div className="h-12 bg-gray-300 w-16 rounded-md " />
+    </div>
+  | _ =>
+    <div className=" animate-pulse  py-2">
+      <div className="h-12 bg-gray-300 w-16 rounded-md " />
+    </div>
   }
 
   <div className="flex flex-col flex-1">
-    <section className="flex justify-center items-center flex-col w-full gap-4 relative">
-      <BrightIdToolTip fetcher />
-    </section>
-    <header className="flex flex-row justify-between md:justify-end m-4">
+    <header className="flex flex-row justify-between md:justify-end m-5">
       <SidebarToggle handleToggleSidebar={context["handleToggleSidebar"]} maybeUser />
       <div className="flex flex-col-reverse md:flex-row items-center justify-center gap-4 ">
         <div> {discordLogoutButton} </div>
         <RainbowKit.ConnectButton className="h-full" />
       </div>
     </header>
+    <section className="flex justify-center items-center flex-col w-full gap-4 relative">
+      <BrightIdToolTip fetcher />
+    </section>
     <div className="flex flex-1 w-full justify-center ">
-      <div className="flex flex-1 flex-col justify-around items-center text-center h-full">
-        <div>
-          <span
-            className="px-2 text-4xl md:text-6xl lg:text-8xl lg:leading-loose font-poppins font-extrabold text-transparent bg-[size:1000px_100%] bg-clip-text bg-gradient-to-l from-brightid to-white animate-textscroll ">
-            {"Unique Discord  "->React.string}
-          </span>
-          <p className=" text-slate-300 text-4xl md:text-6xl lg:text-8xl font-poppins font-bold">
-            {"Dashboard"->React.string}
+      <div className="flex flex-1 flex-col justify-around items-center h-full">
+        <div className="">
+          <div className="flex items-center">
+            <p className="relative pr-2 text-xl md:text-3xl text-white font-poppins font-bold">
+              {"BrightID  "->React.string}
+            </p>
+            <div className="h-0 border border-[#FFFFFF] bg-white flex-1" />
+          </div>
+          <p
+            className="relative py-3 text-3xl md:text-7xl font-pressStart font-extrabold text-white tracking-tight">
+            {"DISCORD BOT  "->React.string}
           </p>
+          <div className="flex items-center">
+            <div className="h-0 border border-[#FFFFFF] bg-white flex-1" />
+            <p className="relative text-white text-xl md:text-3xl font-poppins font-bold pl-2">
+              {"Command Center"->React.string}
+            </p>
+          </div>
         </div>
-        {maybeUser->Option.isSome ? <> </> : <InviteButton />}
-        <section
-          className="width-full flex flex-col md:flex-row justify-around items-center w-full py-2">
-          <div className="flex flex-col  rounded-xl justify-around items-center text-center ">
-            <div className="text-2xl font-bold text-white p-2">
-              {"Available Sponsorships"->React.string}
-            </div>
+        {maybeUser->Belt.Option.isSome ? <> </> : <InviteButton />}
+        <section className=" flex flex-col md:flex-row justify-around items-center w-full px-10 ">
+          <div
+            className="w-full flex-1 relative flex flex-col border border-brightBlue rounded-xl justify-center items-start bg-extraDark p-6 md:p-12">
+            <img src="/assets/gift_icon.svg" className="pb-4" />
             {unusedSponsorships}
+            <p className="text-white font-poppins text-xs font-semibold">
+              {"Available Sponsorships"->React.string}
+            </p>
           </div>
           <div
-            className="flex flex-col rounded-xl justify-around items-center text-center px-6 py-10">
-            <div className="text-2xl font-bold text-white p-2">
-              {"Verifications"->React.string}
-            </div>
+            className="w-full my-6 md:mx-10 md:my-0 flex-1 relative flex flex-col border border-brightOrange rounded-xl justify-center items-start   bg-extraDark p-6 md:p-12">
+            <img src="/assets/verified_icon.svg" className="pb-4" />
             {verificationCount}
+            <p className=" text-white font-poppins text-xs font-semibold">
+              {"Verifications"->React.string}
+            </p>
           </div>
-          <div className="flex flex-col rounded-xl justify-around items-center text-center">
-            <div className="text-2xl font-bold text-white p-2">
-              {"Total Used Sponsors"->React.string}
-            </div>
+          <div
+            className="w-full flex-1 relative flex flex-col border border-brightGreen rounded-xl justify-center items-start  bg-extraDark p-6 md:p-12">
+            <img src="/assets/unlock_icon.svg" className="pb-4" />
+            {usedSponsorships}
+            <p className=" text-white font-poppins text-xs font-semibold">
+              {"Used Sponsorships"->React.string}
+            </p>
             <div
-              className="text-2xl font-semibold text-transparent bg-clip-text bg-gradient-to-l from-brightid to-white">
-              {usedSponsorships}
-            </div>
+              className="text-2xl font-semibold text-transparent bg-clip-text bg-gradient-to-l from-brightid to-white"
+            />
           </div>
         </section>
         <section className="flex flex-col justify-center items-center pb-2 gap-8">

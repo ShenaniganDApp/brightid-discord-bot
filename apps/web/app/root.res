@@ -214,12 +214,20 @@ let default = () => {
       <Remix.Meta />
       <Remix.Links />
     </head>
-    <body className="h-screen w-screen bg-dark">
+    <body className="h-screen w-screen bg-dark relative overflow-x-hidden">
+      <div className="blur-[100px] md:blur-[150px]">
+        <div
+          className="absolute w-72 h-72 rounded-full top-[20vh] left-[-20vw] md:left-[15vw]  bg-gradient-to-b from-[#EC6041]  to-[#2F69FE]"
+        />
+        <div
+          className="absolute w-72 h-72 rounded-full top-[70vh] left-[95vw] bg-gradient-to-b from-[#EC6041]  to-[#2F69FE] overflow-hidden"
+        />
+      </div>
       {switch (state.wagmiClient, state.chains) {
       | (Some(client), Some(chains)) =>
         <Wagmi.WagmiConfig client={client}>
           <RainbowKitProvider chains={chains} theme={myTheme}>
-            <div className="flex h-screen w-screen">
+            <div className="flex h-screen w-screen z-10">
               {switch maybeUser {
               | None => <> </>
               | Some(_) =>

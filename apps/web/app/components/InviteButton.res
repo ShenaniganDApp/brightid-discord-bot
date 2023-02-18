@@ -5,7 +5,7 @@ let make = (~className: option<string>=?) => {
     target="_blank"
     className={className->Option.getWithDefault("")}>
     <button
-      className="p-3 bg-transparent border-2 border-brightid font-semibold rounded-3xl text-xl text-white">
+      className="py-1 px-1 bg-transparent border border-brightOrange font-semibold rounded-xl text-lg text-brightOrange">
       {`Add to Discord`->React.string}
     </button>
   </a>

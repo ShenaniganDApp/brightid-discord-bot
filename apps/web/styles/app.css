@@ -1,16 +1,22 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@100;400&family=Press+Start+2P&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+
 /* For Webkit-based browsers (Chrome, Safari and Opera) */
-.scrollbar-hide::-webkit-scrollbar {
+.pro-sidebar-layout::-webkit-scrollbar {
         display: none;
 }
 
 /* For IE, Edge and Firefox */
-.scrollbar-hide {
+.pro-sidebar-layout {
         -ms-overflow-style: none;
         /* IE and Edge */
         scrollbar-width: none;
         /* Firefox */
 }
+.pro-sidebar > .pro-sidebar-inner {
+        background: transparent !important;
+}
+

@@ -3,8 +3,8 @@
 import * as Uuid from "uuid";
 import * as React from "react";
 import * as AuthServer from "../AuthServer.js";
+import * as Belt_Option from "../../../../node_modules/rescript/lib/es6/belt_Option.js";
 import * as Caml_option from "../../../../node_modules/rescript/lib/es6/caml_option.js";
-import * as Core__Option from "../../../../node_modules/@rescript/core/src/Core__Option.js";
 import * as InviteButton from "../components/InviteButton.js";
 import * as Brightid_sdk from "brightid_sdk";
 import * as QrcodeReact from "qrcode.react";
@@ -214,6 +214,9 @@ function Root_Index$default(props) {
           }
           
         }), [fetcher]);
+  var discordLogoutButton = maybeUser !== undefined ? JsxRuntime.jsx(DiscordLogoutButton.make, {
+          label: "Log out of Discord"
+        }) : JsxRuntime.jsx(JsxRuntime.Fragment, {});
   var match$1 = fetcher.type;
   var unusedSponsorships;
   switch (match$1) {
@@ -223,95 +226,86 @@ function Root_Index$default(props) {
                 children: "N/A",
                 className: "text-white"
               }) : JsxRuntime.jsx("p", {
-                children: data.unusedSponsorships.toString(),
-                className: "text-3xl font-semibold text-transparent bg-clip-text bg-gradient-to-l from-brightid to-white"
+                children: String(data.unusedSponsorships),
+                className: "text-3xl md:text-6xl font-semibold text-brightBlue"
               });
         break;
     case "normalLoad" :
         unusedSponsorships = JsxRuntime.jsx("div", {
               children: JsxRuntime.jsx("div", {
-                    className: "h-8 bg-gray-300 w-8 rounded-md "
+                    className: "h-12 bg-gray-300 w-16 rounded-md "
                   }),
-              className: " animate-pulse  "
+              className: " animate-pulse py-2 "
             });
         break;
     default:
       unusedSponsorships = JsxRuntime.jsx("div", {
             children: JsxRuntime.jsx("div", {
-                  className: "h-8 bg-gray-300 w-8 rounded-md "
+                  className: "h-12 bg-gray-300 w-16 rounded-md "
                 }),
-            className: " animate-pulse  "
+            className: " animate-pulse py-2"
           });
   }
   var match$2 = fetcher.type;
-  var usedSponsorships;
+  var verificationCount;
   switch (match$2) {
     case "done" :
         var data$1 = fetcher.data;
-        usedSponsorships = (data$1 == null) ? JsxRuntime.jsx("p", {
+        verificationCount = (data$1 == null) ? JsxRuntime.jsx("p", {
                 children: "N/A",
                 className: "text-white"
               }) : JsxRuntime.jsx("p", {
-                children: (data$1.unusedSponsorships - data$1.assignedSponsorships | 0).toString(),
-                className: "text-3xl font-semibold text-transparent bg-clip-text bg-gradient-to-l from-brightid to-white"
-              });
-        break;
-    case "normalLoad" :
-        usedSponsorships = JsxRuntime.jsx("div", {
-              children: JsxRuntime.jsx("div", {
-                    className: "h-8 bg-gray-300 w-8 rounded-md "
-                  }),
-              className: " animate-pulse  "
-            });
-        break;
-    default:
-      usedSponsorships = JsxRuntime.jsx("div", {
-            children: JsxRuntime.jsx("div", {
-                  className: "h-8 bg-gray-300 w-8 rounded-md "
-                }),
-            className: " animate-pulse  "
-          });
-  }
-  var match$3 = fetcher.type;
-  var verificationCount;
-  switch (match$3) {
-    case "done" :
-        var data$2 = fetcher.data;
-        verificationCount = (data$2 == null) ? JsxRuntime.jsx("p", {
-                children: "N/A",
-                className: "text-white"
-              }) : JsxRuntime.jsx("p", {
-                children: data$2.verificationCount.toString(),
-                className: "text-3xl font-semibold text-transparent bg-clip-text bg-gradient-to-l from-brightid to-white"
+                children: String(data$1.verificationCount),
+                className: "text-3xl md:text-6xl font-semibold text-brightOrange"
               });
         break;
     case "normalLoad" :
         verificationCount = JsxRuntime.jsx("div", {
               children: JsxRuntime.jsx("div", {
-                    className: "h-8 bg-gray-300 w-8 rounded-md "
+                    className: "h-12 bg-gray-300 w-16 rounded-md "
                   }),
-              className: " animate-pulse  "
+              className: " animate-pulse py-2 "
             });
         break;
     default:
       verificationCount = JsxRuntime.jsx("div", {
             children: JsxRuntime.jsx("div", {
-                  className: "h-8 bg-gray-300 w-8 rounded-md "
+                  className: "h-12 bg-gray-300 w-16 rounded-md "
                 }),
-            className: " animate-pulse  "
+            className: " animate-pulse py-2 "
           });
   }
-  var discordLogoutButton = maybeUser !== undefined ? JsxRuntime.jsx(DiscordLogoutButton.make, {
-          label: "Log out of Discord"
-        }) : JsxRuntime.jsx(JsxRuntime.Fragment, {});
+  var match$3 = fetcher.type;
+  var usedSponsorships;
+  switch (match$3) {
+    case "done" :
+        var data$2 = fetcher.data;
+        usedSponsorships = (data$2 == null) ? JsxRuntime.jsx("p", {
+                children: "N/A",
+                className: "text-white"
+              }) : JsxRuntime.jsx("p", {
+                children: String(data$2.assignedSponsorships - data$2.unusedSponsorships | 0),
+                className: "text-3xl md:text-6xl font-semibold  text-brightGreen"
+              });
+        break;
+    case "normalLoad" :
+        usedSponsorships = JsxRuntime.jsx("div", {
+              children: JsxRuntime.jsx("div", {
+                    className: "h-12 bg-gray-300 w-16 rounded-md "
+                  }),
+              className: " animate-pulse  py-2"
+            });
+        break;
+    default:
+      usedSponsorships = JsxRuntime.jsx("div", {
+            children: JsxRuntime.jsx("div", {
+                  className: "h-12 bg-gray-300 w-16 rounded-md "
+                }),
+            className: " animate-pulse  py-2"
+          });
+  }
   return JsxRuntime.jsxs("div", {
               children: [
-                JsxRuntime.jsx("section", {
-                      children: JsxRuntime.jsx(Root_Index$BrightIdToolTip, {
-                            fetcher: fetcher
-                          }),
-                      className: "flex justify-center items-center flex-col w-full gap-4 relative"
-                    }),
                 JsxRuntime.jsxs("header", {
                       children: [
                         JsxRuntime.jsx(SidebarToggle.make, {
@@ -330,61 +324,100 @@ function Root_Index$default(props) {
                               className: "flex flex-col-reverse md:flex-row items-center justify-center gap-4 "
                             })
                       ],
-                      className: "flex flex-row justify-between md:justify-end m-4"
+                      className: "flex flex-row justify-between md:justify-end m-5"
+                    }),
+                JsxRuntime.jsx("section", {
+                      children: JsxRuntime.jsx(Root_Index$BrightIdToolTip, {
+                            fetcher: fetcher
+                          }),
+                      className: "flex justify-center items-center flex-col w-full gap-4 relative"
                     }),
                 JsxRuntime.jsx("div", {
                       children: JsxRuntime.jsxs("div", {
                             children: [
                               JsxRuntime.jsxs("div", {
                                     children: [
-                                      JsxRuntime.jsx("span", {
-                                            children: "Unique Discord  ",
-                                            className: "px-2 text-4xl md:text-6xl lg:text-8xl lg:leading-loose font-poppins font-extrabold text-transparent bg-[size:1000px_100%] bg-clip-text bg-gradient-to-l from-brightid to-white animate-textscroll "
+                                      JsxRuntime.jsxs("div", {
+                                            children: [
+                                              JsxRuntime.jsx("p", {
+                                                    children: "BrightID  ",
+                                                    className: "relative pr-2 text-xl md:text-3xl text-white font-poppins font-bold"
+                                                  }),
+                                              JsxRuntime.jsx("div", {
+                                                    className: "h-0 border border-[#FFFFFF] bg-white flex-1"
+                                                  })
+                                            ],
+                                            className: "flex items-center"
                                           }),
                                       JsxRuntime.jsx("p", {
-                                            children: "Dashboard",
-                                            className: " text-slate-300 text-4xl md:text-6xl lg:text-8xl font-poppins font-bold"
+                                            children: "DISCORD BOT  ",
+                                            className: "relative py-3 text-3xl md:text-7xl font-pressStart font-extrabold text-white tracking-tight"
+                                          }),
+                                      JsxRuntime.jsxs("div", {
+                                            children: [
+                                              JsxRuntime.jsx("div", {
+                                                    className: "h-0 border border-[#FFFFFF] bg-white flex-1"
+                                                  }),
+                                              JsxRuntime.jsx("p", {
+                                                    children: "Command Center",
+                                                    className: "relative text-white text-xl md:text-3xl font-poppins font-bold pl-2"
+                                                  })
+                                            ],
+                                            className: "flex items-center"
                                           })
-                                    ]
+                                    ],
+                                    className: ""
                                   }),
-                              Core__Option.isSome(maybeUser) ? JsxRuntime.jsx(JsxRuntime.Fragment, {}) : JsxRuntime.jsx(InviteButton.make, {}),
+                              Belt_Option.isSome(maybeUser) ? JsxRuntime.jsx(JsxRuntime.Fragment, {}) : JsxRuntime.jsx(InviteButton.make, {}),
                               JsxRuntime.jsxs("section", {
                                     children: [
                                       JsxRuntime.jsxs("div", {
                                             children: [
-                                              JsxRuntime.jsx("div", {
+                                              JsxRuntime.jsx("img", {
+                                                    className: "pb-4",
+                                                    src: "/assets/gift_icon.svg"
+                                                  }),
+                                              unusedSponsorships,
+                                              JsxRuntime.jsx("p", {
                                                     children: "Available Sponsorships",
-                                                    className: "text-2xl font-bold text-white p-2"
-                                                  }),
-                                              unusedSponsorships
+                                                    className: "text-white font-poppins text-xs font-semibold"
+                                                  })
                                             ],
-                                            className: "flex flex-col  rounded-xl justify-around items-center text-center "
+                                            className: "w-full flex-1 relative flex flex-col border border-brightBlue rounded-xl justify-center items-start bg-extraDark p-6 md:p-12"
                                           }),
                                       JsxRuntime.jsxs("div", {
                                             children: [
-                                              JsxRuntime.jsx("div", {
+                                              JsxRuntime.jsx("img", {
+                                                    className: "pb-4",
+                                                    src: "/assets/verified_icon.svg"
+                                                  }),
+                                              verificationCount,
+                                              JsxRuntime.jsx("p", {
                                                     children: "Verifications",
-                                                    className: "text-2xl font-bold text-white p-2"
-                                                  }),
-                                              verificationCount
+                                                    className: " text-white font-poppins text-xs font-semibold"
+                                                  })
                                             ],
-                                            className: "flex flex-col rounded-xl justify-around items-center text-center px-6 py-10"
+                                            className: "w-full my-6 md:mx-10 md:my-0 flex-1 relative flex flex-col border border-brightOrange rounded-xl justify-center items-start   bg-extraDark p-6 md:p-12"
                                           }),
                                       JsxRuntime.jsxs("div", {
                                             children: [
-                                              JsxRuntime.jsx("div", {
-                                                    children: "Total Used Sponsors",
-                                                    className: "text-2xl font-bold text-white p-2"
+                                              JsxRuntime.jsx("img", {
+                                                    className: "pb-4",
+                                                    src: "/assets/unlock_icon.svg"
+                                                  }),
+                                              usedSponsorships,
+                                              JsxRuntime.jsx("p", {
+                                                    children: "Used Sponsorships",
+                                                    className: " text-white font-poppins text-xs font-semibold"
                                                   }),
                                               JsxRuntime.jsx("div", {
-                                                    children: usedSponsorships,
                                                     className: "text-2xl font-semibold text-transparent bg-clip-text bg-gradient-to-l from-brightid to-white"
                                                   })
                                             ],
-                                            className: "flex flex-col rounded-xl justify-around items-center text-center"
+                                            className: "w-full flex-1 relative flex flex-col border border-brightGreen rounded-xl justify-center items-start  bg-extraDark p-6 md:p-12"
                                           })
                                     ],
-                                    className: "width-full flex flex-col md:flex-row justify-around items-center w-full py-2"
+                                    className: " flex flex-col md:flex-row justify-around items-center w-full px-10 "
                                   }),
                               JsxRuntime.jsx("section", {
                                     children: JsxRuntime.jsx(Root_Index$BrightIdVerificationActions, {
@@ -395,7 +428,7 @@ function Root_Index$default(props) {
                                     className: "flex flex-col justify-center items-center pb-2 gap-8"
                                   })
                             ],
-                            className: "flex flex-1 flex-col justify-around items-center text-center h-full"
+                            className: "flex flex-1 flex-col justify-around items-center h-full"
                           }),
                       className: "flex flex-1 w-full justify-center "
                     })

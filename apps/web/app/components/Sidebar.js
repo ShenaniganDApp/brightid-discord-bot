@@ -30,7 +30,7 @@ function Sidebar(props) {
                                           to: "/guilds/" + guild.id + "",
                                           children: guild.name
                                         })),
-                                className: "bg-extraDark",
+                                className: "bg-extraDark hover:bg-dark",
                                 icon: Caml_option.some(JsxRuntime.jsx("img", {
                                           className: " bg-extraDark rounded-lg border-1 border-white",
                                           src: icon(guild)
@@ -90,31 +90,36 @@ function Sidebar(props) {
   return JsxRuntime.jsxs(ReactProSidebar.ProSidebar, {
               children: [
                 JsxRuntime.jsx(ReactProSidebar.SidebarHeader, {
-                      children: Caml_option.some(JsxRuntime.jsx(InviteButton.make, {})),
-                      className: "p-2 flex justify-around items-center top-0 sticky bg-dark z-10 scrollbar-hide"
+                      children: Caml_option.some(JsxRuntime.jsx("img", {
+                                className: "w-40",
+                                src: "/assets/brightid_reversed.svg"
+                              })),
+                      className: "flex top-0 sticky bg-inherit z-10 justify-center items-center border-b border-b-black backdrop-blur-3xl "
                     }),
                 JsxRuntime.jsxs(ReactProSidebar.SidebarContent, {
                       children: [
                         JsxRuntime.jsx(ReactProSidebar.Menu, {
                               iconShape: "square"
-                            }, (0).toString()),
+                            }, String(0)),
                         sidebarElements
                       ],
-                      className: "scrollbar-hide"
+                      className: " bg-extraDark z-[-1]"
                     }),
                 JsxRuntime.jsx(ReactProSidebar.SidebarFooter, {
-                      children: Caml_option.some(JsxRuntime.jsx(React.Link, {
-                                to: "",
-                                children: JsxRuntime.jsx(ReactProSidebar.MenuItem, {
-                                      children: Caml_option.some(JsxRuntime.jsx("img", {
-                                                src: "/assets/brightid_reversed.svg"
-                                              }))
-                                    })
+                      children: Caml_option.some(JsxRuntime.jsxs("div", {
+                                children: [
+                                  JsxRuntime.jsx("p", {
+                                        children: "Your server is not on the list?",
+                                        className: "text-white font-poppins"
+                                      }),
+                                  JsxRuntime.jsx(InviteButton.make, {})
+                                ],
+                                className: "flex flex-col justify-around items-center py-8"
                               })),
-                      className: "bg-extraDark bottom-0 sticky scrollbar-hide list-none"
+                      className: "bg-dark bottom-0 sticky list-none"
                     })
               ],
-              className: "bg-dark scrollbar-hide",
+              className: "bg-transparent",
               breakPoint: "md",
               onToggle: props.handleIsSidebarVisible,
               toggled: props.isSidebarVisible
