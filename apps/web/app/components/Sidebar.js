@@ -90,9 +90,12 @@ function Sidebar(props) {
   return JsxRuntime.jsxs(ReactProSidebar.ProSidebar, {
               children: [
                 JsxRuntime.jsx(ReactProSidebar.SidebarHeader, {
-                      children: Caml_option.some(JsxRuntime.jsx("img", {
-                                className: "w-40",
-                                src: "/assets/brightid_reversed.svg"
+                      children: Caml_option.some(JsxRuntime.jsx(React.Link, {
+                                to: "",
+                                children: JsxRuntime.jsx("img", {
+                                      className: "w-40",
+                                      src: "/assets/brightid_reversed.svg"
+                                    })
                               })),
                       className: "flex top-0 sticky bg-inherit z-10 justify-center items-center border-b border-b-black backdrop-blur-3xl "
                     }),
@@ -114,7 +117,7 @@ function Sidebar(props) {
                                       }),
                                   JsxRuntime.jsx(InviteButton.make, {})
                                 ],
-                                className: "flex flex-col justify-around items-center py-8"
+                                className: " flex flex-col justify-around items-center py-8 gap-3"
                               })),
                       className: "bg-dark bottom-0 sticky list-none"
                     })

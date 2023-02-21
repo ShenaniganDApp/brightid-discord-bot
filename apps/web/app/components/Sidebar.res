@@ -81,14 +81,16 @@ let make = (~isSidebarVisible, ~handleIsSidebarVisible, ~guilds, ~loadingGuilds)
     toggled={isSidebarVisible}>
     <SidebarHeader
       className="flex top-0 sticky bg-inherit z-10 justify-center items-center border-b border-b-black backdrop-blur-3xl ">
-      <img className="w-40" src={"/assets/brightid_reversed.svg"} />
+      <Remix.Link to="">
+        <img className="w-40" src={"/assets/brightid_reversed.svg"} />
+      </Remix.Link>
     </SidebarHeader>
     <SidebarContent className=" bg-extraDark z-[-1]">
       <Menu iconShape="square" key={0->Belt.Int.toString} />
       {sidebarElements}
     </SidebarContent>
     <SidebarFooter className="bg-dark bottom-0 sticky list-none">
-      <div className="flex flex-col justify-around items-center py-8">
+      <div className=" flex flex-col justify-around items-center py-8 gap-3">
         <p className="text-white font-poppins">
           {"Your server is not on the list?"->React.string}
         </p>

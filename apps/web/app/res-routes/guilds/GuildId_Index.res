@@ -178,7 +178,7 @@ let default = () => {
     <ReactHotToast.Toaster />
     <div className="flex flex-col h-screen">
       <header className="flex flex-row justify-between md:justify-end items-center m-4">
-        <SidebarToggle handleToggleSidebar={context["handleToggleSidebar"]} maybeUser />
+        <SidebarToggle handleIsSidebarVisible={context["handleIsSidebarVisible"]} maybeUser />
         <div className="flex flex-col md:flex-row gap-2 items-center justify-center">
           <RainbowKit.ConnectButton className="h-full" />
         </div>

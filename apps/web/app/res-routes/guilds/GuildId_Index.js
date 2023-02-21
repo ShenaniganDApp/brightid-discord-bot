@@ -221,7 +221,7 @@ function $$default(param) {
                         JsxRuntime.jsxs("header", {
                               children: [
                                 JsxRuntime.jsx(SidebarToggle.make, {
-                                      handleToggleSidebar: context.handleToggleSidebar,
+                                      handleIsSidebarVisible: context.handleIsSidebarVisible,
                                       maybeUser: maybeUser
                                     }),
                                 JsxRuntime.jsx("div", {

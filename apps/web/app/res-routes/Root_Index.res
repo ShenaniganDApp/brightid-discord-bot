@@ -4,39 +4,48 @@ module QRCodeSvg = {
 }
 module StatusToolTip = {
   @react.component
-  let make = (~statusMessage, ~color) => {
-    <div className={`${color} w-full text-center py-1`}>
-      <p className="text-xl font-semibold text-white"> {statusMessage->React.string} </p>
+  let make = (~className: option<string>=?, ~statusMessage) => {
+    <div className={className->Option.getWithDefault("")}>
+      <p className="text-xl font-semibold "> {statusMessage->React.string} </p>
     </div>
   }
 }
 
 @get external innerWidth: Dom.window => int = "innerWidth"
-// let getWindowDimensions = () => {
-//   let innerWidth = window()->innerWidth
-//   let innerHeight = window->React.Dom.innerHeight
+@get external innerHeight: Dom.window => int = "innerHeight"
+@send
+external addEventListener: (Dom.window, string, Dom.event => unit) => unit = "addEventListener"
+@send
+external removeEventListener: (Dom.window, string, Dom.event => unit) => unit =
+  "removeEventListener"
 
-//   {innerWidth, innerHeight}
-// }
+type windowDimensions = {width: int, height: int}
+let getWindowDimensions = () => {
+  let innerWidth = window->innerWidth
+  let innerHeight = window->innerHeight
 
-// let useWindowDimensions = () => {
-//   let (windowDimensions, setWindowDimensions) = React.useState(_ => getWindowDimensions())
+  {width: innerWidth, height: innerHeight}
+}
 
-//   React.useEffect0(() => {
-//     let handleResize = () => {
-//       setWindowDimensions(getWindowDimensions())
-//     }
+let useWindowDimensions = () => {
+  let (windowDimensions, setWindowDimensions) = React.useState(_ => {width: 0, height: 0})
 
-//     window.addEventListener("resize", handleResize)
-//     Some(() => window.removeEventListener("resize", handleResize))
-//   }, [])
+  React.useEffect0(() => {
+    setWindowDimensions(_ => getWindowDimensions())
+    let handleResize = _ => {
+      setWindowDimensions(_ => getWindowDimensions())
+    }
 
-//   windowDimensions
-// }
+    window->addEventListener("resize", handleResize)
+    Some(() => window->removeEventListener("resize", handleResize))
+  })
+
+  windowDimensions
+}
 
 module BrightIdToolTip = {
   @react.component
-  let make = (~fetcher) => {
+  let make = (~fetcher, ~maybeUser) => {
     switch fetcher->Remix.Fetcher._type {
     | "done" =>
       switch fetcher->Remix.Fetcher.data->Nullable.toOption {
@@ -47,24 +56,40 @@ module BrightIdToolTip = {
         | Some(_) =>
           switch data["verifyStatus"] {
           | Types.Unique =>
-            <StatusToolTip color="bg-green-600" statusMessage="Verified with BrightID" />
+            <StatusToolTip
+              className="w-full text-center py-1 bg-green-600 text-white"
+              statusMessage="Verified with BrightID"
+            />
           | Types.NotVerified =>
-            <StatusToolTip color="bg-red-600" statusMessage="You are not Verified" />
+            <StatusToolTip
+              className="w-full text-center py-1 bg-red-600 text-white"
+              statusMessage="You are not Verified"
+            />
           | Types.NotSponsored =>
-            <StatusToolTip color="bg-red-600" statusMessage="You are not Sponsored" />
+            <StatusToolTip
+              className="w-full text-center py-1 bg-red-600 text-white"
+              statusMessage="You are not Sponsored"
+            />
           | Types.NotLinked =>
             <StatusToolTip
-              color="bg-red-600" statusMessage="You have not linked BrightId to Discord"
+              className="w-full text-center py-1 bg-red-600 text-white"
+              statusMessage="You have not linked BrightId to Discord"
             />
           | Types.Unknown =>
             <StatusToolTip
-              color="bg-red-600"
+              className="w-full text-center py-1 bg-red-600 text-white"
               statusMessage="Something went wrong when checking your BrightId status"
             />
           }
         }
       }
-    | "normalLoad" => <> </>
+    | "normalLoad" =>
+      Option.isSome(maybeUser)
+        ? <StatusToolTip
+            className="w-full text-center py-1 bg-gray-400 animate-pulse text-black"
+            statusMessage="Loading BrightID Status..."
+          />
+        : <> </>
     | _ => <> </>
     }
   }
@@ -155,6 +180,7 @@ let default = () => {
   let context = Remix.useOutletContext()
   let fetcher = Remix.useFetcher()
   let {maybeUser, maybeDeeplink} = Remix.useLoaderData()
+  let {width} = useWindowDimensions()
 
   React.useEffect1(() => {
     open Remix
@@ -174,7 +200,7 @@ let default = () => {
     switch fetcher->Remix.Fetcher.data->Nullable.toOption {
     | None => <p className="text-white"> {"N/A"->React.string} </p>
     | Some(data) =>
-      <p className="text-3xl md:text-6xl font-semibold text-brightBlue">
+      <p className="text-3xl lg:text-5xl font-semibold text-brightBlue">
         {data["unusedSponsorships"]->Belt.Int.toString->React.string}
       </p>
     }
@@ -193,7 +219,7 @@ let default = () => {
     switch fetcher->Remix.Fetcher.data->Nullable.toOption {
     | None => <p className="text-white"> {"N/A"->React.string} </p>
     | Some(data) =>
-      <p className="text-3xl md:text-6xl font-semibold text-brightOrange">
+      <p className="text-3xl lg:text-5xl font-semibold text-brightOrange">
         {data["verificationCount"]->Belt.Int.toString->React.string}
       </p>
     }
@@ -212,7 +238,7 @@ let default = () => {
     switch fetcher->Remix.Fetcher.data->Nullable.toOption {
     | None => <p className="text-white"> {"N/A"->React.string} </p>
     | Some(data) =>
-      <p className="text-3xl md:text-6xl font-semibold  text-brightGreen">
+      <p className="text-3xl lg:text-5xl font-semibold  text-brightGreen">
         {(data["assignedSponsorships"] - data["unusedSponsorships"])
         ->Belt.Int.toString
         ->React.string}
@@ -229,59 +255,70 @@ let default = () => {
   }
 
   <div className="flex flex-col flex-1">
+    {width < 768
+      ? <section className="flex justify-center items-center flex-col w-full gap-4 relative">
+          <BrightIdToolTip fetcher maybeUser />
+        </section>
+      : <> </>}
     <header className="flex flex-row justify-between md:justify-end m-5">
-      <SidebarToggle handleToggleSidebar={context["handleToggleSidebar"]} maybeUser />
+      <SidebarToggle handleIsSidebarVisible={context["handleIsSidebarVisible"]} maybeUser />
       <div className="flex flex-col-reverse md:flex-row items-center justify-center gap-4 ">
         <div> {discordLogoutButton} </div>
-        <RainbowKit.ConnectButton className="h-full" />
+        {Option.isSome(maybeUser)
+          ? <RainbowKit.ConnectButton className="h-full" />
+          : <InviteButton />}
       </div>
     </header>
-    <section className="flex justify-center items-center flex-col w-full gap-4 relative">
-      <BrightIdToolTip fetcher />
-    </section>
+    {width > 768
+      ? <section className="flex justify-center items-center flex-col w-full gap-4 relative">
+          <BrightIdToolTip fetcher maybeUser />
+        </section>
+      : <> </>}
     <div className="flex flex-1 w-full justify-center ">
       <div className="flex flex-1 flex-col justify-around items-center h-full">
-        <div className="">
+        <div className="pt-2 ">
           <div className="flex items-center">
-            <p className="relative pr-2 text-xl md:text-3xl text-white font-poppins font-bold">
+            <p
+              className="relative pr-2 text-xl md:text-2xl lg:text-3xl text-white font-poppins font-bold">
               {"BrightID  "->React.string}
             </p>
             <div className="h-0 border border-[#FFFFFF] bg-white flex-1" />
           </div>
           <p
-            className="relative py-3 text-3xl md:text-7xl font-pressStart font-extrabold text-white tracking-tight">
+            className="relative py-3 text-2xl sm:3xl md:text-4xl lg:text-5xl xl:text-6xl font-pressStart font-extrabold text-white tracking-tight">
             {"DISCORD BOT  "->React.string}
           </p>
           <div className="flex items-center">
             <div className="h-0 border border-[#FFFFFF] bg-white flex-1" />
-            <p className="relative text-white text-xl md:text-3xl font-poppins font-bold pl-2">
+            <p
+              className="relative text-white text-xl md:text-2xl lg:text-3xl font-poppins font-bold pl-2">
               {"Command Center"->React.string}
             </p>
           </div>
         </div>
-        {maybeUser->Belt.Option.isSome ? <> </> : <InviteButton />}
-        <section className=" flex flex-col md:flex-row justify-around items-center w-full px-10 ">
+        <section
+          className="py-4 gap-5 md:gap-0 lg:w-full max-w-5xl flex flex-col lg:flex-row  justify-around items-center">
           <div
-            className="w-full flex-1 relative flex flex-col border border-brightBlue rounded-xl justify-center items-start bg-extraDark p-6 md:p-12">
+            className="lg:min-w-[237px] relative flex flex-col border border-brightBlue rounded-xl justify-center items-start bg-extraDark p-6 lg:p-12 self-stretch">
             <img src="/assets/gift_icon.svg" className="pb-4" />
             {unusedSponsorships}
-            <p className="text-white font-poppins text-xs font-semibold">
+            <p className="text-white font-poppins text-xs font-semibold p-1">
               {"Available Sponsorships"->React.string}
             </p>
           </div>
           <div
-            className="w-full my-6 md:mx-10 md:my-0 flex-1 relative flex flex-col border border-brightOrange rounded-xl justify-center items-start   bg-extraDark p-6 md:p-12">
+            className="lg:min-w-[237px] relative flex flex-col border border-brightOrange rounded-xl justify-center items-start   bg-extraDark p-6 lg:p-12 self-stretch">
             <img src="/assets/verified_icon.svg" className="pb-4" />
             {verificationCount}
-            <p className=" text-white font-poppins text-xs font-semibold">
+            <p className=" text-white font-poppins text-xs font-semibold p-1">
               {"Verifications"->React.string}
             </p>
           </div>
           <div
-            className="w-full flex-1 relative flex flex-col border border-brightGreen rounded-xl justify-center items-start  bg-extraDark p-6 md:p-12">
+            className="lg:min-w-[237px]  relative flex flex-col border border-brightGreen rounded-xl justify-center items-start  bg-extraDark p-6 lg:p-12 self-stretch">
             <img src="/assets/unlock_icon.svg" className="pb-4" />
             {usedSponsorships}
-            <p className=" text-white font-poppins text-xs font-semibold">
+            <p className=" text-white font-poppins text-xs font-semibold p-1">
               {"Used Sponsorships"->React.string}
             </p>
             <div
