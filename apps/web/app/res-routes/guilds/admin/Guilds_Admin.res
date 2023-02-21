@@ -20,12 +20,12 @@ let loader: Remix.loaderFunction<loaderData> = ({request, params}) => {
     ~token=Remix.process["env"]["GITHUB_ACCESS_TOKEN"],
   )
 
-  let guildId = params->Js.Dict.get("guildId")->Belt.Option.getWithDefault("")
+  let guildId = params->Dict.get("guildId")->Option.getWithDefault("")
 
   AuthServer.authenticator
   ->RemixAuth.Authenticator.isAuthenticated(request)
   ->then(maybeUser => {
-    switch maybeUser->Js.Nullable.toOption {
+    switch maybeUser->Nullable.toOption {
     | None =>
       Remix.redirect(`/guilds/${guildId}`)->ignore
       {
@@ -37,14 +37,14 @@ let loader: Remix.loaderFunction<loaderData> = ({request, params}) => {
     | Some(user) =>
       open Shared.Decode
       WebUtils_Gist.ReadGist.content(~config, ~decoder=Decode_Gist.brightIdGuilds)->then(guilds => {
-        let maybeBrightIdGuild = guilds->Js.Dict.get(guildId)
+        let maybeBrightIdGuild = guilds->Dict.get(guildId)
         fetchDiscordGuildFromId(~guildId)->then(
           maybeDiscordGuild => {
-            let maybeDiscordGuild = maybeDiscordGuild->Js.Nullable.toOption
+            let maybeDiscordGuild = maybeDiscordGuild->Nullable.toOption
             let userId = user->RemixAuth.User.getProfile->RemixAuth.User.getId
             fetchGuildMemberFromId(~guildId, ~userId)->then(
               guildMember => {
-                let memberRoles = switch guildMember->Js.Nullable.toOption {
+                let memberRoles = switch guildMember->Nullable.toOption {
                 | None => []
                 | Some(guildMember) => guildMember.roles
                 }
@@ -74,9 +74,9 @@ let loader: Remix.loaderFunction<loaderData> = ({request, params}) => {
 }
 
 let truncateAddress = address =>
-  address->Js.String2.slice(~from=0, ~to_=6) ++
+  address->String.slice(~start=0, ~end=6) ++
   "..." ++
-  address->Js.String2.slice(~from=-5, ~to_=Js.String.length(address))
+  address->String.slice(~start=-5, ~end=String.length(address))
 
 type state = {
   role: option<string>,
@@ -110,6 +110,7 @@ let default = () => {
   open Remix
   let context = useOutletContext()
   let {maybeBrightIdGuild, isAdmin, maybeDiscordGuild, maybeUser} = useLoaderData()
+
   let {guildId} = useParams()
   let account = Wagmi.useAccount()
 
@@ -155,20 +156,20 @@ let default = () => {
   }
 
   let onRoleChanged = e => {
-    let value = ReactEvent.Form.currentTarget(e)["value"]->Js.Nullable.toOption
+    let value = ReactEvent.Form.currentTarget(e)["value"]->Nullable.toOption
     value->RoleChanged->dispatch
   }
 
   let onInviteLinkChanged = e => {
-    let value = ReactEvent.Form.currentTarget(e)["value"]->Js.Nullable.toOption
+    let value = ReactEvent.Form.currentTarget(e)["value"]->Nullable.toOption
     value->InviteLinkChanged->dispatch
   }
 
   // let onSponsorshipAddressChanged = e => {
-  //   let value = ReactEvent.Form.currentTarget(e)["value"]->Js.Nullable.toOption
-  //   switch brightIdGuild->Js.Nullable.toOption {
+  //   let value = ReactEvent.Form.currentTarget(e)["value"]->Nullable.toOption
+  //   switch brightIdGuild->Nullable.toOption {
   //   | Some({sponsorshipAddress}) =>
-  //     switch sponsorshipAddress->Js.Nullable.toOption === value {
+  //     switch sponsorshipAddress->Nullable.toOption === value {
   //     | true => None->SponsorshipAddressChanged->dispatch
   //     | false => value->SponsorshipAddressChanged->dispatch
   //     }
@@ -188,7 +189,7 @@ let default = () => {
     | Some(value) => !(value === "")
     }
 
-  let hasChangesToSave = Belt.Array.some(
+  let hasChangesToSave = Array.some(
     [state.role, state.inviteLink, state.sponsorshipAddress],
     isSomeOrString,
   )
@@ -234,8 +235,8 @@ let default = () => {
                         className="text-white p-2 rounded bg-dark cursor-not-allowed"
                         type_="text"
                         name="role"
-                        placeholder={brightIdGuild.role->Belt.Option.getWithDefault("No Role Name")}
-                        value={state.role->Belt.Option.getWithDefault("")}
+                        placeholder={brightIdGuild.role->Option.getWithDefault("No Role Name")}
+                        value={state.role->Option.getWithDefault("")}
                         onChange={onRoleChanged}
                         readOnly={true}
                       />
@@ -246,10 +247,10 @@ let default = () => {
                         className="text-white p-2 bg-extraDark outline-none"
                         name="inviteLink"
                         type_="text"
-                        placeholder={brightIdGuild.inviteLink->Belt.Option.getWithDefault(
+                        placeholder={brightIdGuild.inviteLink->Option.getWithDefault(
                           "No Invite Link",
                         )}
-                        value={state.inviteLink->Belt.Option.getWithDefault("")}
+                        value={state.inviteLink->Option.getWithDefault("")}
                         onChange=onInviteLinkChanged
                       />
                     </label>
@@ -261,9 +262,9 @@ let default = () => {
                           name="sponsorshipAddress"
                           type_="text"
                           placeholder={brightIdGuild.sponsorshipAddress
-                          ->Belt.Option.getWithDefault("0x")
+                          ->Option.getWithDefault("0x")
                           ->truncateAddress}
-                          value={state.sponsorshipAddress->Belt.Option.getWithDefault("")}
+                          value={state.sponsorshipAddress->Option.getWithDefault("")}
                           readOnly={true}
                         />
                         <div

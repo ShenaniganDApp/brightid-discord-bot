@@ -61,8 +61,8 @@ let default = (request, responseStatusCode, responseHeaders, remixContext) => {
     request
     ->Fetch.Request.headers
     ->Fetch.Headers.get("User-Agent")
-    ->Belt.Option.map(isbot)
-    ->Belt.Option.map(onAllReady => onAllReady ? "onAllReady" : "onShellReady")
+    ->Option.map(isbot)
+    ->Option.map(onAllReady => onAllReady ? "onAllReady" : "onShellReady")
 
   Promise.make((resolve, reject) => {
     let onAllReadyOptions = pipe => {
@@ -112,13 +112,13 @@ let default = (request, responseStatusCode, responseHeaders, remixContext) => {
 
     // This is hacky because we can't access the return in params in rescript
     open ReactDOMServer
-    if maybeCallbackName->Belt.Option.getWithDefault("") === "onAllReady" {
+    if maybeCallbackName->Option.getWithDefault("") === "onAllReady" {
       let allStream = renderToPipeableStream(
         <Remix.RemixServer context={remixContext} url={request->Fetch.Request.url} />,
         onAllReadyOptions(%raw(`allStream`)->pipe),
       )
       let _ = NodeJs.Timers.setTimeout(allStream.abort, abortDelay)
-    } else if maybeCallbackName->Belt.Option.getWithDefault("") === "onShellReady" {
+    } else if maybeCallbackName->Option.getWithDefault("") === "onShellReady" {
       let {abort, pipe} = renderToPipeableStream(
         <Remix.RemixServer context={remixContext} url={request->Fetch.Request.url} />,
         onShellReadyOptions(%raw(`pipe`)),

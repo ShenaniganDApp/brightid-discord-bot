@@ -1,6 +1,6 @@
 type loaderData = RemixAuth.User.t
 
-let loader: Remix.loaderFunction<loaderData> = ({request}): Promise.t<loaderData> => {
+let loader: Remix.loaderFunction<loaderData> = ({request}): promise<loaderData> => {
   open RemixAuth
 
   let options = CreateAuthenticateOptions.make(~successRedirect="/", ~failureRedirect="/login", ())

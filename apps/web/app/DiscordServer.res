@@ -11,21 +11,15 @@ let botToken = Remix.process["env"]["DISCORD_API_TOKEN"]
 // let client = Client.createDiscordClient(~options)
 
 let mapGuildOauthRecord = decodedGuilds => {
-  decodedGuilds->Belt.Option.map(guilds =>
-    guilds->Js.Array2.map(guild => {
-      let guild = guild->Js.Json.decodeObject->Belt.Option.getUnsafe
+  decodedGuilds->Option.map(guilds =>
+    guilds->Array.map(guild => {
+      let guild = guild->JSON.Decode.object->Option.getUnsafe
 
       (
         {
-          id: guild
-          ->Js.Dict.get("id")
-          ->Belt.Option.flatMap(Js.Json.decodeString)
-          ->Belt.Option.getExn,
-          name: guild
-          ->Js.Dict.get("name")
-          ->Belt.Option.flatMap(Js.Json.decodeString)
-          ->Belt.Option.getExn,
-          icon: guild->Js.Dict.get("icon")->Belt.Option.flatMap(Js.Json.decodeString),
+          id: guild->Dict.get("id")->Option.flatMap(JSON.Decode.string)->Option.getExn,
+          name: guild->Dict.get("name")->Option.flatMap(JSON.Decode.string)->Option.getExn,
+          icon: guild->Dict.get("icon")->Option.flatMap(JSON.Decode.string),
         }: Types.oauthGuild
       )
     })
@@ -38,23 +32,11 @@ let mapGuildRecord = decodedGuild => {
     Some(
       (
         {
-          id: guild
-          ->Js.Dict.get("id")
-          ->Belt.Option.flatMap(Js.Json.decodeString)
-          ->Belt.Option.getExn,
-          name: guild
-          ->Js.Dict.get("name")
-          ->Belt.Option.flatMap(Js.Json.decodeString)
-          ->Belt.Option.getExn,
-          icon: guild->Js.Dict.get("icon")->Belt.Option.flatMap(Js.Json.decodeString),
-          roles: guild
-          ->Js.Dict.get("roles")
-          ->Belt.Option.flatMap(Js.Json.decodeArray)
-          ->Belt.Option.getExn,
-          owner_id: guild
-          ->Js.Dict.get("owner_id")
-          ->Belt.Option.flatMap(Js.Json.decodeString)
-          ->Belt.Option.getExn,
+          id: guild->Dict.get("id")->Option.flatMap(JSON.Decode.string)->Option.getExn,
+          name: guild->Dict.get("name")->Option.flatMap(JSON.Decode.string)->Option.getExn,
+          icon: guild->Dict.get("icon")->Option.flatMap(JSON.Decode.string),
+          roles: guild->Dict.get("roles")->Option.flatMap(JSON.Decode.array)->Option.getExn,
+          owner_id: guild->Dict.get("owner_id")->Option.flatMap(JSON.Decode.string)->Option.getExn,
         }: Types.guild
       ),
     )
@@ -68,12 +50,10 @@ let mapGuildMemberRecord = decodedGuildMember => {
       (
         {
           roles: guildMember
-          ->Js.Dict.get("roles")
-          ->Belt.Option.flatMap(Js.Json.decodeArray)
-          ->Belt.Option.map(roles =>
-            roles->Js.Array2.map(role => role->Js.Json.decodeString->Belt.Option.getExn)
-          )
-          ->Belt.Option.getExn,
+          ->Dict.get("roles")
+          ->Option.flatMap(JSON.Decode.array)
+          ->Option.map(roles => roles->Array.map(role => role->JSON.Decode.string->Option.getExn))
+          ->Option.getExn,
         }: Types.guildMember
       ),
     )
@@ -81,24 +61,18 @@ let mapGuildMemberRecord = decodedGuildMember => {
 }
 
 let mapRoleRecord = decodedRoles => {
-  decodedRoles->Belt.Option.map(roles =>
-    roles->Js.Array2.map(role => {
-      let role = role->Js.Json.decodeObject->Belt.Option.getUnsafe
+  decodedRoles->Option.map(roles =>
+    roles->Array.map(role => {
+      let role = role->JSON.Decode.object->Option.getUnsafe
 
       (
         {
-          id: role
-          ->Js.Dict.get("id")
-          ->Belt.Option.flatMap(Js.Json.decodeString)
-          ->Belt.Option.getExn,
-          name: role
-          ->Js.Dict.get("name")
-          ->Belt.Option.flatMap(Js.Json.decodeString)
-          ->Belt.Option.getExn,
+          id: role->Dict.get("id")->Option.flatMap(JSON.Decode.string)->Option.getExn,
+          name: role->Dict.get("name")->Option.flatMap(JSON.Decode.string)->Option.getExn,
           permissions: role
-          ->Js.Dict.get("permissions")
-          ->Belt.Option.flatMap(Js.Json.decodeNumber)
-          ->Belt.Option.getExn,
+          ->Dict.get("permissions")
+          ->Option.flatMap(JSON.Decode.float)
+          ->Option.getExn,
         }: Types.role
       )
     })
@@ -108,7 +82,7 @@ let mapRoleRecord = decodedRoles => {
 let sleep = _ms => %raw(` new Promise((resolve) => setTimeout(resolve, _ms))`)
 
 //fetch all bot and user guilds
-let rec fetchBotGuilds = (~after=0, ~allGuilds=[], ()): Promise.t<array<Types.oauthGuild>> => {
+let rec fetchBotGuilds = (~after=0, ~allGuilds=[], ()): promise<array<Types.oauthGuild>> => {
   open Webapi.Fetch
 
   let headers = HeadersInit.make({
@@ -116,37 +90,39 @@ let rec fetchBotGuilds = (~after=0, ~allGuilds=[], ()): Promise.t<array<Types.oa
   })
   let init = RequestInit.make(~method_=Get, ~headers, ())
 
-  `https://discord.com/api/users/@me/guilds?after=${after->Belt.Int.toString}`
+  `https://discord.com/api/users/@me/guilds?after=${after->Int.toString}`
   ->Request.makeWithInit(init)
   ->fetchWithRequest
   ->then(res => res->Response.json)
   ->then(json => {
-    switch json->Js.Json.test(Js.Json.Array) {
-    | false => {
-        let rateLimit = json->Js.Json.decodeObject->Belt.Option.getUnsafe
+    switch json->JSON.Decode.array {
+    | None => {
+        let rateLimit = json->JSON.Decode.object->Option.getUnsafe
 
-        let retry_after =
-          rateLimit->Js.Dict.get("retry_after")->Belt.Option.flatMap(Js.Json.decodeNumber)
+        let retry_after = rateLimit->Dict.get("retry_after")->Option.flatMap(JSON.Decode.float)
 
         let retry_after = switch retry_after {
         | None => DiscordRateLimited->raise
-        | Some(retry_after) => retry_after->Belt.Float.toInt + 100
+        | Some(retry_after) => retry_after->Float.toInt + 100
         }
 
-        Js.log(
-          `Discord Rate Limited: Retrying fetch for guilds after: ${after->Belt.Int.toString} in ${retry_after->Belt.Int.toString}ms`,
+        Console.log(
+          `Discord Rate Limited: Retrying fetch for guilds after: ${after->Int.toString} in ${retry_after->Int.toString}ms`,
         )
         sleep(retry_after)->then(_ => fetchBotGuilds(~after, ~allGuilds, ()))
       }
 
-    | true => {
-        let guilds = json->Js.Json.decodeArray->mapGuildOauthRecord->Belt.Option.getUnsafe
-        switch guilds->Belt.Array.length <= 1 {
-        | true => allGuilds->Belt.Array.concat(guilds)->resolve
+    | Some(_) => {
+        let guilds = json->JSON.Decode.array->mapGuildOauthRecord->Option.getUnsafe
+        switch guilds->Array.length <= 1 {
+        | true => allGuilds->Array.concat(guilds)->resolve
         | false => {
-            let last = guilds->Js.Array2.length - 1
-            let after = guilds[last].id->Belt.Int.fromString->Belt.Option.getUnsafe
-            let allGuilds = allGuilds->Belt.Array.concat(guilds)
+            let last = guilds->Array.length - 1
+            let after =
+              guilds[last]
+              ->Option.map(guild => guild.id->Int.fromString->Option.getUnsafe)
+              ->Option.getUnsafe
+            let allGuilds = allGuilds->Array.concat(guilds)
             fetchBotGuilds(~after, ~allGuilds, ())
           }
         }
@@ -163,7 +139,7 @@ let rec fetchBotGuilds = (~after=0, ~allGuilds=[], ()): Promise.t<array<Types.oa
 
 type guildsCursor = {guilds: array<Types.oauthGuild>, after: option<string>}
 //fetch first 1000 guilds
-let rec fetchBotGuildsLimit = (~after): Promise.t<guildsCursor> => {
+let rec fetchBotGuildsLimit = (~after): promise<guildsCursor> => {
   open Webapi.Fetch
 
   let headers = HeadersInit.make({
@@ -177,28 +153,27 @@ let rec fetchBotGuildsLimit = (~after): Promise.t<guildsCursor> => {
     ->fetchWithRequest
     ->then(res => res->Response.json)
     ->then(json => {
-      switch json->Js.Json.test(Js.Json.Array) {
-      | false => {
-          let rateLimit = json->Js.Json.decodeObject->Belt.Option.getUnsafe
+      switch json->JSON.Decode.array {
+      | None => {
+          let rateLimit = json->JSON.Decode.object->Option.getUnsafe
 
-          let retry_after =
-            rateLimit->Js.Dict.get("retry_after")->Belt.Option.flatMap(Js.Json.decodeNumber)
+          let retry_after = rateLimit->Dict.get("retry_after")->Option.flatMap(JSON.Decode.float)
 
           let retry_after = switch retry_after {
           | None => DiscordRateLimited->raise
-          | Some(retry_after) => retry_after->Belt.Float.toInt + 100
+          | Some(retry_after) => retry_after->Float.toInt + 100
           }
 
-          Js.log(
-            `Discord Rate Limited: Retrying fetch for guilds after: ${after} in ${retry_after->Belt.Int.toString}ms`,
+          Console.log(
+            `Discord Rate Limited: Retrying fetch for guilds after: ${after} in ${retry_after->Int.toString}ms`,
           )
           sleep(retry_after)->then(_ => fetchBotGuildsLimit(~after=Some(after)))
         }
 
-      | true => {
-          let guilds = json->Js.Json.decodeArray->mapGuildOauthRecord->Belt.Option.getUnsafe
-          let last = guilds->Js.Array2.length - 1
-          let after = guilds[last].id->Some
+      | Some(_) => {
+          let guilds = json->JSON.Decode.array->mapGuildOauthRecord->Option.getUnsafe
+          let last = guilds->Array.length - 1
+          let after = guilds[last]->Option.map(guild => guild.id)
           {guilds, after}->resolve
         }
       }
@@ -224,24 +199,23 @@ let rec fetchUserGuilds = (user: RemixAuth.User.t) => {
   ->fetchWithRequest
   ->then(res => res->Response.json)
   ->then(json =>
-    switch json->Js.Json.test(Js.Json.Array) {
-    | false => {
-        let rateLimit = json->Js.Json.decodeObject->Belt.Option.getUnsafe
+    switch json->JSON.Decode.array {
+    | None => {
+        let rateLimit = json->JSON.Decode.object->Option.getUnsafe
 
-        let retry_after =
-          rateLimit->Js.Dict.get("retry_after")->Belt.Option.flatMap(Js.Json.decodeNumber)
+        let retry_after = rateLimit->Dict.get("retry_after")->Option.flatMap(JSON.Decode.float)
 
         let retry_after = switch retry_after {
         | None => DiscordRateLimited->raise
-        | Some(retry_after) => retry_after->Belt.Float.toInt + 100
+        | Some(retry_after) => retry_after->Float.toInt + 100
         }
-        Js.log(
-          `Discord Rate Limited: Retrying fetch user guilds in ${retry_after->Belt.Int.toString}ms`,
+        Console.log(
+          `Discord Rate Limited: Retrying fetch user guilds in ${retry_after->Int.toString}ms`,
         )
         sleep(retry_after)->then(_ => fetchUserGuilds(user))
       }
 
-    | true => json->Js.Json.decodeArray->mapGuildOauthRecord->Belt.Option.getUnsafe->resolve
+    | Some(_) => json->JSON.Decode.array->mapGuildOauthRecord->Option.getUnsafe->resolve
     }
   )
   ->catch(e => {
@@ -263,7 +237,7 @@ let fetchDiscordGuildFromId = (~guildId) => {
   ->Request.makeWithInit(init)
   ->fetchWithRequest
   ->then(res => res->Response.json)
-  ->then(json => json->Js.Json.decodeObject->mapGuildRecord->Js.Nullable.fromOption->resolve)
+  ->then(json => json->JSON.Decode.object->mapGuildRecord->Nullable.fromOption->resolve)
 }
 
 let fetchGuildMemberFromId = (~guildId, ~userId) => {
@@ -278,7 +252,7 @@ let fetchGuildMemberFromId = (~guildId, ~userId) => {
   ->fetchWithRequest
   ->then(res => res->Response.json)
   ->then(json => {
-    json->Js.Json.decodeObject->mapGuildMemberRecord->Js.Nullable.fromOption->resolve
+    json->JSON.Decode.object->mapGuildMemberRecord->Nullable.fromOption->resolve
   })
 }
 
@@ -295,24 +269,23 @@ let rec fetchGuildRoles = (~guildId) => {
   ->fetchWithRequest
   ->then(res => res->Response.json)
   ->then(json =>
-    switch json->Js.Json.test(Js.Json.Array) {
-    | false => {
-        let rateLimit = json->Js.Json.decodeObject->Belt.Option.getUnsafe
+    switch json->JSON.Decode.array {
+    | None => {
+        let rateLimit = json->JSON.Decode.object->Option.getUnsafe
 
-        let retry_after =
-          rateLimit->Js.Dict.get("retry_after")->Belt.Option.flatMap(Js.Json.decodeNumber)
+        let retry_after = rateLimit->Dict.get("retry_after")->Option.flatMap(JSON.Decode.float)
 
         let retry_after = switch retry_after {
         | None => DiscordRateLimited->raise
-        | Some(retry_after) => retry_after->Belt.Float.toInt + 100
+        | Some(retry_after) => retry_after->Float.toInt + 100
         }
-        Js.log(
-          `Discord Rate Limited: Retrying fetch guild: ${guildId} roles in ${retry_after->Belt.Int.toString}ms`,
+        Console.log(
+          `Discord Rate Limited: Retrying fetch guild: ${guildId} roles in ${retry_after->Int.toString}ms`,
         )
         sleep(retry_after)->then(_ => fetchGuildRoles(~guildId))
       }
 
-    | true => json->Js.Json.decodeArray->mapRoleRecord->Belt.Option.getUnsafe->resolve
+    | Some(_) => json->JSON.Decode.array->mapRoleRecord->Option.getUnsafe->resolve
     }
   )
   ->catch(e => {
@@ -326,8 +299,8 @@ let rec fetchGuildRoles = (~guildId) => {
 let memberIsAdmin = (~guildRoles: array<Types.role>, ~memberRoles) => {
   let adminPerm = %raw(`0x0000000000000008`)
 
-  let memberRoles = guildRoles->Js.Array2.filter(role => memberRoles->Js.Array2.includes(role.id))
-  memberRoles->Js.Array2.some(role => {
+  let memberRoles = guildRoles->Array.filter(role => memberRoles->Array.includes(role.id))
+  memberRoles->Array.some(role => {
     %raw(`(role.permissions & adminPerm)`) === adminPerm
   })
 }

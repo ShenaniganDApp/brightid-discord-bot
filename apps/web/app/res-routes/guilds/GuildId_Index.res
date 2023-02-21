@@ -2,52 +2,59 @@ type params = {guildId: string}
 type loaderData = {
   maybeUser: option<RemixAuth.User.t>,
   isAdmin: bool,
-  maybeDiscordGuild: Js.Promise.t<option<Types.guild>>,
+  discordGuildPromise: promise<Nullable.t<Types.guild>>,
 }
-
-@module("@remix-run/node") external defer: loaderData => loaderData = "defer"
-@module("@remix-run/react") external useAsyncValue: unit => 'a = "useAsyncValue"
 
 type routeMatch<'a, 'b> = {
   id: string,
   pathname: string,
-  params: Js.Dict.t<string>,
+  params: Dict.t<string>,
   data: 'a,
   handle: option<'b>,
 }
-
 @module("@remix-run/react") external useMatches: unit => array<routeMatch<'a, 'b>> = "useMatches"
+@module("@remix-run/node") external defer: loaderData => loaderData = "defer"
+@module("@remix-run/react") external useAsyncValue: unit => 'a = "useAsyncValue"
 
 module Await = {
   type t
   @react.component @module("@remix-run/react")
-  external make: (~children: 'a => React.element, ~resolve: 'b) => React.element = "Await"
+  external make: (
+    ~resolve: promise<'a>,
+    ~children: 'a => React.element,
+    ~errorElement: React.element=?,
+  ) => React.element = "Await"
+}
+
+let defaultLoader = {
+  maybeUser: None,
+  isAdmin: false,
+  discordGuildPromise: Promise.resolve(Nullable.null),
 }
 
 let loader: Remix.loaderFunction<loaderData> = async ({request, params}) => {
   open DiscordServer
-  open Promise
 
-  let guildId = params->Js.Dict.get("guildId")->Belt.Option.getWithDefault("")
+  let guildId = params->Dict.get("guildId")->Option.getWithDefault("")
 
   let maybeUser = switch await RemixAuth.Authenticator.isAuthenticated(
     AuthServer.authenticator,
     request,
   ) {
-  | data => data->Js.Nullable.toOption
-  | exception JsError(e) => None
+  | data => data->Nullable.toOption
+  | exception JsError(_) => None
   }
 
   switch maybeUser {
-  | None => {maybeUser, isAdmin: false, maybeDiscordGuild: Promise.resolve(None)}
+  | None => defer(defaultLoader)
   | Some(user) =>
     try {
-      let discordGuild = await fetchDiscordGuildFromId(~guildId)
+      let discordGuildPromise = fetchDiscordGuildFromId(~guildId)
 
       let userId = user->RemixAuth.User.getProfile->RemixAuth.User.getId
       let guildMember = await fetchGuildMemberFromId(~guildId, ~userId)
 
-      let memberRoles = switch guildMember->Js.Nullable.toOption {
+      let memberRoles = switch guildMember->Nullable.toOption {
       | None => []
       | Some(guildMember) => guildMember.roles
       }
@@ -56,19 +63,19 @@ let loader: Remix.loaderFunction<loaderData> = async ({request, params}) => {
       | exception JsError(_) => []
       }
       let isAdmin = memberIsAdmin(~guildRoles, ~memberRoles)
-      let isOwner = switch discordGuild->Js.Nullable.toOption {
-      | None => false
-      | Some(guild) => guild.owner_id === userId
-      }
+      // let isOwner = switch discordGuild->Nullable.toOption {
+      // | None => false
+      // | Some(guild) => guild.owner_id === userId
+      // }
       defer({
         maybeUser,
-        isAdmin: isAdmin || isOwner,
-        maybeDiscordGuild: discordGuild->Js.Nullable.toOption->Promise.resolve,
+        isAdmin,
+        discordGuildPromise,
       })
     } catch {
-    | Js.Exn.Error(e) =>
-      Js.Console.error(e)
-      {maybeUser, isAdmin: false, maybeDiscordGuild: Promise.resolve(None)}
+    | Exn.Error(e) =>
+      Console.error(e)
+      defaultLoader
     }
   }
 }
@@ -79,7 +86,7 @@ let action: Remix.actionFunction<'a> = async ({request, params}) => {
   open WebUtils_Gist
   open Shared.Decode
 
-  let guildId = params->Js.Dict.get("guildId")->Belt.Option.getWithDefault("")
+  let guildId = params->Dict.get("guildId")->Option.getWithDefault("")
 
   let _ = switch await RemixAuth.Authenticator.isAuthenticated(AuthServer.authenticator, request) {
   | data => Some(data)
@@ -96,7 +103,7 @@ let action: Remix.actionFunction<'a> = async ({request, params}) => {
     ~token=Remix.process["env"]["GITHUB_ACCESS_TOKEN"],
   )
   let content = await ReadGist.content(~config, ~decoder=Decode_Gist.brightIdGuilds)
-  let prevEntry = switch content->Js.Dict.get(guildId) {
+  let prevEntry = switch content->Dict.get(guildId) {
   | Some(entry) => entry
   | None => GuildDoesNotExist(guildId)->raise
   }
@@ -111,152 +118,14 @@ let action: Remix.actionFunction<'a> = async ({request, params}) => {
   }
 }
 
-type state = {
-  maybeDiscordGuild: option<Types.guild>,
-  maybeBrightIdGuild: option<Shared.BrightId.Gist.brightIdGuild>,
-  loading: bool,
-  submitting: bool,
-  oauthGuild: option<Types.oauthGuild>,
-}
-
-let state = {
-  maybeDiscordGuild: None,
-  maybeBrightIdGuild: None,
-  loading: true,
-  submitting: false,
-  oauthGuild: None,
-}
-
-type actions =
-  | SetGuild(option<Types.guild>)
-  | SetBrightIdGuild(option<Shared.BrightId.Gist.brightIdGuild>)
-  | SetLoading(bool)
-  | SetSubmitting(bool)
-  | SetOAuthGuild(option<Types.oauthGuild>)
-
-let reducer = (state, action) =>
-  switch action {
-  | SetGuild(maybeDiscordGuild) => {
-      ...state,
-      maybeDiscordGuild,
-    }
-  | SetBrightIdGuild(maybeBrightIdGuild) => {
-      ...state,
-      maybeBrightIdGuild,
-    }
-  | SetLoading(loading) => {...state, loading}
-  | SetSubmitting(submitting) => {...state, submitting}
-  | SetOAuthGuild(oauthGuild) => {...state, oauthGuild}
-  }
-
 let default = () => {
   open Remix
-  let {guildId} = useParams()
-  let {isAdmin, maybeUser, maybeDiscordGuild} = useLoaderData()
-  let discordGuild = useAsyncValue()
+  let {isAdmin, maybeUser, discordGuildPromise} = useLoaderData()
+
   let context = useOutletContext()
-  let account = Wagmi.useAccount()
   let matches = useMatches()
 
-  let {id} = matches[matches->Belt.Array.length - 1]
-
-  let fetcher = useFetcher()
-
-  let (state, dispatch) = React.useReducer(reducer, state)
-  let getGuildName = switch discordGuild {
-  | Some(guild: Types.guild) => guild.name
-  | None => "No Guild"
-  }
-
-  let sign = Wagmi.useSignMessage({
-    "message": `I consent that the SP in this address is able to be used by members of ${getGuildName} Discord Server`,
-    "onError": e =>
-      switch e["name"] {
-      | "ConnectorNotFoundError" =>
-        ReactHotToast.Toaster.makeToaster->ReactHotToast.Toaster.error("No wallet found", ())
-      | _ => ReactHotToast.Toaster.makeToaster->ReactHotToast.Toaster.error(e["message"], ())
-      },
-    "onSuccess": _ => {
-      let options = CreateFetcherSubmitOptions.make(~method="post", ())
-      fetcher->Fetcher.submitWithOptions({"sponsorshipAddress": account.address}, ~options)
-    },
-  })
-
-  React.useEffect1(() => {
-    switch fetcher->Fetcher._type {
-    | "init" =>
-      fetcher->Fetcher.load(~href=`/guilds/${guildId}/Guilds_FetchGuild`)
-      SetLoading(true)->dispatch
-    | "actionSubmission" => SetSubmitting(true)->dispatch
-    | "actionReload" =>
-      switch fetcher->Remix.Fetcher.data->Js.Nullable.toOption {
-      | None => SetSubmitting(false)->dispatch
-      | Some(_) => SetSubmitting(false)->dispatch
-      }
-    | "done" =>
-      switch fetcher->Remix.Fetcher.data->Js.Nullable.toOption {
-      | None => SetLoading(false)->dispatch
-
-      | Some(data) =>
-        data["maybeDiscordGuild"]->SetGuild->dispatch
-        data["maybeBrightIdGuild"]->SetBrightIdGuild->dispatch
-        SetLoading(false)->dispatch
-      }
-    | _ => ()
-    }
-
-    None
-  }, [fetcher])
-
-  React.useEffect1(() => {
-    let contextGuilds: array<Types.oauthGuild> = context["guilds"]
-    switch contextGuilds->Belt.Array.getIndexBy(guild => guild.id === guildId) {
-    | None => ()
-    | Some(index) => contextGuilds->Belt.Array.get(index)->SetOAuthGuild->dispatch
-    }
-    None
-  }, [context])
-
-  // let guildDisplay = switch state.guild {
-  // | None => <div> {"That Discord Server does not exist"->React.string} </div>
-  // | Some(guild) =>
-  //   <div className="flex flex-col items-center">
-  //     <div className="flex gap-4 w-full justify-start items-center">
-  //       <img className="rounded-full h-24" src={guild->Helpers_Guild.iconUri} />
-  //       <p className="text-4xl font-bold text-white"> {guild.name->React.string} </p>
-  //     </div>
-  //     <div className="flex-row" />
-  //   </div>
-  // }
-
-  let handleSign = (_: ReactEvent.Mouse.t) => sign["signMessage"]()
-
-  let guildHeader = {
-    <React.Suspense
-      fallback={<p className="text-3xl text-white font-poppins p-4">
-        {"Loading..."->React.string}
-      </p>}>
-      <Await resolve={maybeDiscordGuild}>
-        {(discordGuild: Types.guild) =>
-          <div className="flex gap-6 w-full justify-start items-center p-4">
-            <img
-              className="rounded-full h-24"
-              src={discordGuild.icon
-              ->Belt.Option.map(icon =>
-                `https://cdn.discordapp.com/icons/${discordGuild.id}/${icon}.png`
-              )
-              ->Belt.Option.getWithDefault("")}
-            />
-            <p className="text-4xl font-bold text-white"> {discordGuild.name->React.string} </p>
-            {isAdmin ? <AdminButton guildId={discordGuild.id} /> : <> </>}
-          </div>}
-
-        // | None => <p className="text-3xl text-white font-poppins p-4"> {"Loading..."->React.string} </p>
-
-        // | Some(guild) =>
-      </Await>
-    </React.Suspense>
-  }
+  let id = matches[matches->Array.length - 1]->Option.map(match => match.id)
 
   React.useEffect0(() => {
     switch context["rateLimited"] {
@@ -271,12 +140,39 @@ let default = () => {
     None
   })
 
+  let guildHeader =
+    <React.Suspense
+      fallback={<p className="text-3xl text-white font-poppins p-4">
+        {"Loading..."->React.string}
+      </p>}>
+      <Await resolve={discordGuildPromise}>
+        {maybeDiscordGuild =>
+          maybeDiscordGuild
+          ->Nullable.toOption
+          ->Option.mapWithDefault(<> </>, discordGuild => {
+            <div className="flex gap-6 w-full justify-start items-center p-4">
+              <img
+                className="rounded-full h-24"
+                src={discordGuild.icon
+                ->Option.map(icon =>
+                  `https://cdn.discordapp.com/icons/${discordGuild.id}/${icon}.png`
+                )
+                ->Option.getWithDefault("")}
+              />
+              <p className="text-4xl font-bold text-white"> {discordGuild.name->React.string} </p>
+              {isAdmin ? <AdminButton guildId={discordGuild.id} /> : <> </>}
+            </div>
+          })}
+      </Await>
+    </React.Suspense>
+
   let showPopup =
     id
-    ->Js.String2.split("/")
-    ->Belt.Array.reverse
-    ->Belt.Array.get(0)
-    ->Belt.Option.getWithDefault("") === "$guildId"
+    ->Option.getWithDefault("")
+    ->String.split("/")
+    ->Array.reverse
+    ->Array.get(0)
+    ->Option.getWithDefault("") === "$guildId"
 
   <div className="flex-1">
     <ReactHotToast.Toaster />
@@ -302,37 +198,6 @@ let default = () => {
           <div className="flex flex-1 flex-col  justify-around items-center text-center relative">
             <section
               className="width-full flex flex-col md:flex-row justify-around items-center w-full">
-              // <div
-              //   className="flex flex-col rounded-xl justify-around items-center text-center h-32 w-60 md:h-48 m-2 border-2 border-white border-solid bg-extraDark">
-              //   <div className="text-3xl font-bold text-white">
-              //     {"Verified Server Members"->React.string}
-              //   </div>
-              //   <div
-              //     className="text-3xl font-semibold text-transparent bg-clip-text bg-gradient-to-l from-brightid to-white">
-              //     {"1000"->React.string}
-              //   </div>
-              // </div>
-              // <div
-              //   className="flex flex-col  rounded-xl justify-around items-center text-center h-32 w-60 md:h-48 m-2 border-2 border-white border-solid bg-extraDark">
-              //   <div className="text-3xl font-bold text-white"> {"Users Sponsored"->React.string} </div>
-              //   <div
-              //     className="text-3xl font-semibold text-transparent bg-clip-text bg-gradient-to-l from-brightid to-white">
-              //     {"125"->React.string}
-              //   </div>
-              // </div>
-              // <div
-              //   className="flex flex-col rounded-xl justify-around items-center text-center h-32 w-60 md:h-48 m-2 border-2 border-white border-solid bg-extraDark">
-              //   <div className="text-3xl font-bold text-white">
-              //     {" Avaliable Sponsors"->React.string}
-              //   </div>
-              //   <div
-              //     className="text-3xl font-semibold text-transparent bg-clip-text bg-gradient-to-l from-brightid to-white">
-              //     {"0"->React.string}
-              //   </div>
-              // </div>
-              // <p className="text-6xl text-slate-400 font-extrabold">
-              //   {"Server Stats Coming Soon"->React.string}
-              // </p>
               <Remix.Outlet />
             </section>
             {showPopup ? <SponsorshipsPopup /> : <> </>}

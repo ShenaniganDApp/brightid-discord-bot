@@ -3,14 +3,14 @@
 import * as Uuid from "uuid";
 import * as React from "react";
 import * as AuthServer from "../AuthServer.js";
-import * as Belt_Option from "../../../../node_modules/rescript/lib/es6/belt_Option.js";
 import * as Caml_option from "../../../../node_modules/rescript/lib/es6/caml_option.js";
+import * as Core__Option from "../../../../node_modules/@rescript/core/src/Core__Option.js";
 import * as InviteButton from "../components/InviteButton.js";
 import * as Brightid_sdk from "brightid_sdk";
 import * as QrcodeReact from "qrcode.react";
 import * as SidebarToggle from "../components/SidebarToggle.js";
 import * as React$1 from "@remix-run/react";
-import * as Constants$Shared from "../../../../node_modules/@brightidbot/shared/src/Constants.js";
+import * as Constants$Shared from "../../node_modules/@brightidbot/shared/src/Constants.js";
 import * as JsxRuntime from "react/jsx-runtime";
 import * as Caml_js_exceptions from "../../../../node_modules/rescript/lib/es6/caml_js_exceptions.js";
 import * as DiscordLoginButton from "../components/DiscordLoginButton.js";
@@ -223,7 +223,7 @@ function Root_Index$default(props) {
                 children: "N/A",
                 className: "text-white"
               }) : JsxRuntime.jsx("p", {
-                children: String(data.unusedSponsorships),
+                children: data.unusedSponsorships.toString(),
                 className: "text-3xl font-semibold text-transparent bg-clip-text bg-gradient-to-l from-brightid to-white"
               });
         break;
@@ -252,7 +252,7 @@ function Root_Index$default(props) {
                 children: "N/A",
                 className: "text-white"
               }) : JsxRuntime.jsx("p", {
-                children: String(data$1.unusedSponsorships - data$1.assignedSponsorships | 0),
+                children: (data$1.unusedSponsorships - data$1.assignedSponsorships | 0).toString(),
                 className: "text-3xl font-semibold text-transparent bg-clip-text bg-gradient-to-l from-brightid to-white"
               });
         break;
@@ -281,7 +281,7 @@ function Root_Index$default(props) {
                 children: "N/A",
                 className: "text-white"
               }) : JsxRuntime.jsx("p", {
-                children: String(data$2.verificationCount),
+                children: data$2.verificationCount.toString(),
                 className: "text-3xl font-semibold text-transparent bg-clip-text bg-gradient-to-l from-brightid to-white"
               });
         break;
@@ -347,7 +347,7 @@ function Root_Index$default(props) {
                                           })
                                     ]
                                   }),
-                              Belt_Option.isSome(maybeUser) ? JsxRuntime.jsx(JsxRuntime.Fragment, {}) : JsxRuntime.jsx(InviteButton.make, {}),
+                              Core__Option.isSome(maybeUser) ? JsxRuntime.jsx(JsxRuntime.Fragment, {}) : JsxRuntime.jsx(InviteButton.make, {}),
                               JsxRuntime.jsxs("section", {
                                     children: [
                                       JsxRuntime.jsxs("div", {

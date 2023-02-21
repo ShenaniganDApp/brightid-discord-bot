@@ -4,7 +4,7 @@ external verifyContextId: (
   ~contextId: string,
   ~nodeUrl: string=?,
   unit,
-) => Js.Promise.t<Js.Json.t> = "verifyContextId"
+) => promise<JSON.t> = "verifyContextId"
 
 @module("brightid_sdk")
 external generateDeeplink: (

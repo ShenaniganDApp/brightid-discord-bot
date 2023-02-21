@@ -17,11 +17,11 @@ let loader: Remix.loaderFunction<loaderData> = ({request, params}) => {
     ~token=Remix.process["env"]["GITHUB_ACCESS_TOKEN"],
   )
 
-  let guildId = params->Js.Dict.get("guildId")->Belt.Option.getWithDefault("")
+  let guildId = params->Dict.get("guildId")->Option.getWithDefault("")
   AuthServer.authenticator
   ->RemixAuth.Authenticator.isAuthenticated(request)
   ->then(maybeUser => {
-    switch maybeUser->Js.Nullable.toOption {
+    switch maybeUser->Nullable.toOption {
     | None => {maybeDiscordGuild: None, isAdmin: false, maybeBrightIdGuild: None}->resolve
     | Some(user) =>
       open Shared.Decode
@@ -29,25 +29,25 @@ let loader: Remix.loaderFunction<loaderData> = ({request, params}) => {
         ~config,
         ~decoder=Decode_Gist.brightIdGuilds,
       )->then(brightIdGuilds => {
-        let maybeBrightIdGuild = brightIdGuilds->Js.Dict.get(guildId)
+        let maybeBrightIdGuild = brightIdGuilds->Dict.get(guildId)
         fetchDiscordGuildFromId(~guildId)->then(
           maybeDiscordGuild => {
             let userId = user->RemixAuth.User.getProfile->RemixAuth.User.getId
             fetchGuildMemberFromId(~guildId, ~userId)->then(
               guildMember => {
-                let memberRoles = switch guildMember->Js.Nullable.toOption {
+                let memberRoles = switch guildMember->Nullable.toOption {
                 | None => []
                 | Some(guildMember) => guildMember.roles
                 }
                 fetchGuildRoles(~guildId)->then(
                   guildRoles => {
                     let isAdmin = memberIsAdmin(~guildRoles, ~memberRoles)
-                    let isOwner = switch maybeDiscordGuild->Js.Nullable.toOption {
+                    let isOwner = switch maybeDiscordGuild->Nullable.toOption {
                     | None => false
                     | Some(guild) => guild.owner_id === userId
                     }
                     {
-                      maybeDiscordGuild: maybeDiscordGuild->Js.Nullable.toOption,
+                      maybeDiscordGuild: maybeDiscordGuild->Nullable.toOption,
                       isAdmin: isAdmin || isOwner,
                       maybeBrightIdGuild,
                     }->resolve

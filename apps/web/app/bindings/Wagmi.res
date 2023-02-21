@@ -13,7 +13,7 @@ type account = {
 
 type queryResult<'data> = {
   "data": option<'data>,
-  "error": option<Js.Exn.t>,
+  "error": option<Exn.t>,
   "isIdle": bool,
   "isLoading": bool,
   "isFetching": bool,
@@ -42,7 +42,7 @@ external useAccount: 'a => account = "useAccount"
 @module("wagmi")
 external useSignMessage: 'a => {
   ...queryResult<{
-    "signature": Js.Nullable.t<string>,
+    "signature": Nullable.t<string>,
   }>,
   "signMessage": unit => unit,
 } = "useSignMessage"

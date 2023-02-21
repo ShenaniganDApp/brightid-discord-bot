@@ -4,12 +4,12 @@ exception EmptySubmit
 exception GuildDoesNotExist(string)
 
 // @module("../../helpers/updateOrReadGist.js")
-// external updateGist: (string, 'a) => Js.Promise.t<unit> = "updateGist"
+// external updateGist: (string, 'a) => promise<unit> = "updateGist"
 
 let botToken = Remix.process["env"]["DISCORD_API_TOKEN"]
 
 let loader: Remix.loaderFunction<Webapi.Fetch.Response.t> = ({params}) => {
-  let guildId = params->Js.Dict.get("guildId")->Belt.Option.getExn
+  let guildId = params->Dict.get("guildId")->Option.getExn
   Remix.redirect(`/guilds/${guildId}/admin`)->resolve
 }
 
@@ -30,7 +30,7 @@ module Form = {
   }
 
   let getIfString = (formData, field) => {
-    Webapi.FormData.get(formData, field)->Belt.Option.flatMap(someIfString)
+    Webapi.FormData.get(formData, field)->Option.flatMap(someIfString)
   }
 
   let make = formData => {
@@ -45,8 +45,8 @@ module Form = {
 let action: Remix.actionFunction<'a> = async ({request, params}) => {
   open Webapi.Fetch
 
-  let guildId = params->Js.Dict.get("guildId")->Belt.Option.getWithDefault("")
-  // let roleId = params->Js.Dict.get("roleId")->Belt.Option.getWithDefault("")
+  let guildId = params->Dict.get("guildId")->Option.getWithDefault("")
+  // let roleId = params->Dict.get("roleId")->Option.getWithDefault("")
 
   let _ = switch await RemixAuth.Authenticator.isAuthenticated(AuthServer.authenticator, request) {
   | data => Some(data)
@@ -68,10 +68,10 @@ let action: Remix.actionFunction<'a> = async ({request, params}) => {
   //   let req = modifyRoleUrl(guildId, roleId)->Request.makeWithInit(init)
   //   switch await fetchWithRequest(req) {
   //   | data =>
-  //     Js.log(data)
+  //     Console.log(data)
   //     Some(data)
   //   | exception JsError(e) =>
-  //     Js.log(e)
+  //    Console.log(e)
   //     None
   //   }
   // | None => None
@@ -84,16 +84,16 @@ let action: Remix.actionFunction<'a> = async ({request, params}) => {
     ~token=Remix.process["env"]["GITHUB_ACCESS_TOKEN"],
   )
   let content = await ReadGist.content(~config, ~decoder=Shared.Decode.Decode_Gist.brightIdGuilds)
-  let prevEntry = switch content->Js.Dict.get(guildId) {
+  let prevEntry = switch content->Dict.get(guildId) {
   | Some(entry) => entry
   | None => GuildDoesNotExist(guildId)->raise
   }
 
-  let atleastOneSome = Belt.Array.some([role, inviteLink, sponsorshipAddress], Belt.Option.isSome)
+  let atleastOneSome = Array.some([role, inviteLink, sponsorshipAddress], Option.isSome)
   switch atleastOneSome {
   | false => EmptySubmit->Error
   | true => {
-      open Belt.Option
+      open Option
       let entry = {
         ...prevEntry,
         role: isSome(role) ? role : prevEntry.role,
@@ -114,12 +114,12 @@ let action: Remix.actionFunction<'a> = async ({request, params}) => {
   //   switch e {
   //   | EmptySubmit => {
   //       Remix.redirect(`/guilds/${guildId}/admin`)->ignore
-  //       resolve(Js.Nullable.null)
+  //       resolve(Nullable.null)
   //     }
 
   //   | _ => {
   //       Remix.redirect(`/guilds/${guildId}/admin`)->ignore
-  //       resolve(Js.Nullable.null)
+  //       resolve(Nullable.null)
   //     }
   //   }
   // })

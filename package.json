@@ -2,18 +2,20 @@
   "name": "root",
   "private": true,
   "devDependencies": {
-    "patch-package": "^6.4.7"
+    "nodemon": "^2.0.20"
   },
   "dependencies": {
+    "@rescript/core": "^0.1.0",
     "brightid_sdk": "^1.0.1",
     "canvas": "^2.9.0",
     "concurrently": "^7.1.0",
     "dotenv": "^8.2.0",
     "find-up": "^6.3.0",
-    "rescript": "^10.1.0-rc.5",
-    "rescript-discordjs": "^0.2.16",
+    "rescript": "^10.1.2",
+    "rescript-discordjs": "^0.3.0",
+    "rescript-nodejs": "^14.3.1",
     "uuid": "^8.3.0",
-    "rescript-nodejs": "^14.3.1"
+    "discord.js": "^13.8.1"
   },
   "scripts": {
     "bot": "yarn workspace @brightidbot/bot",

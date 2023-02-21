@@ -3,12 +3,11 @@
 import * as Curry from "../../../node_modules/rescript/lib/es6/curry.js";
 import * as React from "react";
 import * as Wagmi from "wagmi";
-import * as $$Promise from "../../../node_modules/@ryyppy/rescript-promise/src/Promise.js";
 import * as Sidebar from "./components/Sidebar.js";
 import * as AuthServer from "./AuthServer.js";
-import * as Belt_Array from "../../../node_modules/rescript/lib/es6/belt_Array.js";
 import * as Caml_option from "../../../node_modules/rescript/lib/es6/caml_option.js";
 import LodashMerge from "lodash.merge";
+import * as Core__Promise from "../../../node_modules/@rescript/core/src/Core__Promise.js";
 import * as DiscordServer from "./DiscordServer.js";
 import * as React$1 from "@remix-run/react";
 import * as JsxRuntime from "react/jsx-runtime";
@@ -77,7 +76,7 @@ var _idChain = {
 };
 
 function loader(param) {
-  return $$Promise.$$catch(AuthServer.authenticator.isAuthenticated(param.request).then(function (user) {
+  return Core__Promise.$$catch(AuthServer.authenticator.isAuthenticated(param.request).then(function (user) {
                   return Promise.resolve({
                               maybeUser: (user == null) ? undefined : Caml_option.some(user),
                               rateLimited: false
@@ -153,7 +152,7 @@ function reducer(state, action) {
     case /* AddBotGuilds */0 :
         return {
                 userGuilds: state.userGuilds,
-                botGuilds: Belt_Array.concat(state.botGuilds, action._0),
+                botGuilds: state.botGuilds.concat(action._0),
                 after: state.after,
                 loadingGuilds: state.loadingGuilds,
                 wagmiClient: state.wagmiClient,

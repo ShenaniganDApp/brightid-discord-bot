@@ -21,7 +21,7 @@ let make = (~isSidebarVisible, ~handleIsSidebarVisible, ~guilds, ~loadingGuilds)
   let sidebarElements = {
     switch (guilds, loadingGuilds) {
     | (_, true) =>
-      let intersection = guilds->Belt.Array.map((guild: Types.oauthGuild) => {
+      let intersection = guilds->Array.map((guild: Types.oauthGuild) => {
         <Menu iconShape="square" key={guild.id}>
           <MenuItem
             className="bg-extraDark"
@@ -35,8 +35,8 @@ let make = (~isSidebarVisible, ~handleIsSidebarVisible, ~guilds, ~loadingGuilds)
           </MenuItem>
         </Menu>
       })
-      let loading = Belt.Array.range(0, 4)->Belt.Array.map(i => {
-        <Menu iconShape="square" key={(i + 1)->Belt.Int.toString}>
+      let loading = Belt.Array.range(0, 4)->Array.map(i => {
+        <Menu iconShape="square" key={(i + 1)->Int.toString}>
           <MenuItem
             className="flex animate-pulse flex-row h-full bg-extraDark "
             icon={<img
@@ -48,14 +48,14 @@ let make = (~isSidebarVisible, ~handleIsSidebarVisible, ~guilds, ~loadingGuilds)
           </MenuItem>
         </Menu>
       })
-      intersection->Belt.Array.concat(loading)->React.array
+      intersection->Array.concat(loading)->React.array
     | ([], false) => <p className="text-white"> {"Couldn't Load Discord Servers"->React.string} </p>
     | (_, false) =>
-      switch guilds->Belt.Array.length {
+      switch guilds->Array.length {
       | 0 => <p className="text-white"> {"No Guilds"->React.string} </p>
       | _ =>
         guilds
-        ->Belt.Array.map((guild: Types.oauthGuild) => {
+        ->Array.map((guild: Types.oauthGuild) => {
           <Menu iconShape="square" key={guild.id}>
             <MenuItem
               className="bg-extraDark"
@@ -84,7 +84,7 @@ let make = (~isSidebarVisible, ~handleIsSidebarVisible, ~guilds, ~loadingGuilds)
       <InviteButton />
     </SidebarHeader>
     <SidebarContent className="scrollbar-hide">
-      <Menu iconShape="square" key={0->Belt.Int.toString} />
+      <Menu iconShape="square" key={0->Int.toString} />
       {sidebarElements}
     </SidebarContent>
     <SidebarFooter className="bg-extraDark bottom-0 sticky scrollbar-hide list-none">

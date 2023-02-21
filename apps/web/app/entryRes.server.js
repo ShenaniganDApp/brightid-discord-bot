@@ -3,8 +3,8 @@
 import * as Curry from "../../../node_modules/rescript/lib/es6/curry.js";
 import Isbot from "isbot";
 import * as Stream from "stream";
-import * as Belt_Option from "../../../node_modules/rescript/lib/es6/belt_Option.js";
 import * as Caml_option from "../../../node_modules/rescript/lib/es6/caml_option.js";
+import * as Core__Option from "../../../node_modules/@rescript/core/src/Core__Option.js";
 import * as React from "@remix-run/react";
 import * as Server from "react-dom/server";
 import * as JsxRuntime from "react/jsx-runtime";
@@ -16,7 +16,7 @@ var BodyInit = {};
 var ReactDOMServer = {};
 
 function $$default(request, responseStatusCode, responseHeaders, remixContext) {
-  var maybeCallbackName = Belt_Option.map(Belt_Option.map(Caml_option.null_to_opt(request.headers.get("User-Agent")), (function (prim) {
+  var maybeCallbackName = Core__Option.map(Core__Option.map(Caml_option.null_to_opt(request.headers.get("User-Agent")), (function (prim) {
               return Isbot(prim);
             })), (function (onAllReady) {
           if (onAllReady) {
@@ -68,7 +68,7 @@ function $$default(request, responseStatusCode, responseHeaders, remixContext) {
                             })
                         };
                 };
-                if (Belt_Option.getWithDefault(maybeCallbackName, "") === "onAllReady") {
+                if (Core__Option.getWithDefault(maybeCallbackName, "") === "onAllReady") {
                   var allStream = Server.renderToPipeableStream(JsxRuntime.jsx(React.RemixServer, {
                             context: remixContext,
                             url: request.url
@@ -76,7 +76,7 @@ function $$default(request, responseStatusCode, responseHeaders, remixContext) {
                   setTimeout(allStream.abort, 5000);
                   return ;
                 }
-                if (Belt_Option.getWithDefault(maybeCallbackName, "") !== "onShellReady") {
+                if (Core__Option.getWithDefault(maybeCallbackName, "") !== "onShellReady") {
                   return ;
                 }
                 var match = Server.renderToPipeableStream(JsxRuntime.jsx(React.RemixServer, {

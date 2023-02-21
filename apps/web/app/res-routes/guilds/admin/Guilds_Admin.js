@@ -3,13 +3,11 @@
 import * as Curry from "../../../../../../node_modules/rescript/lib/es6/curry.js";
 import * as React from "react";
 import * as Wagmi from "wagmi";
-import * as Js_dict from "../../../../../../node_modules/rescript/lib/es6/js_dict.js";
 import * as AuthServer from "../../../AuthServer.js";
-import * as Belt_Array from "../../../../../../node_modules/rescript/lib/es6/belt_Array.js";
-import * as Belt_Option from "../../../../../../node_modules/rescript/lib/es6/belt_Option.js";
 import * as Caml_option from "../../../../../../node_modules/rescript/lib/es6/caml_option.js";
 import * as SubmitPopup from "../../../components/SubmitPopup.js";
-import * as Decode$Shared from "../../../../../../node_modules/@brightidbot/shared/src/Decode.js";
+import * as Core__Option from "../../../../../../node_modules/@rescript/core/src/Core__Option.js";
+import * as Decode$Shared from "../../../../node_modules/@brightidbot/shared/src/Decode.js";
 import * as DiscordServer from "../../../DiscordServer.js";
 import * as WebUtils_Gist from "../../../utils/WebUtils_Gist.js";
 import * as $$Node from "@remix-run/node";
@@ -24,7 +22,7 @@ var NoBrightIdData = /* @__PURE__ */Caml_exceptions.create("Guilds_Admin.NoBrigh
 
 function loader(param) {
   var config = WebUtils_Gist.makeGistConfig(process.env.GIST_ID, "guildData.json", process.env.GITHUB_ACCESS_TOKEN);
-  var guildId = Belt_Option.getWithDefault(Js_dict.get(param.params, "guildId"), "");
+  var guildId = Core__Option.getWithDefault(param.params["guildId"], "");
   return AuthServer.authenticator.isAuthenticated(param.request).then(function (maybeUser) {
               if (maybeUser == null) {
                 $$Node.redirect("/guilds/" + guildId + "");
@@ -36,7 +34,7 @@ function loader(param) {
                           });
               } else {
                 return WebUtils_Gist.ReadGist.content(config, Decode$Shared.Decode_Gist.brightIdGuilds).then(function (guilds) {
-                            var maybeBrightIdGuild = Js_dict.get(guilds, guildId);
+                            var maybeBrightIdGuild = guilds[guildId];
                             return DiscordServer.fetchDiscordGuildFromId(guildId).then(function (maybeDiscordGuild) {
                                         var maybeDiscordGuild$1 = (maybeDiscordGuild == null) ? undefined : Caml_option.some(maybeDiscordGuild);
                                         var userId = maybeUser.profile.id;
@@ -172,11 +170,11 @@ function Guilds_Admin$default(props) {
       return false;
     }
   };
-  var hasChangesToSave = Belt_Array.some([
-        state$1.role,
-        state$1.inviteLink,
-        state$1.sponsorshipAddress
-      ], isSomeOrString);
+  var hasChangesToSave = [
+      state$1.role,
+      state$1.inviteLink,
+      state$1.sponsorshipAddress
+    ].some(isSomeOrString);
   if (match.maybeUser !== undefined) {
     if (match.isAdmin) {
       if (maybeDiscordGuild !== undefined) {
@@ -196,10 +194,10 @@ function Guilds_Admin$default(props) {
                                                             JsxRuntime.jsx("input", {
                                                                   className: "text-white p-2 rounded bg-dark cursor-not-allowed",
                                                                   name: "role",
-                                                                  placeholder: Belt_Option.getWithDefault(maybeBrightIdGuild.role, "No Role Name"),
+                                                                  placeholder: Core__Option.getWithDefault(maybeBrightIdGuild.role, "No Role Name"),
                                                                   readOnly: true,
                                                                   type: "text",
-                                                                  value: Belt_Option.getWithDefault(state$1.role, ""),
+                                                                  value: Core__Option.getWithDefault(state$1.role, ""),
                                                                   onChange: onRoleChanged
                                                                 })
                                                           ],
@@ -211,9 +209,9 @@ function Guilds_Admin$default(props) {
                                                             JsxRuntime.jsx("input", {
                                                                   className: "text-white p-2 bg-extraDark outline-none",
                                                                   name: "inviteLink",
-                                                                  placeholder: Belt_Option.getWithDefault(maybeBrightIdGuild.inviteLink, "No Invite Link"),
+                                                                  placeholder: Core__Option.getWithDefault(maybeBrightIdGuild.inviteLink, "No Invite Link"),
                                                                   type: "text",
-                                                                  value: Belt_Option.getWithDefault(state$1.inviteLink, ""),
+                                                                  value: Core__Option.getWithDefault(state$1.inviteLink, ""),
                                                                   onChange: onInviteLinkChanged
                                                                 })
                                                           ],
@@ -227,10 +225,10 @@ function Guilds_Admin$default(props) {
                                                                     JsxRuntime.jsx("input", {
                                                                           className: "text-white p-2 bg-dark",
                                                                           name: "sponsorshipAddress",
-                                                                          placeholder: truncateAddress(Belt_Option.getWithDefault(maybeBrightIdGuild.sponsorshipAddress, "0x")),
+                                                                          placeholder: truncateAddress(Core__Option.getWithDefault(maybeBrightIdGuild.sponsorshipAddress, "0x")),
                                                                           readOnly: true,
                                                                           type: "text",
-                                                                          value: Belt_Option.getWithDefault(state$1.sponsorshipAddress, "")
+                                                                          value: Core__Option.getWithDefault(state$1.sponsorshipAddress, "")
                                                                         }),
                                                                     JsxRuntime.jsx("div", {
                                                                           children: "Sign",

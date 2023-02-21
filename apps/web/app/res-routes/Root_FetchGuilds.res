@@ -1,5 +1,5 @@
 type loaderData = {
-  user: Js.Nullable.t<RemixAuth.User.t>,
+  user: Nullable.t<RemixAuth.User.t>,
   userGuilds: array<Types.oauthGuild>,
   botGuilds: array<Types.oauthGuild>,
   after: option<string>,
@@ -16,10 +16,10 @@ let loader: Remix.loaderFunction<loaderData> = ({request}) => {
   AuthServer.authenticator
   ->RemixAuth.Authenticator.isAuthenticated(request)
   ->then(user => {
-    switch user->Js.Nullable.toOption {
+    switch user->Nullable.toOption {
     | None =>
       {
-        user: Js.Nullable.null,
+        user: Nullable.null,
         userGuilds: [],
         botGuilds: [],
         after: None,
@@ -41,7 +41,7 @@ let loader: Remix.loaderFunction<loaderData> = ({request}) => {
     switch error {
     | DiscordServer.DiscordRateLimited =>
       {
-        user: Js.Nullable.null,
+        user: Nullable.null,
         userGuilds: [],
         botGuilds: [],
         after: None,
@@ -49,7 +49,7 @@ let loader: Remix.loaderFunction<loaderData> = ({request}) => {
       }->resolve
     | _ =>
       {
-        user: Js.Nullable.null,
+        user: Nullable.null,
         userGuilds: [],
         botGuilds: [],
         after: None,

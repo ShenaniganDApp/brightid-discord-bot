@@ -3,11 +3,11 @@
 import * as Curry from "../../../../../../node_modules/rescript/lib/es6/curry.js";
 import * as React from "react";
 import * as Wagmi from "wagmi";
-import * as Belt_Option from "../../../../../../node_modules/rescript/lib/es6/belt_Option.js";
+import * as Core__Option from "../../../../../../node_modules/@rescript/core/src/Core__Option.js";
 import ReactLottie from "react-lottie";
 import * as Caml_exceptions from "../../../../../../node_modules/rescript/lib/es6/caml_exceptions.js";
 import * as React$1 from "@remix-run/react";
-import * as Constants$Shared from "../../../../../../node_modules/@brightidbot/shared/src/Constants.js";
+import * as Constants$Shared from "../../../../node_modules/@brightidbot/shared/src/Constants.js";
 import * as JsxRuntime from "react/jsx-runtime";
 import * as Rainbowkit from "@rainbow-me/rainbowkit";
 
@@ -48,13 +48,6 @@ var Modal = {
 
 var Lottie = {};
 
-function links(param) {
-  return [{
-            rel: "stylesheet",
-            href: styles
-          }];
-}
-
 var assignSPYellow = (require("~/lotties/assignSPYellow.json"));
 
 var assignSPRed = (require("~/lotties/assignSPRed.json"));
@@ -68,7 +61,7 @@ function Guilds_AssignSponsorships$default(props) {
   var transition = React$1.useTransition();
   var match = Wagmi.useAccount(undefined);
   var maybeAddress = match.address;
-  var address = Belt_Option.getWithDefault(maybeAddress, "");
+  var address = Core__Option.getWithDefault(maybeAddress, "");
   var mainnetSP = Wagmi.useBalance({
         address: address,
         token: Constants$Shared.contractAddressETH,
@@ -82,7 +75,7 @@ function Guilds_AssignSponsorships$default(props) {
   var match$1 = mainnetSP.status;
   var formattedMainnetSP = match$1 === "error" ? "Error" : (
       match$1 === "loading" ? "Loading" : (
-          match$1 === "success" ? Belt_Option.getWithDefault(Belt_Option.map(mainnetSP.data, (function (data) {
+          match$1 === "success" ? Core__Option.getWithDefault(Core__Option.map(mainnetSP.data, (function (data) {
                         return data.formatted;
                       })), "0") : "unknown"
         )
@@ -90,7 +83,7 @@ function Guilds_AssignSponsorships$default(props) {
   var match$2 = idSP.status;
   var formattedIDSP = match$2 === "error" ? "Error" : (
       match$2 === "loading" ? "Loading" : (
-          match$2 === "success" ? Belt_Option.getWithDefault(Belt_Option.map(idSP.data, (function (data) {
+          match$2 === "success" ? Core__Option.getWithDefault(Core__Option.map(idSP.data, (function (data) {
                         return data.formatted;
                       })), "0") : "unknown"
         )
@@ -174,7 +167,6 @@ export {
   Lottie ,
   contractAddressID ,
   contractAddressETH ,
-  links ,
   assignSPYellow ,
   assignSPRed ,
   assignSPBlue ,
