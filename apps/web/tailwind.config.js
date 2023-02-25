@@ -30,6 +30,9 @@ module.exports = {
         textscroll: 'bg 25s linear infinite',
       },
       aspectRatio: { '87/74': 87 / 74 },
+      flex: {
+        2: '2 2 0%',
+      },
     },
   },
   variants: {

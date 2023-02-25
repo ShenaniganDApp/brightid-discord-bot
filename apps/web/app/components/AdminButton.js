@@ -9,7 +9,7 @@ function AdminButton(props) {
               to: "/guilds/" + props.guildId + "/admin",
               children: JsxRuntime.jsx("button", {
                     children: "Admin Settings",
-                    className: "p-4 bg-transparent border-2 border-brightid font-semibold rounded-3xl text-large text-white"
+                    className: "py-1 px-2  bg-transparent border-2 border-brightOrange font-semibold rounded-xl text-large text-brightOrange hover:text-white hover:bg-brightOrange"
                   })
             });
 }

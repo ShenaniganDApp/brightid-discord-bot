@@ -448,7 +448,7 @@ function Root_Index$default(props) {
                                                     className: " text-white font-poppins text-xs font-semibold p-1"
                                                   })
                                             ],
-                                            className: "lg:min-w-[237px] relative flex flex-col border border-brightOrange rounded-xl justify-center items-start   bg-extraDark p-6 lg:p-12 self-stretch"
+                                            className: "lg:min-w-[237px] relative flex flex-col border border-brightOrange rounded-xl justify-center items-start  bg-extraDark p-6 lg:p-12 self-stretch"
                                           }),
                                       JsxRuntime.jsxs("div", {
                                             children: [
@@ -465,10 +465,10 @@ function Root_Index$default(props) {
                                                     className: "text-2xl font-semibold text-transparent bg-clip-text bg-gradient-to-l from-brightid to-white"
                                                   })
                                             ],
-                                            className: "lg:min-w-[237px]  relative flex flex-col border border-brightGreen rounded-xl justify-center items-start  bg-extraDark p-6 lg:p-12 self-stretch"
+                                            className: "lg:min-w-[237px]  relative flex flex-col border border-brightGreen rounded-xl justify-center items-start bg-extraDark p-6 lg:p-12 self-stretch"
                                           })
                                     ],
-                                    className: "py-4 gap-5 md:gap-0 lg:w-full max-w-5xl flex flex-col lg:flex-row  justify-around items-center"
+                                    className: "py-4 gap-5 lg:gap-0 lg:w-full max-w-5xl flex flex-col lg:flex-row  justify-around items-center"
                                   }),
                               JsxRuntime.jsx("section", {
                                     children: JsxRuntime.jsx(Root_Index$BrightIdVerificationActions, {

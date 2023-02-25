@@ -32,6 +32,70 @@ let defaultLoader = {
   discordGuildPromise: Promise.resolve(Nullable.null),
 }
 
+module Lottie = {
+  @react.component @module("react-lottie")
+  external make: (
+    ~options: {
+      "animationData": JSON.t,
+      "loop": bool,
+      "autoplay": bool,
+      "rendererSettings": {"preserveAspectRatio": string},
+    },
+    ~style: 'a=?,
+    ~className: string=?,
+  ) => React.element = "default"
+}
+
+let assignSPYellow = %raw(`require("~/lotties/assignSPYellow.json")`)
+let assignSPRed = %raw(`require("~/lotties/assignSPRed.json")`)
+let assignSPBlue = %raw(`require("~/lotties/assignSPBlue.json")`)
+module AssignSponsorships = {
+  let makeLottieOptions = animationData =>
+    {
+      "loop": true,
+      "autoplay": true,
+      "animationData": animationData,
+      "rendererSettings": {
+        "preserveAspectRatio": "xMidYMid slice",
+      },
+    }
+
+  @react.component
+  let make = (~maybeAddress) => {
+    let transition = Remix.useTransition()
+    <div className="flex flex-1 width-full height-full justify-center items-center">
+      {switch maybeAddress {
+      | None => <RainbowKit.ConnectButton />
+      | Some(_) =>
+        transition->Remix.Transition.state === "submitting"
+          ? <div>
+              <Lottie options={makeLottieOptions(assignSPYellow)} style={{"width": "25vw"}} />
+              <p className="text-white font-bold text-24">
+                {React.string(`Assigning Sponsorships to Server`)}
+              </p>
+            </div>
+          : <Remix.Form className="flex flex-col width-full height-full">
+              <div className="flex justify-around p-10">
+                <label className="text-white font-bold text-32"> {"ID SP"->React.string} </label>
+                <p className="text-white font-bold text-24"> {React.string(`${"1000"}`)} </p>
+                <label className="text-white font-bold text-32">
+                  {"Mainnet SP"->React.string}
+                </label>
+                <p className="text-white font-bold text-24"> {React.string(`${"1000"}`)} </p>
+              </div>
+              <input
+                className="appearance-none text-white bg-transparent text-3xl text-center p-5"
+                type_="number"
+                name="sponsorships"
+                defaultValue="1"
+              />
+              <button className="text-white p-5" type_="submit"> {React.string("Assign")} </button>
+            </Remix.Form>
+      }}
+    </div>
+  }
+}
+
 let loader: Remix.loaderFunction<loaderData> = async ({request, params}) => {
   open DiscordServer
 
@@ -52,13 +116,17 @@ let loader: Remix.loaderFunction<loaderData> = async ({request, params}) => {
       let discordGuildPromise = fetchDiscordGuildFromId(~guildId)
 
       let userId = user->RemixAuth.User.getProfile->RemixAuth.User.getId
-      let guildMember = await fetchGuildMemberFromId(~guildId, ~userId)
+
+      let (guildMember, guildRoles) = await Promise.all2((
+        fetchGuildMemberFromId(~guildId, ~userId),
+        fetchGuildRoles(~guildId),
+      ))
 
       let memberRoles = switch guildMember->Nullable.toOption {
       | None => []
       | Some(guildMember) => guildMember.roles
       }
-      let guildRoles = switch await fetchGuildRoles(~guildId) {
+      let guildRoles = switch guildRoles {
       | data => data
       | exception JsError(_) => []
       }
@@ -75,7 +143,7 @@ let loader: Remix.loaderFunction<loaderData> = async ({request, params}) => {
     } catch {
     | Exn.Error(e) =>
       Console.error(e)
-      defaultLoader
+      defer(defaultLoader)
     }
   }
 }
@@ -124,6 +192,7 @@ let default = () => {
 
   let context = useOutletContext()
   let matches = useMatches()
+  let {address: maybeAddress} = Wagmi.useAccount()
 
   let id = matches[matches->Array.length - 1]->Option.map(match => match.id)
 
@@ -191,16 +260,39 @@ let default = () => {
           </p>
           <DiscordLoginButton label="Login To Discord" />
         </div>
-
       | Some(_) =>
         <>
           {guildHeader}
-          <div className="flex flex-1 flex-col  justify-around items-center text-center relative">
+          <div className="flex flex-1 flex-col  justify-around items-center relative">
             <section
-              className="width-full flex flex-col md:flex-row justify-around items-center w-full">
+              className="relative w-full lg:w-[90%] flex flex-col lg:flex-row justify-around items-center border-y-2 lg:border-4 border-extraDark lg:rounded-xl max-w-4xl ">
+              <div
+                className="flex flex-row flex-start lg:flex-col flex-1 h-full w-full border-b-2 lg:border-r-2 border-dark ">
+                <div
+                  className="flex flex-col flex-start flex-1 border-r-2 lg:border-b-2 border-extraDark p-5 bg-dark">
+                  <img src="/assets/verified_icon.svg" className="pb-4 h-14 w-14" />
+                  <p className="text-5xl text-brightOrange py-2"> {"0"->React.string} </p>
+                  <p className="text-sm text-white"> {"Verified Users"->React.string} </p>
+                </div>
+                <div
+                  className="flex flex-col flex-start flex-1 border-r-2 lg:border-b-2 border-extraDark p-5 bg-dark">
+                  <img src="/assets/gift_icon.svg" className="pb-4 h-14 w-14" />
+                  <p className="text-5xl text-brightBlue py-2"> {"0"->React.string} </p>
+                  <p className="text-sm text-white"> {"Available Sponsorships"->React.string} </p>
+                </div>
+                <div
+                  className="flex flex-col flex-start border-r-2 border-extraDark flex-1 p-5 bg-dark">
+                  <img src="/assets/unlock_icon.svg" className="pb-4 h-14 w-14" />
+                  <p className="text-5xl text-brightGreen py-2"> {"0"->React.string} </p>
+                  <p className="text-sm text-white"> {"Used Sponsorships"->React.string} </p>
+                </div>
+              </div>
+              <div className="flex-2">
+                <AssignSponsorships maybeAddress />
+              </div>
               <Remix.Outlet />
             </section>
-            {showPopup ? <SponsorshipsPopup /> : <> </>}
+            // {showPopup ? <SponsorshipsPopup /> : <> </>}
           </div>
         </>
       }}

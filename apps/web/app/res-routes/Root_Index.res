@@ -297,7 +297,7 @@ let default = () => {
           </div>
         </div>
         <section
-          className="py-4 gap-5 md:gap-0 lg:w-full max-w-5xl flex flex-col lg:flex-row  justify-around items-center">
+          className="py-4 gap-5 lg:gap-0 lg:w-full max-w-5xl flex flex-col lg:flex-row  justify-around items-center">
           <div
             className="lg:min-w-[237px] relative flex flex-col border border-brightBlue rounded-xl justify-center items-start bg-extraDark p-6 lg:p-12 self-stretch">
             <img src="/assets/gift_icon.svg" className="pb-4" />
@@ -307,7 +307,7 @@ let default = () => {
             </p>
           </div>
           <div
-            className="lg:min-w-[237px] relative flex flex-col border border-brightOrange rounded-xl justify-center items-start   bg-extraDark p-6 lg:p-12 self-stretch">
+            className="lg:min-w-[237px] relative flex flex-col border border-brightOrange rounded-xl justify-center items-start  bg-extraDark p-6 lg:p-12 self-stretch">
             <img src="/assets/verified_icon.svg" className="pb-4" />
             {verificationCount}
             <p className=" text-white font-poppins text-xs font-semibold p-1">
@@ -315,7 +315,7 @@ let default = () => {
             </p>
           </div>
           <div
-            className="lg:min-w-[237px]  relative flex flex-col border border-brightGreen rounded-xl justify-center items-start  bg-extraDark p-6 lg:p-12 self-stretch">
+            className="lg:min-w-[237px]  relative flex flex-col border border-brightGreen rounded-xl justify-center items-start bg-extraDark p-6 lg:p-12 self-stretch">
             <img src="/assets/unlock_icon.svg" className="pb-4" />
             {usedSponsorships}
             <p className=" text-white font-poppins text-xs font-semibold p-1">
