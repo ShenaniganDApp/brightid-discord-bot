@@ -7,7 +7,7 @@ function DiscordLoginButton(props) {
   return JsxRuntime.jsx(React.Form, {
               children: JsxRuntime.jsx("button", {
                     children: props.label,
-                    className: "w-full p-6 bg-discord font-bold rounded-xl text-2xl text-white"
+                    className: "w-full p-6 border-2 border-discord text-discord bg-transparent font-bold rounded-xl text-2xl hover:bg-discord hover:text-white"
                   }),
               method: "post",
               action: "/auth/discord"

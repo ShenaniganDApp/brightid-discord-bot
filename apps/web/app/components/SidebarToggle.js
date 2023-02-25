@@ -6,7 +6,7 @@ import * as Fa from "react-icons/fa";
 import * as JsxRuntime from "react/jsx-runtime";
 
 function SidebarToggle(props) {
-  var handleToggleSidebar = props.handleToggleSidebar;
+  var handleIsSidebarVisible = props.handleIsSidebarVisible;
   var visibility = Core__Option.isSome(props.maybeUser) ? "visible" : "invisible";
   return JsxRuntime.jsx("div", {
               children: JsxRuntime.jsx(Fa.FaBars, {
@@ -14,7 +14,7 @@ function SidebarToggle(props) {
                   }),
               className: "" + visibility + " md:hidden cursor-pointer w-12 h-12 bg-dark text-center text-white rounded-full flex justify-center items-center font-xl",
               onClick: (function (param) {
-                  Curry._1(handleToggleSidebar, true);
+                  Curry._1(handleIsSidebarVisible, true);
                 })
             });
 }

@@ -24,7 +24,7 @@ let make = (~isSidebarVisible, ~handleIsSidebarVisible, ~guilds, ~loadingGuilds)
       let intersection = guilds->Array.map((guild: Types.oauthGuild) => {
         <Menu iconShape="square" key={guild.id}>
           <MenuItem
-            className="bg-extraDark"
+            className="bg-extraDark hover:bg-dark"
             icon={<img
               className=" bg-extraDark rounded-lg border-1 border-white" src={guild->icon}
             />}>
@@ -75,24 +75,27 @@ let make = (~isSidebarVisible, ~handleIsSidebarVisible, ~guilds, ~loadingGuilds)
   }
 
   <ProSidebar
-    className="bg-dark scrollbar-hide"
+    className="bg-transparent"
     breakPoint="md"
     onToggle={handleIsSidebarVisible}
     toggled={isSidebarVisible}>
     <SidebarHeader
-      className="p-2 flex justify-around items-center top-0 sticky bg-dark z-10 scrollbar-hide">
-      <InviteButton />
+      className="flex top-0 sticky bg-inherit z-10 justify-center items-center border-b border-b-black backdrop-blur-3xl ">
+      <Remix.Link to="">
+        <img className="w-40" src={"/assets/brightid_reversed.svg"} />
+      </Remix.Link>
     </SidebarHeader>
-    <SidebarContent className="scrollbar-hide">
-      <Menu iconShape="square" key={0->Int.toString} />
+    <SidebarContent className=" bg-extraDark z-[-1]">
+      <Menu iconShape="square" key={0->Belt.Int.toString} />
       {sidebarElements}
     </SidebarContent>
-    <SidebarFooter className="bg-extraDark bottom-0 sticky scrollbar-hide list-none">
-      <Remix.Link to={""}>
-        <MenuItem>
-          <img src={"/assets/brightid_reversed.svg"} />
-        </MenuItem>
-      </Remix.Link>
+    <SidebarFooter className="bg-dark bottom-0 sticky list-none">
+      <div className=" flex flex-col justify-around items-center py-8 gap-3">
+        <p className="text-white font-poppins">
+          {"Your server is not on the list?"->React.string}
+        </p>
+        <InviteButton />
+      </div>
     </SidebarFooter>
   </ProSidebar>
 }
