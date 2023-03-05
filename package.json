@@ -11,7 +11,7 @@
     "dotenv": "^8.2.0",
     "find-up": "^6.3.0",
     "rescript": "^10.1.0-rc.5",
-    "rescript-discordjs": "^0.2.16",
+    "rescript-discordjs": "^0.3.0",
     "uuid": "^8.3.0",
     "rescript-nodejs": "^14.3.1"
   },

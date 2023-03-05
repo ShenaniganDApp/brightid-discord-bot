@@ -65,7 +65,7 @@ let sponsorshipRequested = async (interaction, contextId, sponsorHash) => {
       ->Interaction.getClient
       ->Client.getChannelManager
       ->ChannelManager.fetch(envConfig["discordLogChannelId"])
-    let _ = await channel->Channel.send({"embeds": [messageEmbed]})
+    let _ = await channel->Channel.sendWithOptions({"embeds": [messageEmbed]})
   } catch {
   | Js.Exn.Error(obj) =>
     switch Js.Exn.message(obj) {

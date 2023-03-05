@@ -71,13 +71,9 @@ function fetchVerificationInfo(retryOpt, id) {
                 }
                 var retry$1 = retry - 1 | 0;
                 if (retry$1 !== 0) {
-                  if (retry$1 !== 1) {
-                    return fetchVerificationInfo(retry$1, id);
-                  } else {
-                    return sleep(1000).then(function (param) {
-                                return fetchVerificationInfo(retry$1, id);
-                              });
-                  }
+                  return sleep(1000).then(function (param) {
+                              return fetchVerificationInfo(retry$1, id);
+                            });
                 }
                 throw e;
               }));
