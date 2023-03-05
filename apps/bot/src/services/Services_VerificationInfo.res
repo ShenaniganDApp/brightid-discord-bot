@@ -61,8 +61,7 @@ let rec fetchVerificationInfo = (~retry=10, id) => {
       let retry = retry - 1
       switch retry {
       | 0 => e->raise
-      | 1 => sleep(1000)->then(_ => fetchVerificationInfo(~retry, id))
-      | _ => fetchVerificationInfo(~retry, id)
+      | _ => sleep(1000)->then(_ => fetchVerificationInfo(~retry, id))
       }
     }
   })
