@@ -7,9 +7,9 @@ module Rest = {
   @module("@discordjs/rest") @new external make: {"version": int} => t = "REST"
   @send external setToken: (t, string) => t = "setToken"
   @send
-  external put: (t, string, {"body": array<SlashCommandBuilder.json>}) => Js.Promise.t<unit> = "put"
+  external put: (t, string, {"body": array<SlashCommandBuilder.json>}) => promise<unit> = "put"
   @send
-  external delete: (t, string) => Js.Promise.t<unit> = "delete"
+  external delete: (t, string) => promise<unit> = "delete"
 }
 
 module Routes = {
@@ -43,16 +43,16 @@ let rest = Rest.make({"version": 9})->Rest.setToken(token)
 
 rest
 ->Rest.put(Routes.applicationCommands(~clientId), {"body": commands})
-->thenResolve(() => Js.log("Successfully registered application commands."))
+->thenResolve(() => Console.log("Successfully registered application commands."))
 ->catch(e => {
   switch e {
-  | DeployCommandsError(msg) => Js.Console.error("Deploy Commands Error:" ++ msg)
-  | JsError(obj) =>
-    switch Js.Exn.message(obj) {
-    | Some(msg) => Js.Console.error("Deploy Commands Error: " ++ msg)
-    | None => Js.Console.error("Must be some non-error value")
+  | DeployCommandsError(msg) => Console.error("Deploy Commands Error:" ++ msg)
+  | Exn.Error(obj) =>
+    switch Exn.message(obj) {
+    | Some(msg) => Console.error("Deploy Commands Error: " ++ msg)
+    | None => Console.error("Must be some non-error value")
     }
-  | _ => Js.Console.error("Some unknown error")
+  | _ => Console.error("Some unknown error")
   }
   resolve()
 })
@@ -62,10 +62,10 @@ rest
 // rest
 // ->Rest.delete(Routes.applicationCommand(~clientId, ~commandId="981007485634748511"))
 // ->then(_ => {
-//   Js.log("Successfully deleted guilds command.")->resolve
+//   Console.log("Successfully deleted guilds command.")->resolve
 // })
 // ->catch(e => {
-//   Js.log(e)
+//   Console.log(e)
 //   resolve()
 // })
 // ->ignore

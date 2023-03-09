@@ -18,9 +18,10 @@
     "@glennsl/rescript-json-combinators",
     "rescript-discordjs",
     "@brightidbot/utils",
-    "@brightidbot/shared"
+    "@brightidbot/shared",
+    "@rescript/core"
   ],
   "pinned-dependencies": ["@brightidbot/utils", "@brightidbot/shared"],
-  "bsc-flags": ["-open JsonCombinators -open Belt"],
+  "bsc-flags": ["-open JsonCombinators -open RescriptCore"],
   "reanalyze": { "analysis": ["dce", "exception"] }
 }

@@ -10,10 +10,9 @@ let {makeCanvasFromUri, createMessageAttachmentFromCanvas, makeBeforeSponsorActi
 )
 
 @val @scope("globalThis")
-external fetch: (string, 'params) => Promise.t<Response.t<Js.Json.t>> = "fetch"
+external fetch: (string, 'params) => promise<Response.t<JSON.t>> = "fetch"
 
-let sleep: int => Js.Promise.t<unit> = _ms =>
-  %raw(` new Promise((resolve) => setTimeout(resolve, _ms))`)
+let sleep: int => promise<unit> = _ms => %raw(` new Promise((resolve) => setTimeout(resolve, _ms))`)
 
 Env.createEnv()
 
@@ -45,7 +44,7 @@ let sponsorRequestSubmittedMessageOptions = async uuid => {
   let uri = `${brightIdAppDeeplink}/${uuid}`
   let canvas = await makeCanvasFromUri(uri)
   let attachment = await createMessageAttachmentFromCanvas(canvas)
-  let nowInSeconds = Js.Math.round(Js.Date.now() /. 1000.)
+  let nowInSeconds = Math.round(Date.now() /. 1000.)
   let fifteenMinutesAfter = 15. *. 60. +. nowInSeconds
   let content = `You sponsor request has been submitted! \n\n Make sure you have scanned this QR code in the BrightID mobile app to confirm your sponsor and link Discord to BrightID. \n This process will timeout <t:${fifteenMinutesAfter->Float.toString}:R>.\n\nPlease be patient until time expires \n`
   {
@@ -89,7 +88,7 @@ let successfulSponsorMessageOptions = async uuid => {
 
 type sponsorship = Sponsorship(BrightId.Sponsorships.t)
 let checkSponsor = async uuid => {
-  open Shared.Decode.Decode_BrightId
+  open Shared.Decode
   let endpoint = `https://app.brightid.org/node/v6/sponsorships/${uuid}`
   let params = {
     "method": "GET",
@@ -102,7 +101,10 @@ let checkSponsor = async uuid => {
   let res = await fetch(endpoint, params)
   let json = await Response.json(res)
 
-  switch (json->Json.decode(Sponsorships.data), json->Json.decode(Error.data)) {
+  switch (
+    json->Json.decode(Decode_BrightId.Sponsorships.data),
+    json->Json.decode(Decode_BrightId.Error.data),
+  ) {
   | (Ok({data}), _) => Sponsorship(data)
   | (_, Ok(error)) => error->Exceptions.BrightIdError->raise
   | (Error(err), _) => err->Json.Decode.DecodeError->raise
@@ -117,7 +119,7 @@ type handleSponsor =
   | NoUnusedSponsorships
   | TimedOut
 
-@raises([HandleSponsorError, Js.Exn.Error, Json.Decode.DecodeError])
+@raises([HandleSponsorError, Exn.Error, Json.Decode.DecodeError])
 let rec handleSponsor = async (interaction, ~maybeHash=None, ~attempts=30, uuid) => {
   open Shared.BrightId
   open Shared.Decode
@@ -136,7 +138,7 @@ let rec handleSponsor = async (interaction, ~maybeHash=None, ~attempts=30, uuid)
       | Ok({hash}) =>
         let options = await sponsorRequestSubmittedMessageOptions(uuid)
         let _ = await Interaction.editReply(interaction, ~options, ())
-        Js.log2(
+        Console.log2(
           `A sponsor request has been submitted`,
           {"guild": guildId, "contextId": uuid, "hash": hash},
         )
@@ -145,11 +147,11 @@ let rec handleSponsor = async (interaction, ~maybeHash=None, ~attempts=30, uuid)
       | Error(err) => Json.Decode.DecodeError(err)->raise
       }
     } catch {
-    | Js.Exn.Error(error) =>
+    | Exn.Error(error) =>
       try {
         let brightIdError =
-          Js.Json.stringifyAny(error)
-          ->Option.map(Js.Json.parseExn)
+          JSON.stringifyAny(error)
+          ->Option.map(JSON.parseExn)
           ->Option.map(Json.decode(_, Decode_BrightId.Error.data))
 
         switch brightIdError {
@@ -211,11 +213,11 @@ let rec handleSponsor = async (interaction, ~maybeHash=None, ~attempts=30, uuid)
       | Exceptions.BrightIdError(_) =>
         let _ = await sleep(secondsBetweenAttempts * 1000)
         await handleSponsor(interaction, uuid, ~maybeHash, ~attempts=attempts - 1)
-      | Js.Exn.Error(obj) =>
-        switch Js.Exn.message(obj) {
+      | Exn.Error(obj) =>
+        switch Exn.message(obj) {
         | Some(msg) => HandleSponsorError(msg)->raise
         | None =>
-          Js.Console.error(obj)
+          Console.error(obj)
           HandleSponsorError("Handle Sponsor: Unknown Error")->raise
         }
       }
@@ -244,7 +246,7 @@ let execute = async interaction => {
     switch await Gist.ReadGist.content(~config=gistConfig(), ~decoder=Decode_Gist.brightIdGuilds) {
     | exception e => e->raise
     | guilds =>
-      switch guilds->Js.Dict.get(guildId) {
+      switch guilds->Dict.get(guildId) {
       | None =>
         let _ = await noWriteToGistMessage(interaction)
         SponsorButtonError(
@@ -275,7 +277,7 @@ let execute = async interaction => {
             let options = await successfulSponsorMessageOptions(uuid)
             let _ = await Interaction.followUp(interaction, ~options, ())
           | Error(err) =>
-            Js.Console.error2("Buttons Sponsor: Error updating used sponsorships", err)
+            Console.error2("Buttons Sponsor: Error updating used sponsorships", err)
             let _ = await noWriteToGistMessage(interaction)
           }
 

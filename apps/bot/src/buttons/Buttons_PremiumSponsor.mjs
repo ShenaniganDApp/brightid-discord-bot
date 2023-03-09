@@ -5,13 +5,12 @@ import * as Uuid from "uuid";
 import * as Js_exn from "rescript/lib/es6/js_exn.js";
 import * as Ethers from "ethers";
 import * as Js_dict from "rescript/lib/es6/js_dict.js";
-import * as $$Promise from "@ryyppy/rescript-promise/src/Promise.mjs";
 import * as Endpoints from "../Endpoints.mjs";
 import * as Exceptions from "../Exceptions.mjs";
 import * as Gist$Utils from "@brightidbot/utils/src/Gist.mjs";
 import * as DiscordJs from "discord.js";
-import * as Belt_Option from "rescript/lib/es6/belt_Option.js";
 import * as Caml_option from "rescript/lib/es6/caml_option.js";
+import * as Core__Option from "@rescript/core/src/Core__Option.mjs";
 import * as Decode$Shared from "@brightidbot/shared/src/Decode.mjs";
 import * as CustomMessages from "../CustomMessages.mjs";
 import * as Caml_exceptions from "rescript/lib/es6/caml_exceptions.js";
@@ -69,7 +68,7 @@ async function sponsorRequestSubmittedMessageOptions(uuid) {
   var attachment = await Commands_Verify.createMessageAttachmentFromCanvas(canvas);
   var nowInSeconds = Math.round(Date.now() / 1000);
   var fifteenMinutesAfter = 15 * 60 + nowInSeconds;
-  var content = "You sponsor request has been submitted! \n\n Make sure you have scanned this QR code in the BrightID mobile app to confirm your sponsor and link Discord to BrightID. \n This process will timeout <t:" + String(fifteenMinutesAfter) + ":R>.\n\n";
+  var content = "You sponsor request has been submitted! \n\n Make sure you have scanned this QR code in the BrightID mobile app to confirm your sponsor and link Discord to BrightID. \n This process will timeout <t:" + fifteenMinutesAfter.toString() + ":R>.\n\n";
   return {
           content: content,
           files: [attachment],
@@ -170,7 +169,7 @@ async function handleSponsor(interaction, maybeHashOpt, attemptsOpt, uuid) {
     var error = Caml_js_exceptions.internalToOCamlException(raw_error);
     if (error.RE_EXN_ID === Js_exn.$$Error) {
       try {
-        var brightIdError = Belt_Option.map(Belt_Option.map(JSON.stringify(error._1), (function (prim) {
+        var brightIdError = Core__Option.map(Core__Option.map(JSON.stringify(error._1), (function (prim) {
                     return JSON.parse(prim);
                   })), (function (__x) {
                 return Json$JsonCombinators.decode(__x, Decode$Shared.Decode_BrightId.$$Error.data);
@@ -343,7 +342,7 @@ async function execute(interaction) {
             var guildName = guild.name;
             console.error("User: " + uuid + " from server " + guildName + " ran into an unexpected error: ", errorMessage._1);
             await Commands_Verify.unknownErrorMessage(interaction);
-          } else if (errorMessage.RE_EXN_ID === $$Promise.JsError) {
+          } else if (errorMessage.RE_EXN_ID === "JsError") {
             var guildName$1 = guild.name;
             console.error("User: " + uuid + " from server " + guildName$1 + " ran into an unexpected error: ", errorMessage._1);
             await Commands_Verify.unknownErrorMessage(interaction);
@@ -354,7 +353,7 @@ async function execute(interaction) {
         if (exit$2 === 3) {
           switch (val$1) {
             case /* SponsorshipUsed */0 :
-                var premiumSponsorshipsUsed = Belt_Option.getWithDefault(guildData.premiumSponsorshipsUsed, Ethers.constants.Zero.toString());
+                var premiumSponsorshipsUsed = Core__Option.getWithDefault(guildData.premiumSponsorshipsUsed, Ethers.constants.Zero.toString());
                 var premiumSponsorshipsUsed$1 = Ethers.BigNumber.from(premiumSponsorshipsUsed).add("1").toString();
                 var updatePremiumSponsorshipsUsed = await Gist$Utils.UpdateGist.updateEntry(guilds, guildId, {
                       role: guildData.role,

@@ -12,7 +12,7 @@ import * as Caml_array from "../../../../../node_modules/rescript/lib/es6/caml_a
 import * as AdminButton from "../../components/AdminButton.js";
 import * as Belt_Option from "../../../../../node_modules/rescript/lib/es6/belt_Option.js";
 import * as Caml_option from "../../../../../node_modules/rescript/lib/es6/caml_option.js";
-import * as Decode$Shared from "../../../../../node_modules/@brightidbot/shared/src/Decode.js";
+import * as Decode$Shared from "../../../node_modules/@brightidbot/shared/src/Decode.js";
 import * as DiscordServer from "../../DiscordServer.js";
 import * as SidebarToggle from "../../components/SidebarToggle.js";
 import * as WebUtils_Gist from "../../utils/WebUtils_Gist.js";

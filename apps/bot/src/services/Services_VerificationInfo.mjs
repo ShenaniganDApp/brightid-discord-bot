@@ -2,10 +2,10 @@
 
 import * as Env from "../Env.mjs";
 import * as Uuid from "uuid";
-import * as $$Promise from "@ryyppy/rescript-promise/src/Promise.mjs";
 import * as Endpoints from "../Endpoints.mjs";
 import * as Exceptions from "../Exceptions.mjs";
 import NodeFetch from "node-fetch";
+import * as Core__Promise from "@rescript/core/src/Core__Promise.mjs";
 import * as Decode$Shared from "@brightidbot/shared/src/Decode.mjs";
 import * as Constants$Shared from "@brightidbot/shared/src/Constants.mjs";
 import * as Json$JsonCombinators from "@glennsl/rescript-json-combinators/src/Json.mjs";
@@ -45,7 +45,7 @@ function fetchVerificationInfo(retryOpt, id) {
     },
     timestamp: 60000
   };
-  return $$Promise.$$catch(NodeFetch(endpoint, params).then(function (prim) {
+  return Core__Promise.$$catch(NodeFetch(endpoint, params).then(function (prim) {
                     return prim.json();
                   }).then(function (json) {
                   var match = Json$JsonCombinators.decode(json, Decode$Shared.Decode_BrightId.ContextId.data);
