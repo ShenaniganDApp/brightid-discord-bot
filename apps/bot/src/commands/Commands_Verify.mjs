@@ -5,14 +5,13 @@ import * as Uuid from "uuid";
 import * as Canvas from "canvas";
 import * as Ethers from "ethers";
 import * as Qrcode from "qrcode";
-import * as Js_dict from "rescript/lib/es6/js_dict.js";
-import * as $$Promise from "@ryyppy/rescript-promise/src/Promise.mjs";
 import * as Endpoints from "../Endpoints.mjs";
-import * as Belt_Array from "rescript/lib/es6/belt_Array.js";
 import * as Exceptions from "../Exceptions.mjs";
 import * as Gist$Utils from "@brightidbot/utils/src/Gist.mjs";
 import * as DiscordJs from "discord.js";
-import * as Belt_Option from "rescript/lib/es6/belt_Option.js";
+import * as Core__Array from "@rescript/core/src/Core__Array.mjs";
+import * as Core__Option from "@rescript/core/src/Core__Option.mjs";
+import * as Core__Promise from "@rescript/core/src/Core__Promise.mjs";
 import * as Decode$Shared from "@brightidbot/shared/src/Decode.mjs";
 import * as Caml_exceptions from "rescript/lib/es6/caml_exceptions.js";
 import * as Constants$Shared from "@brightidbot/shared/src/Constants.mjs";
@@ -171,7 +170,7 @@ function getAssignedSPFromAddress(maybeSponsorshipAddress, contractAddress, url)
     var formattedContext = Ethers.utils.formatBytes32String("Discord");
     return contract.contextBalance(sponsorshipAddress, formattedContext);
   };
-  return Belt_Option.mapWithDefault(maybeSponsorshipAddress, Promise.resolve(Ethers.constants.Zero), getBalance);
+  return Core__Option.mapWithDefault(maybeSponsorshipAddress, Promise.resolve(Ethers.constants.Zero), getBalance);
 }
 
 function totalUnusedSponsorships(usedSponsorships, assignedSponsorships, assignedSponsorshipsEth) {
@@ -226,7 +225,7 @@ async function getAppUnusedSponsorships(context) {
     if (exn.RE_EXN_ID === Exceptions.BrightIdError) {
       return ;
     }
-    if (exn.RE_EXN_ID === $$Promise.JsError) {
+    if (exn.RE_EXN_ID === "JsError") {
       return ;
     }
     throw exn;
@@ -240,7 +239,7 @@ function getServerAssignedSponsorships(guildData) {
   };
   var assignedSponsorships = guildData.assignedSponsorships;
   if (assignedSponsorships !== undefined) {
-    return Belt_Array.reduce(assignedSponsorships, Ethers.constants.Zero, sumAmounts);
+    return Core__Array.reduce(assignedSponsorships, Ethers.constants.Zero, sumAmounts);
   } else {
     return Ethers.constants.Zero;
   }
@@ -250,7 +249,7 @@ function getGuildSponsorshipTotals(guilds) {
   var calculateAssignedAndUnusedTotals = function (acc, key) {
     var guild = guilds[key];
     var assignedSponsorships = getServerAssignedSponsorships(guild);
-    var usedSponsorships = Ethers.BigNumber.from(Belt_Option.getWithDefault(guild.usedSponsorships, "0"));
+    var usedSponsorships = Ethers.BigNumber.from(Core__Option.getWithDefault(guild.usedSponsorships, "0"));
     var totalAssignedSponsorships = acc[0].add(assignedSponsorships);
     var totalUsedSponsorships = acc[1].add(usedSponsorships);
     return [
@@ -258,7 +257,7 @@ function getGuildSponsorshipTotals(guilds) {
             totalUsedSponsorships
           ];
   };
-  return Belt_Array.reduce(Object.keys(guilds), [
+  return Core__Array.reduce(Object.keys(guilds), [
               Ethers.constants.Zero,
               Ethers.constants.Zero
             ], calculateAssignedAndUnusedTotals);
@@ -270,17 +269,17 @@ function execute(interaction) {
   var guildRoleManager = guild.roles;
   var memberId = member.id;
   var uuid = Uuid.v5(memberId, envConfig.uuidNamespace);
-  return $$Promise.$$catch(interaction.deferReply({
+  return Core__Promise.$$catch(interaction.deferReply({
                     ephemeral: true
                   }).then(function (param) {
                   return Gist$Utils.ReadGist.content(gistConfig(undefined), Decode$Shared.Decode_Gist.brightIdGuilds).then(function (guilds) {
                               var guildId = guild.id;
-                              var guildData = Js_dict.get(guilds, guildId);
+                              var guildData = guilds[guildId];
                               if (guildData !== undefined) {
                                 var roleId = guildData.roleId;
                                 if (roleId !== undefined) {
                                   var guildRole = getRolebyRoleId(guildRoleManager, roleId);
-                                  return $$Promise.$$catch(Services_VerificationInfo.getBrightIdVerification(member).then(function (verificationInfo) {
+                                  return Core__Promise.$$catch(Services_VerificationInfo.getBrightIdVerification(member).then(function (verificationInfo) {
                                                   if (verificationInfo._0.unique) {
                                                     return addRoleToMember(guildRole, member).then(function (param) {
                                                                 var options = {
@@ -310,8 +309,8 @@ function execute(interaction) {
                                                   if (appUnusedSponsorships !== undefined) {
                                                     var match = getGuildSponsorshipTotals(guilds);
                                                     var unusedGuildSponsorships = match[0].sub(match[1]);
-                                                    var unusedPremiumSponsorships = Ethers.BigNumber.from(String(appUnusedSponsorships)).sub(unusedGuildSponsorships);
-                                                    var premiumSponsorshipsUsed = Ethers.BigNumber.from(Belt_Option.getWithDefault(guildData.premiumSponsorshipsUsed, "0"));
+                                                    var unusedPremiumSponsorships = Ethers.BigNumber.from(appUnusedSponsorships.toString()).sub(unusedGuildSponsorships);
+                                                    var premiumSponsorshipsUsed = Ethers.BigNumber.from(Core__Option.getWithDefault(guildData.premiumSponsorshipsUsed, "0"));
                                                     var shouldUsePremiumSponsorships = unusedPremiumSponsorships.gt(Ethers.constants.Zero) && premiumSponsorshipsUsed.lt("10") || unusedPremiumSponsorships.gt(Ethers.constants.Zero) && hasPremium(guildData) || inWhitelist;
                                                     if (errorNum !== 4) {
                                                       var exit = 0;
@@ -322,7 +321,7 @@ function execute(interaction) {
                                                       }
                                                       catch (raw_obj){
                                                         var obj = Caml_js_exceptions.internalToOCamlException(raw_obj);
-                                                        if (obj.RE_EXN_ID === $$Promise.JsError) {
+                                                        if (obj.RE_EXN_ID === "JsError") {
                                                           console.error(obj._1);
                                                           throw {
                                                                 RE_EXN_ID: Exceptions.VerifyCommandError,
@@ -362,7 +361,7 @@ function execute(interaction) {
                                                       }
                                                       throw e$1;
                                                     }
-                                                    var usedSponsorships = Belt_Option.mapWithDefault(guildData.usedSponsorships, Ethers.constants.Zero, (function (prim) {
+                                                    var usedSponsorships = Core__Option.mapWithDefault(guildData.usedSponsorships, Ethers.constants.Zero, (function (prim) {
                                                             return Ethers.BigNumber.from(prim);
                                                           }));
                                                     var assignedSponsorships = assignedSponsorshipsID.add(assignedSponsorshipsEth);

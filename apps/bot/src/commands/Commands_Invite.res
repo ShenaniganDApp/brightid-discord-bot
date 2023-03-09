@@ -3,7 +3,7 @@ open Promise
 open Exceptions
 
 @module("../updateOrReadGist.mjs")
-external updateGist: (string, 'a) => Js.Promise.t<unit> = "updateGist"
+external updateGist: (string, 'a) => promise<unit> = "updateGist"
 
 let urlRe = %re(
   "/(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})/"
@@ -28,7 +28,7 @@ let execute = (interaction: Interaction.t) => {
       InviteCommandError("Commands_Invite: User does not have Administrator permissions")->raise
     | true => {
         let inviteLink = commandOptions->CommandInteractionOptionResolver.getString("invite")
-        switch inviteLink->Js.Nullable.toOption {
+        switch inviteLink->Nullable.toOption {
         | None =>
           interaction
           ->Interaction.editReply(
@@ -38,7 +38,7 @@ let execute = (interaction: Interaction.t) => {
           ->ignore
           InviteCommandError("Commands_Invite: Invite Link returned null or undefined")->reject
         | Some(inviteLink) =>
-          switch urlRe->Js.Re.test_(inviteLink) {
+          switch urlRe->RegExp.test(inviteLink) {
           | false => {
               interaction
               ->Interaction.editReply(
@@ -73,13 +73,13 @@ let execute = (interaction: Interaction.t) => {
       }
     }->catch(e => {
       switch e {
-      | InviteCommandError(msg) => Js.Console.error(msg)
-      | JsError(obj) =>
-        switch Js.Exn.message(obj) {
-        | Some(msg) => Js.Console.error(msg)
-        | None => Js.Console.error("Must be some non-error value")
+      | InviteCommandError(msg) => Console.error(msg)
+      | Exn.Error(obj) =>
+        switch Exn.message(obj) {
+        | Some(msg) => Console.error(msg)
+        | None => Console.error("Must be some non-error value")
         }
-      | _ => Js.Console.error("Some unknown error")
+      | _ => Console.error("Some unknown error")
       }
       resolve()
     })

@@ -22,4 +22,4 @@ type brightIdGuild = {
   "roleId": string,
 }
 
-type brightIdGuilds = Js.Dict.t<brightIdGuild>
+type brightIdGuilds = Dict.t<brightIdGuild>

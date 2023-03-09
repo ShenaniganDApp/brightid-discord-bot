@@ -1,5 +1,4 @@
 open Discord
-open Promise
 
 let helpMessage = `\
 __**Available BrightId Unique Bot commands:**__
@@ -27,7 +26,7 @@ let execute = async (interaction: Interaction.t) => {
     (),
   ) {
   | exception JsError(obj) =>
-    Js.Console.error(obj)
+    Console.error(obj)
     JsError(obj)->raise
   | _ => ()
   }

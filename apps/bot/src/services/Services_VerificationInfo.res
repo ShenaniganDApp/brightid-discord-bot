@@ -20,10 +20,9 @@ let config = switch config {
 }
 
 @module("node-fetch")
-external fetch: (string, 'params) => Promise.t<Response.t<Js.Json.t>> = "default"
+external fetch: (string, 'params) => promise<Response.t<JSON.t>> = "default"
 
-let sleep: int => Js.Promise.t<unit> = _ms =>
-  %raw(` new Promise((resolve) => setTimeout(resolve, _ms))`)
+let sleep: int => promise<unit> = _ms => %raw(` new Promise((resolve) => setTimeout(resolve, _ms))`)
 
 let {context} = module(Constants)
 let {brightIdVerificationEndpoint} = module(Endpoints)
@@ -46,9 +45,12 @@ let rec fetchVerificationInfo = (~retry=10, id) => {
   ->fetch(params)
   ->then(Response.json)
   ->then(json => {
-    open Decode.Decode_BrightId
+    open Decode
 
-    switch (json->Json.decode(ContextId.data), json->Json.decode(Error.data)) {
+    switch (
+      json->Json.decode(Decode_BrightId.ContextId.data),
+      json->Json.decode(Decode_BrightId.Error.data),
+    ) {
     | (Ok({data}), _) => VerificationInfo(data)->resolve
     | (_, Ok(error)) => error->Exceptions.BrightIdError->reject
     | (Error(err), _) => err->Json.Decode.DecodeError->reject

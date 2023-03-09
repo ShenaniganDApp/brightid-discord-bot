@@ -1,5 +1,4 @@
 open Discord
-open Promise
 open NodeFetch
 open Shared
 
@@ -8,15 +7,15 @@ let {context} = module(Constants)
 
 module type Command = {
   let data: SlashCommandBuilder.t
-  let execute: Interaction.t => Js.Promise.t<unit>
+  let execute: Interaction.t => promise<unit>
 }
 module type Button = {
   let customId: string
-  let execute: Interaction.t => Js.Promise.t<unit>
+  let execute: Interaction.t => promise<unit>
 }
 
 @val @scope("globalThis")
-external fetch: (string, 'params) => Promise.t<Response.t<Js.Json.t>> = "fetch"
+external fetch: (string, 'params) => promise<Response.t<JSON.t>> = "fetch"
 
 Env.createEnv()
 
@@ -90,7 +89,7 @@ let updateGistOnGuildCreate = async (guild, roleId, content) => {
 }
 
 let rec fetchContextIds = async (~retry=5, ()) => {
-  open Decode.Decode_BrightId
+  open Decode
   let requestTimeout = 60000
   let endpoint = `${brightIdVerificationEndpoint}/${context}`
   let params = {
@@ -103,8 +102,11 @@ let rec fetchContextIds = async (~retry=5, ()) => {
   }
   let res = await fetch(endpoint, params)
   let json = await Response.json(res)
-  switch (json->Json.decode(Verifications.data), json->Json.decode(Error.data)) {
-  | (Ok({data}), _) => Set.String.fromArray(data.contextIds)
+  switch (
+    json->Json.decode(Decode_BrightId.Verifications.data),
+    json->Json.decode(Decode_BrightId.Error.data),
+  ) {
+  | (Ok({data}), _) => Set.fromArray(data.contextIds)
   | (_, Ok(error)) =>
     let retry = retry - 1
     switch retry {
@@ -131,7 +133,7 @@ let assignRoleOnCreate = async (guild, role) => {
     guildMember
     ->GuildMember.getGuildMemberId
     ->UUID.v5(envConfig["uuidNamespace"])
-    ->Set.String.has(contextIds, _)
+    ->Set.has(contextIds, _)
 
   let assignRoleToGuildMember = (guildMember, role) => {
     guildMember->GuildMember.getGuildMemberRoleManager->GuildMemberRoleManager.add(role, ())
@@ -176,19 +178,19 @@ let onGuildCreate = async guild => {
     },
   )
   switch role {
-  | exception e => Js.Console.error2(`${guildName} : ${guildId}: `, e)
+  | exception e => Console.error2(`${guildName} : ${guildId}: `, e)
   | role =>
     let content = await Gist.ReadGist.content(~config, ~decoder=Decode_Gist.brightIdGuilds)
 
     switch await updateGistOnGuildCreate(guild, role->Role.getRoleId, content) {
-    | exception e => Js.Console.error2(`${guildName} : ${guildId}: `, e)
+    | exception e => Console.error2(`${guildName} : ${guildId}: `, e)
     | _ =>
-      Js.log(`${guildName} : ${guildId}: Successfully added to the database`)
+      Console.log(`${guildName} : ${guildId}: Successfully added to the database`)
 
       switch await assignRoleOnCreate(guild, role) {
-      | exception e => Js.Console.error2(`${guildName} : ${guildId}: `, e)
+      | exception e => Console.error2(`${guildName} : ${guildId}: `, e)
       | verifiedMembersCount =>
-        Js.log(
+        Console.log(
           `${guildName} : ${guildId}: Successfully assigned role to ${Int.toString(
               verifiedMembersCount,
             )} current members`,
@@ -208,23 +210,21 @@ let onInteraction = async (interaction: Interaction.t) => {
   | (true, false) => {
       let commandName = interaction->Interaction.getCommandName
       let command = commands->Collection.get(commandName)
-      switch command->Js.Nullable.toOption {
-      | None => Js.Console.error("Bot.res: Command not found")
+      switch command->Nullable.toOption {
+      | None => Console.error("Bot.res: Command not found")
       | Some(module(Command)) =>
         switch await Command.execute(interaction) {
         | exception e =>
           switch e {
           | Exceptions.BrightIdError({errorMessage}) =>
-            Js.Console.error2(`${guildName} : ${guildId}: `, errorMessage)
-          | Exceptions.VerifyCommandError(msg) =>
-            Js.Console.error2(`${guildName} : ${guildId}: `, msg)
-          | Exceptions.InviteCommandError(msg) =>
-            Js.Console.error2(`${guildName} : ${guildId}: `, msg)
-          | JsError(obj) => Js.Console.error2(`${guildName} : ${guildId}: `, obj)
-          | _ => Js.Console.error2(`${guildName} : ${guildId}: `, e)
+            Console.error2(`${guildName} : ${guildId}: `, errorMessage)
+          | Exceptions.VerifyCommandError(msg) => Console.error2(`${guildName} : ${guildId}: `, msg)
+          | Exceptions.InviteCommandError(msg) => Console.error2(`${guildName} : ${guildId}: `, msg)
+          | JsError(obj) => Console.error2(`${guildName} : ${guildId}: `, obj)
+          | _ => Console.error2(`${guildName} : ${guildId}: `, e)
           }
         | _ =>
-          Js.Console.log(
+          Console.log(
             `${guildName} : ${guildId}: Successfully served the command ${commandName} for ${user->User.getUsername}`,
           )
         }
@@ -235,32 +235,31 @@ let onInteraction = async (interaction: Interaction.t) => {
       let buttonCustomId = interaction->Interaction.getCustomId
 
       let button = buttons->Collection.get(buttonCustomId)
-      switch button->Js.Nullable.toOption {
-      | None => Js.Console.error("Bot.res: Button not found")
+      switch button->Nullable.toOption {
+      | None => Console.error("Bot.res: Button not found")
       | Some(module(Button)) =>
         switch await Button.execute(interaction) {
         | exception e =>
           switch e {
           | Exceptions.BrightIdError({errorMessage}) =>
-            Js.Console.error2(`${guildName} : ${guildId}: `, errorMessage)
+            Console.error2(`${guildName} : ${guildId}: `, errorMessage)
           | Exceptions.PremiumSponsorButtonError(msg) =>
-            Js.Console.error2(`${guildName} : ${guildId}: `, msg)
-          | Exceptions.SponsorButtonError(msg) =>
-            Js.Console.error2(`${guildName} : ${guildId}: `, msg)
+            Console.error2(`${guildName} : ${guildId}: `, msg)
+          | Exceptions.SponsorButtonError(msg) => Console.error2(`${guildName} : ${guildId}: `, msg)
           | Exceptions.ButtonVerifyHandlerError(msg) =>
-            Js.Console.error2(`${guildName} : ${guildId}: `, msg)
-          | JsError(obj) => Js.Console.error2(`${guildName} : ${guildId}: `, obj)
-          | _ => Js.Console.error2(`${guildName} : ${guildId}: `, e)
+            Console.error2(`${guildName} : ${guildId}: `, msg)
+          | JsError(obj) => Console.error2(`${guildName} : ${guildId}: `, obj)
+          | _ => Console.error2(`${guildName} : ${guildId}: `, e)
           }
         | _ =>
-          Js.Console.log(
+          Console.log(
             `${guildName} : ${guildId}: Successfully served button press "${buttonCustomId}" for ${user->User.getUsername}`,
           )
         }
       }
     }
 
-  | (_, _) => Js.Console.error("Bot.res: Unknown interaction")
+  | (_, _) => Console.error("Bot.res: Unknown interaction")
   }
 }
 
@@ -272,20 +271,20 @@ let onGuildDelete = async guild => {
   let guildName = Guild.getGuildName(guild)
 
   switch await Gist.ReadGist.content(~config=gistConfig(), ~decoder=Decode_Gist.brightIdGuilds) {
-  | exception JsError(e) => Js.Console.error2(`${guildName} : ${guildId}: `, e)
+  | exception JsError(e) => Console.error2(`${guildName} : ${guildId}: `, e)
   | guilds =>
-    switch guilds->Js.Dict.get(guildId) {
+    switch guilds->Dict.get(guildId) {
     | Some(_) =>
       switch await Gist.UpdateGist.removeEntry(
         ~content=guilds,
         ~key=guildId,
         ~config=gistConfig(),
       ) {
-      | _ => Js.log(`${guildName} : ${guildId}: Successfully removed guild data`)
-      | exception JsError(e) => Js.Console.error2(`${guildName} : ${guildId}: `, e)
+      | _ => Console.log(`${guildName} : ${guildId}: Successfully removed guild data`)
+      | exception JsError(e) => Console.error2(`${guildName} : ${guildId}: `, e)
       }
 
-    | None => Js.Console.error(`${guildName} : ${guildId}: Could not find guild data to delete`)
+    | None => Console.error(`${guildName} : ${guildId}: Could not find guild data to delete`)
     }
   }
 }
@@ -304,24 +303,24 @@ let onGuildMemberAdd = async guildMember => {
         ~config=gistConfig(),
         ~decoder=Decode.Decode_Gist.brightIdGuilds,
       ) {
-      | exception e => Js.Console.error2(`${guildName} : ${guildId}: `, e)
+      | exception e => Console.error2(`${guildName} : ${guildId}: `, e)
       | guilds =>
         let guild = guildMember->GuildMember.getGuild
         let guildId = guild->Guild.getGuildId
-        let brightIdGuild = guilds->Js.Dict.get(guildId)
+        let brightIdGuild = guilds->Dict.get(guildId)
         switch brightIdGuild {
-        | None => Js.Console.error2(`${guildName} : ${guildId}: `, `Guild does not exist in Gist`)
+        | None => Console.error2(`${guildName} : ${guildId}: `, `Guild does not exist in Gist`)
         | Some({roleId: None}) =>
-          Js.Console.error2(`${guildName} : ${guildId}: `, `Guild does not have a saved roleId`)
+          Console.error2(`${guildName} : ${guildId}: `, `Guild does not have a saved roleId`)
         | Some({roleId: Some(roleId)}) =>
           let role =
             guild
             ->Guild.getGuildRoleManager
             ->RoleManager.getCache
             ->Collection.get(roleId)
-            ->Js.Nullable.toOption
+            ->Nullable.toOption
           switch role {
-          | None => Js.Console.error2(`${guildName} : ${guildId}: `, `Role does not exist`)
+          | None => Console.error2(`${guildName} : ${guildId}: `, `Role does not exist`)
           | Some(role) =>
             let guildMemberRoleManager = guildMember->GuildMember.getGuildMemberRoleManager
             let _ = switch await GuildMemberRoleManager.add(
@@ -330,17 +329,17 @@ let onGuildMemberAdd = async guildMember => {
               ~reason="User is already verified by BrightID",
               (),
             ) {
-            | exception e => Js.Console.error2(`${guildName} : ${guildId}: `, e)
+            | exception e => Console.error2(`${guildName} : ${guildId}: `, e)
             | _ =>
               let uuid =
                 guildMember->GuildMember.getGuildMemberId->UUID.v5(envConfig["uuidNamespace"])
-              Js.log(`${guildName} : ${guildId} verified the user with contextId: ${uuid}`)
+              Console.log(`${guildName} : ${guildId} verified the user with contextId: ${uuid}`)
             }
           }
         }
       }
     | false =>
-      Js.Console.error2(
+      Console.error2(
         `${guildName} : ${guildId}: `,
         `User ${guildMember->GuildMember.getDisplayName} is not unique`,
       )
@@ -348,13 +347,12 @@ let onGuildMemberAdd = async guildMember => {
   | exception e =>
     switch e {
     | Exceptions.BrightIdError({errorMessage}) =>
-      Js.Console.error2(`${guildName} : ${guildId}: `, errorMessage)
-    | JsError(obj) => Js.Console.error2(`${guildName} : ${guildId}: `, obj)
-    | _ => Js.Console.error2(`${guildName} : ${guildId}: `, e)
+      Console.error2(`${guildName} : ${guildId}: `, errorMessage)
+    | JsError(obj) => Console.error2(`${guildName} : ${guildId}: `, obj)
+    | _ => Console.error2(`${guildName} : ${guildId}: `, e)
     }
   }
 }
-
 
 let onRoleUpdate = async role => {
   open Utils
@@ -365,15 +363,14 @@ let onRoleUpdate = async role => {
     ~config=gistConfig(),
     ~decoder=Decode.Decode_Gist.brightIdGuilds,
   ) {
-  | exception e => Js.Console.error2(`${guildName} : ${guildId}: `, e)
+  | exception e => Console.error2(`${guildName} : ${guildId}: `, e)
   | content =>
-    let brightIdGuild = content->Js.Dict.get(guildId)
+    let brightIdGuild = content->Dict.get(guildId)
     switch brightIdGuild {
-    | None => Js.Console.error2(`${guildName} : ${guildId}: `, `Guild does not exist in Gist`)
+    | None => Console.error2(`${guildName} : ${guildId}: `, `Guild does not exist in Gist`)
     | Some(brightIdGuild) =>
       switch brightIdGuild.roleId {
-      | None =>
-        Js.Console.error2(`${guildName} : ${guildId}: `, `Guild does not have a saved roleId`)
+      | None => Console.error2(`${guildName} : ${guildId}: `, `Guild does not have a saved roleId`)
       | Some(roleId) =>
         let isVerifiedRole = role->Role.getRoleId === roleId
         switch isVerifiedRole {
@@ -389,8 +386,8 @@ let onRoleUpdate = async role => {
             ~key=guildId,
             ~config=gistConfig(),
           ) {
-          | exception e => Js.Console.error2(`${guildName} : ${guildId}: `, e)
-          | _ => Js.log(`${guildName} : ${guildId} updated the role name to ${roleName}`)
+          | exception e => Console.error2(`${guildName} : ${guildId}: `, e)
+          | _ => Console.log(`${guildName} : ${guildId} updated the role name to ${roleName}`)
           }
         | false => ()
         }
@@ -410,16 +407,16 @@ let onGuildMemberUpdate = async (_, newMember) => {
     ~config=gistConfig(),
     ~decoder=Decode.Decode_Gist.brightIdGuilds,
   ) {
-  | exception e => Js.Console.error2(`${guildName} : ${guildId}: `, e)
+  | exception e => Console.error2(`${guildName} : ${guildId}: `, e)
   | guilds =>
-    switch guilds->Js.Dict.get(guildId) {
+    switch guilds->Dict.get(guildId) {
     | None => ()
     | Some({roleId: None}) => ()
     | Some({roleId: Some(roleId)}) =>
       let _ = switch await guild
       ->Guild.getGuildMemberManager
       ->GuildMemberManager.fetchOne(newMember->GuildMember.getGuildMemberId) {
-      | exception e => Js.Console.error2(`${guildName} : ${guildId}: `, e)
+      | exception e => Console.error2(`${guildName} : ${guildId}: `, e)
       | member =>
         let _ = switch await getBrightIdVerification(member) {
         | VerificationInfo({unique}) =>
@@ -430,7 +427,7 @@ let onGuildMemberUpdate = async (_, newMember) => {
             ->Guild.getGuildRoleManager
             ->RoleManager.getCache
             ->Collection.get(roleId)
-            ->Js.Nullable.toOption
+            ->Nullable.toOption
           switch (role, roles->Collection.has(roleId), unique) {
           | (None, _, _) => ()
           | (Some(role), true, false) =>
@@ -442,9 +439,9 @@ let onGuildMemberUpdate = async (_, newMember) => {
             ) {
             | exception e =>
               switch e {
-              | Js.Exn.Error(obj) =>
-                switch Js.Exn.message(obj) {
-                | Some(m) => Js.Console.error2(`${guildName} : ${guildId}: `, m)
+              | Exn.Error(obj) =>
+                switch Exn.message(obj) {
+                | Some(m) => Console.error2(`${guildName} : ${guildId}: `, m)
                 | None => ()
                 }
               | _ => ()
@@ -461,9 +458,9 @@ let onGuildMemberUpdate = async (_, newMember) => {
             ) {
             | exception e =>
               switch e {
-              | Js.Exn.Error(obj) =>
-                switch Js.Exn.message(obj) {
-                | Some(m) => Js.Console.error2(`${guildName} : ${guildId}: `, m)
+              | Exn.Error(obj) =>
+                switch Exn.message(obj) {
+                | Some(m) => Console.error2(`${guildName} : ${guildId}: `, m)
                 | None => ()
                 }
               | _ => ()
@@ -481,7 +478,7 @@ let onGuildMemberUpdate = async (_, newMember) => {
               ->Guild.getGuildRoleManager
               ->RoleManager.getCache
               ->Collection.get(roleId)
-              ->Js.Nullable.toOption
+              ->Nullable.toOption
             let guildMemberRoleManager = newMember->GuildMember.getGuildMemberRoleManager
             switch role {
             | None => ()
@@ -494,9 +491,9 @@ let onGuildMemberUpdate = async (_, newMember) => {
               ) {
               | exception e =>
                 switch e {
-                | Js.Exn.Error(obj) =>
-                  switch Js.Exn.message(obj) {
-                  | Some(m) => Js.Console.error2(`${guildName} : ${guildId}: `, m)
+                | Exn.Error(obj) =>
+                  switch Exn.message(obj) {
+                  | Some(m) => Console.error2(`${guildName} : ${guildId}: `, m)
                   | None => ()
                   }
                 | _ => ()
@@ -504,12 +501,12 @@ let onGuildMemberUpdate = async (_, newMember) => {
               | _ => ()
               }
             }
-          | Js.Exn.Error(obj) =>
-            switch Js.Exn.message(obj) {
-            | Some(m) => Js.Console.error2(`${guildName} : ${guildId}: `, m)
+          | Exn.Error(obj) =>
+            switch Exn.message(obj) {
+            | Some(m) => Console.error2(`${guildName} : ${guildId}: `, m)
             | None => ()
             }
-          | _ => Js.Console.error2(`${guildName} : ${guildId}: `, e)
+          | _ => Console.error2(`${guildName} : ${guildId}: `, e)
           }
         }
       }
@@ -520,7 +517,7 @@ let onGuildMemberUpdate = async (_, newMember) => {
 client->Client.on(
   #ready(
     () => {
-      Js.log("Logged In")
+      Console.log("Logged In")
     },
   ),
 )

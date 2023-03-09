@@ -8,7 +8,7 @@ let {brightIdAppDeeplink, brightIdLinkVerificationEndpoint} = module(Endpoints)
 let {context, contractAddressID, contractAddressETH} = module(Shared.Constants)
 
 @val @scope("globalThis")
-external fetch: (string, 'params) => Promise.t<Response.t<Js.Json.t>> = "fetch"
+external fetch: (string, 'params) => promise<Response.t<JSON.t>> = "fetch"
 
 let abi: Shared.ABI.t = %raw(`import("../../../../packages/shared/src/abi/SP.json", {assert: {type: "json"}}).then((module) => module.default)`)
 
@@ -21,7 +21,7 @@ module Canvas = {
 
 module QRCode = {
   type t
-  @module("qrcode") external toCanvas: (Canvas.t, string) => Promise.t<unit> = "toCanvas"
+  @module("qrcode") external toCanvas: (Canvas.t, string) => promise<unit> = "toCanvas"
 }
 
 Env.createEnv()
@@ -103,8 +103,7 @@ let createMessageAttachmentFromCanvas = async canvas => {
 }
 
 let getRolebyRoleId = (guildRoleManager, roleId) => {
-  let guildRole =
-    guildRoleManager->RoleManager.getCache->Collection.get(roleId)->Js.Nullable.toOption
+  let guildRole = guildRoleManager->RoleManager.getCache->Collection.get(roleId)->Nullable.toOption
 
   switch guildRole {
   | Some(guildRole) => guildRole
@@ -234,7 +233,7 @@ let handleUnverifiedGuildMember = async (errorNum, interaction, uuid) => {
 let hasPremium = (guildData: BrightId.Gist.brightIdGuild) =>
   switch guildData.premiumExpirationTimestamp {
   | Some(premiumExpirationTimestamp) =>
-    let now = Js.Date.now()
+    let now = Date.now()
     now < premiumExpirationTimestamp
   | None => false
   }
@@ -266,7 +265,7 @@ let getGuildSponsorshipTotals = guilds => {
 
   let calculateAssignedAndUnusedTotals = (acc, key) => {
     let (totalAssignedSponsorships, totalUsedSponsorships) = acc
-    let guild = guilds->Js.Dict.unsafeGet(key)
+    let guild = guilds->Dict.get(key)->Option.getUnsafe
     let assignedSponsorships = getServerAssignedSponsorships(guild)
     let usedSponsorships = guild.usedSponsorships->Option.getWithDefault("0")->fromString
     let totalAssignedSponsorships = add(totalAssignedSponsorships, assignedSponsorships)
@@ -274,7 +273,7 @@ let getGuildSponsorshipTotals = guilds => {
     (totalAssignedSponsorships, totalUsedSponsorships)
   }
 
-  guilds->Js.Dict.keys->Array.reduce((zero, zero), calculateAssignedAndUnusedTotals)
+  guilds->Dict.keysToArray->Array.reduce((zero, zero), calculateAssignedAndUnusedTotals)
 }
 
 let execute = interaction => {
@@ -296,7 +295,7 @@ let execute = interaction => {
       ~decoder=Decode_Gist.brightIdGuilds,
     )->then(guilds => {
       let guildId = guild->Guild.getGuildId
-      let guildData = guilds->Js.Dict.get(guildId)
+      let guildData = guilds->Dict.get(guildId)
       switch guildData {
       | None =>
         let options = {
@@ -359,8 +358,8 @@ let execute = interaction => {
               | Exceptions.BrightIdError({errorNum}) =>
                 let inWhitelist =
                   envConfig["sponsorshipsWhitelist"]
-                  ->Js.String2.split(",")
-                  ->Js.Array2.includes(guild->Guild.getGuildId)
+                  ->String.split(",")
+                  ->Array.includes(guild->Guild.getGuildId)
                 switch await getAppUnusedSponsorships(context) {
                 | None =>
                   let _ = await noSponsorshipsMessage(interaction)
@@ -393,7 +392,7 @@ let execute = interaction => {
                   switch (errorNum, shouldUsePremiumSponsorships) {
                   // Premium is active
                   | (4, true) =>
-                    Js.log2(
+                    Console.log2(
                       "Unused Sponsorships in premium pool: ",
                       Ethers.BigNumber.toString(unusedPremiumSponsorships),
                     )
@@ -445,7 +444,7 @@ let execute = interaction => {
                     let _ = switch await handleUnverifiedGuildMember(errorNum, interaction, uuid) {
                     | data => Some(data)
                     | exception JsError(obj) =>
-                      Js.Console.error(obj)
+                      Console.error(obj)
                       VerifyCommandError("Unknown JS Error")->raise
                     }
                   }

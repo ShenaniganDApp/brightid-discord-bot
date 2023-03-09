@@ -16,11 +16,10 @@ let {
   unknownErrorMessage,
 } = module(Commands_Verify)
 
-@val @scope("globalThis")
-external fetch: (string, 'params) => Promise.t<Response.t<Js.Json.t>> = "fetch"
+let sleep: int => promise<unit> = _ms => %raw(` new Promise((resolve) => setTimeout(resolve, _ms))`)
 
-let sleep: int => Js.Promise.t<unit> = _ms =>
-  %raw(` new Promise((resolve) => setTimeout(resolve, _ms))`)
+@val @scope("globalThis")
+external fetch: (string, 'params) => promise<Response.t<JSON.t>> = "fetch"
 
 Env.createEnv()
 
@@ -96,7 +95,7 @@ let successfulSponsorMessageOptions = async uuid => {
 
 type sponsorship = Sponsorship(BrightId.Sponsorships.t)
 let checkSponsor = async uuid => {
-  open Shared.Decode.Decode_BrightId
+  open Shared.Decode
   let endpoint = `https://app.brightid.org/node/v6/sponsorships/${uuid}`
   let params = {
     "method": "GET",
@@ -109,7 +108,10 @@ let checkSponsor = async uuid => {
   let res = await fetch(endpoint, params)
   let json = await Response.json(res)
 
-  switch (json->Json.decode(Sponsorships.data), json->Json.decode(Error.data)) {
+  switch (
+    json->Json.decode(Decode_BrightId.Sponsorships.data),
+    json->Json.decode(Decode_BrightId.Error.data),
+  ) {
   | (Ok({data}), _) => Sponsorship(data)
   | (_, Ok(error)) => error->Exceptions.BrightIdError->raise
   | (Error(err), _) => err->Json.Decode.DecodeError->raise
@@ -284,7 +286,7 @@ let execute = async interaction => {
             let options = await successfulSponsorMessageOptions(uuid)
             let _ = await Interaction.followUp(interaction, ~options, ())
           | Error(err) =>
-            Js.Console.error2("Buttons Sponsor: Error updating premium used sponsorships", err)
+            Console.error2("Buttons Sponsor: Error updating premium used sponsorships", err)
             let _ = await noWriteToGistMessage(interaction)
           }
 
@@ -306,14 +308,14 @@ let execute = async interaction => {
           let _ = await Interaction.editReply(interaction, ~options, ())
         | exception HandleSponsorError(errorMessage) =>
           let guildName = guild->Guild.getGuildName
-          Js.Console.error2(
+          Console.error2(
             `User: ${uuid} from server ${guildName} ran into an unexpected error: `,
             errorMessage,
           )
           let _ = await unknownErrorMessage(interaction)
         | exception JsError(err) =>
           let guildName = guild->Guild.getGuildName
-          Js.Console.error2(
+          Console.error2(
             `User: ${uuid} from server ${guildName} ran into an unexpected error: `,
             err,
           )

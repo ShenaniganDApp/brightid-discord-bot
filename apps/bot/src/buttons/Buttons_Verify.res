@@ -16,8 +16,7 @@ let config = switch Env.getConfig() {
 }
 
 let getRolebyRoleId = (guildRoleManager, roleId) => {
-  let guildRole =
-    guildRoleManager->RoleManager.getCache->Collection.get(roleId)->Js.Nullable.toOption
+  let guildRole = guildRoleManager->RoleManager.getCache->Collection.get(roleId)->Nullable.toOption
 
   switch guildRole {
   | Some(guildRole) => guildRole
@@ -26,7 +25,7 @@ let getRolebyRoleId = (guildRoleManager, roleId) => {
 }
 
 let getGuildDataFromGist = (guilds, guildId, interaction) => {
-  let guildData = guilds->Js.Dict.get(guildId)
+  let guildData = guilds->Dict.get(guildId)
   switch guildData {
   | None =>
     interaction

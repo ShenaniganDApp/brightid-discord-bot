@@ -5,7 +5,7 @@ import * as $$Promise from "../../../../../../node_modules/@ryyppy/rescript-prom
 import * as AuthServer from "../../../AuthServer.js";
 import * as Belt_Array from "../../../../../../node_modules/rescript/lib/es6/belt_Array.js";
 import * as Belt_Option from "../../../../../../node_modules/rescript/lib/es6/belt_Option.js";
-import * as Decode$Shared from "../../../../../../node_modules/@brightidbot/shared/src/Decode.js";
+import * as Decode$Shared from "../../../../node_modules/@brightidbot/shared/src/Decode.js";
 import * as WebUtils_Gist from "../../../utils/WebUtils_Gist.js";
 import * as $$Node from "@remix-run/node";
 import * as Caml_exceptions from "../../../../../../node_modules/rescript/lib/es6/caml_exceptions.js";

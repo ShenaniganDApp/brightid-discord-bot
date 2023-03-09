@@ -5,7 +5,7 @@ exception EnvError(string)
 let nodeEnv = Node.Process.process["env"]
 
 let createEnv = () => {
-  let path = switch nodeEnv->Js.Dict.get("ENV_FILE") {
+  let path = switch nodeEnv->Dict.get("ENV_FILE") {
   | None => ".env.local"->findUpSync()
   | Some(envFile) => envFile->findUpSync()
   }
@@ -13,7 +13,7 @@ let createEnv = () => {
 }
 
 let env = name =>
-  switch Js.Dict.get(nodeEnv, name) {
+  switch Dict.get(nodeEnv, name) {
   | Some(value) => Ok(value)
   | None => Error(`Environment variable ${name} is missing`)
   }

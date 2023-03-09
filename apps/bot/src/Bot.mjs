@@ -4,17 +4,14 @@ import * as Env from "./Env.mjs";
 import * as Uuid from "uuid";
 import * as Curry from "rescript/lib/es6/curry.js";
 import * as Js_exn from "rescript/lib/es6/js_exn.js";
-import * as Js_dict from "rescript/lib/es6/js_dict.js";
-import * as $$Promise from "@ryyppy/rescript-promise/src/Promise.mjs";
 import * as Endpoints from "./Endpoints.mjs";
 import * as Exceptions from "./Exceptions.mjs";
 import * as Gist$Utils from "@brightidbot/utils/src/Gist.mjs";
 import * as DiscordJs from "discord.js";
-import * as Belt_Option from "rescript/lib/es6/belt_Option.js";
 import * as Caml_option from "rescript/lib/es6/caml_option.js";
+import * as Core__Option from "@rescript/core/src/Core__Option.mjs";
 import * as Commands_Help from "./commands/Commands_Help.mjs";
 import * as Decode$Shared from "@brightidbot/shared/src/Decode.mjs";
-import * as Belt_SetString from "rescript/lib/es6/belt_SetString.js";
 import * as Buttons_Verify from "./buttons/Buttons_Verify.mjs";
 import * as Buttons_Sponsor from "./buttons/Buttons_Sponsor.mjs";
 import * as Commands_Invite from "./commands/Commands_Invite.mjs";
@@ -125,7 +122,7 @@ async function fetchContextIds(retryOpt, param) {
   var match = Json$JsonCombinators.decode(json, Decode$Shared.Decode_BrightId.Verifications.data);
   var match$1 = Json$JsonCombinators.decode(json, Decode$Shared.Decode_BrightId.$$Error.data);
   if (match.TAG === /* Ok */0) {
-    return Belt_SetString.fromArray(match._0.data.contextIds);
+    return new Set(match._0.data.contextIds);
   }
   if (match$1.TAG === /* Ok */0) {
     var retry$1 = retry - 1 | 0;
@@ -166,12 +163,12 @@ async function assignRoleOnCreate(guild, role) {
   var contextIds = await fetchContextIds(undefined, undefined);
   var makeAddRolePromises = function (members) {
     return members.filter(function (__x) {
-                    return Belt_SetString.has(contextIds, Uuid.v5(__x.id, envConfig$1.uuidNamespace));
+                    return contextIds.has(Uuid.v5(__x.id, envConfig$1.uuidNamespace));
                   }).mapValues(function (__x) {
                   return __x.roles.add(role, undefined);
                 }).values();
   };
-  var addRolePromises = Belt_Option.map(maybeMembers, makeAddRolePromises);
+  var addRolePromises = Core__Option.map(maybeMembers, makeAddRolePromises);
   if (addRolePromises === undefined) {
     return 0;
   }
@@ -235,7 +232,7 @@ async function onGuildCreate(guild) {
         return ;
       }
       if (exit$2 === 3) {
-        console.log("" + guildName + " : " + guildId + ": Successfully assigned role to " + String(verifiedMembersCount) + " current members");
+        console.log("" + guildName + " : " + guildId + ": Successfully assigned role to " + verifiedMembersCount.toString() + " current members");
         return ;
       }
       
@@ -274,7 +271,7 @@ async function onInteraction(interaction) {
         console.error("" + guildName + " : " + guildId + ": ", e._1);
       } else if (e.RE_EXN_ID === Exceptions.InviteCommandError) {
         console.error("" + guildName + " : " + guildId + ": ", e._1);
-      } else if (e.RE_EXN_ID === $$Promise.JsError) {
+      } else if (e.RE_EXN_ID === "JsError") {
         console.error("" + guildName + " : " + guildId + ": ", e._1);
       } else {
         console.error("" + guildName + " : " + guildId + ": ", e);
@@ -305,7 +302,7 @@ async function onInteraction(interaction) {
         console.error("" + guildName + " : " + guildId + ": ", e$1._1);
       } else if (e$1.RE_EXN_ID === Exceptions.ButtonVerifyHandlerError) {
         console.error("" + guildName + " : " + guildId + ": ", e$1._1);
-      } else if (e$1.RE_EXN_ID === $$Promise.JsError) {
+      } else if (e$1.RE_EXN_ID === "JsError") {
         console.error("" + guildName + " : " + guildId + ": ", e$1._1);
       } else {
         console.error("" + guildName + " : " + guildId + ": ", e$1);
@@ -329,14 +326,14 @@ async function onGuildDelete(guild) {
   }
   catch (raw_e){
     var e = Caml_js_exceptions.internalToOCamlException(raw_e);
-    if (e.RE_EXN_ID === $$Promise.JsError) {
+    if (e.RE_EXN_ID === "JsError") {
       console.error("" + guildName + " : " + guildId + ": ", e._1);
       return ;
     }
     throw e;
   }
   if (exit === 1) {
-    var match = Js_dict.get(guilds, guildId);
+    var match = guilds[guildId];
     if (match !== undefined) {
       var exit$1 = 0;
       var val;
@@ -346,7 +343,7 @@ async function onGuildDelete(guild) {
       }
       catch (raw_e$1){
         var e$1 = Caml_js_exceptions.internalToOCamlException(raw_e$1);
-        if (e$1.RE_EXN_ID === $$Promise.JsError) {
+        if (e$1.RE_EXN_ID === "JsError") {
           console.error("" + guildName + " : " + guildId + ": ", e$1._1);
           return ;
         }
@@ -378,7 +375,7 @@ async function onGuildMemberAdd(guildMember) {
     var e = Caml_js_exceptions.internalToOCamlException(raw_e);
     if (e.RE_EXN_ID === Exceptions.BrightIdError) {
       console.error("" + guildName + " : " + guildId + ": ", e._1.errorMessage);
-    } else if (e.RE_EXN_ID === $$Promise.JsError) {
+    } else if (e.RE_EXN_ID === "JsError") {
       console.error("" + guildName + " : " + guildId + ": ", e._1);
     } else {
       console.error("" + guildName + " : " + guildId + ": ", e);
@@ -399,7 +396,7 @@ async function onGuildMemberAdd(guildMember) {
       if (exit$1 === 2) {
         var guild = guildMember.guild;
         var guildId$1 = guild.id;
-        var brightIdGuild = Js_dict.get(guilds, guildId$1);
+        var brightIdGuild = guilds[guildId$1];
         if (brightIdGuild !== undefined) {
           var roleId = brightIdGuild.roleId;
           if (roleId !== undefined) {
@@ -454,7 +451,7 @@ async function onRoleUpdate(role) {
     return ;
   }
   if (exit === 1) {
-    var brightIdGuild = Js_dict.get(content, guildId);
+    var brightIdGuild = content[guildId];
     if (brightIdGuild !== undefined) {
       var roleId = brightIdGuild.roleId;
       if (roleId !== undefined) {
@@ -528,7 +525,7 @@ async function onGuildMemberUpdate(param, newMember) {
     console.error("" + guildName + " : " + guildId + ": ", e);
   }
   if (exit === 1) {
-    var match = Js_dict.get(guilds, guildId);
+    var match = guilds[guildId];
     if (match !== undefined) {
       var roleId = match.roleId;
       if (roleId !== undefined) {

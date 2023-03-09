@@ -67,10 +67,10 @@ let sponsorshipRequested = async (interaction, contextId, sponsorHash) => {
       ->ChannelManager.fetch(envConfig["discordLogChannelId"])
     let _ = await channel->Channel.sendWithOptions({"embeds": [messageEmbed]})
   } catch {
-  | Js.Exn.Error(obj) =>
-    switch Js.Exn.message(obj) {
-    | Some(msg) => Js.Console.error2("Failed to create sponsorship request: ", msg)
-    | None => Js.Console.error2("Failed to create sponsorship request", obj)
+  | Exn.Error(obj) =>
+    switch Exn.message(obj) {
+    | Some(msg) => Console.error2("Failed to create sponsorship request: ", msg)
+    | None => Console.error2("Failed to create sponsorship request", obj)
     }
   }
 }

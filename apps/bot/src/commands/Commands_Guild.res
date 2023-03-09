@@ -6,14 +6,14 @@ exception GuildHandlerError(string)
 type brightIdGuildData = {
   name: string,
   role: string,
-  inviteLink: Js.Nullable.t<string>,
+  inviteLink: Nullable.t<string>,
 }
 
 @module("../updateOrReadGist.mjs")
-external readGist: unit => Promise.t<Js.Dict.t<brightIdGuildData>> = "readGist"
+external readGist: unit => promise<Dict.t<brightIdGuildData>> = "readGist"
 
 let getGuildDataFromGist = (guilds, guildId, interaction) => {
-  let guildData = guilds->Js.Dict.get(guildId)
+  let guildData = guilds->Dict.get(guildId)
   switch guildData {
   | None =>
     interaction
@@ -27,17 +27,17 @@ let getGuildDataFromGist = (guilds, guildId, interaction) => {
   }
 }
 
-let generateEmbed = (guilds, interaction, offset) => {
+let generateEmbed = (guilds, interaction, start) => {
   open MessageEmbed
-  let current = guilds->Array.slice(~offset, ~len=offset + 10)
-  let embedTitle = `Showing guilds ${(offset + 1)->Js.Int.toString}-${(offset +
-    current->Array.length)->Js.Int.toString} out of ${guilds->Array.length->Js.Int.toString}`
+  let current = guilds->Array.slice(~start, ~end=start + 10)
+  let embedTitle = `Showing guilds ${(start + 1)->Int.toString}-${(start + current->Array.length)
+      ->Int.toString} out of ${guilds->Array.length->Int.toString}`
   let embed = createMessageEmbed()->setTitle(embedTitle)
 
   readGist()->then(guilds => {
     current->Array.forEach(g => {
       let guildData = guilds->getGuildDataFromGist(g->Guild.getGuildId, interaction)
-      let guildLink = switch guildData.inviteLink->Js.Nullable.toOption {
+      let guildLink = switch guildData.inviteLink->Nullable.toOption {
       | None => "No Invite Link Available"
       | Some(inviteLink) => `**Invite:** ${inviteLink}`
       }
@@ -73,9 +73,9 @@ let execute = interaction => {
           // react with the right arrow (so that the user can click it) (left arrow isn't needed because it is the start)
           guildsMessage->Message.react(`➡️`)->ignore
           let filter = (reaction, user) => {
-            Js.log2("reaction: ", reaction)
+            Console.log2("reaction: ", reaction)
             let emoji = reaction->Reaction.getReactionEmoji
-            Js.log2("emoji: ", emoji)
+            Console.log2("emoji: ", emoji)
             let name = emoji->Emoji.getEmojiName
             ([`⬅️`, `➡️`]->Array.some(arrow => name === arrow) &&
               user->User.getUserId === member->GuildMember.getGuildMemberId)->resolve
@@ -89,7 +89,7 @@ let execute = interaction => {
           collector->ReactionCollector.on(
             #collect(
               reaction => {
-                Js.log2("reaction: ", reaction)
+                Console.log2("reaction: ", reaction)
                 open Message
                 guildsMessage->getMessageReactions->ReactionManager.removeAll->ignore
 
@@ -121,13 +121,13 @@ let execute = interaction => {
     })
     ->catch(e => {
       switch e {
-      | GuildHandlerError(msg) => Js.Console.error(msg)
-      | JsError(obj) =>
-        switch Js.Exn.message(obj) {
-        | Some(msg) => Js.Console.error(msg)
-        | None => Js.Console.error("Must be some non-error value")
+      | GuildHandlerError(msg) => Console.error(msg)
+      | Exn.Error(obj) =>
+        switch Exn.message(obj) {
+        | Some(msg) => Console.error(msg)
+        | None => Console.error("Must be some non-error value")
         }
-      | _ => Js.Console.error("Some unknown error")
+      | _ => Console.error("Some unknown error")
       }
       resolve()
     })

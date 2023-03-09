@@ -6,6 +6,6 @@ globalThis["fetch"] = fetch
 module Response = {
   type t<'data>
 
-  @send external json: t<'data> => Promise.t<'data> = "json"
+  @send external json: t<'data> => promise<'data> = "json"
   @get external status: t<'data> => int = "status"
 }
