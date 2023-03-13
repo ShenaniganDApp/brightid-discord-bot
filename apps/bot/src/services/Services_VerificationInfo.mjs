@@ -71,7 +71,7 @@ function fetchVerificationInfo(retryOpt, id) {
                 }
                 var retry$1 = retry - 1 | 0;
                 if (retry$1 !== 0) {
-                  return sleep(1000).then(function (param) {
+                  return sleep(3000).then(function (param) {
                               return fetchVerificationInfo(retry$1, id);
                             });
                 }

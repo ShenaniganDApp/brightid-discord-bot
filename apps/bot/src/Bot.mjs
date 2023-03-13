@@ -439,19 +439,9 @@ async function onGuildMemberAdd(guildMember) {
 async function onRoleUpdate(role) {
   var guildId = role.guild.id;
   var guildName = role.guild.name;
-  var exit = 0;
-  var content;
   try {
-    content = await Gist$Utils.ReadGist.content(gistConfig(undefined), Decode$Shared.Decode_Gist.brightIdGuilds);
-    exit = 1;
-  }
-  catch (raw_e){
-    var e = Caml_js_exceptions.internalToOCamlException(raw_e);
-    console.error("" + guildName + " : " + guildId + ": ", e);
-    return ;
-  }
-  if (exit === 1) {
-    var brightIdGuild = content[guildId];
+    var brightIdGuilds = await Gist$Utils.ReadGist.content(gistConfig(undefined), Decode$Shared.Decode_Gist.brightIdGuilds);
+    var brightIdGuild = brightIdGuilds[guildId];
     if (brightIdGuild !== undefined) {
       var roleId = brightIdGuild.roleId;
       if (roleId !== undefined) {
@@ -482,157 +472,120 @@ async function onRoleUpdate(role) {
           premiumSponsorshipsUsed: entry_premiumSponsorshipsUsed,
           premiumExpirationTimestamp: entry_premiumExpirationTimestamp
         };
-        var exit$1 = 0;
-        var val;
-        try {
-          val = await Gist$Utils.UpdateGist.updateEntry(content, guildId, entry, gistConfig(undefined));
-          exit$1 = 2;
-        }
-        catch (raw_e$1){
-          var e$1 = Caml_js_exceptions.internalToOCamlException(raw_e$1);
-          console.error("" + guildName + " : " + guildId + ": ", e$1);
-          return ;
-        }
-        if (exit$1 === 2) {
-          console.log("" + guildName + " : " + guildId + " updated the role name to " + roleName + "");
-          return ;
-        }
-        
-      } else {
-        console.error("" + guildName + " : " + guildId + ": ", "Guild does not have a saved roleId");
+        await Gist$Utils.UpdateGist.updateEntry(brightIdGuilds, guildId, entry, gistConfig(undefined));
+        console.log("" + guildName + " : " + guildId + " updated the role name to " + roleName + "");
         return ;
       }
-    } else {
-      console.error("" + guildName + " : " + guildId + ": ", "Guild does not exist in Gist");
+      console.error("" + guildName + " : " + guildId + ": ", "Guild does not have a saved roleId");
       return ;
     }
+    console.error("" + guildName + " : " + guildId + ": ", "Guild does not exist in Gist");
+    return ;
   }
-  
+  catch (raw_e){
+    var e = Caml_js_exceptions.internalToOCamlException(raw_e);
+    console.error("" + guildName + " : " + guildId + ": ", e);
+    return ;
+  }
 }
 
 async function onGuildMemberUpdate(param, newMember) {
   var guild = newMember.guild;
   var guildName = guild.name;
   var guildId = guild.id;
-  var exit = 0;
-  var guilds;
   try {
-    guilds = await Gist$Utils.ReadGist.content(gistConfig(undefined), Decode$Shared.Decode_Gist.brightIdGuilds);
-    exit = 1;
-  }
-  catch (raw_e){
-    var e = Caml_js_exceptions.internalToOCamlException(raw_e);
-    console.error("" + guildName + " : " + guildId + ": ", e);
-  }
-  if (exit === 1) {
-    var match = guilds[guildId];
-    if (match !== undefined) {
-      var roleId = match.roleId;
-      if (roleId !== undefined) {
-        var exit$1 = 0;
-        var member;
+    var brightIdGuilds = await Gist$Utils.ReadGist.content(gistConfig(undefined), Decode$Shared.Decode_Gist.brightIdGuilds);
+    var match = brightIdGuilds[guildId];
+    if (match === undefined) {
+      return ;
+    }
+    var roleId = match.roleId;
+    if (roleId === undefined) {
+      return ;
+    }
+    var member = await guild.members.fetch(newMember.id);
+    var exit = 0;
+    var val;
+    try {
+      val = await Services_VerificationInfo.getBrightIdVerification(member);
+      exit = 1;
+    }
+    catch (raw_e){
+      var e = Caml_js_exceptions.internalToOCamlException(raw_e);
+      if (e.RE_EXN_ID === Exceptions.BrightIdError) {
+        var role = guild.roles.cache.get(roleId);
+        var guildMemberRoleManager = newMember.roles;
+        if (role == null) {
+          return ;
+        }
         try {
-          member = await guild.members.fetch(newMember.id);
-          exit$1 = 2;
+          await guildMemberRoleManager.remove(role, "User is not verified by BrightID");
         }
         catch (raw_e$1){
           var e$1 = Caml_js_exceptions.internalToOCamlException(raw_e$1);
-          console.error("" + guildName + " : " + guildId + ": ", e$1);
-        }
-        if (exit$1 === 2) {
-          var exit$2 = 0;
-          var val;
-          try {
-            val = await Services_VerificationInfo.getBrightIdVerification(member);
-            exit$2 = 3;
-          }
-          catch (raw_e$2){
-            var e$2 = Caml_js_exceptions.internalToOCamlException(raw_e$2);
-            if (e$2.RE_EXN_ID === Exceptions.BrightIdError) {
-              var role = guild.roles.cache.get(roleId);
-              var guildMemberRoleManager = newMember.roles;
-              if (!(role == null)) {
-                try {
-                  await guildMemberRoleManager.remove(role, "User is not verified by BrightID");
-                }
-                catch (raw_e$3){
-                  var e$3 = Caml_js_exceptions.internalToOCamlException(raw_e$3);
-                  if (e$3.RE_EXN_ID === Js_exn.$$Error) {
-                    var m = e$3._1.message;
-                    if (m !== undefined) {
-                      console.error("" + guildName + " : " + guildId + ": ", m);
-                    }
-                    
-                  }
-                  
-                }
-              }
-              
-            } else if (e$2.RE_EXN_ID === Js_exn.$$Error) {
-              var m$1 = e$2._1.message;
-              if (m$1 !== undefined) {
-                console.error("" + guildName + " : " + guildId + ": ", m$1);
-              }
-              
-            } else {
-              console.error("" + guildName + " : " + guildId + ": ", e$2);
-            }
-          }
-          if (exit$2 === 3) {
-            var unique = val._0.unique;
-            var guildMemberRoleManager$1 = member.roles;
-            var roles = guildMemberRoleManager$1.cache;
-            var role$1 = guild.roles.cache.get(roleId);
-            var match$1 = roles.has(roleId);
-            if (!(role$1 == null)) {
-              if (match$1) {
-                if (!unique) {
-                  try {
-                    await guildMemberRoleManager$1.remove(role$1, "User is not verified by BrightID");
-                  }
-                  catch (raw_e$4){
-                    var e$4 = Caml_js_exceptions.internalToOCamlException(raw_e$4);
-                    if (e$4.RE_EXN_ID === Js_exn.$$Error) {
-                      var m$2 = e$4._1.message;
-                      if (m$2 !== undefined) {
-                        console.error("" + guildName + " : " + guildId + ": ", m$2);
-                      }
-                      
-                    }
-                    
-                  }
-                }
-                
-              } else if (unique) {
-                var guildMemberRoleManager$2 = member.roles;
-                try {
-                  await guildMemberRoleManager$2.add(role$1, "User is verified by BrightID");
-                }
-                catch (raw_e$5){
-                  var e$5 = Caml_js_exceptions.internalToOCamlException(raw_e$5);
-                  if (e$5.RE_EXN_ID === Js_exn.$$Error) {
-                    var m$3 = e$5._1.message;
-                    if (m$3 !== undefined) {
-                      console.error("" + guildName + " : " + guildId + ": ", m$3);
-                    }
-                    
-                  }
-                  
-                }
-              }
-              
+          if (e$1.RE_EXN_ID === Js_exn.$$Error) {
+            var m = e$1._1.message;
+            if (m !== undefined) {
+              console.error("" + guildName + " : " + guildId + ": ", m);
             }
             
           }
           
         }
-        
+        return ;
       }
-      
+      if (e.RE_EXN_ID === Js_exn.$$Error) {
+        var m$1 = e._1.message;
+        if (m$1 !== undefined) {
+          console.error("" + guildName + " : " + guildId + ": ", m$1);
+          return ;
+        } else {
+          return ;
+        }
+      }
+      console.error("" + guildName + " : " + guildId + ": ", e);
+      return ;
+    }
+    if (exit === 1) {
+      var unique = val._0.unique;
+      var guildMemberRoleManager$1 = member.roles;
+      var roles = guildMemberRoleManager$1.cache;
+      var role$1 = guild.roles.cache.get(roleId);
+      var match$1 = roles.has(roleId);
+      if (role$1 == null) {
+        return ;
+      }
+      if (match$1) {
+        if (unique) {
+          return ;
+        } else {
+          await guildMemberRoleManager$1.remove(role$1, "User is not verified by BrightID");
+          return ;
+        }
+      }
+      if (!unique) {
+        return ;
+      }
+      var guildMemberRoleManager$2 = member.roles;
+      await guildMemberRoleManager$2.add(role$1, "User is verified by BrightID");
+      return ;
     }
     
   }
-  
+  catch (raw_obj){
+    var obj = Caml_js_exceptions.internalToOCamlException(raw_obj);
+    if (obj.RE_EXN_ID === Js_exn.$$Error) {
+      var m$2 = obj._1.message;
+      if (m$2 !== undefined) {
+        console.error("" + guildName + " : " + guildId + ": ", m$2);
+        return ;
+      } else {
+        return ;
+      }
+    }
+    console.error("" + guildName + " : " + guildId + ": ", obj);
+    return ;
+  }
 }
 
 client.on("ready", (function (param) {
