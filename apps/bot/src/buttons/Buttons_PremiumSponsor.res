@@ -1,5 +1,4 @@
 open Discord
-open Promise
 open Shared
 open NodeFetch
 open Exceptions
@@ -28,39 +27,6 @@ let envConfig = switch Env.getConfig() {
 | Error(err) => err->Env.EnvError->raise
 }
 
-let noUnusedSponsorshipsOptions = () =>
-  {
-    "content": "There are no sponsorhips available in the Discord pool. Please try again later.",
-    "ephemeral": true,
-  }
-
-let unsuccessfulSponsorMessageOptions = async uuid => {
-  let verifyUrl = `${brightIdLinkVerificationEndpoint}/${uuid}`
-  let uri = `${brightIdAppDeeplink}/${uuid}`
-  let canvas = await makeCanvasFromUri(uri)
-  let attachment = await createMessageAttachmentFromCanvas(canvas)
-  let row = makeBeforeSponsorActionRow("Retry Sponsor", verifyUrl)
-  {
-    "content": "Your sponsor request failed. \n\n This is often due to the BrightID App not being linked to Discord. Please scan this QR code in the BrightID mobile app then retry your sponsorship request.\n\n",
-    "files": [attachment],
-    "ephemeral": true,
-    "components": [row],
-  }
-}
-let sponsorRequestSubmittedMessageOptions = async uuid => {
-  let uri = `${brightIdAppDeeplink}/${uuid}`
-  let canvas = await makeCanvasFromUri(uri)
-  let attachment = await createMessageAttachmentFromCanvas(canvas)
-  let nowInSeconds = Js.Math.round(Js.Date.now() /. 1000.)
-  let fifteenMinutesAfter = 15. *. 60. +. nowInSeconds
-  let content = `You sponsor request has been submitted! \n\n Make sure you have scanned this QR code in the BrightID mobile app to confirm your sponsor and link Discord to BrightID. \n This process will timeout <t:${fifteenMinutesAfter->Float.toString}:R>.\n\n`
-  {
-    "content": content,
-    "files": [attachment],
-    "ephemeral": true,
-  }
-}
-
 let noWriteToGistMessage = async interaction => {
   let options = {
     "content": "It seems like I can't write to my database at the moment. Please try again or contact the BrightID support.",
@@ -68,168 +34,6 @@ let noWriteToGistMessage = async interaction => {
   }
 
   await Interaction.followUp(interaction, ~options, ())
-}
-
-let makeAfterSponsorActionRow = label => {
-  let verifyButton =
-    MessageButton.make()
-    ->MessageButton.setCustomId("verify")
-    ->MessageButton.setLabel(label)
-    ->MessageButton.setStyle("PRIMARY")
-
-  MessageActionRow.make()->MessageActionRow.addComponents([verifyButton])
-}
-
-let successfulSponsorMessageOptions = async uuid => {
-  let uri = `${brightIdAppDeeplink}/${uuid}`
-  let canvas = await makeCanvasFromUri(uri)
-  let attachment = await createMessageAttachmentFromCanvas(canvas)
-  let row = makeAfterSponsorActionRow("Assign BrightID Verified Role")
-  {
-    "content": "You have succesfully been sponsored \n\n If you are verified in BrightID you are all done. Click the button below to assign your role.\n\n",
-    "files": [attachment],
-    "ephemeral": true,
-    "components": [row],
-  }
-}
-
-type sponsorship = Sponsorship(BrightId.Sponsorships.t)
-let checkSponsor = async uuid => {
-  open Shared.Decode
-  let endpoint = `https://app.brightid.org/node/v6/sponsorships/${uuid}`
-  let params = {
-    "method": "GET",
-    "headers": {
-      "Accept": "application/json",
-      "Content-Type": "application/json",
-    },
-    "timeout": 60000,
-  }
-  let res = await fetch(endpoint, params)
-  let json = await Response.json(res)
-
-  switch (
-    json->Json.decode(Decode_BrightId.Sponsorships.data),
-    json->Json.decode(Decode_BrightId.Error.data),
-  ) {
-  | (Ok({data}), _) => Sponsorship(data)
-  | (_, Ok(error)) => error->Exceptions.BrightIdError->raise
-  | (Error(err), _) => err->Json.Decode.DecodeError->raise
-  }
-}
-
-exception HandleSponsorError(string)
-type sponsor = SponsorSuccess(BrightId.Sponsorships.sponsor)
-type handleSponsor =
-  | SponsorshipUsed
-  | RetriedCommandDuring
-  | NoUnusedSponsorships
-  | TimedOut
-
-@raises([HandleSponsorError, Js.Exn.Error, Json.Decode.DecodeError])
-let rec handleSponsor = async (interaction, ~maybeHash=None, ~attempts=30, uuid) => {
-  open Shared.BrightId
-  open Shared.Decode
-  let guildId = interaction->Interaction.getGuild->Guild.getGuildId
-  let secondsBetweenAttempts = 29 //29 seconds between attempts to leave time for timeout message
-  switch attempts {
-  | 0 => TimedOut
-  | _ =>
-    try {
-      let json = await sponsor(
-        ~key=envConfig["sponsorshipKey"],
-        ~context="Discord",
-        ~contextId=uuid,
-      )
-      switch json->Json.decode(Decode_BrightId.Sponsorships.sponsor) {
-      | Ok({hash}) =>
-        let options = await sponsorRequestSubmittedMessageOptions(uuid)
-        let _ = await Interaction.editReply(interaction, ~options, ())
-        Js.log2(
-          `A sponsor request has been submitted`,
-          {"guild": guildId, "contextId": uuid, "hash": hash},
-        )
-        let _ = await CustomMessages.sponsorshipRequested(interaction, uuid, hash)
-        await handleSponsor(interaction, uuid, ~maybeHash=Some(hash), ~attempts=30)
-      | Error(err) => Json.Decode.DecodeError(err)->raise
-      }
-    } catch {
-    | Js.Exn.Error(error) =>
-      try {
-        let brightIdError =
-          Js.Json.stringifyAny(error)
-          ->Option.map(Js.Json.parseExn)
-          ->Option.map(Json.decode(_, Decode_BrightId.Error.data))
-
-        switch brightIdError {
-        | None =>
-          HandleSponsorError(
-            "Handle Sponsor Error: There was a problem JSON parsing the error from sponsor()",
-          )->raise
-        | Some(Error(err)) => err->Json.Decode.DecodeError->raise
-        | Some(Ok({errorNum, errorMessage})) =>
-          switch (errorNum, maybeHash) {
-          //No Sponsorships in the Discord App
-          | (38, _) => NoUnusedSponsorships
-          //Sponsorship already assigned
-          | (_, None) => RetriedCommandDuring
-          | (39, Some(_)) =>
-            let Sponsorship({spendRequested}) = await checkSponsor(uuid)
-            if spendRequested {
-              let options = successfulSponsorMessageOptions(uuid)
-              let _ = await Interaction.editReply(interaction, ~options, ())
-              SponsorshipUsed
-            } else {
-              let _ = await sleep(secondsBetweenAttempts * 1000)
-              await handleSponsor(interaction, uuid, ~maybeHash, ~attempts=attempts - 1)
-            }
-          //App authorized before
-          | (45, Some(_)) =>
-            let Sponsorship({spendRequested}) = await checkSponsor(uuid)
-            if spendRequested {
-              let options = successfulSponsorMessageOptions(uuid)
-              let _ = await Interaction.editReply(interaction, ~options, ())
-              SponsorshipUsed
-            } else {
-              let _ = await sleep(secondsBetweenAttempts * 1000)
-              await handleSponsor(interaction, uuid, ~maybeHash, ~attempts=attempts - 1)
-            }
-
-          // Spend Request Submitted
-          | (46, Some(_)) =>
-            let options = await successfulSponsorMessageOptions(uuid)
-            let _ = await interaction->Interaction.editReply(~options, ())
-            SponsorshipUsed
-
-          // Sponsored Request Recently
-          | (47, Some(_)) =>
-            let Sponsorship({spendRequested}) = await checkSponsor(uuid)
-            if spendRequested {
-              let options = successfulSponsorMessageOptions(uuid)
-              let _ = await Interaction.editReply(interaction, ~options, ())
-              SponsorshipUsed
-            } else {
-              let _ = await sleep(secondsBetweenAttempts * 1000)
-              await handleSponsor(interaction, uuid, ~maybeHash, ~attempts=attempts - 1)
-            }
-
-          | _ => HandleSponsorError(errorMessage)->raise
-          }
-        }
-      } catch {
-      | Exceptions.BrightIdError(_) =>
-        let _ = await sleep(secondsBetweenAttempts * 1000)
-        await handleSponsor(interaction, uuid, ~maybeHash, ~attempts=attempts - 1)
-      | Js.Exn.Error(obj) =>
-        switch Js.Exn.message(obj) {
-        | Some(msg) => HandleSponsorError(msg)->raise
-        | None =>
-          Js.Console.error(obj)
-          HandleSponsorError("Handle Sponsor: Unknown Error")->raise
-        }
-      }
-    }
-  }
 }
 
 let gistConfig = () =>
@@ -256,13 +60,14 @@ let execute = async interaction => {
       raise(e)
 
     | guilds =>
-      switch guilds->Js.Dict.get(guildId) {
+      switch guilds->Dict.get(guildId) {
       | None =>
         let _ = await noWriteToGistMessage(interaction)
         PremiumSponsorButtonError(
           `Buttons_PremiumSponsor: Guild with guildId: ${guildId} not found in gist`,
         )->raise
       | Some(guildData) =>
+        open Services_Sponsor
         let _ = switch await handleSponsor(interaction, uuid) {
         | SponsorshipUsed =>
           let premiumSponsorshipsUsed =
