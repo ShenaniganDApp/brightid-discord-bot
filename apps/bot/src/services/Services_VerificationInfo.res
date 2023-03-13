@@ -41,6 +41,7 @@ let rec fetchVerificationInfo = (~retry=10, id) => {
     },
     "timestamp": requestTimeout,
   }
+
   endpoint
   ->fetch(params)
   ->then(Response.json)
@@ -63,7 +64,7 @@ let rec fetchVerificationInfo = (~retry=10, id) => {
       let retry = retry - 1
       switch retry {
       | 0 => e->raise
-      | _ => sleep(1000)->then(_ => fetchVerificationInfo(~retry, id))
+      | _ => sleep(3000)->then(_ => fetchVerificationInfo(~retry, id))
       }
     }
   })
