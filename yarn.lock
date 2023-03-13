@@ -2027,10 +2027,10 @@
   dependencies:
     web-streams-polyfill "^3.1.1"
 
-"@rescript/core@^0.1.0":
-  version "0.1.0"
-  resolved "https://registry.yarnpkg.com/@rescript/core/-/core-0.1.0.tgz#fff0135d239cd202486a0d4bc0c8cfd7c8a04945"
-  integrity sha512-+nJiH67zp/CD6qwFv9VxlAknlYf/lIb6Q72Nqc0tvoMUizX+sRKQxQVUQSIqG+MSoxCUlSVye1wmZFwbNmJKpw==
+"@rescript/core@^0.2.0":
+  version "0.2.0"
+  resolved "https://registry.yarnpkg.com/@rescript/core/-/core-0.2.0.tgz#9ad48a3a9551f13d6ca196a536084a78f9443959"
+  integrity sha512-gY0OmietZ1t+EflWwIJAR90sRNxjCrtlg3b3m4o//sQ84e/09S3fC+GErZjl/cdrTPKID6emOlVQ8hRNgF8qVQ==
 
 "@rescript/react@^0.11.0":
   version "0.11.0"
