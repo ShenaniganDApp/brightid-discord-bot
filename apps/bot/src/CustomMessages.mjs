@@ -4,6 +4,7 @@ import * as Env from "./Env.mjs";
 import * as Js_exn from "rescript/lib/es6/js_exn.js";
 import * as Endpoints from "./Endpoints.mjs";
 import * as DiscordJs from "discord.js";
+import * as Caml_option from "rescript/lib/es6/caml_option.js";
 import * as Constants$Shared from "@brightidbot/shared/src/Constants.mjs";
 import * as Caml_js_exceptions from "rescript/lib/es6/caml_js_exceptions.js";
 
@@ -23,13 +24,41 @@ if (config.TAG === /* Ok */0) {
       };
 }
 
-async function sponsorshipRequested(interaction, contextId, sponsorHash) {
-  var verificationStatusUrl = "" + Endpoints.brightIdVerificationEndpoint + "/" + Constants$Shared.context + "/" + contextId + "";
-  var sponsorshipStatusUrl = "" + Endpoints.brightIdSubscriptionEndpoint + "/" + sponsorHash + "";
+function verificationStatusUrl(contextId) {
+  return "" + Endpoints.brightIdVerificationEndpoint + "/" + Constants$Shared.context + "/" + contextId + "";
+}
+
+function sponsorshipStatusUrl(sponsorHash) {
+  return "" + Endpoints.brightIdSubscriptionEndpoint + "/" + sponsorHash + "";
+}
+
+function toString(status) {
+  if (typeof status !== "number") {
+    return "Error: " + status._0 + "";
+  }
+  switch (status) {
+    case /* Requested */0 :
+        return "Requested";
+    case /* Successful */1 :
+        return "Successful";
+    case /* Failed */2 :
+        return "Failed";
+    
+  }
+}
+
+var Status = {
+  toString: toString
+};
+
+function sponsorshipRequestedMessage(interaction, statusOpt, contextId, maybeSponsorHash) {
+  var status = statusOpt !== undefined ? statusOpt : /* Requested */0;
+  var nowInSeconds = Math.round(Date.now() / 1000);
+  var fifteenMinutesAfter = 15 * 60 + nowInSeconds;
   var embedFields = [
     {
       name: "__Status__",
-      value: "Requested"
+      value: toString(status)
     },
     {
       name: "__Server__",
@@ -37,20 +66,53 @@ async function sponsorshipRequested(interaction, contextId, sponsorHash) {
     },
     {
       name: "__Bright ID Verification Status__",
-      value: "**Context ID:** [" + contextId + "](" + verificationStatusUrl + " \"" + verificationStatusUrl + "\")"
+      value: "**Context ID:** [" + contextId + "](" + verificationStatusUrl(contextId) + " \"" + verificationStatusUrl(contextId) + "\")"
     },
     {
       name: "__Sponsorship Operation Status__",
-      value: "**Request Hash:** [" + sponsorHash + "](" + sponsorshipStatusUrl + " \"" + sponsorshipStatusUrl + "\")"
+      value: "**Request Hash:** [" + maybeSponsorHash + "](" + sponsorshipStatusUrl(maybeSponsorHash) + " \"" + sponsorshipStatusUrl(maybeSponsorHash) + "\")"
+    },
+    {
+      name: "__Timeout:__",
+      value: "This process will timeout <t:" + fifteenMinutesAfter.toString() + ":R>."
     }
   ];
-  var messageEmbed = new DiscordJs.MessageEmbed().setColor("#fb8b60").setTitle("A Sponsorship Has Been Requested").setURL(verificationStatusUrl).setAuthor("BrightID Bot", "https://media.discordapp.net/attachments/708186850359246859/760681364163919994/1601430947224.png", "https://www.brightid.org/").setDescription("A member of " + interaction.guild.name + " is attempting to get sponsored").setThumbnail("https://media.discordapp.net/attachments/708186850359246859/760681364163919994/1601430947224.png").addFields(embedFields).setTimestamp();
+  var messageEmbed = new DiscordJs.MessageEmbed().setColor("#fb8b60").setTitle("A Sponsorship Has Been Requested").setURL(verificationStatusUrl(contextId)).setAuthor("BrightID Bot", "https://media.discordapp.net/attachments/708186850359246859/760681364163919994/1601430947224.png", "https://www.brightid.org/").setDescription("A member of " + interaction.guild.name + " is attempting to get sponsored").setThumbnail("https://media.discordapp.net/attachments/708186850359246859/760681364163919994/1601430947224.png").addFields(embedFields).setTimestamp();
+  return {
+          embeds: [messageEmbed]
+        };
+}
+
+function editSponsorMessageContent(message, status, contextId, maybeSponsorHash) {
+  var embedFields = [
+    {
+      name: "__Status__",
+      value: toString(status)
+    },
+    {
+      name: "__Server__",
+      value: "**Server Name:** " + message.guild.name + "\n **Server ID:** " + message.guild.id + ""
+    },
+    {
+      name: "__Bright ID Verification Status__",
+      value: "**Context ID:** [" + contextId + "](" + verificationStatusUrl(contextId) + " \"" + verificationStatusUrl(contextId) + "\")"
+    },
+    {
+      name: "__Sponsorship Operation Status__",
+      value: "**Request Hash:** [" + maybeSponsorHash + "](" + sponsorshipStatusUrl(maybeSponsorHash) + " \"" + sponsorshipStatusUrl(maybeSponsorHash) + "\")"
+    }
+  ];
+  var messageEmbed = new DiscordJs.MessageEmbed().setColor("#fb8b60").setTitle("A Sponsorship Has Been Requested").setURL(verificationStatusUrl(contextId)).setAuthor("BrightID Bot", "https://media.discordapp.net/attachments/708186850359246859/760681364163919994/1601430947224.png", "https://www.brightid.org/").setDescription("A member of " + message.guild.name + " is attempting to get sponsored").setThumbnail("https://media.discordapp.net/attachments/708186850359246859/760681364163919994/1601430947224.png").addFields(embedFields).setTimestamp();
+  return {
+          embeds: [messageEmbed]
+        };
+}
+
+async function sponsorshipRequested(interaction, contextId, sponsorHash) {
   try {
     var channel = await interaction.client.channels.fetch(envConfig.discordLogChannelId);
-    await channel.send({
-          embeds: [messageEmbed]
-        });
-    return ;
+    var messageContent = sponsorshipRequestedMessage(interaction, undefined, contextId, sponsorHash);
+    return Caml_option.some(await channel.send(messageContent));
   }
   catch (raw_obj){
     var obj = Caml_js_exceptions.internalToOCamlException(raw_obj);
@@ -61,6 +123,27 @@ async function sponsorshipRequested(interaction, contextId, sponsorHash) {
         console.error("Failed to create sponsorship request: ", msg);
       } else {
         console.error("Failed to create sponsorship request", obj$1);
+      }
+      return ;
+    }
+    throw obj;
+  }
+}
+
+async function editSponsorhipMessage(message, status, contextId, maybeSponsorHash) {
+  try {
+    var messageContent = editSponsorMessageContent(message, status, contextId, maybeSponsorHash);
+    return Caml_option.some(await message.edit(messageContent));
+  }
+  catch (raw_obj){
+    var obj = Caml_js_exceptions.internalToOCamlException(raw_obj);
+    if (obj.RE_EXN_ID === Js_exn.$$Error) {
+      var obj$1 = obj._1;
+      var msg = obj$1.message;
+      if (msg !== undefined) {
+        console.error("Failed to edit sponsorship request: ", msg);
+      } else {
+        console.error("Failed to edit sponsorship request", obj$1);
       }
       return ;
     }
@@ -79,6 +162,12 @@ export {
   brightIdSubscriptionEndpoint ,
   context ,
   envConfig ,
+  verificationStatusUrl ,
+  sponsorshipStatusUrl ,
+  Status ,
+  sponsorshipRequestedMessage ,
+  editSponsorMessageContent ,
   sponsorshipRequested ,
+  editSponsorhipMessage ,
 }
 /*  Not a pure module */
