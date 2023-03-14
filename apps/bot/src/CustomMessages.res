@@ -10,15 +10,39 @@ let envConfig = switch Env.getConfig() {
 | Error(err) => err->Env.EnvError->raise
 }
 
-let sponsorshipRequested = async (interaction, contextId, sponsorHash) => {
+let verificationStatusUrl = contextId => `${brightIdVerificationEndpoint}/${context}/${contextId}`
+let sponsorshipStatusUrl = sponsorHash => `${brightIdSubscriptionEndpoint}/${sponsorHash}`
+
+module Status = {
+  type t =
+    | Requested
+    | Successful
+    | Failed
+    | Error(string)
+
+  let toString = status =>
+    switch status {
+    | Requested => "Requested"
+    | Successful => "Successful"
+    | Failed => "Failed"
+    | Error(msg) => `Error: ${msg}`
+    }
+}
+
+let sponsorshipRequestedMessage = (
+  interaction,
+  ~status=Status.Requested,
+  contextId,
+  maybeSponsorHash,
+) => {
   open MessageEmbed
-  let verificationStatusUrl = `${brightIdVerificationEndpoint}/${context}/${contextId}`
-  let sponsorshipStatusUrl = `${brightIdSubscriptionEndpoint}/${sponsorHash}`
+  let nowInSeconds = Math.round(Date.now() /. 1000.)
+  let fifteenMinutesAfter = 15. *. 60. +. nowInSeconds
   let embedFields = {
     [
       {
         name: "__Status__",
-        value: "Requested",
+        value: Status.toString(status),
       },
       {
         name: "__Server__",
@@ -30,11 +54,19 @@ let sponsorshipRequested = async (interaction, contextId, sponsorHash) => {
       },
       {
         name: "__Bright ID Verification Status__",
-        value: `**Context ID:** [${contextId}](${verificationStatusUrl} "${verificationStatusUrl}")`,
+        value: `**Context ID:** [${contextId}](${verificationStatusUrl(
+            contextId,
+          )} "${verificationStatusUrl(contextId)}")`,
       },
       {
         name: "__Sponsorship Operation Status__",
-        value: `**Request Hash:** [${sponsorHash}](${sponsorshipStatusUrl} "${sponsorshipStatusUrl}")`,
+        value: `**Request Hash:** [${maybeSponsorHash->Option.getUnsafe}](${sponsorshipStatusUrl(
+            maybeSponsorHash->Option.getUnsafe,
+          )} "${sponsorshipStatusUrl(maybeSponsorHash->Option.getUnsafe)}")`,
+      },
+      {
+        name: "__Timeout:__",
+        value: `This process will timeout <t:${fifteenMinutesAfter->Float.toString}:R>.`,
       },
     ]
   }
@@ -42,7 +74,7 @@ let sponsorshipRequested = async (interaction, contextId, sponsorHash) => {
     createMessageEmbed()
     ->setColor("#fb8b60")
     ->setTitle("A Sponsorship Has Been Requested")
-    ->setURL(verificationStatusUrl)
+    ->setURL(verificationStatusUrl(contextId))
     ->setAuthor(
       "BrightID Bot",
       "https://media.discordapp.net/attachments/708186850359246859/760681364163919994/1601430947224.png",
@@ -59,18 +91,98 @@ let sponsorshipRequested = async (interaction, contextId, sponsorHash) => {
     ->addFields(embedFields)
     ->setTimestamp
 
+  {"embeds": [messageEmbed]}
+}
+
+let editSponsorMessageContent = (message, ~status, contextId, maybeSponsorHash) => {
+  open MessageEmbed
+  let embedFields = {
+    [
+      {
+        name: "__Status__",
+        value: Status.toString(status),
+      },
+      {
+        name: "__Server__",
+        value: `**Server Name:** ${message
+          ->Message.getMessageGuild
+          ->Guild.getGuildName}\n **Server ID:** ${message
+          ->Message.getMessageGuild
+          ->Guild.getGuildId}`,
+      },
+      {
+        name: "__Bright ID Verification Status__",
+        value: `**Context ID:** [${contextId}](${verificationStatusUrl(
+            contextId,
+          )} "${verificationStatusUrl(contextId)}")`,
+      },
+      {
+        name: "__Sponsorship Operation Status__",
+        value: `**Request Hash:** [${maybeSponsorHash->Option.getUnsafe}](${sponsorshipStatusUrl(
+            maybeSponsorHash->Option.getUnsafe,
+          )} "${sponsorshipStatusUrl(maybeSponsorHash->Option.getUnsafe)}")`,
+      },
+    ]
+  }
+  let messageEmbed =
+    createMessageEmbed()
+    ->setColor("#fb8b60")
+    ->setTitle("A Sponsorship Has Been Requested")
+    ->setURL(verificationStatusUrl(contextId))
+    ->setAuthor(
+      "BrightID Bot",
+      "https://media.discordapp.net/attachments/708186850359246859/760681364163919994/1601430947224.png",
+      "https://www.brightid.org/",
+    )
+    ->setDescription(
+      `A member of ${message
+        ->Message.getMessageGuild
+        ->Guild.getGuildName} is attempting to get sponsored`,
+    )
+    ->setThumbnail(
+      "https://media.discordapp.net/attachments/708186850359246859/760681364163919994/1601430947224.png",
+    )
+    ->addFields(embedFields)
+    ->setTimestamp
+
+  {"embeds": [messageEmbed]}
+}
+
+let sponsorshipRequested = async (interaction, contextId, sponsorHash) => {
   try {
     let channel =
       await interaction
       ->Interaction.getClient
       ->Client.getChannelManager
       ->ChannelManager.fetch(envConfig["discordLogChannelId"])
-    let _ = await channel->Channel.sendWithOptions({"embeds": [messageEmbed]})
+    let messageContent = sponsorshipRequestedMessage(interaction, contextId, sponsorHash)
+    Some(await channel->Channel.sendWithOptions(messageContent))
   } catch {
   | Exn.Error(obj) =>
     switch Exn.message(obj) {
-    | Some(msg) => Console.error2("Failed to create sponsorship request: ", msg)
-    | None => Console.error2("Failed to create sponsorship request", obj)
+    | Some(msg) =>
+      Console.error2("Failed to create sponsorship request: ", msg)
+      None
+    | None =>
+      Console.error2("Failed to create sponsorship request", obj)
+      None
+    }
+  }
+}
+
+let editSponsorhipMessage = async (message, status, contextId, maybeSponsorHash) => {
+  try {
+    let messageContent = editSponsorMessageContent(message, ~status, contextId, maybeSponsorHash)
+    Some(await message->Message.edit(messageContent))
+  } catch {
+  | Exn.Error(obj) =>
+    switch Exn.message(obj) {
+    | Some(msg) =>
+      Console.error2("Failed to edit sponsorship request: ", msg)
+      None
+    | None =>
+      Console.error2("Failed to edit sponsorship request", obj)
+      None
     }
   }
 }

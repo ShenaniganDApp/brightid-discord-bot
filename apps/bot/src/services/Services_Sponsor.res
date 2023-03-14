@@ -117,13 +117,29 @@ let checkSponsor = async uuid => {
 }
 
 @raises([HandleSponsorError, Exn.Error, Json.Decode.DecodeError])
-let rec handleSponsor = async (interaction, ~maybeHash=None, ~attempts=30, uuid) => {
+let rec handleSponsor = async (
+  interaction,
+  ~maybeHash=None,
+  ~attempts=30,
+  ~maybeLogMessage=None,
+  uuid,
+) => {
   open Shared.BrightId
   open Shared.Decode
+
   let guildId = interaction->Interaction.getGuild->Guild.getGuildId
-  let secondsBetweenAttempts = 29 //29 seconds between attempts to leave time for timeout message
+  let secondsBetweenAttempts = 29 //29 seconds between attempts to leave time for timeout message;
   switch attempts {
-  | 0 => TimedOut
+  | 0 =>
+    if maybeLogMessage->Option.isSome {
+      let _ = await CustomMessages.editSponsorhipMessage(
+        maybeLogMessage->Option.getExn,
+        CustomMessages.Status.Failed,
+        uuid,
+        maybeHash,
+      )
+    }
+    TimedOut
   | _ =>
     try {
       let json = await sponsor(
@@ -139,8 +155,18 @@ let rec handleSponsor = async (interaction, ~maybeHash=None, ~attempts=30, uuid)
           `A sponsor request has been submitted`,
           {"guild": guildId, "contextId": uuid, "hash": hash},
         )
-        let _ = await CustomMessages.sponsorshipRequested(interaction, uuid, hash)
-        await handleSponsor(interaction, uuid, ~maybeHash=Some(hash), ~attempts=30)
+        let maybeLogMessage = await CustomMessages.sponsorshipRequested(
+          interaction,
+          uuid,
+          maybeHash,
+        )
+        await handleSponsor(
+          interaction,
+          uuid,
+          ~maybeHash=Some(hash),
+          ~attempts=30,
+          ~maybeLogMessage,
+        )
       | Error(err) => Json.Decode.DecodeError(err)->raise
       }
     } catch {
@@ -160,33 +186,83 @@ let rec handleSponsor = async (interaction, ~maybeHash=None, ~attempts=30, uuid)
         | Some(Ok({errorNum})) =>
           switch (errorNum, maybeHash) {
           //No Sponsorships in the Discord App
-          | (38, _) => NoUnusedSponsorships
+          | (38, _) =>
+            if maybeLogMessage->Option.isSome {
+              let _ = await CustomMessages.editSponsorhipMessage(
+                maybeLogMessage->Option.getExn,
+                CustomMessages.Status.Error(
+                  "No Sponsorships available in the BrightID Discord App",
+                ),
+                uuid,
+                maybeHash,
+              )
+            }
+            NoUnusedSponsorships
           //Sponsorship already assigned
           | (_, None) => RetriedCommandDuring
           | (39, Some(_)) =>
             let Sponsorship({spendRequested}) = await checkSponsor(uuid)
             if spendRequested {
+              if maybeLogMessage->Option.isSome {
+                let _ =
+                  maybeLogMessage->Option.map(async logMessage =>
+                    await CustomMessages.editSponsorhipMessage(
+                      logMessage,
+                      CustomMessages.Status.Successful,
+                      uuid,
+                      maybeHash,
+                    )
+                  )
+              }
               let options = successfulSponsorMessageOptions(uuid)
               let _ = await Interaction.editReply(interaction, ~options, ())
               SponsorshipUsed
             } else {
               let _ = await sleep(secondsBetweenAttempts * 1000)
-              await handleSponsor(interaction, uuid, ~maybeHash, ~attempts=attempts - 1)
+              await handleSponsor(
+                interaction,
+                uuid,
+                ~maybeHash,
+                ~attempts=attempts - 1,
+                ~maybeLogMessage,
+              )
             }
           //App authorized before
           | (45, Some(_)) =>
             let Sponsorship({spendRequested}) = await checkSponsor(uuid)
             if spendRequested {
+              if maybeLogMessage->Option.isSome {
+                let _ = await CustomMessages.editSponsorhipMessage(
+                  maybeLogMessage->Option.getExn,
+                  CustomMessages.Status.Successful,
+                  uuid,
+                  maybeHash,
+                )
+              }
               let options = successfulSponsorMessageOptions(uuid)
               let _ = await Interaction.editReply(interaction, ~options, ())
               SponsorshipUsed
             } else {
               let _ = await sleep(secondsBetweenAttempts * 1000)
-              await handleSponsor(interaction, uuid, ~maybeHash, ~attempts=attempts - 1)
+              await handleSponsor(
+                interaction,
+                uuid,
+                ~maybeHash,
+                ~attempts=attempts - 1,
+                ~maybeLogMessage,
+              )
             }
 
           // Spend Request Submitted
           | (46, Some(_)) =>
+            if maybeLogMessage->Option.isSome {
+              let _ = await CustomMessages.editSponsorhipMessage(
+                maybeLogMessage->Option.getExn,
+                CustomMessages.Status.Successful,
+                uuid,
+                maybeHash,
+              )
+            }
             let options = await successfulSponsorMessageOptions(uuid)
             let _ = await interaction->Interaction.editReply(~options, ())
             SponsorshipUsed
@@ -195,27 +271,47 @@ let rec handleSponsor = async (interaction, ~maybeHash=None, ~attempts=30, uuid)
           | (47, Some(_)) =>
             let Sponsorship({spendRequested}) = await checkSponsor(uuid)
             if spendRequested {
+              if maybeLogMessage->Option.isSome {
+                let _ = await CustomMessages.editSponsorhipMessage(
+                  maybeLogMessage->Option.getExn,
+                  CustomMessages.Status.Successful,
+                  uuid,
+                  maybeHash,
+                )
+              }
               let options = successfulSponsorMessageOptions(uuid)
               let _ = await Interaction.editReply(interaction, ~options, ())
               SponsorshipUsed
             } else {
               let _ = await sleep(secondsBetweenAttempts * 1000)
-              await handleSponsor(interaction, uuid, ~maybeHash, ~attempts=attempts - 1)
+              await handleSponsor(
+                interaction,
+                uuid,
+                ~maybeHash,
+                ~attempts=attempts - 1,
+                ~maybeLogMessage,
+              )
             }
 
           | _ =>
             let _ = await sleep(secondsBetweenAttempts * 1000)
-            await handleSponsor(interaction, uuid, ~maybeHash, ~attempts=attempts - 1)
+            await handleSponsor(
+              interaction,
+              uuid,
+              ~maybeHash,
+              ~attempts=attempts - 1,
+              ~maybeLogMessage,
+            )
           }
         }
       } catch {
       | Exceptions.BrightIdError(_) =>
         let _ = await sleep(secondsBetweenAttempts * 1000)
-        await handleSponsor(interaction, uuid, ~maybeHash, ~attempts=attempts - 1)
+        await handleSponsor(interaction, uuid, ~maybeHash, ~attempts=attempts - 1, ~maybeLogMessage)
       | Json.Decode.DecodeError(msg) =>
         if msg->String.includes("503 Service Temporarily Unavailable") {
           let _ = await sleep(3000)
-          await handleSponsor(interaction, uuid, ~maybeHash, ~attempts)
+          await handleSponsor(interaction, uuid, ~maybeHash, ~attempts, ~maybeLogMessage)
         } else {
           HandleSponsorError(msg)->raise
         }
@@ -223,12 +319,29 @@ let rec handleSponsor = async (interaction, ~maybeHash=None, ~attempts=30, uuid)
         switch Exn.name(obj) {
         | Some("FetchError") =>
           let _ = await sleep(3000)
-          await handleSponsor(interaction, uuid, ~maybeHash, ~attempts)
+          await handleSponsor(interaction, uuid, ~maybeHash, ~attempts, ~maybeLogMessage)
         | _ =>
           switch Exn.message(obj) {
-          | Some(msg) => HandleSponsorError(msg)->raise
+          | Some(msg) =>
+            if maybeLogMessage->Option.isSome {
+              let _ = await CustomMessages.editSponsorhipMessage(
+                maybeLogMessage->Option.getExn,
+                CustomMessages.Status.Error(msg),
+                uuid,
+                maybeHash,
+              )
+            }
+            HandleSponsorError(msg)->raise
           | None =>
             Console.error(obj)
+            if maybeLogMessage->Option.isSome {
+              let _ = await CustomMessages.editSponsorhipMessage(
+                maybeLogMessage->Option.getExn,
+                CustomMessages.Status.Error("Something went wrong"),
+                uuid,
+                maybeHash,
+              )
+            }
             HandleSponsorError("Handle Sponsor: Unknown Error")->raise
           }
         }
