@@ -127,7 +127,7 @@ async function execute(interaction) {
         var exit$2 = 0;
         var val$1;
         try {
-          val$1 = await Services_Sponsor.handleSponsor(interaction, undefined, undefined, uuid);
+          val$1 = await Services_Sponsor.handleSponsor(interaction, undefined, undefined, undefined, uuid);
           exit$2 = 3;
         }
         catch (e$2){
