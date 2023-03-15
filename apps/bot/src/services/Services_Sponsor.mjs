@@ -155,7 +155,7 @@ async function handleSponsor(interaction, maybeHashOpt, attemptsOpt, maybeLogMes
               contextId: uuid,
               hash: hash
             });
-        var maybeLogMessage$1 = await CustomMessages.sponsorshipRequested(interaction, uuid, maybeHash);
+        var maybeLogMessage$1 = await CustomMessages.sponsorshipRequested(interaction, uuid, hash);
         return await handleSponsor(interaction, Caml_option.some(hash), 30, Caml_option.some(maybeLogMessage$1), uuid);
       }
       throw {
@@ -187,7 +187,8 @@ async function handleSponsor(interaction, maybeHashOpt, attemptsOpt, maybeLogMes
                 case 39 :
                     if (maybeHash !== undefined) {
                       var match = await checkSponsor(uuid);
-                      if (match._0.spendRequested) {
+                      var match$1 = match._0;
+                      if (match$1.spendRequested && match$1.appHasAuthorized) {
                         if (Core__Option.isSome(maybeLogMessage)) {
                           Core__Option.map(maybeLogMessage, (async function (logMessage) {
                                   return await CustomMessages.editSponsorhipMessage(logMessage, /* Successful */1, uuid, maybeHash);
@@ -211,8 +212,9 @@ async function handleSponsor(interaction, maybeHashOpt, attemptsOpt, maybeLogMes
                     break;
                 case 45 :
                     if (maybeHash !== undefined) {
-                      var match$1 = await checkSponsor(uuid);
-                      if (match$1._0.spendRequested) {
+                      var match$2 = await checkSponsor(uuid);
+                      var match$3 = match$2._0;
+                      if (match$3.spendRequested && match$3.appHasAuthorized) {
                         if (Core__Option.isSome(maybeLogMessage)) {
                           await CustomMessages.editSponsorhipMessage(Core__Option.getExn(maybeLogMessage), /* Successful */1, uuid, maybeHash);
                         }
@@ -227,19 +229,26 @@ async function handleSponsor(interaction, maybeHashOpt, attemptsOpt, maybeLogMes
                     break;
                 case 46 :
                     if (maybeHash !== undefined) {
-                      if (Core__Option.isSome(maybeLogMessage)) {
-                        await CustomMessages.editSponsorhipMessage(Core__Option.getExn(maybeLogMessage), /* Successful */1, uuid, maybeHash);
+                      var match$4 = await checkSponsor(uuid);
+                      var match$5 = match$4._0;
+                      if (match$5.spendRequested && match$5.appHasAuthorized) {
+                        if (Core__Option.isSome(maybeLogMessage)) {
+                          await CustomMessages.editSponsorhipMessage(Core__Option.getExn(maybeLogMessage), /* Successful */1, uuid, maybeHash);
+                        }
+                        var options$3 = await successfulSponsorMessageOptions(uuid);
+                        await interaction.editReply(options$3);
+                        return /* SponsorshipUsed */0;
                       }
-                      var options$3 = await successfulSponsorMessageOptions(uuid);
-                      await interaction.editReply(options$3);
-                      return /* SponsorshipUsed */0;
+                      await sleep(29000);
+                      return await handleSponsor(interaction, Caml_option.some(maybeHash), attempts - 1 | 0, Caml_option.some(maybeLogMessage), uuid);
                     }
                     exit = 1;
                     break;
                 case 47 :
                     if (maybeHash !== undefined) {
-                      var match$2 = await checkSponsor(uuid);
-                      if (match$2._0.spendRequested) {
+                      var match$6 = await checkSponsor(uuid);
+                      var match$7 = match$6._0;
+                      if (match$7.spendRequested && match$7.appHasAuthorized) {
                         if (Core__Option.isSome(maybeLogMessage)) {
                           await CustomMessages.editSponsorhipMessage(Core__Option.getExn(maybeLogMessage), /* Successful */1, uuid, maybeHash);
                         }
@@ -299,8 +308,8 @@ async function handleSponsor(interaction, maybeHashOpt, attemptsOpt, maybeLogMes
           }
           if (msg.RE_EXN_ID === Js_exn.$$Error) {
             var obj = msg._1;
-            var match$3 = obj.name;
-            if (match$3 === "FetchError") {
+            var match$8 = obj.name;
+            if (match$8 === "FetchError") {
               await sleep(3000);
               return await handleSponsor(interaction, Caml_option.some(maybeHash), attempts, Caml_option.some(maybeLogMessage), uuid);
             }

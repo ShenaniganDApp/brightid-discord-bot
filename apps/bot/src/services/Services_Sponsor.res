@@ -158,7 +158,7 @@ let rec handleSponsor = async (
         let maybeLogMessage = await CustomMessages.sponsorshipRequested(
           interaction,
           uuid,
-          maybeHash,
+          Some(hash),
         )
         await handleSponsor(
           interaction,
@@ -200,9 +200,9 @@ let rec handleSponsor = async (
             NoUnusedSponsorships
           //Sponsorship already assigned
           | (_, None) => RetriedCommandDuring
-          | (39, Some(_)) =>
-            let Sponsorship({spendRequested}) = await checkSponsor(uuid)
-            if spendRequested {
+          | (39, Some(hash)) =>
+            let Sponsorship({spendRequested, appHasAuthorized}) = await checkSponsor(uuid)
+            if spendRequested && appHasAuthorized {
               if maybeLogMessage->Option.isSome {
                 let _ =
                   maybeLogMessage->Option.map(async logMessage =>
@@ -210,7 +210,7 @@ let rec handleSponsor = async (
                       logMessage,
                       CustomMessages.Status.Successful,
                       uuid,
-                      maybeHash,
+                      Some(hash),
                     )
                   )
               }
@@ -228,19 +228,19 @@ let rec handleSponsor = async (
               )
             }
           //App authorized before
-          | (45, Some(_)) =>
-            let Sponsorship({spendRequested}) = await checkSponsor(uuid)
-            if spendRequested {
+          | (45, Some(hash)) =>
+            let Sponsorship({spendRequested, appHasAuthorized}) = await checkSponsor(uuid)
+            if spendRequested && appHasAuthorized {
               if maybeLogMessage->Option.isSome {
                 let _ = await CustomMessages.editSponsorhipMessage(
                   maybeLogMessage->Option.getExn,
                   CustomMessages.Status.Successful,
                   uuid,
-                  maybeHash,
+                  Some(hash),
                 )
               }
               let options = successfulSponsorMessageOptions(uuid)
-              let _ = await Interaction.editReply(interaction, ~options, ())
+              let _ = {await Interaction.editReply(interaction, ~options, ())}
               SponsorshipUsed
             } else {
               let _ = await sleep(secondsBetweenAttempts * 1000)
@@ -254,23 +254,35 @@ let rec handleSponsor = async (
             }
 
           // Spend Request Submitted
-          | (46, Some(_)) =>
-            if maybeLogMessage->Option.isSome {
-              let _ = await CustomMessages.editSponsorhipMessage(
-                maybeLogMessage->Option.getExn,
-                CustomMessages.Status.Successful,
+          | (46, Some(hash)) =>
+            let Sponsorship({spendRequested, appHasAuthorized}) = await checkSponsor(uuid)
+            if spendRequested && appHasAuthorized {
+              if maybeLogMessage->Option.isSome {
+                let _ = await CustomMessages.editSponsorhipMessage(
+                  maybeLogMessage->Option.getExn,
+                  CustomMessages.Status.Successful,
+                  uuid,
+                  Some(hash),
+                )
+              }
+              let options = await successfulSponsorMessageOptions(uuid)
+              let _ = await interaction->Interaction.editReply(~options, ())
+              SponsorshipUsed
+            } else {
+              let _ = await sleep(secondsBetweenAttempts * 1000)
+              await handleSponsor(
+                interaction,
                 uuid,
-                maybeHash,
+                ~maybeHash,
+                ~attempts=attempts - 1,
+                ~maybeLogMessage,
               )
             }
-            let options = await successfulSponsorMessageOptions(uuid)
-            let _ = await interaction->Interaction.editReply(~options, ())
-            SponsorshipUsed
 
           // Sponsored Request Recently
           | (47, Some(_)) =>
-            let Sponsorship({spendRequested}) = await checkSponsor(uuid)
-            if spendRequested {
+            let Sponsorship({spendRequested, appHasAuthorized}) = await checkSponsor(uuid)
+            if spendRequested && appHasAuthorized {
               if maybeLogMessage->Option.isSome {
                 let _ = await CustomMessages.editSponsorhipMessage(
                   maybeLogMessage->Option.getExn,
