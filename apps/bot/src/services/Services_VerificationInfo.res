@@ -25,26 +25,19 @@ external fetch: (string, 'params) => promise<Response.t<JSON.t>> = "default"
 let sleep: int => promise<unit> = _ms => %raw(` new Promise((resolve) => setTimeout(resolve, _ms))`)
 
 let {context} = module(Constants)
-let {brightIdVerificationEndpoint} = module(Endpoints)
+let {brightIdVerificationEndpoint, nodes} = module(Endpoints)
 
 let requestTimeout = 60000
 
-let rec fetchVerificationInfo = (~retry=10, id) => {
+let rec fetchVerificationInfo = (~retry=5, id) => {
   let uuid = id->UUID.v5(config["uuidNamespace"])
-  let endpoint = `${brightIdVerificationEndpoint}/${context}/${uuid}?timestamp=seconds`
-
-  let params = {
-    "method": "GET",
-    "headers": {
-      "Accept": "application/json",
-      "Content-Type": "application/json",
-    },
-    "timestamp": requestTimeout,
-  }
-
-  endpoint
-  ->fetch(params)
-  ->then(Response.json)
+  FetchTools.fetchWithFallback(~relativeUrl=`/verifications/${context}/${uuid}`, nodes[0], nodes)
+  ->then(maybeRes =>
+    switch maybeRes {
+    | None => reject(FetchTools.NoRes)
+    | Some(res) => Response.json(res)
+    }
+  )
   ->then(json => {
     open Decode
 
