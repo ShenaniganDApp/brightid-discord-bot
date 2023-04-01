@@ -4,7 +4,8 @@ import * as Env from "../Env.mjs";
 import * as Uuid from "uuid";
 import * as Endpoints from "../Endpoints.mjs";
 import * as Exceptions from "../Exceptions.mjs";
-import NodeFetch from "node-fetch";
+import * as FetchTools from "../FetchTools.mjs";
+import * as Caml_option from "rescript/lib/es6/caml_option.js";
 import * as Core__Promise from "@rescript/core/src/Core__Promise.mjs";
 import * as Decode$Shared from "@brightidbot/shared/src/Decode.mjs";
 import * as Constants$Shared from "@brightidbot/shared/src/Constants.mjs";
@@ -36,17 +37,14 @@ function sleep(_ms) {
 function fetchVerificationInfo(retryOpt, id) {
   var retry = retryOpt !== undefined ? retryOpt : 10;
   var uuid = Uuid.v5(id, config$1.uuidNamespace);
-  var endpoint = "" + Endpoints.brightIdVerificationEndpoint + "/" + Constants$Shared.context + "/" + uuid + "?timestamp=seconds";
-  var params = {
-    method: "GET",
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json"
-    },
-    timestamp: 60000
-  };
-  return Core__Promise.$$catch(NodeFetch(endpoint, params).then(function (prim) {
-                    return prim.json();
+  return Core__Promise.$$catch(FetchTools.fetchWithFallback("/verifications/" + Constants$Shared.context + "/" + uuid + "", undefined, Endpoints.nodes[0], Endpoints.nodes).then(function (maybeRes) {
+                    if (maybeRes !== undefined) {
+                      return Caml_option.valFromOption(maybeRes).json();
+                    } else {
+                      return Promise.reject({
+                                  RE_EXN_ID: FetchTools.NoRes
+                                });
+                    }
                   }).then(function (json) {
                   var match = Json$JsonCombinators.decode(json, Decode$Shared.Decode_BrightId.ContextId.data);
                   var match$1 = Json$JsonCombinators.decode(json, Decode$Shared.Decode_BrightId.$$Error.data);
@@ -88,6 +86,8 @@ var context = Constants$Shared.context;
 
 var brightIdVerificationEndpoint = Endpoints.brightIdVerificationEndpoint;
 
+var nodes = Endpoints.nodes;
+
 var requestTimeout = 60000;
 
 export {
@@ -96,6 +96,7 @@ export {
   sleep ,
   context ,
   brightIdVerificationEndpoint ,
+  nodes ,
   requestTimeout ,
   fetchVerificationInfo ,
   getBrightIdVerification ,
