@@ -16,6 +16,19 @@ var brightIdAppDeeplink = "brightid://link-verification/" + nodeUrl + "/" + Cons
 
 var brightIdLinkVerificationEndpoint = "https://app.brightid.org/link-verification/" + nodeUrl + "/" + Constants.context + "";
 
+var nodeUrls = [
+  "http://node.brightid.org/brightid/v5",
+  "https://aura-node.brightid.org/brightid/v5"
+];
+
+var nodes = nodeUrls.map(function (url, i) {
+      return {
+              url: url,
+              priority: i,
+              timeout: 60000
+            };
+    });
+
 var context = Constants.context;
 
 export {
@@ -27,5 +40,7 @@ export {
   brightIdAppsEndpoint ,
   brightIdAppDeeplink ,
   brightIdLinkVerificationEndpoint ,
+  nodeUrls ,
+  nodes ,
 }
-/* No side effect */
+/* nodes Not a pure module */
