@@ -4,7 +4,9 @@ module ContextId = {
     app: string,
     context: string,
     contextIds: array<string>,
-    timestamp: int,
+    timestamp: option<float>,
+    sig: option<string>,
+    publicKey: option<string>,
   }
   type data = {data: t}
 }

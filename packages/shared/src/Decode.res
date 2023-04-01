@@ -8,7 +8,9 @@ module Decode_BrightId = {
       app: field.required(. "app", string),
       context: field.required(. "context", string),
       contextIds: field.required(. "contextIds", array(string)),
-      timestamp: field.required(. "timestamp", int),
+      timestamp: field.optional(. "timestamp", float),
+      sig: field.optional(. "sig", string),
+      publicKey: field.optional(. "publicKey", string),
     }
 
     let data = field => {

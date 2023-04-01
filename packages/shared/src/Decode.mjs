@@ -8,7 +8,9 @@ function contextId(field) {
           app: field.required("app", Json_Decode$JsonCombinators.string),
           context: field.required("context", Json_Decode$JsonCombinators.string),
           contextIds: field.required("contextIds", Json_Decode$JsonCombinators.array(Json_Decode$JsonCombinators.string)),
-          timestamp: field.required("timestamp", Json_Decode$JsonCombinators.$$int)
+          timestamp: field.optional("timestamp", Json_Decode$JsonCombinators.$$float),
+          sig: field.optional("sig", Json_Decode$JsonCombinators.string),
+          publicKey: field.optional("publicKey", Json_Decode$JsonCombinators.string)
         };
 }
 
