@@ -171,7 +171,8 @@ function assignedSponsorship(field) {
   return {
           address: field.required("address", Json_Decode$JsonCombinators.string),
           amount: field.required("amount", Json_Decode$JsonCombinators.string),
-          timestamp: field.required("timestamp", Json_Decode$JsonCombinators.$$float)
+          timestamp: field.required("timestamp", Json_Decode$JsonCombinators.$$float),
+          chainId: field.required("chainId", Json_Decode$JsonCombinators.$$int)
         };
 }
 

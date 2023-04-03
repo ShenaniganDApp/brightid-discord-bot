@@ -47,6 +47,7 @@ module Gist = {
     address: string,
     amount: string,
     timestamp: float,
+    chainId: int,
   }
 
   type brightIdGuild = {
