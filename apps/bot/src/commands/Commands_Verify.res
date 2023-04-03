@@ -401,45 +401,16 @@ let execute = interaction => {
 
                   // Use server sponsor
                   | (4, false) =>
-                    let assignedSponsorshipsID = await getAssignedSPFromAddress(
-                      guildData.sponsorshipAddress,
-                      contractAddressID,
-                      "https://idchain.one/rpc",
-                    )
-                    let assignedSponsorshipsEth = await getAssignedSPFromAddress(
-                      guildData.sponsorshipAddressEth,
-                      contractAddressETH,
-                      "https://rpc.ankr.com/eth",
-                    )
-                    let totalUnusedSponsorships = totalUnusedSponsorships(
-                      assignedSponsorshipsID,
-                      assignedSponsorshipsEth,
-                    )
-                    switch totalUnusedSponsorships {
-                    | exception NoAvailableSP =>
+                    // THis will probably have to be updated optimistically in order to avoid double spending
+                    open Ethers.BigNumber
+                    switch unusedGuildSponsorships->gt(zero) {
+                    | false =>
                       let _ = await noSponsorshipsMessage(interaction)
                       VerifyCommandError("This server has no usable sponsorships")->raise
-                    | exception e => raise(e)
-                    | _ =>
-                      open Ethers.BigNumber
-                      let usedSponsorships =
-                        guildData.usedSponsorships->Option.mapWithDefault(zero, fromString)
-
-                      let assignedSponsorships =
-                        assignedSponsorshipsID->add(assignedSponsorshipsEth)
-                      let availableSponsorships = assignedSponsorships->sub(usedSponsorships)
-
-                      let hasAvailableSponsorships = !isZero(availableSponsorships)
-                      switch hasAvailableSponsorships {
-                      | false =>
-                        //@TODO: Error no available SP
-                        let _ = await noSponsorshipsMessage(interaction)
-                      | true =>
-                        let options = await beforeSponsorMessageOptions("before-sponsor", uuid)
-                        let _ = await Interaction.editReply(interaction, ~options, ())
-                      }
+                    | true =>
+                      let options = await beforeSponsorMessageOptions("before-sponsor", uuid)
+                      let _ = await Interaction.editReply(interaction, ~options, ())
                     }
-
                   | (_, _) =>
                     let _ = switch await handleUnverifiedGuildMember(errorNum, interaction, uuid) {
                     | data => Some(data)
