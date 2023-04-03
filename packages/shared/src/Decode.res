@@ -116,6 +116,7 @@ module Decode_Gist = {
     address: field.required(. "address", string),
     amount: field.required(. "amount", string),
     timestamp: field.required(. "timestamp", float),
+    chainId: field.required(. "chainId", int),
   }
 
   let assignedSponsorships = assignedSponsorship->object->array

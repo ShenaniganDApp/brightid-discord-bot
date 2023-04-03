@@ -35,7 +35,7 @@ function sleep(_ms) {
 }
 
 function fetchVerificationInfo(retryOpt, id) {
-  var retry = retryOpt !== undefined ? retryOpt : 10;
+  var retry = retryOpt !== undefined ? retryOpt : 5;
   var uuid = Uuid.v5(id, config$1.uuidNamespace);
   return Core__Promise.$$catch(FetchTools.fetchWithFallback("/verifications/" + Constants$Shared.context + "/" + uuid + "", undefined, Endpoints.nodes[0], Endpoints.nodes).then(function (maybeRes) {
                     if (maybeRes !== undefined) {

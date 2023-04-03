@@ -340,40 +340,17 @@ function execute(interaction) {
                                                       await interaction.editReply(options);
                                                       return ;
                                                     }
-                                                    var assignedSponsorshipsID = await getAssignedSPFromAddress(guildData.sponsorshipAddress, Constants$Shared.contractAddressID, "https://idchain.one/rpc");
-                                                    var assignedSponsorshipsEth = await getAssignedSPFromAddress(guildData.sponsorshipAddressEth, Constants$Shared.contractAddressETH, "https://rpc.ankr.com/eth");
-                                                    var totalUnusedSponsorships$1 = function (param) {
-                                                      return totalUnusedSponsorships(assignedSponsorshipsID, assignedSponsorshipsEth, param);
-                                                    };
-                                                    var val;
-                                                    try {
-                                                      val = totalUnusedSponsorships$1;
-                                                    }
-                                                    catch (raw_e){
-                                                      var e$1 = Caml_js_exceptions.internalToOCamlException(raw_e);
-                                                      if (e$1.RE_EXN_ID === NoAvailableSP) {
-                                                        await noSponsorshipsMessage(interaction);
-                                                        throw {
-                                                              RE_EXN_ID: Exceptions.VerifyCommandError,
-                                                              _1: "This server has no usable sponsorships",
-                                                              Error: new Error()
-                                                            };
-                                                      }
-                                                      throw e$1;
-                                                    }
-                                                    var usedSponsorships = Core__Option.mapWithDefault(guildData.usedSponsorships, Ethers.constants.Zero, (function (prim) {
-                                                            return Ethers.BigNumber.from(prim);
-                                                          }));
-                                                    var assignedSponsorships = assignedSponsorshipsID.add(assignedSponsorshipsEth);
-                                                    var availableSponsorships = assignedSponsorships.sub(usedSponsorships);
-                                                    var hasAvailableSponsorships = !availableSponsorships.isZero();
-                                                    if (hasAvailableSponsorships) {
+                                                    if (unusedGuildSponsorships.gt(Ethers.constants.Zero)) {
                                                       var options$1 = await beforeSponsorMessageOptions("before-sponsor", uuid);
                                                       await interaction.editReply(options$1);
                                                       return ;
                                                     }
                                                     await noSponsorshipsMessage(interaction);
-                                                    return ;
+                                                    throw {
+                                                          RE_EXN_ID: Exceptions.VerifyCommandError,
+                                                          _1: "This server has no usable sponsorships",
+                                                          Error: new Error()
+                                                        };
                                                   }
                                                   await noSponsorshipsMessage(interaction);
                                                   throw {
