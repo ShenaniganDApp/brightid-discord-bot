@@ -46,12 +46,12 @@ function gistConfig(param) {
 }
 
 var options_intents = [
-  "GUILDS",
-  "GUILD_MESSAGES",
-  "GUILD_MEMBERS"
+  "Guilds",
+  "GuildMessages",
+  "GuildMembers"
 ];
 
-var options_partials = ["GUILD_MEMBER"];
+var options_partials = ["GuildMember"];
 
 var options = {
   intents: options_intents,

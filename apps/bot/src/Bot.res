@@ -36,8 +36,8 @@ let gistConfig = () => {
 }
 
 let options: Client.clientOptions = {
-  intents: ["GUILDS", "GUILD_MESSAGES", "GUILD_MEMBERS"],
-  partials: ["GUILD_MEMBER"],
+  intents: ["Guilds", "GuildMessages", "GuildMembers"],
+  partials: ["GuildMember"],
 }
 
 let client = Client.createDiscordClient(~options)
