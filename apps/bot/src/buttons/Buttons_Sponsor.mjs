@@ -58,7 +58,7 @@ function makeAfterSponsorActionRow(label) {
 }
 
 async function checkSponsor(uuid) {
-  var endpoint = "https://app.brightid.org/node/v6/sponsorships/" + uuid + "";
+  var endpoint = "https://app.brightid.org/node/v5/sponsorships/" + uuid + "";
   var params = {
     method: "GET",
     headers: {

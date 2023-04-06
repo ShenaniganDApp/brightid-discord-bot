@@ -53,7 +53,7 @@ let makeAfterSponsorActionRow = label => {
 type sponsorship = Sponsorship(BrightId.Sponsorships.t)
 let checkSponsor = async uuid => {
   open Shared.Decode
-  let endpoint = `https://app.brightid.org/node/v6/sponsorships/${uuid}`
+  let endpoint = `https://app.brightid.org/node/v5/sponsorships/${uuid}`
   let params = {
     "method": "GET",
     "headers": {
