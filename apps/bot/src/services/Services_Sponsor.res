@@ -116,11 +116,12 @@ let checkSponsor = async uuid => {
   }
 }
 
+// Moight want to add a 15 minute timer to this recursive function in order to avoid Discord's interaction timeout
 @raises([HandleSponsorError, Exn.Error, Json.Decode.DecodeError])
 let rec handleSponsor = async (
   interaction,
   ~maybeHash=None,
-  ~attempts=30,
+  ~attempts=29,
   ~maybeLogMessage=None,
   uuid,
 ) => {
@@ -134,6 +135,7 @@ let rec handleSponsor = async (
     if maybeLogMessage->Option.isSome {
       let _ = await CustomMessages.editSponsorhipMessage(
         maybeLogMessage->Option.getExn,
+        interaction,
         CustomMessages.Status.Failed,
         uuid,
         maybeHash,
@@ -190,6 +192,7 @@ let rec handleSponsor = async (
             if maybeLogMessage->Option.isSome {
               let _ = await CustomMessages.editSponsorhipMessage(
                 maybeLogMessage->Option.getExn,
+                interaction,
                 CustomMessages.Status.Error(
                   "No Sponsorships available in the BrightID Discord App",
                 ),
@@ -208,6 +211,7 @@ let rec handleSponsor = async (
                   maybeLogMessage->Option.map(async logMessage =>
                     await CustomMessages.editSponsorhipMessage(
                       logMessage,
+                      interaction,
                       CustomMessages.Status.Successful,
                       uuid,
                       Some(hash),
@@ -234,6 +238,7 @@ let rec handleSponsor = async (
               if maybeLogMessage->Option.isSome {
                 let _ = await CustomMessages.editSponsorhipMessage(
                   maybeLogMessage->Option.getExn,
+                  interaction,
                   CustomMessages.Status.Successful,
                   uuid,
                   Some(hash),
@@ -260,6 +265,7 @@ let rec handleSponsor = async (
               if maybeLogMessage->Option.isSome {
                 let _ = await CustomMessages.editSponsorhipMessage(
                   maybeLogMessage->Option.getExn,
+                  interaction,
                   CustomMessages.Status.Successful,
                   uuid,
                   Some(hash),
@@ -286,6 +292,7 @@ let rec handleSponsor = async (
               if maybeLogMessage->Option.isSome {
                 let _ = await CustomMessages.editSponsorhipMessage(
                   maybeLogMessage->Option.getExn,
+                  interaction,
                   CustomMessages.Status.Successful,
                   uuid,
                   maybeHash,
@@ -338,6 +345,7 @@ let rec handleSponsor = async (
             if maybeLogMessage->Option.isSome {
               let _ = await CustomMessages.editSponsorhipMessage(
                 maybeLogMessage->Option.getExn,
+                interaction,
                 CustomMessages.Status.Error(msg),
                 uuid,
                 maybeHash,
@@ -349,6 +357,7 @@ let rec handleSponsor = async (
             if maybeLogMessage->Option.isSome {
               let _ = await CustomMessages.editSponsorhipMessage(
                 maybeLogMessage->Option.getExn,
+                interaction,
                 CustomMessages.Status.Error("Something went wrong"),
                 uuid,
                 maybeHash,

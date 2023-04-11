@@ -54,13 +54,13 @@ let sponsorshipRequestedMessage = (
       },
       {
         name: "__Bright ID Verification Status__",
-        value: `**Context ID:** [${contextId}](${verificationStatusUrl(
+        value: `[${contextId}](${verificationStatusUrl(contextId)} "${verificationStatusUrl(
             contextId,
-          )} "${verificationStatusUrl(contextId)}")`,
+          )}")`,
       },
       {
         name: "__Sponsorship Operation Status__",
-        value: `**Request Hash:** [${maybeSponsorHash->Option.getUnsafe}](${sponsorshipStatusUrl(
+        value: `[${maybeSponsorHash->Option.getUnsafe}](${sponsorshipStatusUrl(
             maybeSponsorHash->Option.getUnsafe,
           )} "${sponsorshipStatusUrl(maybeSponsorHash->Option.getUnsafe)}")`,
       },
@@ -94,7 +94,7 @@ let sponsorshipRequestedMessage = (
   {"embeds": [messageEmbed]}
 }
 
-let editSponsorMessageContent = (message, ~status, contextId, maybeSponsorHash) => {
+let editSponsorMessageContent = (message, interaction, ~status, contextId, maybeSponsorHash) => {
   open MessageEmbed
   let embedFields = {
     [
@@ -104,21 +104,21 @@ let editSponsorMessageContent = (message, ~status, contextId, maybeSponsorHash) 
       },
       {
         name: "__Server__",
-        value: `**Server Name:** ${message
-          ->Message.getMessageGuild
+        value: `**Server Name:** ${interaction
+          ->Interaction.getGuild
           ->Guild.getGuildName}\n **Server ID:** ${message
           ->Message.getMessageGuild
           ->Guild.getGuildId}`,
       },
       {
         name: "__Bright ID Verification Status__",
-        value: `**Context ID:** [${contextId}](${verificationStatusUrl(
+        value: `[${contextId}](${verificationStatusUrl(contextId)} "${verificationStatusUrl(
             contextId,
-          )} "${verificationStatusUrl(contextId)}")`,
+          )}")`,
       },
       {
         name: "__Sponsorship Operation Status__",
-        value: `**Request Hash:** [${maybeSponsorHash->Option.getUnsafe}](${sponsorshipStatusUrl(
+        value: `[${maybeSponsorHash->Option.getUnsafe}](${sponsorshipStatusUrl(
             maybeSponsorHash->Option.getUnsafe,
           )} "${sponsorshipStatusUrl(maybeSponsorHash->Option.getUnsafe)}")`,
       },
@@ -170,9 +170,15 @@ let sponsorshipRequested = async (interaction, contextId, sponsorHash) => {
   }
 }
 
-let editSponsorhipMessage = async (message, status, contextId, maybeSponsorHash) => {
+let editSponsorhipMessage = async (message, interaction, status, contextId, maybeSponsorHash) => {
   try {
-    let messageContent = editSponsorMessageContent(message, ~status, contextId, maybeSponsorHash)
+    let messageContent = editSponsorMessageContent(
+      message,
+      interaction,
+      ~status,
+      contextId,
+      maybeSponsorHash,
+    )
     Some(await message->Message.edit(messageContent))
   } catch {
   | Exn.Error(obj) =>

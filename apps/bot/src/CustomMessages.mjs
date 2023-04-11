@@ -66,11 +66,11 @@ function sponsorshipRequestedMessage(interaction, statusOpt, contextId, maybeSpo
     },
     {
       name: "__Bright ID Verification Status__",
-      value: "**Context ID:** [" + contextId + "](" + verificationStatusUrl(contextId) + " \"" + verificationStatusUrl(contextId) + "\")"
+      value: "[" + contextId + "](" + verificationStatusUrl(contextId) + " \"" + verificationStatusUrl(contextId) + "\")"
     },
     {
       name: "__Sponsorship Operation Status__",
-      value: "**Request Hash:** [" + maybeSponsorHash + "](" + sponsorshipStatusUrl(maybeSponsorHash) + " \"" + sponsorshipStatusUrl(maybeSponsorHash) + "\")"
+      value: "[" + maybeSponsorHash + "](" + sponsorshipStatusUrl(maybeSponsorHash) + " \"" + sponsorshipStatusUrl(maybeSponsorHash) + "\")"
     },
     {
       name: "__Timeout:__",
@@ -83,7 +83,7 @@ function sponsorshipRequestedMessage(interaction, statusOpt, contextId, maybeSpo
         };
 }
 
-function editSponsorMessageContent(message, status, contextId, maybeSponsorHash) {
+function editSponsorMessageContent(message, interaction, status, contextId, maybeSponsorHash) {
   var embedFields = [
     {
       name: "__Status__",
@@ -91,15 +91,15 @@ function editSponsorMessageContent(message, status, contextId, maybeSponsorHash)
     },
     {
       name: "__Server__",
-      value: "**Server Name:** " + message.guild.name + "\n **Server ID:** " + message.guild.id + ""
+      value: "**Server Name:** " + interaction.guild.name + "\n **Server ID:** " + message.guild.id + ""
     },
     {
       name: "__Bright ID Verification Status__",
-      value: "**Context ID:** [" + contextId + "](" + verificationStatusUrl(contextId) + " \"" + verificationStatusUrl(contextId) + "\")"
+      value: "[" + contextId + "](" + verificationStatusUrl(contextId) + " \"" + verificationStatusUrl(contextId) + "\")"
     },
     {
       name: "__Sponsorship Operation Status__",
-      value: "**Request Hash:** [" + maybeSponsorHash + "](" + sponsorshipStatusUrl(maybeSponsorHash) + " \"" + sponsorshipStatusUrl(maybeSponsorHash) + "\")"
+      value: "[" + maybeSponsorHash + "](" + sponsorshipStatusUrl(maybeSponsorHash) + " \"" + sponsorshipStatusUrl(maybeSponsorHash) + "\")"
     }
   ];
   var messageEmbed = new DiscordJs.MessageEmbed().setColor("#fb8b60").setTitle("A Sponsorship Has Been Requested").setURL(verificationStatusUrl(contextId)).setAuthor("BrightID Bot", "https://media.discordapp.net/attachments/708186850359246859/760681364163919994/1601430947224.png", "https://www.brightid.org/").setDescription("A member of " + message.guild.name + " is attempting to get sponsored").setThumbnail("https://media.discordapp.net/attachments/708186850359246859/760681364163919994/1601430947224.png").addFields(embedFields).setTimestamp();
@@ -130,9 +130,9 @@ async function sponsorshipRequested(interaction, contextId, sponsorHash) {
   }
 }
 
-async function editSponsorhipMessage(message, status, contextId, maybeSponsorHash) {
+async function editSponsorhipMessage(message, interaction, status, contextId, maybeSponsorHash) {
   try {
-    var messageContent = editSponsorMessageContent(message, status, contextId, maybeSponsorHash);
+    var messageContent = editSponsorMessageContent(message, interaction, status, contextId, maybeSponsorHash);
     return Caml_option.some(await message.edit(messageContent));
   }
   catch (raw_obj){

@@ -139,7 +139,7 @@ async function checkSponsor(uuid) {
 
 async function handleSponsor(interaction, maybeHashOpt, attemptsOpt, maybeLogMessageOpt, uuid) {
   var maybeHash = maybeHashOpt !== undefined ? Caml_option.valFromOption(maybeHashOpt) : undefined;
-  var attempts = attemptsOpt !== undefined ? attemptsOpt : 30;
+  var attempts = attemptsOpt !== undefined ? attemptsOpt : 29;
   var maybeLogMessage = maybeLogMessageOpt !== undefined ? Caml_option.valFromOption(maybeLogMessageOpt) : undefined;
   var guildId = interaction.guild.id;
   if (attempts !== 0) {
@@ -179,7 +179,7 @@ async function handleSponsor(interaction, maybeHashOpt, attemptsOpt, maybeLogMes
               switch (brightIdError._0.errorNum) {
                 case 38 :
                     if (Core__Option.isSome(maybeLogMessage)) {
-                      await CustomMessages.editSponsorhipMessage(Core__Option.getExn(maybeLogMessage), /* Error */{
+                      await CustomMessages.editSponsorhipMessage(Core__Option.getExn(maybeLogMessage), interaction, /* Error */{
                             _0: "No Sponsorships available in the BrightID Discord App"
                           }, uuid, maybeHash);
                     }
@@ -191,7 +191,7 @@ async function handleSponsor(interaction, maybeHashOpt, attemptsOpt, maybeLogMes
                       if (match$1.spendRequested && match$1.appHasAuthorized) {
                         if (Core__Option.isSome(maybeLogMessage)) {
                           Core__Option.map(maybeLogMessage, (async function (logMessage) {
-                                  return await CustomMessages.editSponsorhipMessage(logMessage, /* Successful */1, uuid, maybeHash);
+                                  return await CustomMessages.editSponsorhipMessage(logMessage, interaction, /* Successful */1, uuid, maybeHash);
                                 }));
                         }
                         var options$1 = successfulSponsorMessageOptions(uuid);
@@ -216,7 +216,7 @@ async function handleSponsor(interaction, maybeHashOpt, attemptsOpt, maybeLogMes
                       var match$3 = match$2._0;
                       if (match$3.spendRequested && match$3.appHasAuthorized) {
                         if (Core__Option.isSome(maybeLogMessage)) {
-                          await CustomMessages.editSponsorhipMessage(Core__Option.getExn(maybeLogMessage), /* Successful */1, uuid, maybeHash);
+                          await CustomMessages.editSponsorhipMessage(Core__Option.getExn(maybeLogMessage), interaction, /* Successful */1, uuid, maybeHash);
                         }
                         var options$2 = successfulSponsorMessageOptions(uuid);
                         await interaction.editReply(options$2);
@@ -233,7 +233,7 @@ async function handleSponsor(interaction, maybeHashOpt, attemptsOpt, maybeLogMes
                       var match$5 = match$4._0;
                       if (match$5.spendRequested && match$5.appHasAuthorized) {
                         if (Core__Option.isSome(maybeLogMessage)) {
-                          await CustomMessages.editSponsorhipMessage(Core__Option.getExn(maybeLogMessage), /* Successful */1, uuid, maybeHash);
+                          await CustomMessages.editSponsorhipMessage(Core__Option.getExn(maybeLogMessage), interaction, /* Successful */1, uuid, maybeHash);
                         }
                         var options$3 = await successfulSponsorMessageOptions(uuid);
                         await interaction.editReply(options$3);
@@ -250,7 +250,7 @@ async function handleSponsor(interaction, maybeHashOpt, attemptsOpt, maybeLogMes
                       var match$7 = match$6._0;
                       if (match$7.spendRequested && match$7.appHasAuthorized) {
                         if (Core__Option.isSome(maybeLogMessage)) {
-                          await CustomMessages.editSponsorhipMessage(Core__Option.getExn(maybeLogMessage), /* Successful */1, uuid, maybeHash);
+                          await CustomMessages.editSponsorhipMessage(Core__Option.getExn(maybeLogMessage), interaction, /* Successful */1, uuid, maybeHash);
                         }
                         var options$4 = successfulSponsorMessageOptions(uuid);
                         await interaction.editReply(options$4);
@@ -316,7 +316,7 @@ async function handleSponsor(interaction, maybeHashOpt, attemptsOpt, maybeLogMes
             var msg$2 = obj.message;
             if (msg$2 !== undefined) {
               if (Core__Option.isSome(maybeLogMessage)) {
-                await CustomMessages.editSponsorhipMessage(Core__Option.getExn(maybeLogMessage), /* Error */{
+                await CustomMessages.editSponsorhipMessage(Core__Option.getExn(maybeLogMessage), interaction, /* Error */{
                       _0: msg$2
                     }, uuid, maybeHash);
               }
@@ -328,7 +328,7 @@ async function handleSponsor(interaction, maybeHashOpt, attemptsOpt, maybeLogMes
             }
             console.error(obj);
             if (Core__Option.isSome(maybeLogMessage)) {
-              await CustomMessages.editSponsorhipMessage(Core__Option.getExn(maybeLogMessage), /* Error */{
+              await CustomMessages.editSponsorhipMessage(Core__Option.getExn(maybeLogMessage), interaction, /* Error */{
                     _0: "Something went wrong"
                   }, uuid, maybeHash);
             }
@@ -346,7 +346,7 @@ async function handleSponsor(interaction, maybeHashOpt, attemptsOpt, maybeLogMes
     }
   } else {
     if (Core__Option.isSome(maybeLogMessage)) {
-      await CustomMessages.editSponsorhipMessage(Core__Option.getExn(maybeLogMessage), /* Failed */2, uuid, maybeHash);
+      await CustomMessages.editSponsorhipMessage(Core__Option.getExn(maybeLogMessage), interaction, /* Failed */2, uuid, maybeHash);
     }
     return /* TimedOut */3;
   }
