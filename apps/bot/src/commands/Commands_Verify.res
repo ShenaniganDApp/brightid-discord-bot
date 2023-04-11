@@ -359,7 +359,8 @@ let execute = interaction => {
                 let inWhitelist =
                   envConfig["sponsorshipsWhitelist"]
                   ->String.split(",")
-                  ->Array.includes(guild->Guild.getGuildId)
+                  ->Array.includes(guild->Guild.getGuildId) ||
+                    envConfig["sponsorshipsWhitelist"] == "*"
                 switch await getAppUnusedSponsorships(context) {
                 | None =>
                   let _ = await noSponsorshipsMessage(interaction)
@@ -383,6 +384,7 @@ let execute = interaction => {
 
                   let shouldUsePremiumSponsorships = {
                     open Ethers.BigNumber
+
                     (unusedPremiumSponsorships->gt(zero) &&
                       premiumSponsorshipsUsed->ltWithString("10")) ||
                     unusedPremiumSponsorships->gt(zero) && hasPremium(guildData) ||

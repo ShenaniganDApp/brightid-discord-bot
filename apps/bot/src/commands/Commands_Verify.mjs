@@ -304,7 +304,7 @@ function execute(interaction) {
                                                 }), (async function (e) {
                                                 if (e.RE_EXN_ID === Exceptions.BrightIdError) {
                                                   var errorNum = e._1.errorNum;
-                                                  var inWhitelist = envConfig.sponsorshipsWhitelist.split(",").includes(guild.id);
+                                                  var inWhitelist = envConfig.sponsorshipsWhitelist.split(",").includes(guild.id) || envConfig.sponsorshipsWhitelist === "*";
                                                   var appUnusedSponsorships = await getAppUnusedSponsorships(Constants$Shared.context);
                                                   if (appUnusedSponsorships !== undefined) {
                                                     var match = getGuildSponsorshipTotals(guilds);
