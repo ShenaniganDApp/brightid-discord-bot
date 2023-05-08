@@ -116,22 +116,23 @@ let checkSponsor = async uuid => {
   }
 }
 
-// Moight want to add a 15 minute timer to this recursive function in order to avoid Discord's interaction timeout
 @raises([HandleSponsorError, Exn.Error, Json.Decode.DecodeError])
 let rec handleSponsor = async (
-  interaction,
   ~maybeHash=None,
-  ~attempts=29,
   ~maybeLogMessage=None,
+  interaction,
   uuid,
+  endTimeInSeconds,
 ) => {
   open Shared.BrightId
   open Shared.Decode
 
   let guildId = interaction->Interaction.getGuild->Guild.getGuildId
-  let secondsBetweenAttempts = 29 //29 seconds between attempts to leave time for timeout message;
-  switch attempts {
-  | 0 =>
+  let secondsBetweenAttempts = 15 //Probably won't need this if whe are using our own node
+  // 10 second buffer for Webhook expiry
+  let hasWebhookExpired = endTimeInSeconds - Helpers.nowInSeconds() > 10
+  switch hasWebhookExpired {
+  | true =>
     if maybeLogMessage->Option.isSome {
       let _ = await CustomMessages.editSponsorshipMessage(
         maybeLogMessage->Option.getExn,
@@ -166,8 +167,8 @@ let rec handleSponsor = async (
           interaction,
           uuid,
           ~maybeHash=Some(hash),
-          ~attempts=30,
           ~maybeLogMessage,
+          endTimeInSeconds,
         )
       | Error(err) => Json.Decode.DecodeError(err)->raise
       }
@@ -223,13 +224,7 @@ let rec handleSponsor = async (
               SponsorshipUsed
             } else {
               let _ = await sleep(secondsBetweenAttempts * 1000)
-              await handleSponsor(
-                interaction,
-                uuid,
-                ~maybeHash,
-                ~attempts=attempts - 1,
-                ~maybeLogMessage,
-              )
+              await handleSponsor(~maybeHash, ~maybeLogMessage, interaction, uuid, endTimeInSeconds)
             }
           //App authorized before
           | (45, Some(hash)) =>
@@ -249,13 +244,7 @@ let rec handleSponsor = async (
               SponsorshipUsed
             } else {
               let _ = await sleep(secondsBetweenAttempts * 1000)
-              await handleSponsor(
-                interaction,
-                uuid,
-                ~maybeHash,
-                ~attempts=attempts - 1,
-                ~maybeLogMessage,
-              )
+              await handleSponsor(~maybeHash, ~maybeLogMessage, interaction, uuid, endTimeInSeconds)
             }
 
           // Spend Request Submitted
@@ -276,13 +265,7 @@ let rec handleSponsor = async (
               SponsorshipUsed
             } else {
               let _ = await sleep(secondsBetweenAttempts * 1000)
-              await handleSponsor(
-                interaction,
-                uuid,
-                ~maybeHash,
-                ~attempts=attempts - 1,
-                ~maybeLogMessage,
-              )
+              await handleSponsor(~maybeHash, ~maybeLogMessage, interaction, uuid, endTimeInSeconds)
             }
 
           // Sponsored Request Recently
@@ -303,34 +286,22 @@ let rec handleSponsor = async (
               SponsorshipUsed
             } else {
               let _ = await sleep(secondsBetweenAttempts * 1000)
-              await handleSponsor(
-                interaction,
-                uuid,
-                ~maybeHash,
-                ~attempts=attempts - 1,
-                ~maybeLogMessage,
-              )
+              await handleSponsor(~maybeHash, ~maybeLogMessage, interaction, uuid, endTimeInSeconds)
             }
 
           | _ =>
             let _ = await sleep(secondsBetweenAttempts * 1000)
-            await handleSponsor(
-              interaction,
-              uuid,
-              ~maybeHash,
-              ~attempts=attempts - 1,
-              ~maybeLogMessage,
-            )
+            await handleSponsor(~maybeHash, ~maybeLogMessage, interaction, uuid, endTimeInSeconds)
           }
         }
       } catch {
       | Exceptions.BrightIdError(_) =>
         let _ = await sleep(secondsBetweenAttempts * 1000)
-        await handleSponsor(interaction, uuid, ~maybeHash, ~attempts=attempts - 1, ~maybeLogMessage)
+        await handleSponsor(interaction, uuid, ~maybeHash, ~maybeLogMessage, endTimeInSeconds)
       | Json.Decode.DecodeError(msg) =>
         if msg->String.includes("503 Service Temporarily Unavailable") {
-          let _ = await sleep(3000)
-          await handleSponsor(interaction, uuid, ~maybeHash, ~attempts, ~maybeLogMessage)
+          let _ = await sleep(secondsBetweenAttempts * 1000)
+          await handleSponsor(~maybeHash, ~maybeLogMessage, interaction, uuid, endTimeInSeconds)
         } else {
           HandleSponsorError(msg)->raise
         }
@@ -338,7 +309,7 @@ let rec handleSponsor = async (
         switch Exn.name(obj) {
         | Some("FetchError") =>
           let _ = await sleep(3000)
-          await handleSponsor(interaction, uuid, ~maybeHash, ~attempts, ~maybeLogMessage)
+          await handleSponsor(~maybeHash, ~maybeLogMessage, interaction, uuid, endTimeInSeconds)
         | _ =>
           switch Exn.message(obj) {
           | Some(msg) =>

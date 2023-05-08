@@ -68,7 +68,7 @@ let execute = async interaction => {
         )->raise
       | Some(guildData) =>
         open Services_Sponsor
-        let _ = switch await handleSponsor(interaction, uuid) {
+        let _ = switch await handleSponsor(interaction, uuid, Helpers.fifteenMinutesFromNow()) {
         | SponsorshipUsed =>
           let premiumSponsorshipsUsed =
             guildData.premiumSponsorshipsUsed->Option.getWithDefault(
