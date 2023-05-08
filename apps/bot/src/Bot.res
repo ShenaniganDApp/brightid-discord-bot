@@ -64,6 +64,19 @@ let _ =
   ->Collection.set(Buttons_Sponsor.customId, module(Buttons_Sponsor))
   ->Collection.set(Buttons_PremiumSponsor.customId, module(Buttons_PremiumSponsor))
 
+type missingFields = RoleID
+let missingFields = guild => ()
+
+let validateConfig = async (config, decoder) => {
+  open Utils.Gist
+  try {
+    let brightIdGuilds = await ReadGist.content(~config, ~decoder)
+    brightIdGuilds->Dict.get(config.id)->Option.map(missingFields)
+  } catch {
+  | _ => None
+  }
+}
+
 let updateGistOnGuildCreate = async (guild, roleId, content) => {
   open Utils
 
@@ -211,7 +224,7 @@ let onInteraction = async (interaction: Interaction.t) => {
       let commandName = interaction->Interaction.getCommandName
       let command = commands->Collection.get(commandName)
       switch command->Nullable.toOption {
-      | None => Console.error("Bot.res: Command not found")
+      | None => Console.error(`${guildName} : ${guildId}: Command ${commandName} not found `)
       | Some(module(Command)) =>
         switch await Command.execute(interaction) {
         | exception e =>
@@ -236,7 +249,7 @@ let onInteraction = async (interaction: Interaction.t) => {
 
       let button = buttons->Collection.get(buttonCustomId)
       switch button->Nullable.toOption {
-      | None => Console.error("Bot.res: Button not found")
+      | None => Console.error(`${guildName} : ${guildId}: Button ${buttonCustomId} not found `)
       | Some(module(Button)) =>
         switch await Button.execute(interaction) {
         | exception e =>

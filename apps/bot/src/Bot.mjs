@@ -86,6 +86,20 @@ buttons.set(Buttons_Verify.customId, {
       execute: Buttons_PremiumSponsor.execute
     });
 
+function missingFields(guild) {
+  
+}
+
+async function validateConfig(config, decoder) {
+  try {
+    var brightIdGuilds = await Gist$Utils.ReadGist.content(config, decoder);
+    return Core__Option.map(brightIdGuilds[config.id], missingFields);
+  }
+  catch (exn){
+    return ;
+  }
+}
+
 async function updateGistOnGuildCreate(guild, roleId, content) {
   var guildId = guild.id;
   var entry_role = "Verified";
@@ -631,6 +645,8 @@ export {
   client ,
   commands ,
   buttons ,
+  missingFields ,
+  validateConfig ,
   updateGistOnGuildCreate ,
   fetchContextIds ,
   assignRoleOnCreate ,
