@@ -66,15 +66,15 @@ function sponsorshipRequestedMessage(interaction, statusOpt, contextId, maybeSpo
     },
     {
       name: "__Bright ID Verification Status__",
-      value: "[" + contextId + "](" + verificationStatusUrl(contextId) + " \"" + verificationStatusUrl(contextId) + "\")"
+      value: "[" + contextId + "](" + verificationStatusUrl(contextId) + " )"
     },
     {
       name: "__Sponsorship Operation Status__",
-      value: "[" + maybeSponsorHash + "](" + sponsorshipStatusUrl(maybeSponsorHash) + " \"" + sponsorshipStatusUrl(maybeSponsorHash) + "\")"
+      value: "[" + maybeSponsorHash + "](" + sponsorshipStatusUrl(maybeSponsorHash) + " )"
     },
     {
       name: "__Timeout:__",
-      value: "This process will timeout <t:" + fifteenMinutesAfter.toString() + ":R>."
+      value: "<t:" + fifteenMinutesAfter.toString() + ":R>"
     }
   ];
   var messageEmbed = new DiscordJs.MessageEmbed().setColor("#fb8b60").setTitle("A Sponsorship Has Been Requested").setURL(verificationStatusUrl(contextId)).setAuthor("BrightID Bot", "https://media.discordapp.net/attachments/708186850359246859/760681364163919994/1601430947224.png", "https://www.brightid.org/").setDescription("A member of " + interaction.guild.name + " is attempting to get sponsored").setThumbnail("https://media.discordapp.net/attachments/708186850359246859/760681364163919994/1601430947224.png").addFields(embedFields).setTimestamp();
@@ -95,11 +95,11 @@ function editSponsorMessageContent(message, interaction, status, contextId, mayb
     },
     {
       name: "__Bright ID Verification Status__",
-      value: "[" + contextId + "](" + verificationStatusUrl(contextId) + " \"" + verificationStatusUrl(contextId) + "\")"
+      value: "[" + contextId + "](" + verificationStatusUrl(contextId) + ")"
     },
     {
       name: "__Sponsorship Operation Status__",
-      value: "[" + maybeSponsorHash + "](" + sponsorshipStatusUrl(maybeSponsorHash) + " \"" + sponsorshipStatusUrl(maybeSponsorHash) + "\")"
+      value: "[" + maybeSponsorHash + "](" + sponsorshipStatusUrl(maybeSponsorHash) + " )"
     }
   ];
   var messageEmbed = new DiscordJs.MessageEmbed().setColor("#fb8b60").setTitle("A Sponsorship Has Been Requested").setURL(verificationStatusUrl(contextId)).setAuthor("BrightID Bot", "https://media.discordapp.net/attachments/708186850359246859/760681364163919994/1601430947224.png", "https://www.brightid.org/").setDescription("A member of " + interaction.guild.name + " is attempting to get sponsored").setThumbnail("https://media.discordapp.net/attachments/708186850359246859/760681364163919994/1601430947224.png").addFields(embedFields).setTimestamp();
@@ -130,7 +130,7 @@ async function sponsorshipRequested(interaction, contextId, sponsorHash) {
   }
 }
 
-async function editSponsorhipMessage(message, interaction, status, contextId, maybeSponsorHash) {
+async function editSponsorshipMessage(message, interaction, status, contextId, maybeSponsorHash) {
   try {
     var messageContent = editSponsorMessageContent(message, interaction, status, contextId, maybeSponsorHash);
     return Caml_option.some(await message.edit(messageContent));
@@ -168,6 +168,6 @@ export {
   sponsorshipRequestedMessage ,
   editSponsorMessageContent ,
   sponsorshipRequested ,
-  editSponsorhipMessage ,
+  editSponsorshipMessage ,
 }
 /*  Not a pure module */
