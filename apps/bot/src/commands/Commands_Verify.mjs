@@ -55,19 +55,19 @@ function embedFields(verifyUrl) {
   return [
           {
             name: "1. Get Verified in the BrightID app",
-            value: "Getting verified requires you make connections with other trusted users. Given the concept is new and there are not many trusted users, this is currently being done through [Verification parties](https://www.brightid.org/meet \"https://www.brightid.org/meet\") that are hosted in the BrightID server and require members join a voice/video call."
+            value: "Getting verified requires you make connections with other trusted users. Given the concept is new and there are not many trusted users, this is currently being done through [Verification parties](https://www.brightid.org/meet) that are hosted in the BrightID server and require members join a voice/video call."
           },
           {
-            name: "2. Link to a Sponsored App (like 1hive, gitcoin, etc)",
-            value: "You can link to these [sponsored apps](https://apps.brightid.org/ \"https://apps.brightid.org/\") once you are verified within the app."
+            name: "2. Type the `/verify` command in an appropriate channel",
+            value: "You can type this command in any public channel with access to the BrightID Bot, like the official BrightID server which [you can access here](https://discord.gg/gH6qAUH)."
           },
           {
-            name: "3. Type the `/verify` command in an appropriate channel",
-            value: "You can type this command in any public channel with access to the BrightID Bot, like the official BrightID server which [you can access here](https://discord.gg/gH6qAUH \"https://discord.gg/gH6qAUH\")."
-          },
-          {
-            name: "4. Scan the DM\"d QR Code",
+            name: "3. Scan the QR Code",
             value: "Open the BrightID app and scan the QR code. Mobile users can click [this link](" + verifyUrl + ")."
+          },
+          {
+            name: "4. Link to a Sponsored App (like 1hive, gitcoin, etc)",
+            value: "The Discord bot will attempt to sponsor any verified BrightID. You can also link to these [sponsored apps](https://apps.brightid.org/) once you are verified within the app."
           },
           {
             name: "5. Click the button after you scanned the QR code",

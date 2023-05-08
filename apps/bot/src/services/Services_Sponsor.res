@@ -133,7 +133,7 @@ let rec handleSponsor = async (
   switch attempts {
   | 0 =>
     if maybeLogMessage->Option.isSome {
-      let _ = await CustomMessages.editSponsorhipMessage(
+      let _ = await CustomMessages.editSponsorshipMessage(
         maybeLogMessage->Option.getExn,
         interaction,
         CustomMessages.Status.Failed,
@@ -190,7 +190,7 @@ let rec handleSponsor = async (
           //No Sponsorships in the Discord App
           | (38, _) =>
             if maybeLogMessage->Option.isSome {
-              let _ = await CustomMessages.editSponsorhipMessage(
+              let _ = await CustomMessages.editSponsorshipMessage(
                 maybeLogMessage->Option.getExn,
                 interaction,
                 CustomMessages.Status.Error(
@@ -209,7 +209,7 @@ let rec handleSponsor = async (
               if maybeLogMessage->Option.isSome {
                 let _ =
                   maybeLogMessage->Option.map(async logMessage =>
-                    await CustomMessages.editSponsorhipMessage(
+                    await CustomMessages.editSponsorshipMessage(
                       logMessage,
                       interaction,
                       CustomMessages.Status.Successful,
@@ -236,7 +236,7 @@ let rec handleSponsor = async (
             let Sponsorship({spendRequested, appHasAuthorized}) = await checkSponsor(uuid)
             if spendRequested && appHasAuthorized {
               if maybeLogMessage->Option.isSome {
-                let _ = await CustomMessages.editSponsorhipMessage(
+                let _ = await CustomMessages.editSponsorshipMessage(
                   maybeLogMessage->Option.getExn,
                   interaction,
                   CustomMessages.Status.Successful,
@@ -263,7 +263,7 @@ let rec handleSponsor = async (
             let Sponsorship({spendRequested, appHasAuthorized}) = await checkSponsor(uuid)
             if spendRequested && appHasAuthorized {
               if maybeLogMessage->Option.isSome {
-                let _ = await CustomMessages.editSponsorhipMessage(
+                let _ = await CustomMessages.editSponsorshipMessage(
                   maybeLogMessage->Option.getExn,
                   interaction,
                   CustomMessages.Status.Successful,
@@ -290,7 +290,7 @@ let rec handleSponsor = async (
             let Sponsorship({spendRequested, appHasAuthorized}) = await checkSponsor(uuid)
             if spendRequested && appHasAuthorized {
               if maybeLogMessage->Option.isSome {
-                let _ = await CustomMessages.editSponsorhipMessage(
+                let _ = await CustomMessages.editSponsorshipMessage(
                   maybeLogMessage->Option.getExn,
                   interaction,
                   CustomMessages.Status.Successful,
@@ -343,7 +343,7 @@ let rec handleSponsor = async (
           switch Exn.message(obj) {
           | Some(msg) =>
             if maybeLogMessage->Option.isSome {
-              let _ = await CustomMessages.editSponsorhipMessage(
+              let _ = await CustomMessages.editSponsorshipMessage(
                 maybeLogMessage->Option.getExn,
                 interaction,
                 CustomMessages.Status.Error(msg),
@@ -355,7 +355,7 @@ let rec handleSponsor = async (
           | None =>
             Console.error(obj)
             if maybeLogMessage->Option.isSome {
-              let _ = await CustomMessages.editSponsorhipMessage(
+              let _ = await CustomMessages.editSponsorshipMessage(
                 maybeLogMessage->Option.getExn,
                 interaction,
                 CustomMessages.Status.Error("Something went wrong"),

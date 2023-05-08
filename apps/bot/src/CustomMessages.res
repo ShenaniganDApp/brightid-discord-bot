@@ -54,19 +54,17 @@ let sponsorshipRequestedMessage = (
       },
       {
         name: "__Bright ID Verification Status__",
-        value: `[${contextId}](${verificationStatusUrl(contextId)} "${verificationStatusUrl(
-            contextId,
-          )}")`,
+        value: `[${contextId}](${verificationStatusUrl(contextId)} )`,
       },
       {
         name: "__Sponsorship Operation Status__",
         value: `[${maybeSponsorHash->Option.getUnsafe}](${sponsorshipStatusUrl(
             maybeSponsorHash->Option.getUnsafe,
-          )} "${sponsorshipStatusUrl(maybeSponsorHash->Option.getUnsafe)}")`,
+          )} )`,
       },
       {
         name: "__Timeout:__",
-        value: `This process will timeout <t:${fifteenMinutesAfter->Float.toString}:R>.`,
+        value: `<t:${fifteenMinutesAfter->Float.toString}:R>`,
       },
     ]
   }
@@ -112,15 +110,13 @@ let editSponsorMessageContent = (message, interaction, ~status, contextId, maybe
       },
       {
         name: "__Bright ID Verification Status__",
-        value: `[${contextId}](${verificationStatusUrl(contextId)} "${verificationStatusUrl(
-            contextId,
-          )}")`,
+        value: `[${contextId}](${verificationStatusUrl(contextId)})`,
       },
       {
         name: "__Sponsorship Operation Status__",
         value: `[${maybeSponsorHash->Option.getUnsafe}](${sponsorshipStatusUrl(
             maybeSponsorHash->Option.getUnsafe,
-          )} "${sponsorshipStatusUrl(maybeSponsorHash->Option.getUnsafe)}")`,
+          )} )`,
       },
     ]
   }
@@ -170,7 +166,7 @@ let sponsorshipRequested = async (interaction, contextId, sponsorHash) => {
   }
 }
 
-let editSponsorhipMessage = async (message, interaction, status, contextId, maybeSponsorHash) => {
+let editSponsorshipMessage = async (message, interaction, status, contextId, maybeSponsorHash) => {
   try {
     let messageContent = editSponsorMessageContent(
       message,
