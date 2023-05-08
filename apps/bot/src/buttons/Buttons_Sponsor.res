@@ -104,7 +104,7 @@ let execute = async interaction => {
         )->raise
       | Some(guildData) =>
         open Services_Sponsor
-        let _ = switch await handleSponsor(interaction, uuid) {
+        let _ = switch await handleSponsor(interaction, uuid, Helpers.fifteenMinutesFromNow()) {
         | exception e => e->raise
         | SponsorshipUsed =>
           let usedSponsorships =

@@ -3,6 +3,7 @@
 import * as Env from "../Env.mjs";
 import * as Curry from "rescript/lib/es6/curry.js";
 import * as Js_exn from "rescript/lib/es6/js_exn.js";
+import * as Helpers from "../Helpers.mjs";
 import * as Endpoints from "../Endpoints.mjs";
 import * as Exceptions from "../Exceptions.mjs";
 import * as DiscordJs from "discord.js";
@@ -137,218 +138,217 @@ async function checkSponsor(uuid) {
       };
 }
 
-async function handleSponsor(interaction, maybeHashOpt, attemptsOpt, maybeLogMessageOpt, uuid) {
+async function handleSponsor(maybeHashOpt, maybeLogMessageOpt, interaction, uuid, endTimeInSeconds) {
   var maybeHash = maybeHashOpt !== undefined ? Caml_option.valFromOption(maybeHashOpt) : undefined;
-  var attempts = attemptsOpt !== undefined ? attemptsOpt : 29;
   var maybeLogMessage = maybeLogMessageOpt !== undefined ? Caml_option.valFromOption(maybeLogMessageOpt) : undefined;
   var guildId = interaction.guild.id;
-  if (attempts !== 0) {
-    try {
-      var json = await Brightid_sdk_v5.sponsor(envConfig.sponsorshipKey, "Discord", uuid);
-      var err = Json$JsonCombinators.decode(json, Decode$Shared.Decode_BrightId.Sponsorships.sponsor);
-      if (err.TAG === /* Ok */0) {
-        var hash = err._0.hash;
-        var options = await sponsorRequestSubmittedMessageOptions(undefined);
-        await interaction.editReply(options);
-        console.log("A sponsor request has been submitted", {
-              guild: guildId,
-              contextId: uuid,
-              hash: hash
-            });
-        var maybeLogMessage$1 = await CustomMessages.sponsorshipRequested(interaction, uuid, hash);
-        return await handleSponsor(interaction, Caml_option.some(hash), 30, Caml_option.some(maybeLogMessage$1), uuid);
-      }
-      throw {
-            RE_EXN_ID: Json_Decode$JsonCombinators.DecodeError,
-            _1: err._0,
-            Error: new Error()
-          };
-    }
-    catch (raw_error){
-      var error = Caml_js_exceptions.internalToOCamlException(raw_error);
-      if (error.RE_EXN_ID === Js_exn.$$Error) {
-        try {
-          var brightIdError = Core__Option.map(Core__Option.map(JSON.stringify(error._1), (function (prim) {
-                      return JSON.parse(prim);
-                    })), (function (__x) {
-                  return Json$JsonCombinators.decode(__x, Decode$Shared.Decode_BrightId.$$Error.data);
-                }));
-          if (brightIdError !== undefined) {
-            if (brightIdError.TAG === /* Ok */0) {
-              var exit = 0;
-              switch (brightIdError._0.errorNum) {
-                case 38 :
-                    if (Core__Option.isSome(maybeLogMessage)) {
-                      await CustomMessages.editSponsorshipMessage(Core__Option.getExn(maybeLogMessage), interaction, /* Error */{
-                            _0: "No Sponsorships available in the BrightID Discord App"
-                          }, uuid, maybeHash);
-                    }
-                    return /* NoUnusedSponsorships */2;
-                case 39 :
-                    if (maybeHash !== undefined) {
-                      var match = await checkSponsor(uuid);
-                      var match$1 = match._0;
-                      if (match$1.spendRequested && match$1.appHasAuthorized) {
-                        if (Core__Option.isSome(maybeLogMessage)) {
-                          Core__Option.map(maybeLogMessage, (async function (logMessage) {
-                                  return await CustomMessages.editSponsorshipMessage(logMessage, interaction, /* Successful */1, uuid, maybeHash);
-                                }));
-                        }
-                        var options$1 = successfulSponsorMessageOptions(uuid);
-                        await interaction.editReply(options$1);
-                        return /* SponsorshipUsed */0;
-                      }
-                      await sleep(29000);
-                      return await handleSponsor(interaction, Caml_option.some(maybeHash), attempts - 1 | 0, Caml_option.some(maybeLogMessage), uuid);
-                    }
-                    exit = 1;
-                    break;
-                case 40 :
-                case 41 :
-                case 42 :
-                case 43 :
-                case 44 :
-                    exit = 1;
-                    break;
-                case 45 :
-                    if (maybeHash !== undefined) {
-                      var match$2 = await checkSponsor(uuid);
-                      var match$3 = match$2._0;
-                      if (match$3.spendRequested && match$3.appHasAuthorized) {
-                        if (Core__Option.isSome(maybeLogMessage)) {
-                          await CustomMessages.editSponsorshipMessage(Core__Option.getExn(maybeLogMessage), interaction, /* Successful */1, uuid, maybeHash);
-                        }
-                        var options$2 = successfulSponsorMessageOptions(uuid);
-                        await interaction.editReply(options$2);
-                        return /* SponsorshipUsed */0;
-                      }
-                      await sleep(29000);
-                      return await handleSponsor(interaction, Caml_option.some(maybeHash), attempts - 1 | 0, Caml_option.some(maybeLogMessage), uuid);
-                    }
-                    exit = 1;
-                    break;
-                case 46 :
-                    if (maybeHash !== undefined) {
-                      var match$4 = await checkSponsor(uuid);
-                      var match$5 = match$4._0;
-                      if (match$5.spendRequested && match$5.appHasAuthorized) {
-                        if (Core__Option.isSome(maybeLogMessage)) {
-                          await CustomMessages.editSponsorshipMessage(Core__Option.getExn(maybeLogMessage), interaction, /* Successful */1, uuid, maybeHash);
-                        }
-                        var options$3 = await successfulSponsorMessageOptions(uuid);
-                        await interaction.editReply(options$3);
-                        return /* SponsorshipUsed */0;
-                      }
-                      await sleep(29000);
-                      return await handleSponsor(interaction, Caml_option.some(maybeHash), attempts - 1 | 0, Caml_option.some(maybeLogMessage), uuid);
-                    }
-                    exit = 1;
-                    break;
-                case 47 :
-                    if (maybeHash !== undefined) {
-                      var match$6 = await checkSponsor(uuid);
-                      var match$7 = match$6._0;
-                      if (match$7.spendRequested && match$7.appHasAuthorized) {
-                        if (Core__Option.isSome(maybeLogMessage)) {
-                          await CustomMessages.editSponsorshipMessage(Core__Option.getExn(maybeLogMessage), interaction, /* Successful */1, uuid, maybeHash);
-                        }
-                        var options$4 = successfulSponsorMessageOptions(uuid);
-                        await interaction.editReply(options$4);
-                        return /* SponsorshipUsed */0;
-                      }
-                      await sleep(29000);
-                      return await handleSponsor(interaction, Caml_option.some(maybeHash), attempts - 1 | 0, Caml_option.some(maybeLogMessage), uuid);
-                    }
-                    exit = 1;
-                    break;
-                default:
-                  exit = 1;
-              }
-              if (exit === 1) {
-                if (maybeHash !== undefined) {
-                  await sleep(29000);
-                  return await handleSponsor(interaction, Caml_option.some(maybeHash), attempts - 1 | 0, Caml_option.some(maybeLogMessage), uuid);
-                } else {
-                  return /* RetriedCommandDuring */1;
-                }
-              }
-              
-            } else {
-              throw {
-                    RE_EXN_ID: Json_Decode$JsonCombinators.DecodeError,
-                    _1: brightIdError._0,
-                    Error: new Error()
-                  };
-            }
-          } else {
-            throw {
-                  RE_EXN_ID: HandleSponsorError,
-                  _1: "Handle Sponsor Error: There was a problem JSON parsing the error from sponsor()",
-                  Error: new Error()
-                };
-          }
-        }
-        catch (raw_msg){
-          var msg = Caml_js_exceptions.internalToOCamlException(raw_msg);
-          if (msg.RE_EXN_ID === Exceptions.BrightIdError) {
-            await sleep(29000);
-            return await handleSponsor(interaction, Caml_option.some(maybeHash), attempts - 1 | 0, Caml_option.some(maybeLogMessage), uuid);
-          }
-          if (msg.RE_EXN_ID === Json_Decode$JsonCombinators.DecodeError) {
-            var msg$1 = msg._1;
-            if (msg$1.includes("503 Service Temporarily Unavailable")) {
-              await sleep(3000);
-              return await handleSponsor(interaction, Caml_option.some(maybeHash), attempts, Caml_option.some(maybeLogMessage), uuid);
-            }
-            throw {
-                  RE_EXN_ID: HandleSponsorError,
-                  _1: msg$1,
-                  Error: new Error()
-                };
-          }
-          if (msg.RE_EXN_ID === Js_exn.$$Error) {
-            var obj = msg._1;
-            var match$8 = obj.name;
-            if (match$8 === "FetchError") {
-              await sleep(3000);
-              return await handleSponsor(interaction, Caml_option.some(maybeHash), attempts, Caml_option.some(maybeLogMessage), uuid);
-            }
-            var msg$2 = obj.message;
-            if (msg$2 !== undefined) {
-              if (Core__Option.isSome(maybeLogMessage)) {
-                await CustomMessages.editSponsorshipMessage(Core__Option.getExn(maybeLogMessage), interaction, /* Error */{
-                      _0: msg$2
-                    }, uuid, maybeHash);
-              }
-              throw {
-                    RE_EXN_ID: HandleSponsorError,
-                    _1: msg$2,
-                    Error: new Error()
-                  };
-            }
-            console.error(obj);
-            if (Core__Option.isSome(maybeLogMessage)) {
-              await CustomMessages.editSponsorshipMessage(Core__Option.getExn(maybeLogMessage), interaction, /* Error */{
-                    _0: "Something went wrong"
-                  }, uuid, maybeHash);
-            }
-            throw {
-                  RE_EXN_ID: HandleSponsorError,
-                  _1: "Handle Sponsor: Unknown Error",
-                  Error: new Error()
-                };
-          }
-          throw msg;
-        }
-      } else {
-        throw error;
-      }
-    }
-  } else {
+  var hasWebhookExpired = (endTimeInSeconds - Helpers.nowInSeconds(undefined) | 0) < 10;
+  if (hasWebhookExpired) {
     if (Core__Option.isSome(maybeLogMessage)) {
       await CustomMessages.editSponsorshipMessage(Core__Option.getExn(maybeLogMessage), interaction, /* Failed */2, uuid, maybeHash);
     }
     return /* TimedOut */3;
+  }
+  try {
+    var json = await Brightid_sdk_v5.sponsor(envConfig.sponsorshipKey, "Discord", uuid);
+    var err = Json$JsonCombinators.decode(json, Decode$Shared.Decode_BrightId.Sponsorships.sponsor);
+    if (err.TAG === /* Ok */0) {
+      var hash = err._0.hash;
+      var options = await sponsorRequestSubmittedMessageOptions(undefined);
+      await interaction.editReply(options);
+      console.log("A sponsor request has been submitted", {
+            guild: guildId,
+            contextId: uuid,
+            hash: hash
+          });
+      var maybeLogMessage$1 = await CustomMessages.sponsorshipRequested(interaction, uuid, hash);
+      return await handleSponsor(Caml_option.some(hash), Caml_option.some(maybeLogMessage$1), interaction, uuid, endTimeInSeconds);
+    }
+    throw {
+          RE_EXN_ID: Json_Decode$JsonCombinators.DecodeError,
+          _1: err._0,
+          Error: new Error()
+        };
+  }
+  catch (raw_error){
+    var error = Caml_js_exceptions.internalToOCamlException(raw_error);
+    if (error.RE_EXN_ID === Js_exn.$$Error) {
+      try {
+        var brightIdError = Core__Option.map(Core__Option.map(JSON.stringify(error._1), (function (prim) {
+                    return JSON.parse(prim);
+                  })), (function (__x) {
+                return Json$JsonCombinators.decode(__x, Decode$Shared.Decode_BrightId.$$Error.data);
+              }));
+        if (brightIdError !== undefined) {
+          if (brightIdError.TAG === /* Ok */0) {
+            var exit = 0;
+            switch (brightIdError._0.errorNum) {
+              case 38 :
+                  if (Core__Option.isSome(maybeLogMessage)) {
+                    await CustomMessages.editSponsorshipMessage(Core__Option.getExn(maybeLogMessage), interaction, /* Error */{
+                          _0: "No Sponsorships available in the BrightID Discord App"
+                        }, uuid, maybeHash);
+                  }
+                  return /* NoUnusedSponsorships */2;
+              case 39 :
+                  if (maybeHash !== undefined) {
+                    var match = await checkSponsor(uuid);
+                    var match$1 = match._0;
+                    if (match$1.spendRequested && match$1.appHasAuthorized) {
+                      if (Core__Option.isSome(maybeLogMessage)) {
+                        Core__Option.map(maybeLogMessage, (async function (logMessage) {
+                                return await CustomMessages.editSponsorshipMessage(logMessage, interaction, /* Successful */1, uuid, maybeHash);
+                              }));
+                      }
+                      var options$1 = successfulSponsorMessageOptions(uuid);
+                      await interaction.editReply(options$1);
+                      return /* SponsorshipUsed */0;
+                    }
+                    await sleep(15000);
+                    return await handleSponsor(Caml_option.some(maybeHash), Caml_option.some(maybeLogMessage), interaction, uuid, endTimeInSeconds);
+                  }
+                  exit = 1;
+                  break;
+              case 40 :
+              case 41 :
+              case 42 :
+              case 43 :
+              case 44 :
+                  exit = 1;
+                  break;
+              case 45 :
+                  if (maybeHash !== undefined) {
+                    var match$2 = await checkSponsor(uuid);
+                    var match$3 = match$2._0;
+                    if (match$3.spendRequested && match$3.appHasAuthorized) {
+                      if (Core__Option.isSome(maybeLogMessage)) {
+                        await CustomMessages.editSponsorshipMessage(Core__Option.getExn(maybeLogMessage), interaction, /* Successful */1, uuid, maybeHash);
+                      }
+                      var options$2 = successfulSponsorMessageOptions(uuid);
+                      await interaction.editReply(options$2);
+                      return /* SponsorshipUsed */0;
+                    }
+                    await sleep(15000);
+                    return await handleSponsor(Caml_option.some(maybeHash), Caml_option.some(maybeLogMessage), interaction, uuid, endTimeInSeconds);
+                  }
+                  exit = 1;
+                  break;
+              case 46 :
+                  if (maybeHash !== undefined) {
+                    var match$4 = await checkSponsor(uuid);
+                    var match$5 = match$4._0;
+                    if (match$5.spendRequested && match$5.appHasAuthorized) {
+                      if (Core__Option.isSome(maybeLogMessage)) {
+                        await CustomMessages.editSponsorshipMessage(Core__Option.getExn(maybeLogMessage), interaction, /* Successful */1, uuid, maybeHash);
+                      }
+                      var options$3 = await successfulSponsorMessageOptions(uuid);
+                      await interaction.editReply(options$3);
+                      return /* SponsorshipUsed */0;
+                    }
+                    await sleep(15000);
+                    return await handleSponsor(Caml_option.some(maybeHash), Caml_option.some(maybeLogMessage), interaction, uuid, endTimeInSeconds);
+                  }
+                  exit = 1;
+                  break;
+              case 47 :
+                  if (maybeHash !== undefined) {
+                    var match$6 = await checkSponsor(uuid);
+                    var match$7 = match$6._0;
+                    if (match$7.spendRequested && match$7.appHasAuthorized) {
+                      if (Core__Option.isSome(maybeLogMessage)) {
+                        await CustomMessages.editSponsorshipMessage(Core__Option.getExn(maybeLogMessage), interaction, /* Successful */1, uuid, maybeHash);
+                      }
+                      var options$4 = successfulSponsorMessageOptions(uuid);
+                      await interaction.editReply(options$4);
+                      return /* SponsorshipUsed */0;
+                    }
+                    await sleep(15000);
+                    return await handleSponsor(Caml_option.some(maybeHash), Caml_option.some(maybeLogMessage), interaction, uuid, endTimeInSeconds);
+                  }
+                  exit = 1;
+                  break;
+              default:
+                exit = 1;
+            }
+            if (exit === 1) {
+              if (maybeHash !== undefined) {
+                await sleep(15000);
+                return await handleSponsor(Caml_option.some(maybeHash), Caml_option.some(maybeLogMessage), interaction, uuid, endTimeInSeconds);
+              } else {
+                return /* RetriedCommandDuring */1;
+              }
+            }
+            
+          } else {
+            throw {
+                  RE_EXN_ID: Json_Decode$JsonCombinators.DecodeError,
+                  _1: brightIdError._0,
+                  Error: new Error()
+                };
+          }
+        } else {
+          throw {
+                RE_EXN_ID: HandleSponsorError,
+                _1: "Handle Sponsor Error: There was a problem JSON parsing the error from sponsor()",
+                Error: new Error()
+              };
+        }
+      }
+      catch (raw_msg){
+        var msg = Caml_js_exceptions.internalToOCamlException(raw_msg);
+        if (msg.RE_EXN_ID === Exceptions.BrightIdError) {
+          await sleep(15000);
+          return await handleSponsor(Caml_option.some(maybeHash), Caml_option.some(maybeLogMessage), interaction, uuid, endTimeInSeconds);
+        }
+        if (msg.RE_EXN_ID === Json_Decode$JsonCombinators.DecodeError) {
+          var msg$1 = msg._1;
+          if (msg$1.includes("503 Service Temporarily Unavailable")) {
+            await sleep(15000);
+            return await handleSponsor(Caml_option.some(maybeHash), Caml_option.some(maybeLogMessage), interaction, uuid, endTimeInSeconds);
+          }
+          throw {
+                RE_EXN_ID: HandleSponsorError,
+                _1: msg$1,
+                Error: new Error()
+              };
+        }
+        if (msg.RE_EXN_ID === Js_exn.$$Error) {
+          var obj = msg._1;
+          var match$8 = obj.name;
+          if (match$8 === "FetchError") {
+            await sleep(3000);
+            return await handleSponsor(Caml_option.some(maybeHash), Caml_option.some(maybeLogMessage), interaction, uuid, endTimeInSeconds);
+          }
+          var msg$2 = obj.message;
+          if (msg$2 !== undefined) {
+            if (Core__Option.isSome(maybeLogMessage)) {
+              await CustomMessages.editSponsorshipMessage(Core__Option.getExn(maybeLogMessage), interaction, /* Error */{
+                    _0: msg$2
+                  }, uuid, maybeHash);
+            }
+            throw {
+                  RE_EXN_ID: HandleSponsorError,
+                  _1: msg$2,
+                  Error: new Error()
+                };
+          }
+          console.error(obj);
+          if (Core__Option.isSome(maybeLogMessage)) {
+            await CustomMessages.editSponsorshipMessage(Core__Option.getExn(maybeLogMessage), interaction, /* Error */{
+                  _0: "Something went wrong"
+                }, uuid, maybeHash);
+          }
+          throw {
+                RE_EXN_ID: HandleSponsorError,
+                _1: "Handle Sponsor: Unknown Error",
+                Error: new Error()
+              };
+        }
+        throw msg;
+      }
+    } else {
+      throw error;
+    }
   }
 }
 

@@ -3,6 +3,7 @@
 import * as Env from "../Env.mjs";
 import * as Uuid from "uuid";
 import * as Ethers from "ethers";
+import * as Helpers from "../Helpers.mjs";
 import * as Endpoints from "../Endpoints.mjs";
 import * as Exceptions from "../Exceptions.mjs";
 import * as Gist$Utils from "@brightidbot/utils/src/Gist.mjs";
@@ -127,7 +128,7 @@ async function execute(interaction) {
         var exit$2 = 0;
         var val$1;
         try {
-          val$1 = await Services_Sponsor.handleSponsor(interaction, undefined, undefined, undefined, uuid);
+          val$1 = await Services_Sponsor.handleSponsor(undefined, undefined, interaction, uuid, Helpers.fifteenMinutesFromNow(undefined));
           exit$2 = 3;
         }
         catch (e$2){
