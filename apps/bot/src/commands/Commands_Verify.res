@@ -16,7 +16,7 @@ module Canvas = {
   type t
   @module("canvas") @scope("default")
   external createCanvas: (int, int) => t = "createCanvas"
-  @send external toBuffer: t => Node.Buffer.t = "toBuffer"
+  @send external toBuffer: t => Buffer.t = "toBuffer"
 }
 
 module QRCode = {
@@ -57,14 +57,6 @@ let embedFields = verifyUrl => {
     {
       name: `3. Scan the QR Code`,
       value: `Open the BrightID app and scan the QR code. Mobile users can click [this link](${verifyUrl}).`,
-    },
-    {
-      name: "4. Link to a Sponsored App (like 1hive, gitcoin, etc)",
-      value: `The Discord bot will attempt to sponsor any verified BrightID. You can also link to these [sponsored apps](https://apps.brightid.org/) once you are verified within the app.`,
-    },
-    {
-      name: "5. Click the button after you scanned the QR code",
-      value: "Once you have scanned the QR code you can return to Discord and click the button to receive the appropriate BrightID role.",
     },
   ]
 }
@@ -182,18 +174,6 @@ let beforeSponsorMessageOptions = async (customId, uuid) => {
 }
 
 exception NoAvailableSP
-let getAssignedSPFromAddress = (maybeSponsorshipAddress, contractAddress, url) => {
-  let getBalance = sponsorshipAddress => {
-    let provider = Ethers.Providers.jsonRpcProvider(~url)
-    let contract = Ethers.Contract.make(~provider, ~address=contractAddress, ~abi)
-
-    let formattedContext = Ethers.Utils.formatBytes32String("Discord")
-    let contract = BrightId.SPContract.make(contract)
-    BrightId.SPContract.contextBalance(contract, ~address=sponsorshipAddress, ~formattedContext)
-  }
-  Option.mapWithDefault(maybeSponsorshipAddress, resolve(Ethers.BigNumber.zero), getBalance)
-}
-
 let totalUnusedSponsorships = (usedSponsorships, assignedSponsorships, assignedSponsorshipsEth) => {
   open Ethers.BigNumber
   let totalAssignedSponsorships = assignedSponsorshipsEth->add(assignedSponsorships)
@@ -204,7 +184,7 @@ let totalUnusedSponsorships = (usedSponsorships, assignedSponsorships, assignedS
 
 let noSponsorshipsMessage = async interaction => {
   let options = {
-    "content": "Whoops! You haven't received a sponsor. There are plenty of apps with free sponsors, such as the [EIDI Faucet](https://idchain.one/begin/). \n\n See all the apps available at https://apps.brightid.org \n\n ",
+    "content": "Whoops! You have not yet been sponsored. You can get sponsored from within the BrightID mobile app https://www.brightid.org/ \n\n ",
     "ephemeral": true,
   }
 
@@ -228,52 +208,15 @@ let handleUnverifiedGuildMember = async (errorNum, interaction, uuid) => {
     }
     let _ = await Interaction.editReply(interaction, ~options, ())
   }
-}
-
-let hasPremium = (guildData: BrightId.Gist.brightIdGuild) =>
-  switch guildData.premiumExpirationTimestamp {
-  | Some(premiumExpirationTimestamp) =>
-    let now = Date.now()
-    now < premiumExpirationTimestamp
-  | None => false
   }
+
 
 let getAppUnusedSponsorships = async context => {
   switch await Services_AppInfo.getAppInfo(context) {
   | exception Exceptions.BrightIdError(_) => None
   | exception JsError(_) => None
-  | data => Some(data.unusedSponsorships)
+  | data => Some(data.unusedSponsorships->BigInt.fromFloat)
   }
-}
-let getServerAssignedSponsorships = guildData => {
-  open Shared.BrightId.Gist
-  open Ethers.BigNumber
-
-  let sumAmounts = (acc, {amount}) => {
-    amount->fromString->add(acc)
-  }
-
-  switch guildData.assignedSponsorships {
-  | None => zero
-  | Some(assignedSponsorships) => Array.reduce(assignedSponsorships, zero, sumAmounts)
-  }
-}
-
-let getGuildSponsorshipTotals = guilds => {
-  open Ethers.BigNumber
-  open Shared.BrightId.Gist
-
-  let calculateAssignedAndUnusedTotals = (acc, key) => {
-    let (totalAssignedSponsorships, totalUsedSponsorships) = acc
-    let guild = guilds->Dict.get(key)->Option.getUnsafe
-    let assignedSponsorships = getServerAssignedSponsorships(guild)
-    let usedSponsorships = guild.usedSponsorships->Option.getWithDefault("0")->fromString
-    let totalAssignedSponsorships = add(totalAssignedSponsorships, assignedSponsorships)
-    let totalUsedSponsorships = add(totalUsedSponsorships, usedSponsorships)
-    (totalAssignedSponsorships, totalUsedSponsorships)
-  }
-
-  guilds->Dict.keysToArray->Array.reduce((zero, zero), calculateAssignedAndUnusedTotals)
 }
 
 let execute = interaction => {
@@ -356,64 +299,20 @@ let execute = interaction => {
             async e =>
               switch e {
               | Exceptions.BrightIdError({errorNum}) =>
-                let inWhitelist =
-                  envConfig["sponsorshipsWhitelist"]
-                  ->String.split(",")
-                  ->Array.includes(guild->Guild.getGuildId) ||
-                    envConfig["sponsorshipsWhitelist"] == "*"
                 switch await getAppUnusedSponsorships(context) {
                 | None =>
                   let _ = await noSponsorshipsMessage(interaction)
-                  VerifyCommandError("No sponsorships available in Discord pool")->raise
+                  VerifyCommandError("Discord Bot has no available sponsorships")->raise
                 | Some(appUnusedSponsorships) =>
-                  let (
-                    totalGuildAssignedSponsorships,
-                    totalGuildUsedSponsorships,
-                  ) = getGuildSponsorshipTotals(guilds)
-                  let unusedGuildSponsorships =
-                    totalGuildAssignedSponsorships->Ethers.BigNumber.sub(totalGuildUsedSponsorships)
-                  let unusedPremiumSponsorships =
-                    appUnusedSponsorships
-                    ->Float.toString
-                    ->Ethers.BigNumber.fromString
-                    ->Ethers.BigNumber.sub(unusedGuildSponsorships)
-                  let premiumSponsorshipsUsed =
-                    guildData.premiumSponsorshipsUsed
-                    ->Option.getWithDefault("0")
-                    ->Ethers.BigNumber.fromString
-
-                  let shouldUsePremiumSponsorships = {
-                    open Ethers.BigNumber
-
-                    (unusedPremiumSponsorships->gt(zero) &&
-                      premiumSponsorshipsUsed->ltWithString("10")) ||
-                    unusedPremiumSponsorships->gt(zero) && hasPremium(guildData) ||
-                    inWhitelist
-                  }
-
-                  switch (errorNum, shouldUsePremiumSponsorships) {
-                  // Premium is active
-                  | (4, true) =>
+                  switch (errorNum) {
+                  | (4) =>
                     Console.log2(
-                      "Unused Sponsorships in premium pool: ",
-                      Ethers.BigNumber.toString(unusedPremiumSponsorships),
+                      "App Sponsorships left: ",
+                      BigInt.toString(appUnusedSponsorships),
                     )
                     let options = await beforeSponsorMessageOptions("before-premium-sponsor", uuid)
                     let _ = await Interaction.editReply(interaction, ~options, ())
-
-                  // Use server sponsor
-                  | (4, false) =>
-                    // THis will probably have to be updated optimistically in order to avoid double spending
-                    open Ethers.BigNumber
-                    switch unusedGuildSponsorships->gt(zero) {
-                    | false =>
-                      let _ = await noSponsorshipsMessage(interaction)
-                      VerifyCommandError("This server has no usable sponsorships")->raise
-                    | true =>
-                      let options = await beforeSponsorMessageOptions("before-sponsor", uuid)
-                      let _ = await Interaction.editReply(interaction, ~options, ())
-                    }
-                  | (_, _) =>
+                  | (_) =>
                     let _ = switch await handleUnverifiedGuildMember(errorNum, interaction, uuid) {
                     | data => Some(data)
                     | exception JsError(obj) =>

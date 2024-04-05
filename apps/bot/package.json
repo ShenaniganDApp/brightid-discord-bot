@@ -24,7 +24,7 @@
     "@brightidbot/utils": "./packages/utils",
     "@discordjs/builders": "^0.13.0",
     "@discordjs/rest": "^0.4.1",
-    "@glennsl/rescript-json-combinators": "^1.0.0",
+    "@glennsl/rescript-json-combinators": "^1.4.0",
     "@ryyppy/rescript-promise": "^2.1.0",
     "brightid_sdk_v5": "^1.0.2",
     "discord-api-types": "^0.32.0",

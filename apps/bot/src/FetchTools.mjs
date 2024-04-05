@@ -3,7 +3,6 @@
 import * as Caml_obj from "rescript/lib/es6/caml_obj.js";
 import NodeFetch from "node-fetch";
 import * as Caml_option from "rescript/lib/es6/caml_option.js";
-import * as Core__Array from "@rescript/core/src/Core__Array.mjs";
 import * as Core__Option from "@rescript/core/src/Core__Option.mjs";
 import * as Caml_exceptions from "rescript/lib/es6/caml_exceptions.js";
 
@@ -11,22 +10,22 @@ var NoRes = /* @__PURE__ */Caml_exceptions.create("FetchTools.NoRes");
 
 async function fetchWithFallback(relativeUrl, nodeIndexOpt, defaultNode, fallbackNodes) {
   var nodeIndex = nodeIndexOpt !== undefined ? nodeIndexOpt : 0;
-  var sortedNodes = nodeIndex > 0 ? Core__Array.sort(fallbackNodes, (function (a, b) {
-            if (Caml_obj.greaterthan(a.priority, b.priority)) {
-              return 1;
-            } else {
-              return -1;
-            }
-          })) : [];
+  var sortedNodes = nodeIndex > 0 ? fallbackNodes.toSorted(function (a, b) {
+          if (Caml_obj.greaterthan(a.priority, b.priority)) {
+            return 1;
+          } else {
+            return -1;
+          }
+        }) : [];
   try {
-    var node = Core__Option.mapWithDefault(sortedNodes[nodeIndex], defaultNode, (function (node) {
+    var node = Core__Option.mapOr(sortedNodes[nodeIndex], defaultNode, (function (node) {
             return node;
           }));
     if (node === undefined) {
       return ;
     }
-    var timeout = Core__Option.getWithDefault(node.timeout, 1000);
-    var response = await NodeFetch("" + node.url + "" + relativeUrl + "", {
+    var timeout = Core__Option.getOr(node.timeout, 1000);
+    var response = await NodeFetch(node.url + relativeUrl, {
           timeout: timeout,
           method: "GET",
           headers: {

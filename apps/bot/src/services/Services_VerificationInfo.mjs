@@ -14,13 +14,13 @@ import * as Json_Decode$JsonCombinators from "@glennsl/rescript-json-combinators
 
 var UUID = {};
 
-Env.createEnv(undefined);
+Env.createEnv();
 
-var config = Env.getConfig(undefined);
+var config = Env.getConfig();
 
 var config$1;
 
-if (config.TAG === /* Ok */0) {
+if (config.TAG === "Ok") {
   config$1 = config._0;
 } else {
   throw {
@@ -37,7 +37,7 @@ function sleep(_ms) {
 function fetchVerificationInfo(retryOpt, id) {
   var retry = retryOpt !== undefined ? retryOpt : 5;
   var uuid = Uuid.v5(id, config$1.uuidNamespace);
-  return Core__Promise.$$catch(FetchTools.fetchWithFallback("/verifications/" + Constants$Shared.context + "/" + uuid + "", undefined, Endpoints.nodes[0], Endpoints.nodes).then(function (maybeRes) {
+  return Core__Promise.$$catch(FetchTools.fetchWithFallback("/verifications/" + Constants$Shared.context + "/" + uuid, undefined, Endpoints.nodes[0], Endpoints.nodes).then(function (maybeRes) {
                     if (maybeRes !== undefined) {
                       return Caml_option.valFromOption(maybeRes).json();
                     } else {
@@ -48,11 +48,12 @@ function fetchVerificationInfo(retryOpt, id) {
                   }).then(function (json) {
                   var match = Json$JsonCombinators.decode(json, Decode$Shared.Decode_BrightId.ContextId.data);
                   var match$1 = Json$JsonCombinators.decode(json, Decode$Shared.Decode_BrightId.$$Error.data);
-                  if (match.TAG === /* Ok */0) {
-                    return Promise.resolve(/* VerificationInfo */{
+                  if (match.TAG === "Ok") {
+                    return Promise.resolve({
+                                TAG: "VerificationInfo",
                                 _0: match._0.data
                               });
-                  } else if (match$1.TAG === /* Ok */0) {
+                  } else if (match$1.TAG === "Ok") {
                     return Promise.reject({
                                 RE_EXN_ID: Exceptions.BrightIdError,
                                 _1: match$1._0
@@ -69,7 +70,7 @@ function fetchVerificationInfo(retryOpt, id) {
                 }
                 var retry$1 = retry - 1 | 0;
                 if (retry$1 !== 0) {
-                  return sleep(3000).then(function (param) {
+                  return sleep(3000).then(function () {
                               return fetchVerificationInfo(retry$1, id);
                             });
                 }

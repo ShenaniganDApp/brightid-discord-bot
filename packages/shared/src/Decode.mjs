@@ -15,9 +15,10 @@ function contextId(field) {
 }
 
 function data(field) {
-  var __x = Json_Decode$JsonCombinators.object(contextId);
   return {
-          data: field.required("data", __x)
+          data: (function (__x) {
+                return field.required("data", __x);
+              })(Json_Decode$JsonCombinators.object(contextId))
         };
 }
 
@@ -36,9 +37,10 @@ function verification(field) {
 }
 
 function data$2(field) {
-  var __x = Json_Decode$JsonCombinators.object(verification);
   return {
-          data: field.required("data", __x)
+          data: (function (__x) {
+                return field.required("data", __x);
+              })(Json_Decode$JsonCombinators.object(verification))
         };
 }
 
@@ -82,9 +84,10 @@ function sponsorship(field) {
 }
 
 function data$6(field) {
-  var __x = Json_Decode$JsonCombinators.object(sponsorship);
   return {
-          data: field.required("data", __x)
+          data: (function (__x) {
+                return field.required("data", __x);
+              })(Json_Decode$JsonCombinators.object(sponsorship))
         };
 }
 
@@ -114,9 +117,10 @@ function operation(field) {
 }
 
 function data$8(field) {
-  var __x = Json_Decode$JsonCombinators.object(operation);
   return {
-          data: field.required("data", __x)
+          data: (function (__x) {
+                return field.required("data", __x);
+              })(Json_Decode$JsonCombinators.object(operation))
         };
 }
 
@@ -145,9 +149,10 @@ function app(field) {
 }
 
 function data$10(field) {
-  var __x = Json_Decode$JsonCombinators.object(app);
   return {
-          data: field.required("data", __x)
+          data: (function (__x) {
+                return field.required("data", __x);
+              })(Json_Decode$JsonCombinators.object(app))
         };
 }
 

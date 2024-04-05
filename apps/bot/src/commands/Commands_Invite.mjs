@@ -37,10 +37,10 @@ function execute(interaction) {
                         inviteLink: inviteLink
                       });
                   interaction.editReply({
-                        content: "Successfully update server invite link to " + inviteLink + "",
+                        content: "Successfully update server invite link to " + inviteLink,
                         ephemeral: true
                       });
-                  tmp = Promise.resolve(undefined);
+                  tmp = Promise.resolve();
                 } else {
                   interaction.editReply({
                         content: "The invite link is not a valid URL"
@@ -73,7 +73,7 @@ function execute(interaction) {
                             } else {
                               console.error("Some unknown error");
                             }
-                            return Promise.resolve(undefined);
+                            return Promise.resolve();
                           }));
             });
 }

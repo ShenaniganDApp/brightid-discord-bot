@@ -10,6 +10,6 @@
     "re:start": "rescript build -w -with-deps"
   },
   "dependencies": {
-    "@glennsl/rescript-json-combinators": "^1.0.0"
+    "@glennsl/rescript-json-combinators": "^1.4.0"
   }
 }

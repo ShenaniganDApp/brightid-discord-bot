@@ -16,13 +16,13 @@ var Rest$1 = {};
 
 var Routes = {};
 
-Env.createEnv(undefined);
+Env.createEnv();
 
-var envConfig = Env.getConfig(undefined);
+var envConfig = Env.getConfig();
 
 var envConfig$1;
 
-if (envConfig.TAG === /* Ok */0) {
+if (envConfig.TAG === "Ok") {
   envConfig$1 = envConfig._0;
 } else {
   throw {
@@ -54,7 +54,7 @@ var rest = new Rest.REST({
 
 Core__Promise.$$catch(rest.put(V9.Routes.applicationCommands(clientId), {
             body: commands
-          }).then(function (param) {
+          }).then(function () {
           console.log("Successfully registered application commands.");
         }), (function (e) {
         if (e.RE_EXN_ID === DeployCommandsError) {
@@ -69,7 +69,7 @@ Core__Promise.$$catch(rest.put(V9.Routes.applicationCommands(clientId), {
         } else {
           console.error("Some unknown error");
         }
-        return Promise.resolve(undefined);
+        return Promise.resolve();
       }));
 
 export {

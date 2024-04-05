@@ -2,7 +2,6 @@
 
 import * as Env from "./Env.mjs";
 import * as Uuid from "uuid";
-import * as Curry from "rescript/lib/es6/curry.js";
 import * as Js_exn from "rescript/lib/es6/js_exn.js";
 import * as Endpoints from "./Endpoints.mjs";
 import * as Exceptions from "./Exceptions.mjs";
@@ -13,23 +12,21 @@ import * as Core__Option from "@rescript/core/src/Core__Option.mjs";
 import * as Commands_Help from "./commands/Commands_Help.mjs";
 import * as Decode$Shared from "@brightidbot/shared/src/Decode.mjs";
 import * as Buttons_Verify from "./buttons/Buttons_Verify.mjs";
-import * as Buttons_Sponsor from "./buttons/Buttons_Sponsor.mjs";
 import * as Commands_Invite from "./commands/Commands_Invite.mjs";
 import * as Commands_Verify from "./commands/Commands_Verify.mjs";
 import * as Constants$Shared from "@brightidbot/shared/src/Constants.mjs";
 import * as Caml_js_exceptions from "rescript/lib/es6/caml_js_exceptions.js";
 import * as Json$JsonCombinators from "@glennsl/rescript-json-combinators/src/Json.mjs";
-import * as Buttons_PremiumSponsor from "./buttons/Buttons_PremiumSponsor.mjs";
 import * as Services_VerificationInfo from "./services/Services_VerificationInfo.mjs";
 import * as Json_Decode$JsonCombinators from "@glennsl/rescript-json-combinators/src/Json_Decode.mjs";
 
-Env.createEnv(undefined);
+Env.createEnv();
 
-var envConfig = Env.getConfig(undefined);
+var envConfig = Env.getConfig();
 
 var envConfig$1;
 
-if (envConfig.TAG === /* Ok */0) {
+if (envConfig.TAG === "Ok") {
   envConfig$1 = envConfig._0;
 } else {
   throw {
@@ -39,7 +36,7 @@ if (envConfig.TAG === /* Ok */0) {
       };
 }
 
-function gistConfig(param) {
+function gistConfig() {
   var id = envConfig$1.gistId;
   var token = envConfig$1.githubAccessToken;
   return Gist$Utils.makeGistConfig(id, "guildData.json", token);
@@ -76,29 +73,9 @@ commands.set(Commands_Help.data.name, {
     });
 
 buttons.set(Buttons_Verify.customId, {
-          customId: Buttons_Verify.customId,
-          execute: Buttons_Verify.execute
-        }).set(Buttons_Sponsor.customId, {
-        customId: Buttons_Sponsor.customId,
-        execute: Buttons_Sponsor.execute
-      }).set(Buttons_PremiumSponsor.customId, {
-      customId: Buttons_PremiumSponsor.customId,
-      execute: Buttons_PremiumSponsor.execute
+      customId: Buttons_Verify.customId,
+      execute: Buttons_Verify.execute
     });
-
-function missingFields(guild) {
-  
-}
-
-async function validateConfig(config, decoder) {
-  try {
-    var brightIdGuilds = await Gist$Utils.ReadGist.content(config, decoder);
-    return Core__Option.map(brightIdGuilds[config.id], missingFields);
-  }
-  catch (exn){
-    return ;
-  }
-}
 
 async function updateGistOnGuildCreate(guild, roleId, content) {
   var guildId = guild.id;
@@ -117,12 +94,12 @@ async function updateGistOnGuildCreate(guild, roleId, content) {
     premiumSponsorshipsUsed: undefined,
     premiumExpirationTimestamp: undefined
   };
-  return await Gist$Utils.UpdateGist.addEntry(content, guildId, entry, gistConfig(undefined));
+  return await Gist$Utils.UpdateGist.addEntry(content, guildId, entry, gistConfig());
 }
 
 async function fetchContextIds(retryOpt, param) {
   var retry = retryOpt !== undefined ? retryOpt : 5;
-  var endpoint = "" + Endpoints.brightIdVerificationEndpoint + "/" + Constants$Shared.context + "";
+  var endpoint = Endpoints.brightIdVerificationEndpoint + "/" + Constants$Shared.context;
   var params = {
     method: "GET",
     headers: {
@@ -135,10 +112,10 @@ async function fetchContextIds(retryOpt, param) {
   var json = await res.json();
   var match = Json$JsonCombinators.decode(json, Decode$Shared.Decode_BrightId.Verifications.data);
   var match$1 = Json$JsonCombinators.decode(json, Decode$Shared.Decode_BrightId.$$Error.data);
-  if (match.TAG === /* Ok */0) {
+  if (match.TAG === "Ok") {
     return new Set(match._0.data.contextIds);
   }
-  if (match$1.TAG === /* Ok */0) {
+  if (match$1.TAG === "Ok") {
     var retry$1 = retry - 1 | 0;
     if (retry$1 !== 0) {
       return await fetchContextIds(retry$1, undefined);
@@ -177,7 +154,8 @@ async function assignRoleOnCreate(guild, role) {
   var contextIds = await fetchContextIds(undefined, undefined);
   var makeAddRolePromises = function (members) {
     return members.filter(function (__x) {
-                    return contextIds.has(Uuid.v5(__x.id, envConfig$1.uuidNamespace));
+                    var __x$1 = Uuid.v5(__x.id, envConfig$1.uuidNamespace);
+                    return contextIds.has(__x$1);
                   }).mapValues(function (__x) {
                   return __x.roles.add(role, undefined);
                 }).values();
@@ -216,7 +194,7 @@ async function onGuildCreate(guild) {
   }
   catch (raw_e){
     var e = Caml_js_exceptions.internalToOCamlException(raw_e);
-    console.error("" + guildName + " : " + guildId + ": ", e);
+    console.error(guildName + " : " + guildId + ": ", e);
     return ;
   }
   if (exit === 1) {
@@ -229,11 +207,11 @@ async function onGuildCreate(guild) {
     }
     catch (raw_e$1){
       var e$1 = Caml_js_exceptions.internalToOCamlException(raw_e$1);
-      console.error("" + guildName + " : " + guildId + ": ", e$1);
+      console.error(guildName + " : " + guildId + ": ", e$1);
       return ;
     }
     if (exit$1 === 2) {
-      console.log("" + guildName + " : " + guildId + ": Successfully added to the database");
+      console.log(guildName + " : " + guildId + ": Successfully added to the database");
       var exit$2 = 0;
       var verifiedMembersCount;
       try {
@@ -242,11 +220,11 @@ async function onGuildCreate(guild) {
       }
       catch (raw_e$2){
         var e$2 = Caml_js_exceptions.internalToOCamlException(raw_e$2);
-        console.error("" + guildName + " : " + guildId + ": ", e$2);
+        console.error(guildName + " : " + guildId + ": ", e$2);
         return ;
       }
       if (exit$2 === 3) {
-        console.log("" + guildName + " : " + guildId + ": Successfully assigned role to " + verifiedMembersCount.toString() + " current members");
+        console.log(guildName + " : " + guildId + ": Successfully assigned role to " + verifiedMembersCount.toString() + " current members");
         return ;
       }
       
@@ -270,60 +248,60 @@ async function onInteraction(interaction) {
     var commandName = interaction.commandName;
     var command = commands.get(commandName);
     if (command == null) {
-      console.error("Bot.res: Command not found");
+      console.error(guildName + " : " + guildId + ": Command " + commandName + " not found ");
       return ;
     }
     var val;
     try {
-      val = await Curry._1(command.execute, interaction);
+      val = await command.execute(interaction);
     }
     catch (raw_e){
       var e = Caml_js_exceptions.internalToOCamlException(raw_e);
       if (e.RE_EXN_ID === Exceptions.BrightIdError) {
-        console.error("" + guildName + " : " + guildId + ": ", e._1.errorMessage);
+        console.error(guildName + " : " + guildId + ": ", e._1.errorMessage);
       } else if (e.RE_EXN_ID === Exceptions.VerifyCommandError) {
-        console.error("" + guildName + " : " + guildId + ": ", e._1);
+        console.error(guildName + " : " + guildId + ": ", e._1);
       } else if (e.RE_EXN_ID === Exceptions.InviteCommandError) {
-        console.error("" + guildName + " : " + guildId + ": ", e._1);
+        console.error(guildName + " : " + guildId + ": ", e._1);
       } else if (e.RE_EXN_ID === "JsError") {
-        console.error("" + guildName + " : " + guildId + ": ", e._1);
+        console.error(guildName + " : " + guildId + ": ", e._1);
       } else {
-        console.error("" + guildName + " : " + guildId + ": ", e);
+        console.error(guildName + " : " + guildId + ": ", e);
       }
       return ;
     }
-    console.log("" + guildName + " : " + guildId + ": Successfully served the command " + commandName + " for " + user.username + "");
+    console.log(guildName + " : " + guildId + ": Successfully served the command " + commandName + " for " + user.username);
     return ;
   }
   if (isButton) {
     var buttonCustomId = interaction.customId;
     var button = buttons.get(buttonCustomId);
     if (button == null) {
-      console.error("Bot.res: Button not found");
+      console.error(guildName + " : " + guildId + ": Button " + buttonCustomId + " not found ");
       return ;
     }
     var val$1;
     try {
-      val$1 = await Curry._1(button.execute, interaction);
+      val$1 = await button.execute(interaction);
     }
     catch (raw_e$1){
       var e$1 = Caml_js_exceptions.internalToOCamlException(raw_e$1);
       if (e$1.RE_EXN_ID === Exceptions.BrightIdError) {
-        console.error("" + guildName + " : " + guildId + ": ", e$1._1.errorMessage);
+        console.error(guildName + " : " + guildId + ": ", e$1._1.errorMessage);
       } else if (e$1.RE_EXN_ID === Exceptions.PremiumSponsorButtonError) {
-        console.error("" + guildName + " : " + guildId + ": ", e$1._1);
+        console.error(guildName + " : " + guildId + ": ", e$1._1);
       } else if (e$1.RE_EXN_ID === Exceptions.SponsorButtonError) {
-        console.error("" + guildName + " : " + guildId + ": ", e$1._1);
+        console.error(guildName + " : " + guildId + ": ", e$1._1);
       } else if (e$1.RE_EXN_ID === Exceptions.ButtonVerifyHandlerError) {
-        console.error("" + guildName + " : " + guildId + ": ", e$1._1);
+        console.error(guildName + " : " + guildId + ": ", e$1._1);
       } else if (e$1.RE_EXN_ID === "JsError") {
-        console.error("" + guildName + " : " + guildId + ": ", e$1._1);
+        console.error(guildName + " : " + guildId + ": ", e$1._1);
       } else {
-        console.error("" + guildName + " : " + guildId + ": ", e$1);
+        console.error(guildName + " : " + guildId + ": ", e$1);
       }
       return ;
     }
-    console.log("" + guildName + " : " + guildId + ": Successfully served button press \"" + buttonCustomId + "\" for " + user.username + "");
+    console.log(guildName + " : " + guildId + ": Successfully served button press \"" + buttonCustomId + "\" for " + user.username);
     return ;
   }
   console.error("Bot.res: Unknown interaction");
@@ -335,13 +313,13 @@ async function onGuildDelete(guild) {
   var exit = 0;
   var guilds;
   try {
-    guilds = await Gist$Utils.ReadGist.content(gistConfig(undefined), Decode$Shared.Decode_Gist.brightIdGuilds);
+    guilds = await Gist$Utils.ReadGist.content(gistConfig(), Decode$Shared.Decode_Gist.brightIdGuilds);
     exit = 1;
   }
   catch (raw_e){
     var e = Caml_js_exceptions.internalToOCamlException(raw_e);
     if (e.RE_EXN_ID === "JsError") {
-      console.error("" + guildName + " : " + guildId + ": ", e._1);
+      console.error(guildName + " : " + guildId + ": ", e._1);
       return ;
     }
     throw e;
@@ -352,24 +330,24 @@ async function onGuildDelete(guild) {
       var exit$1 = 0;
       var val;
       try {
-        val = await Gist$Utils.UpdateGist.removeEntry(guilds, guildId, gistConfig(undefined));
+        val = await Gist$Utils.UpdateGist.removeEntry(guilds, guildId, gistConfig());
         exit$1 = 2;
       }
       catch (raw_e$1){
         var e$1 = Caml_js_exceptions.internalToOCamlException(raw_e$1);
         if (e$1.RE_EXN_ID === "JsError") {
-          console.error("" + guildName + " : " + guildId + ": ", e$1._1);
+          console.error(guildName + " : " + guildId + ": ", e$1._1);
           return ;
         }
         throw e$1;
       }
       if (exit$1 === 2) {
-        console.log("" + guildName + " : " + guildId + ": Successfully removed guild data");
+        console.log(guildName + " : " + guildId + ": Successfully removed guild data");
         return ;
       }
       
     } else {
-      console.error("" + guildName + " : " + guildId + ": Could not find guild data to delete");
+      console.error(guildName + " : " + guildId + ": Could not find guild data to delete");
       return ;
     }
   }
@@ -388,11 +366,11 @@ async function onGuildMemberAdd(guildMember) {
   catch (raw_e){
     var e = Caml_js_exceptions.internalToOCamlException(raw_e);
     if (e.RE_EXN_ID === Exceptions.BrightIdError) {
-      console.error("" + guildName + " : " + guildId + ": ", e._1.errorMessage);
+      console.error(guildName + " : " + guildId + ": ", e._1.errorMessage);
     } else if (e.RE_EXN_ID === "JsError") {
-      console.error("" + guildName + " : " + guildId + ": ", e._1);
+      console.error(guildName + " : " + guildId + ": ", e._1);
     } else {
-      console.error("" + guildName + " : " + guildId + ": ", e);
+      console.error(guildName + " : " + guildId + ": ", e);
     }
   }
   if (exit === 1) {
@@ -400,12 +378,12 @@ async function onGuildMemberAdd(guildMember) {
       var exit$1 = 0;
       var guilds;
       try {
-        guilds = await Gist$Utils.ReadGist.content(gistConfig(undefined), Decode$Shared.Decode_Gist.brightIdGuilds);
+        guilds = await Gist$Utils.ReadGist.content(gistConfig(), Decode$Shared.Decode_Gist.brightIdGuilds);
         exit$1 = 2;
       }
       catch (raw_e$1){
         var e$1 = Caml_js_exceptions.internalToOCamlException(raw_e$1);
-        console.error("" + guildName + " : " + guildId + ": ", e$1);
+        console.error(guildName + " : " + guildId + ": ", e$1);
       }
       if (exit$1 === 2) {
         var guild = guildMember.guild;
@@ -416,7 +394,7 @@ async function onGuildMemberAdd(guildMember) {
           if (roleId !== undefined) {
             var role = guild.roles.cache.get(roleId);
             if (role == null) {
-              console.error("" + guildName + " : " + guildId$1 + ": ", "Role does not exist");
+              console.error(guildName + " : " + guildId$1 + ": ", "Role does not exist");
             } else {
               var guildMemberRoleManager = guildMember.roles;
               var exit$2 = 0;
@@ -427,24 +405,24 @@ async function onGuildMemberAdd(guildMember) {
               }
               catch (raw_e$2){
                 var e$2 = Caml_js_exceptions.internalToOCamlException(raw_e$2);
-                console.error("" + guildName + " : " + guildId$1 + ": ", e$2);
+                console.error(guildName + " : " + guildId$1 + ": ", e$2);
               }
               if (exit$2 === 3) {
                 var uuid = Uuid.v5(guildMember.id, envConfig$1.uuidNamespace);
-                console.log("" + guildName + " : " + guildId$1 + " verified the user with contextId: " + uuid + "");
+                console.log(guildName + " : " + guildId$1 + " verified the user with contextId: " + uuid);
               }
               
             }
           } else {
-            console.error("" + guildName + " : " + guildId$1 + ": ", "Guild does not have a saved roleId");
+            console.error(guildName + " : " + guildId$1 + ": ", "Guild does not have a saved roleId");
           }
         } else {
-          console.error("" + guildName + " : " + guildId$1 + ": ", "Guild does not exist in Gist");
+          console.error(guildName + " : " + guildId$1 + ": ", "Guild does not exist in Gist");
         }
       }
       
     } else {
-      console.error("" + guildName + " : " + guildId + ": ", "User " + guildMember.displayName + " is not unique");
+      console.error(guildName + " : " + guildId + ": ", "User " + guildMember.displayName + " is not unique");
     }
   }
   
@@ -454,7 +432,7 @@ async function onRoleUpdate(role) {
   var guildId = role.guild.id;
   var guildName = role.guild.name;
   try {
-    var brightIdGuilds = await Gist$Utils.ReadGist.content(gistConfig(undefined), Decode$Shared.Decode_Gist.brightIdGuilds);
+    var brightIdGuilds = await Gist$Utils.ReadGist.content(gistConfig(), Decode$Shared.Decode_Gist.brightIdGuilds);
     var brightIdGuild = brightIdGuilds[guildId];
     if (brightIdGuild !== undefined) {
       var roleId = brightIdGuild.roleId;
@@ -486,19 +464,19 @@ async function onRoleUpdate(role) {
           premiumSponsorshipsUsed: entry_premiumSponsorshipsUsed,
           premiumExpirationTimestamp: entry_premiumExpirationTimestamp
         };
-        await Gist$Utils.UpdateGist.updateEntry(brightIdGuilds, guildId, entry, gistConfig(undefined));
-        console.log("" + guildName + " : " + guildId + " updated the role name to " + roleName + "");
+        await Gist$Utils.UpdateGist.updateEntry(brightIdGuilds, guildId, entry, gistConfig());
+        console.log(guildName + " : " + guildId + " updated the role name to " + roleName);
         return ;
       }
-      console.error("" + guildName + " : " + guildId + ": ", "Guild does not have a saved roleId");
+      console.error(guildName + " : " + guildId + ": ", "Guild does not have a saved roleId");
       return ;
     }
-    console.error("" + guildName + " : " + guildId + ": ", "Guild does not exist in Gist");
+    console.error(guildName + " : " + guildId + ": ", "Guild does not exist in Gist");
     return ;
   }
   catch (raw_e){
     var e = Caml_js_exceptions.internalToOCamlException(raw_e);
-    console.error("" + guildName + " : " + guildId + ": ", e);
+    console.error(guildName + " : " + guildId + ": ", e);
     return ;
   }
 }
@@ -508,7 +486,7 @@ async function onGuildMemberUpdate(param, newMember) {
   var guildName = guild.name;
   var guildId = guild.id;
   try {
-    var brightIdGuilds = await Gist$Utils.ReadGist.content(gistConfig(undefined), Decode$Shared.Decode_Gist.brightIdGuilds);
+    var brightIdGuilds = await Gist$Utils.ReadGist.content(gistConfig(), Decode$Shared.Decode_Gist.brightIdGuilds);
     var match = brightIdGuilds[guildId];
     if (match === undefined) {
       return ;
@@ -540,7 +518,7 @@ async function onGuildMemberUpdate(param, newMember) {
           if (e$1.RE_EXN_ID === Js_exn.$$Error) {
             var m = e$1._1.message;
             if (m !== undefined) {
-              console.error("" + guildName + " : " + guildId + ": ", m);
+              console.error(guildName + " : " + guildId + ": ", m);
             }
             
           }
@@ -551,13 +529,13 @@ async function onGuildMemberUpdate(param, newMember) {
       if (e.RE_EXN_ID === Js_exn.$$Error) {
         var m$1 = e._1.message;
         if (m$1 !== undefined) {
-          console.error("" + guildName + " : " + guildId + ": ", m$1);
+          console.error(guildName + " : " + guildId + ": ", m$1);
           return ;
         } else {
           return ;
         }
       }
-      console.error("" + guildName + " : " + guildId + ": ", e);
+      console.error(guildName + " : " + guildId + ": ", e);
       return ;
     }
     if (exit === 1) {
@@ -591,18 +569,18 @@ async function onGuildMemberUpdate(param, newMember) {
     if (obj.RE_EXN_ID === Js_exn.$$Error) {
       var m$2 = obj._1.message;
       if (m$2 !== undefined) {
-        console.error("" + guildName + " : " + guildId + ": ", m$2);
+        console.error(guildName + " : " + guildId + ": ", m$2);
         return ;
       } else {
         return ;
       }
     }
-    console.error("" + guildName + " : " + guildId + ": ", obj);
+    console.error(guildName + " : " + guildId + ": ", obj);
     return ;
   }
 }
 
-client.on("ready", (function (param) {
+client.on("ready", (function () {
         console.log("Logged In");
       }));
 
@@ -645,8 +623,6 @@ export {
   client ,
   commands ,
   buttons ,
-  missingFields ,
-  validateConfig ,
   updateGistOnGuildCreate ,
   fetchContextIds ,
   assignRoleOnCreate ,

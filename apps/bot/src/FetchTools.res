@@ -12,14 +12,14 @@ exception NoRes
 
 let rec fetchWithFallback = async (~relativeUrl, ~nodeIndex=0, defaultNode, fallbackNodes) => {
   let sortedNodes =
-    nodeIndex > 0 ? fallbackNodes->Array.sort((a, b) => a.priority > b.priority ? 1 : -1) : []
+    nodeIndex > 0 ? fallbackNodes->Array.toSorted((a, b) => a.priority > b.priority ? 1. : -1.) : []
   try {
     let node =
-      sortedNodes->Array.get(nodeIndex)->Option.mapWithDefault(defaultNode, node => Some(node))
+      sortedNodes->Array.get(nodeIndex)->Option.mapOr(defaultNode, node => Some(node))
     switch node {
     | None => None
     | Some(node) =>
-      let timeout = node.timeout->Option.getWithDefault(1000)
+      let timeout = node.timeout->Option.getOr(1000)
       let response = await fetch(
         `${node.url}${relativeUrl}`,
         {

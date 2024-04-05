@@ -61,21 +61,6 @@ let _ =
 let _ =
   buttons
   ->Collection.set(Buttons_Verify.customId, module(Buttons_Verify))
-  ->Collection.set(Buttons_Sponsor.customId, module(Buttons_Sponsor))
-  ->Collection.set(Buttons_PremiumSponsor.customId, module(Buttons_PremiumSponsor))
-
-type missingFields = RoleID
-let missingFields = guild => ()
-
-let validateConfig = async (config, decoder) => {
-  open Utils.Gist
-  try {
-    let brightIdGuilds = await ReadGist.content(~config, ~decoder)
-    brightIdGuilds->Dict.get(config.id)->Option.map(missingFields)
-  } catch {
-  | _ => None
-  }
-}
 
 let updateGistOnGuildCreate = async (guild, roleId, content) => {
   open Utils

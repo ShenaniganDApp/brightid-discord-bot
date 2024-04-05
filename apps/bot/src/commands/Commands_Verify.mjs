@@ -9,8 +9,7 @@ import * as Endpoints from "../Endpoints.mjs";
 import * as Exceptions from "../Exceptions.mjs";
 import * as Gist$Utils from "@brightidbot/utils/src/Gist.mjs";
 import * as DiscordJs from "discord.js";
-import * as Core__Array from "@rescript/core/src/Core__Array.mjs";
-import * as Core__Option from "@rescript/core/src/Core__Option.mjs";
+import * as Caml_option from "rescript/lib/es6/caml_option.js";
 import * as Core__Promise from "@rescript/core/src/Core__Promise.mjs";
 import * as Decode$Shared from "@brightidbot/shared/src/Decode.mjs";
 import * as Caml_exceptions from "rescript/lib/es6/caml_exceptions.js";
@@ -26,13 +25,13 @@ var Canvas$1 = {};
 
 var QRCode = {};
 
-Env.createEnv(undefined);
+Env.createEnv();
 
-var config = Env.getConfig(undefined);
+var config = Env.getConfig();
 
 var envConfig;
 
-if (config.TAG === /* Ok */0) {
+if (config.TAG === "Ok") {
   envConfig = config._0;
 } else {
   throw {
@@ -42,7 +41,7 @@ if (config.TAG === /* Ok */0) {
       };
 }
 
-function gistConfig(param) {
+function gistConfig() {
   return Gist$Utils.makeGistConfig(envConfig.gistId, "guildData.json", envConfig.githubAccessToken);
 }
 
@@ -64,14 +63,6 @@ function embedFields(verifyUrl) {
           {
             name: "3. Scan the QR Code",
             value: "Open the BrightID app and scan the QR code. Mobile users can click [this link](" + verifyUrl + ")."
-          },
-          {
-            name: "4. Link to a Sponsored App (like 1hive, gitcoin, etc)",
-            value: "The Discord bot will attempt to sponsor any verified BrightID. You can also link to these [sponsored apps](https://apps.brightid.org/) once you are verified within the app."
-          },
-          {
-            name: "5. Click the button after you scanned the QR code",
-            value: "Once you have scanned the QR code you can return to Discord and click the button to receive the appropriate BrightID role."
           }
         ];
 }
@@ -130,8 +121,8 @@ function linkOptions(attachment, embed, row) {
 }
 
 async function makeLinkOptions(uuid) {
-  var uri = "" + Endpoints.brightIdAppDeeplink + "/" + uuid + "";
-  var verifyUrl = "" + Endpoints.brightIdLinkVerificationEndpoint + "/" + uuid + "";
+  var uri = Endpoints.brightIdAppDeeplink + "/" + uuid;
+  var verifyUrl = Endpoints.brightIdLinkVerificationEndpoint + "/" + uuid;
   var canvas = await makeCanvasFromUri(uri);
   var attachment = await createMessageAttachmentFromCanvas(canvas);
   var embed = makeEmbed(embedFields(verifyUrl));
@@ -148,8 +139,8 @@ async function unknownErrorMessage(interaction) {
 }
 
 async function beforeSponsorMessageOptions(customId, uuid) {
-  var uri = "" + Endpoints.brightIdAppDeeplink + "/" + uuid + "";
-  var verifyUrl = "" + Endpoints.brightIdLinkVerificationEndpoint + "/" + uuid + "";
+  var uri = Endpoints.brightIdAppDeeplink + "/" + uuid;
+  var verifyUrl = Endpoints.brightIdLinkVerificationEndpoint + "/" + uuid;
   var canvas = await makeCanvasFromUri(uri);
   var attachment = await createMessageAttachmentFromCanvas(canvas);
   var row = makeBeforeSponsorActionRow(customId, verifyUrl);
@@ -162,16 +153,6 @@ async function beforeSponsorMessageOptions(customId, uuid) {
 }
 
 var NoAvailableSP = /* @__PURE__ */Caml_exceptions.create("Commands_Verify.NoAvailableSP");
-
-function getAssignedSPFromAddress(maybeSponsorshipAddress, contractAddress, url) {
-  var getBalance = function (sponsorshipAddress) {
-    var provider = new (Ethers.providers.JsonRpcProvider)(url);
-    var contract = new Ethers.Contract(contractAddress, abi, provider);
-    var formattedContext = Ethers.utils.formatBytes32String("Discord");
-    return contract.contextBalance(sponsorshipAddress, formattedContext);
-  };
-  return Core__Option.mapWithDefault(maybeSponsorshipAddress, Promise.resolve(Ethers.constants.Zero), getBalance);
-}
 
 function totalUnusedSponsorships(usedSponsorships, assignedSponsorships, assignedSponsorshipsEth) {
   var totalAssignedSponsorships = assignedSponsorshipsEth.add(assignedSponsorships);
@@ -187,7 +168,7 @@ function totalUnusedSponsorships(usedSponsorships, assignedSponsorships, assigne
 
 async function noSponsorshipsMessage(interaction) {
   var options = {
-    content: "Whoops! You haven't received a sponsor. There are plenty of apps with free sponsors, such as the [EIDI Faucet](https://idchain.one/begin/). \n\n See all the apps available at https://apps.brightid.org \n\n ",
+    content: "Whoops! You have not yet been sponsored. You can get sponsored from within the BrightID mobile app https://www.brightid.org/ \n\n ",
     ephemeral: true
   };
   return await interaction.followUp(options);
@@ -206,15 +187,6 @@ async function handleUnverifiedGuildMember(errorNum, interaction, uuid) {
   await interaction.editReply(options$1);
 }
 
-function hasPremium(guildData) {
-  var premiumExpirationTimestamp = guildData.premiumExpirationTimestamp;
-  if (premiumExpirationTimestamp === undefined) {
-    return false;
-  }
-  var now = Date.now();
-  return now < premiumExpirationTimestamp;
-}
-
 async function getAppUnusedSponsorships(context) {
   var data;
   try {
@@ -230,37 +202,7 @@ async function getAppUnusedSponsorships(context) {
     }
     throw exn;
   }
-  return data.unusedSponsorships;
-}
-
-function getServerAssignedSponsorships(guildData) {
-  var sumAmounts = function (acc, param) {
-    return Ethers.BigNumber.from(param.amount).add(acc);
-  };
-  var assignedSponsorships = guildData.assignedSponsorships;
-  if (assignedSponsorships !== undefined) {
-    return Core__Array.reduce(assignedSponsorships, Ethers.constants.Zero, sumAmounts);
-  } else {
-    return Ethers.constants.Zero;
-  }
-}
-
-function getGuildSponsorshipTotals(guilds) {
-  var calculateAssignedAndUnusedTotals = function (acc, key) {
-    var guild = guilds[key];
-    var assignedSponsorships = getServerAssignedSponsorships(guild);
-    var usedSponsorships = Ethers.BigNumber.from(Core__Option.getWithDefault(guild.usedSponsorships, "0"));
-    var totalAssignedSponsorships = acc[0].add(assignedSponsorships);
-    var totalUsedSponsorships = acc[1].add(usedSponsorships);
-    return [
-            totalAssignedSponsorships,
-            totalUsedSponsorships
-          ];
-  };
-  return Core__Array.reduce(Object.keys(guilds), [
-              Ethers.constants.Zero,
-              Ethers.constants.Zero
-            ], calculateAssignedAndUnusedTotals);
+  return Caml_option.some(BigInt(data.unusedSponsorships));
 }
 
 function execute(interaction) {
@@ -272,7 +214,7 @@ function execute(interaction) {
   return Core__Promise.$$catch(interaction.deferReply({
                     ephemeral: true
                   }).then(function (param) {
-                  return Gist$Utils.ReadGist.content(gistConfig(undefined), Decode$Shared.Decode_Gist.brightIdGuilds).then(function (guilds) {
+                  return Gist$Utils.ReadGist.content(gistConfig(), Decode$Shared.Decode_Gist.brightIdGuilds).then(function (guilds) {
                               var guildId = guild.id;
                               var guildData = guilds[guildId];
                               if (guildData !== undefined) {
@@ -287,7 +229,7 @@ function execute(interaction) {
                                                                   ephemeral: true
                                                                 };
                                                                 return interaction.editReply(options).then(function (param) {
-                                                                            return Promise.resolve(undefined);
+                                                                            return Promise.resolve();
                                                                           });
                                                               });
                                                   }
@@ -304,14 +246,8 @@ function execute(interaction) {
                                                 }), (async function (e) {
                                                 if (e.RE_EXN_ID === Exceptions.BrightIdError) {
                                                   var errorNum = e._1.errorNum;
-                                                  var inWhitelist = envConfig.sponsorshipsWhitelist.split(",").includes(guild.id) || envConfig.sponsorshipsWhitelist === "*";
                                                   var appUnusedSponsorships = await getAppUnusedSponsorships(Constants$Shared.context);
                                                   if (appUnusedSponsorships !== undefined) {
-                                                    var match = getGuildSponsorshipTotals(guilds);
-                                                    var unusedGuildSponsorships = match[0].sub(match[1]);
-                                                    var unusedPremiumSponsorships = Ethers.BigNumber.from(appUnusedSponsorships.toString()).sub(unusedGuildSponsorships);
-                                                    var premiumSponsorshipsUsed = Ethers.BigNumber.from(Core__Option.getWithDefault(guildData.premiumSponsorshipsUsed, "0"));
-                                                    var shouldUsePremiumSponsorships = unusedPremiumSponsorships.gt(Ethers.constants.Zero) && premiumSponsorshipsUsed.lt("10") || unusedPremiumSponsorships.gt(Ethers.constants.Zero) && hasPremium(guildData) || inWhitelist;
                                                     if (errorNum !== 4) {
                                                       var exit = 0;
                                                       var data;
@@ -334,28 +270,15 @@ function execute(interaction) {
                                                       exit === 1;
                                                       return ;
                                                     }
-                                                    if (shouldUsePremiumSponsorships) {
-                                                      console.log("Unused Sponsorships in premium pool: ", unusedPremiumSponsorships.toString());
-                                                      var options = await beforeSponsorMessageOptions("before-premium-sponsor", uuid);
-                                                      await interaction.editReply(options);
-                                                      return ;
-                                                    }
-                                                    if (unusedGuildSponsorships.gt(Ethers.constants.Zero)) {
-                                                      var options$1 = await beforeSponsorMessageOptions("before-sponsor", uuid);
-                                                      await interaction.editReply(options$1);
-                                                      return ;
-                                                    }
-                                                    await noSponsorshipsMessage(interaction);
-                                                    throw {
-                                                          RE_EXN_ID: Exceptions.VerifyCommandError,
-                                                          _1: "This server has no usable sponsorships",
-                                                          Error: new Error()
-                                                        };
+                                                    console.log("App Sponsorships left: ", Caml_option.valFromOption(appUnusedSponsorships).toString());
+                                                    var options = await beforeSponsorMessageOptions("before-premium-sponsor", uuid);
+                                                    await interaction.editReply(options);
+                                                    return ;
                                                   }
                                                   await noSponsorshipsMessage(interaction);
                                                   throw {
                                                         RE_EXN_ID: Exceptions.VerifyCommandError,
-                                                        _1: "No sponsorships available in Discord pool",
+                                                        _1: "Discord Bot has no available sponsorships",
                                                         Error: new Error()
                                                       };
                                                 }
@@ -423,14 +346,10 @@ export {
   unknownErrorMessage ,
   beforeSponsorMessageOptions ,
   NoAvailableSP ,
-  getAssignedSPFromAddress ,
   totalUnusedSponsorships ,
   noSponsorshipsMessage ,
   handleUnverifiedGuildMember ,
-  hasPremium ,
   getAppUnusedSponsorships ,
-  getServerAssignedSponsorships ,
-  getGuildSponsorshipTotals ,
   execute ,
   data ,
 }
