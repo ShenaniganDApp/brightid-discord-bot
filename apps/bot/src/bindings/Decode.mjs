@@ -13,9 +13,10 @@ function contextId(field) {
 }
 
 function data(field) {
-  var __x = Json_Decode$JsonCombinators.object(contextId);
   return {
-          data: field.required("data", __x)
+          data: (function (__x) {
+                return field.required("data", __x);
+              })(Json_Decode$JsonCombinators.object(contextId))
         };
 }
 

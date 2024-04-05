@@ -10,13 +10,13 @@ import * as Decode$Shared from "@brightidbot/shared/src/Decode.mjs";
 import * as Constants$Shared from "@brightidbot/shared/src/Constants.mjs";
 import * as Services_VerificationInfo from "../services/Services_VerificationInfo.mjs";
 
-Env.createEnv(undefined);
+Env.createEnv();
 
-var config = Env.getConfig(undefined);
+var config = Env.getConfig();
 
 var config$1;
 
-if (config.TAG === /* Ok */0) {
+if (config.TAG === "Ok") {
   config$1 = config._0;
 } else {
   throw {
@@ -66,7 +66,7 @@ function noMultipleContextIds(member, interaction) {
   return interaction.followUp(options).then(function (param) {
               return Promise.reject({
                           RE_EXN_ID: Exceptions.ButtonVerifyHandlerError,
-                          _1: "" + member.displayName + ": Verification Info can not be retrieved from more than one Discord account."
+                          _1: member.displayName + ": Verification Info can not be retrieved from more than one Discord account."
                         });
             });
 }
@@ -79,7 +79,7 @@ function handleUnverifiedGuildMember(errorNum, interaction) {
           ephemeral: true
         };
         return interaction.followUp(options).then(function (param) {
-                    return Promise.resolve(undefined);
+                    return Promise.resolve();
                   });
     case 3 :
         var options$1 = {
@@ -87,7 +87,7 @@ function handleUnverifiedGuildMember(errorNum, interaction) {
           ephemeral: true
         };
         return interaction.followUp(options$1).then(function (param) {
-                    return Promise.resolve(undefined);
+                    return Promise.resolve();
                   });
     case 4 :
         var options$2 = {
@@ -95,7 +95,7 @@ function handleUnverifiedGuildMember(errorNum, interaction) {
           ephemeral: true
         };
         return interaction.followUp(options$2).then(function (param) {
-                    return Promise.resolve(undefined);
+                    return Promise.resolve();
                   });
     default:
       var options$3 = {
@@ -103,7 +103,7 @@ function handleUnverifiedGuildMember(errorNum, interaction) {
         ephemeral: true
       };
       return interaction.followUp(options$3).then(function (param) {
-                  return Promise.resolve(undefined);
+                  return Promise.resolve();
                 });
   }
 }
@@ -125,7 +125,9 @@ function execute(interaction) {
                                             var match = verificationInfo._0;
                                             var contextIdsLength = match.contextIds.length;
                                             if (match.unique) {
-                                              var guildRole = getRolebyRoleId(guildRoleManager, roleId);
+                                              var guildRole = (function (__x) {
+                                                    return getRolebyRoleId(guildRoleManager, __x);
+                                                  })(roleId);
                                               return addRoleToMember(guildRole, member).then(function (param) {
                                                             var options = {
                                                               content: "Hey, I recognize you! I just gave you the \`" + guildRole.name + "\` role. You are now BrightID verified in " + guild.name + " server!",
@@ -133,7 +135,7 @@ function execute(interaction) {
                                                             };
                                                             return interaction.followUp(options);
                                                           }).then(function (param) {
-                                                          return Promise.resolve(undefined);
+                                                          return Promise.resolve();
                                                         });
                                             }
                                             if (contextIdsLength !== 0) {
@@ -144,7 +146,7 @@ function execute(interaction) {
                                               return interaction.followUp(options).then(function (param) {
                                                           return Promise.reject({
                                                                       RE_EXN_ID: Exceptions.ButtonVerifyHandlerError,
-                                                                      _1: "" + member.displayName + " is not unique"
+                                                                      _1: member.displayName + " is not unique"
                                                                     });
                                                         });
                                             }
@@ -153,7 +155,7 @@ function execute(interaction) {
                                               ephemeral: true
                                             };
                                             return interaction.followUp(options$1).then(function (param) {
-                                                        return Promise.resolve(undefined);
+                                                        return Promise.resolve();
                                                       });
                                           }), (async function (e) {
                                           if (e.RE_EXN_ID === "JsError") {

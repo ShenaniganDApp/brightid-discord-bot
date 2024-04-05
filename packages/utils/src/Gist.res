@@ -229,10 +229,10 @@ module UpdateGist = {
       let content = entries->Js.Dict.fromArray->Js.Json.stringifyAny
       let files = Js.Dict.empty()
       files->Js.Dict.set(name, {"content": content})
-      let size = keys->Belt.Set.String.size
+      let size = keys->Belt.Set.String.size->Int.toString
       let body = {
         "gist_id": id,
-        "description": j`Removed  $size entries`,
+        "description": `Removed  ${size} entries`,
         "files": files,
       }
 

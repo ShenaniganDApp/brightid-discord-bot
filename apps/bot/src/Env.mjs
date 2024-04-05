@@ -2,15 +2,15 @@
 
 import * as Dotenv from "dotenv";
 import * as FindUp from "find-up";
-import * as Process from "process";
+import * as Core__Option from "@rescript/core/src/Core__Option.mjs";
 import * as Caml_exceptions from "rescript/lib/es6/caml_exceptions.js";
 
 var EnvError = /* @__PURE__ */Caml_exceptions.create("Env.EnvError");
 
-var nodeEnv = Process.env;
-
-function createEnv(param) {
-  var envFile = nodeEnv["ENV_FILE"];
+function createEnv() {
+  var envFile = Core__Option.flatMap(process.env, (function (__x) {
+          return __x["ENV_FILE"];
+        }));
   var path = envFile !== undefined ? FindUp.findUpSync(envFile, undefined) : FindUp.findUpSync(".env.local", undefined);
   Dotenv.config({
         path: path
@@ -18,21 +18,23 @@ function createEnv(param) {
 }
 
 function env(name) {
-  var value = nodeEnv[name];
+  var value = Core__Option.flatMap(process.env, (function (__x) {
+          return __x[name];
+        }));
   if (value !== undefined) {
     return {
-            TAG: /* Ok */0,
+            TAG: "Ok",
             _0: value
           };
   } else {
     return {
-            TAG: /* Error */1,
+            TAG: "Error",
             _0: "Environment variable " + name + " is missing"
           };
   }
 }
 
-function getConfig(param) {
+function getConfig() {
   var match = env("DISCORD_API_TOKEN");
   var match$1 = env("DISCORD_CLIENT_ID");
   var match$2 = env("UUID_NAMESPACE");
@@ -41,16 +43,16 @@ function getConfig(param) {
   var match$5 = env("SPONSORSHIP_KEY");
   var match$6 = env("SPONSORSHIPS_WHITELIST");
   var match$7 = env("DISCORD_LOG_CHANNEL_ID");
-  if (match.TAG === /* Ok */0) {
-    if (match$1.TAG === /* Ok */0) {
-      if (match$2.TAG === /* Ok */0) {
-        if (match$3.TAG === /* Ok */0) {
-          if (match$4.TAG === /* Ok */0) {
-            if (match$5.TAG === /* Ok */0) {
-              if (match$6.TAG === /* Ok */0) {
-                if (match$7.TAG === /* Ok */0) {
+  if (match.TAG === "Ok") {
+    if (match$1.TAG === "Ok") {
+      if (match$2.TAG === "Ok") {
+        if (match$3.TAG === "Ok") {
+          if (match$4.TAG === "Ok") {
+            if (match$5.TAG === "Ok") {
+              if (match$6.TAG === "Ok") {
+                if (match$7.TAG === "Ok") {
                   return {
-                          TAG: /* Ok */0,
+                          TAG: "Ok",
                           _0: {
                             discordApiToken: match._0,
                             discordClientId: match$1._0,
@@ -90,9 +92,8 @@ function getConfig(param) {
 
 export {
   EnvError ,
-  nodeEnv ,
   createEnv ,
   env ,
   getConfig ,
 }
-/* nodeEnv Not a pure module */
+/* dotenv Not a pure module */

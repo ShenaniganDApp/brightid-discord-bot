@@ -1,11 +1,13 @@
 exception EnvError(string)
 @module("find-up") external findUpSync: (string, 'options) => string = "findUpSync"
 @module("dotenv") external createEnv: {"path": string} => unit = "config"
+@val @scope("process")
+external nodeEnv: option<Dict.t<string>> = "env"
 
-let nodeEnv = Node.Process.process["env"]
+
 
 let createEnv = () => {
-  let path = switch nodeEnv->Js.Dict.get("ENV_FILE") {
+  let path = switch nodeEnv->Option.flatMap(Dict.get(_,"ENV_FILE")) {
   | None => ".env.local"->findUpSync()
   | Some(envFile) => envFile->findUpSync()
   }
@@ -13,7 +15,7 @@ let createEnv = () => {
 }
 
 let env = name =>
-  switch Js.Dict.get(nodeEnv, name) {
+  switch nodeEnv->Option.flatMap(Dict.get(_,name)) {
   | Some(value) => Ok(value)
   | None => Error(`Environment variable ${name} is missing`)
   }

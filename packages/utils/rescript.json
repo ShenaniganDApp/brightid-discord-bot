@@ -17,8 +17,9 @@
   "bs-dependencies": [
     "rescript-discordjs",
     "@ryyppy/rescript-promise",
-    "@glennsl/rescript-json-combinators"
+    "@glennsl/rescript-json-combinators",
+    "@rescript/core"
   ],
-  "bsc-flags": ["-open JsonCombinators"],
+  "bsc-flags": ["-open JsonCombinators", "-open RescriptCore"],
   "reanalyze": { "analysis": ["dce", "exception"] }
 }

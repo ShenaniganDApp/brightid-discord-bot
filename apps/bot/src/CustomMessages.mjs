@@ -8,13 +8,13 @@ import * as Caml_option from "rescript/lib/es6/caml_option.js";
 import * as Constants$Shared from "@brightidbot/shared/src/Constants.mjs";
 import * as Caml_js_exceptions from "rescript/lib/es6/caml_js_exceptions.js";
 
-Env.createEnv(undefined);
+Env.createEnv();
 
-var config = Env.getConfig(undefined);
+var config = Env.getConfig();
 
 var envConfig;
 
-if (config.TAG === /* Ok */0) {
+if (config.TAG === "Ok") {
   envConfig = config._0;
 } else {
   throw {
@@ -25,23 +25,23 @@ if (config.TAG === /* Ok */0) {
 }
 
 function verificationStatusUrl(contextId) {
-  return "" + Endpoints.brightIdVerificationEndpoint + "/" + Constants$Shared.context + "/" + contextId + "";
+  return Endpoints.brightIdVerificationEndpoint + "/" + Constants$Shared.context + "/" + contextId;
 }
 
 function sponsorshipStatusUrl(sponsorHash) {
-  return "" + Endpoints.brightIdSubscriptionEndpoint + "/" + sponsorHash + "";
+  return Endpoints.brightIdSubscriptionEndpoint + "/" + sponsorHash;
 }
 
 function toString(status) {
-  if (typeof status !== "number") {
-    return "Error: " + status._0 + "";
+  if (typeof status === "object") {
+    return "Error: " + status._0;
   }
   switch (status) {
-    case /* Requested */0 :
+    case "Requested" :
         return "Requested";
-    case /* Successful */1 :
+    case "Successful" :
         return "Successful";
-    case /* Failed */2 :
+    case "Failed" :
         return "Failed";
     
   }
@@ -52,7 +52,7 @@ var Status = {
 };
 
 function sponsorshipRequestedMessage(interaction, statusOpt, contextId, maybeSponsorHash) {
-  var status = statusOpt !== undefined ? statusOpt : /* Requested */0;
+  var status = statusOpt !== undefined ? statusOpt : "Requested";
   var nowInSeconds = Math.round(Date.now() / 1000);
   var fifteenMinutesAfter = 15 * 60 + nowInSeconds;
   var embedFields = [
@@ -62,7 +62,7 @@ function sponsorshipRequestedMessage(interaction, statusOpt, contextId, maybeSpo
     },
     {
       name: "__Server__",
-      value: "**Server Name:** " + interaction.guild.name + "\n **Server ID:** " + interaction.guild.id + ""
+      value: "**Server Name:** " + interaction.guild.name + "\n **Server ID:** " + interaction.guild.id
     },
     {
       name: "__Bright ID Verification Status__",
@@ -91,7 +91,7 @@ function editSponsorMessageContent(message, interaction, status, contextId, mayb
     },
     {
       name: "__Server__",
-      value: "**Server Name:** " + interaction.guild.name + "\n **Server ID:** " + message.guild.id + ""
+      value: "**Server Name:** " + interaction.guild.name + "\n **Server ID:** " + message.guild.id
     },
     {
       name: "__Bright ID Verification Status__",

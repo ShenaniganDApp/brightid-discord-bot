@@ -6,15 +6,15 @@ var nodeUrl = "http:%2f%2fnode.brightid.org";
 
 var brightIdEndpointv5 = "https://app.brightid.org/node/v5";
 
-var brightIdVerificationEndpoint = "" + brightIdEndpointv5 + "/verifications";
+var brightIdVerificationEndpoint = brightIdEndpointv5 + "/verifications";
 
-var brightIdSubscriptionEndpoint = "" + brightIdEndpointv5 + "/operations";
+var brightIdSubscriptionEndpoint = brightIdEndpointv5 + "/operations";
 
-var brightIdAppsEndpoint = "" + brightIdEndpointv5 + "/apps";
+var brightIdAppsEndpoint = brightIdEndpointv5 + "/apps";
 
-var brightIdAppDeeplink = "brightid://link-verification/" + nodeUrl + "/" + Constants.context + "";
+var brightIdAppDeeplink = "brightid://link-verification/" + nodeUrl + "/" + Constants.context;
 
-var brightIdLinkVerificationEndpoint = "https://app.brightid.org/link-verification/" + nodeUrl + "/" + Constants.context + "";
+var brightIdLinkVerificationEndpoint = "https://app.brightid.org/link-verification/" + nodeUrl + "/" + Constants.context;
 
 var nodeUrls = [
   "http://node.brightid.org/brightid/v5",

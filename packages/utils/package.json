@@ -11,7 +11,8 @@
     "re:start": "rescript build -w -with-deps"
   },
   "dependencies": {
-    "@glennsl/rescript-json-combinators": "^1.0.0",
+    "@glennsl/rescript-json-combinators": "^1.4.0",
+    "@rescript/core": "^1.2.0",
     "@ryyppy/rescript-promise": "^2.1.0",
     "dotenv": "^16.0.1",
     "find-up": "^6.3.0",

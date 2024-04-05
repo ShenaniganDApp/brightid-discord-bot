@@ -13,13 +13,13 @@ import * as Json_Decode$JsonCombinators from "@glennsl/rescript-json-combinators
 
 var UUID = {};
 
-Env.createEnv(undefined);
+Env.createEnv();
 
-var config = Env.getConfig(undefined);
+var config = Env.getConfig();
 
 var config$1;
 
-if (config.TAG === /* Ok */0) {
+if (config.TAG === "Ok") {
   config$1 = config._0;
 } else {
   throw {
@@ -31,7 +31,7 @@ if (config.TAG === /* Ok */0) {
 
 function fetchAppInformation(retryOpt, context) {
   var retry = retryOpt !== undefined ? retryOpt : 5;
-  var endpoint = "" + Endpoints.brightIdAppsEndpoint + "/" + context + "";
+  var endpoint = Endpoints.brightIdAppsEndpoint + "/" + context;
   var params = {
     method: "GET",
     headers: {
@@ -45,9 +45,9 @@ function fetchAppInformation(retryOpt, context) {
                   }).then(function (json) {
                   var match = Json$JsonCombinators.decode(json, Decode$Shared.Decode_BrightId.App.data);
                   var match$1 = Json$JsonCombinators.decode(json, Decode$Shared.Decode_BrightId.$$Error.data);
-                  if (match.TAG === /* Ok */0) {
+                  if (match.TAG === "Ok") {
                     return Promise.resolve(match._0.data);
-                  } else if (match$1.TAG === /* Ok */0) {
+                  } else if (match$1.TAG === "Ok") {
                     return Promise.reject({
                                 RE_EXN_ID: Exceptions.BrightIdError,
                                 _1: match$1._0
