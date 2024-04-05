@@ -26,8 +26,6 @@ let getConfig = () =>
     env("UUID_NAMESPACE"),
     env("GIST_ID"),
     env("GITHUB_ACCESS_TOKEN"),
-    env("SPONSORSHIP_KEY"),
-    env("SPONSORSHIPS_WHITELIST"),
     env("DISCORD_LOG_CHANNEL_ID"),
   ) {
   // Got all vars
@@ -37,8 +35,6 @@ let getConfig = () =>
       Ok(uuidNamespace),
       Ok(gistId),
       Ok(githubAccessToken),
-      Ok(sponsorshipKey),
-      Ok(sponsorshipsWhitelist),
       Ok(discordLogChannelId),
     ) =>
     Ok({
@@ -47,17 +43,13 @@ let getConfig = () =>
       "uuidNamespace": uuidNamespace,
       "gistId": gistId,
       "githubAccessToken": githubAccessToken,
-      "sponsorshipKey": sponsorshipKey,
-      "sponsorshipsWhitelist": sponsorshipsWhitelist,
       "discordLogChannelId": discordLogChannelId,
     })
   // Did not get one or more vars, return the first error
-  | (Error(_) as err, _, _, _, _, _, _, _)
-  | (_, Error(_) as err, _, _, _, _, _, _)
-  | (_, _, Error(_) as err, _, _, _, _, _)
-  | (_, _, _, Error(_) as err, _, _, _, _)
-  | (_, _, _, _, Error(_) as err, _, _, _)
-  | (_, _, _, _, _, Error(_) as err, _, _)
-  | (_, _, _, _, _, _, Error(_) as err, _)
-  | (_, _, _, _, _, _, _, Error(_) as err) => err
+  | (Error(_) as err, _, _, _, _, _ )
+  | (_, Error(_) as err, _, _, _, _ )
+  | (_, _, Error(_) as err, _, _, _ )
+  | (_, _, _, Error(_) as err, _, _)
+  | (_, _, _, _, Error(_) as err, _ )
+  | (_, _, _, _, _, Error(_) as err) => err
   }
