@@ -40,36 +40,24 @@ function getConfig() {
   var match$2 = env("UUID_NAMESPACE");
   var match$3 = env("GIST_ID");
   var match$4 = env("GITHUB_ACCESS_TOKEN");
-  var match$5 = env("SPONSORSHIP_KEY");
-  var match$6 = env("SPONSORSHIPS_WHITELIST");
-  var match$7 = env("DISCORD_LOG_CHANNEL_ID");
+  var match$5 = env("DISCORD_LOG_CHANNEL_ID");
   if (match.TAG === "Ok") {
     if (match$1.TAG === "Ok") {
       if (match$2.TAG === "Ok") {
         if (match$3.TAG === "Ok") {
           if (match$4.TAG === "Ok") {
             if (match$5.TAG === "Ok") {
-              if (match$6.TAG === "Ok") {
-                if (match$7.TAG === "Ok") {
-                  return {
-                          TAG: "Ok",
-                          _0: {
-                            discordApiToken: match._0,
-                            discordClientId: match$1._0,
-                            uuidNamespace: match$2._0,
-                            gistId: match$3._0,
-                            githubAccessToken: match$4._0,
-                            sponsorshipKey: match$5._0,
-                            sponsorshipsWhitelist: match$6._0,
-                            discordLogChannelId: match$7._0
-                          }
-                        };
-                } else {
-                  return match$7;
-                }
-              } else {
-                return match$6;
-              }
+              return {
+                      TAG: "Ok",
+                      _0: {
+                        discordApiToken: match._0,
+                        discordClientId: match$1._0,
+                        uuidNamespace: match$2._0,
+                        gistId: match$3._0,
+                        githubAccessToken: match$4._0,
+                        discordLogChannelId: match$5._0
+                      }
+                    };
             } else {
               return match$5;
             }
