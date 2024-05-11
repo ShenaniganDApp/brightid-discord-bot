@@ -30,6 +30,9 @@
     "scripts": "yarn workspace @brightidbot/scripts",
     "shared": "yarn workspace @brightidbot/shared"
   },
+  "engines":{
+    "node": ">=20.10.0"
+  },
   "workspaces": [
     "apps/*",
     "packages/*"
