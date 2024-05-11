@@ -1,4 +1,4 @@
-open Json.Decode
+open! Json.Decode
 
 module Decode_BrightId = {
   module ContextId = {

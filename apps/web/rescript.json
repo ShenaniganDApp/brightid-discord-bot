@@ -6,7 +6,7 @@
     "subdirs": true
   },
   "package-specs": {
-    "module": "es6-global",
+    "module": "esmodule",
     "in-source": true
   },
   "suffix": ".js",
@@ -14,12 +14,9 @@
   "bs-dependencies": [
     "@rescript/react",
     "rescript-remix",
-    "rescript-webapi",
-    "@ryyppy/rescript-promise",
     "@brightidbot/utils",
     "@glennsl/rescript-json-combinators",
-    "@brightidbot/shared",
-    "rescript-nodejs"
+    "@brightidbot/shared"
   ],
   "pinned-dependencies": ["@brightidbot/utils", "@brightidbot/shared"],
   "bsc-flags": ["-open JsonCombinators"],

@@ -9,11 +9,11 @@
   ],
   "package-specs": [
     {
-      "module": "es6",
+      "module": "esmodule",
       "in-source": true
     }
   ],
   "suffix": ".mjs",
-  "bs-dependencies": ["@glennsl/rescript-json-combinators"],
-  "bsc-flags": ["-open JsonCombinators"]
+  "bs-dependencies": ["@glennsl/rescript-json-combinators", "@rescript/core"],
+  "bsc-flags": ["-open JsonCombinators -open RescriptCore"]
 }

@@ -1,13 +1,8 @@
 open Promise
 open NodeFetch
-open Shared
 
 type verificationInfo = VerificationInfo(BrightId.ContextId.t)
 
-module UUID = {
-  type t = string
-  @module("uuid") external v5: (string, string) => t = "v5"
-}
 
 //@TODO I shouldnt have to keep importing this
 Env.createEnv()

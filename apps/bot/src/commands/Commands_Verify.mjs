@@ -9,7 +9,6 @@ import * as Endpoints from "../Endpoints.mjs";
 import * as Exceptions from "../Exceptions.mjs";
 import * as Gist$Utils from "@brightidbot/utils/src/Gist.mjs";
 import * as DiscordJs from "discord.js";
-import * as Caml_option from "rescript/lib/es6/caml_option.js";
 import * as Core__Promise from "@rescript/core/src/Core__Promise.mjs";
 import * as Decode$Shared from "@brightidbot/shared/src/Decode.mjs";
 import * as Caml_exceptions from "rescript/lib/es6/caml_exceptions.js";
@@ -202,7 +201,7 @@ async function getAppUnusedSponsorships(context) {
     }
     throw exn;
   }
-  return Caml_option.some(BigInt(data.unusedSponsorships));
+  return BigInt(data.unusedSponsorships);
 }
 
 function execute(interaction) {
@@ -270,7 +269,7 @@ function execute(interaction) {
                                                       exit === 1;
                                                       return ;
                                                     }
-                                                    console.log("App Sponsorships left: ", Caml_option.valFromOption(appUnusedSponsorships).toString());
+                                                    console.log("App Sponsorships left: ", appUnusedSponsorships.toString());
                                                     var options = await beforeSponsorMessageOptions("before-premium-sponsor", uuid);
                                                     await interaction.editReply(options);
                                                     return ;
