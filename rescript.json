@@ -2,18 +2,23 @@
   "name": "@brightidbot/root",
   "version": "0.0.1",
   "sources": [],
+  "package-specs": [
+    {
+      "module": "esmodule",
+      "in-source": true
+    }
+  ],
+  "suffix": ".mjs",
   "bs-dependencies": [
     "@brightidbot/shared",
     "@brightidbot/utils",
     "@brightidbot/scripts",
-    "@brightidbot/bot",
-    "@brightidbot/web"
+    "@brightidbot/bot"
   ],
   "pinned-dependencies": [
     "@brightidbot/shared",
     "@brightidbot/utils",
     "@brightidbot/scripts",
-    "@brightidbot/bot",
-    "@brightidbot/web"
+    "@brightidbot/bot"
   ]
 }

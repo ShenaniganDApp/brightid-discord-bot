@@ -1,6 +1,5 @@
 open Discord
 open NodeFetch
-open Shared
 
 let {brightIdVerificationEndpoint} = module(Endpoints)
 let {context} = module(Constants)

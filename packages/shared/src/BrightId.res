@@ -92,11 +92,11 @@ module Operations = {
 }
 
 @module("brightid_sdk_v5")
-external sponsor: (~key: string, ~context: string, ~contextId: string) => Js.Promise.t<Js.Json.t> =
+external sponsor: (~key: string, ~context: string, ~contextId: string) => Promise.t<JSON.t> =
   "sponsor"
 
 @module("brightid_sdk_v5")
-external availableSponsorships: (~context: string) => Js.Promise.t<Js.Json.t> =
+external availableSponsorships: (~context: string) => Promise.t<JSON.t> =
   "availableSponsorships"
 
 //@Todo:  rename this to contract name (IdSponsorships)
@@ -109,12 +109,22 @@ module SPContract = {
     t,
     ~address: string,
     ~formattedContext: string,
-  ) => Js.Promise.t<Ethers.BigNumber.t> = "contextBalance"
+  ) => Promise.t<Ethers.BigNumber.t> = "contextBalance"
 
   @send
   external assignContext: (
     t,
     ~formattedContext: string,
     ~amount: Ethers.BigNumber.t,
-  ) => Js.Promise.t<unit> = "assignContext"
+  ) => Promise.t<unit> = "assignContext"
 }
+
+// @TODO this should be a record
+type brightIdGuild = {
+  "role": string,
+  "name": string,
+  "inviteLink": option<string>,
+  "roleId": string,
+}
+
+type brightIdGuilds = Dict.t<brightIdGuild>

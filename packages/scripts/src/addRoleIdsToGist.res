@@ -44,7 +44,6 @@ let brightIdGuilds = guild->Json.Decode.dict
 
 Client.login(client, discordBotToken)
 ->then(_ => {
-  open Utils
 
   let config = Gist.makeGistConfig(~token=githubAccessToken, ~id, ~name="guildData.json")
 
@@ -115,7 +114,7 @@ Client.login(client, discordBotToken)
     Gist.UpdateGist.updateAllEntries(~content, ~entries=roleIdEntries, ~config)->then(
       result => {
         switch result {
-        | Ok(result) => Js.log(j`$result: Succesfully updated gist with id: ${id}`)->resolve
+        | Ok(result) => Js.log(`${result->Int.toString}: Succesfully updated gist with id: ${id}`)->resolve
         | Error(err) => err->Gist.UpdateGist.UpdateGistError->raise
         }
       },

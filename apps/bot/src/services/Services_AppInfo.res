@@ -1,6 +1,5 @@
 open Promise
 open NodeFetch
-open Shared
 
 let {context} = module(Constants)
 

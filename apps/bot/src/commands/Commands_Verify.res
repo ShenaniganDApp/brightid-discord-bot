@@ -1,16 +1,15 @@
 open Promise
 open Discord
-open Shared
 open NodeFetch
 open Exceptions
 
 let {brightIdAppDeeplink, brightIdLinkVerificationEndpoint} = module(Endpoints)
-let {context, contractAddressID, contractAddressETH} = module(Shared.Constants)
+let {context, contractAddressID, contractAddressETH} = module(Constants)
 
 @val @scope("globalThis")
 external fetch: (string, 'params) => promise<Response.t<JSON.t>> = "fetch"
 
-let abi: Shared.ABI.t = %raw(`import("../../../../packages/shared/src/abi/SP.json", {assert: {type: "json"}}).then((module) => module.default)`)
+let abi: ABI.t = %raw(`import("../../../../packages/shared/src/abi/SP.json", {assert: {type: "json"}}).then((module) => module.default)`)
 
 module Canvas = {
   type t
@@ -231,7 +230,7 @@ let execute = interaction => {
   interaction
   ->Interaction.deferReply(~options={"ephemeral": true}, ())
   ->then(_ => {
-    open Shared.Decode
+    open Decode
 
     Gist.ReadGist.content(
       ~config=gistConfig(),

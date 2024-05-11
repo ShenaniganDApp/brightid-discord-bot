@@ -1,6 +1,5 @@
 open Discord
 open Promise
-open Shared
 open Exceptions
 
 let {brightIdVerificationEndpoint, brightIdAppDeeplink, brightIdLinkVerificationEndpoint} = module(

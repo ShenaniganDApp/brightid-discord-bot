@@ -275,7 +275,6 @@ module UpdateGist = {
     let entries = entries->Js.Dict.fromList
     let keys = entries->Js.Dict.keys
     keys->Belt.Array.forEach(key => {
-      let prev = content->Js.Dict.get(key)->Belt.Option.getExn
       let entry = entries->Js.Dict.get(key)->Belt.Option.getExn
       content->Js.Dict.set(key, entry)
     })

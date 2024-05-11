@@ -8,20 +8,18 @@
   ],
   "package-specs": [
     {
-      "module": "es6",
+      "module": "esmodule",
       "in-source": true
     }
   ],
   "suffix": ".mjs",
   "bs-dependencies": [
-    "@ryyppy/rescript-promise",
+    "@rescript/core",
     "@glennsl/rescript-json-combinators",
     "rescript-discordjs",
     "@brightidbot/utils",
-    "@brightidbot/shared",
-    "@rescript/core"
+    "@brightidbot/shared"
   ],
-  "pinned-dependencies": ["@brightidbot/utils", "@brightidbot/shared"],
-  "bsc-flags": ["-open JsonCombinators -open RescriptCore"],
+  "bsc-flags": ["-open JsonCombinators","-open RescriptCore","-open Shared"],
   "reanalyze": { "analysis": ["dce", "exception"] }
 }

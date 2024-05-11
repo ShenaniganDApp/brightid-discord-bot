@@ -7,15 +7,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "re:build": "rescript build -with-deps",
-    "re:start": "rescript build -w -with-deps"
+    "re:build": "rescript build",
+    "re:start": "rescript build -w"
   },
   "dependencies": {
-    "@glennsl/rescript-json-combinators": "^1.4.0",
-    "@rescript/core": "^1.2.0",
-    "@ryyppy/rescript-promise": "^2.1.0",
-    "dotenv": "^16.0.1",
-    "find-up": "^6.3.0",
     "node-fetch": "^3.2.8",
     "x-ray": "^2.3.4"
   },

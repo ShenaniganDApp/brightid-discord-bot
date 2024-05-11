@@ -1,17 +1,15 @@
 open Promise
-open Utils
-open Shared
 open Discord
 
 Env.createEnv()
 
 let envConfig = Env.getConfig()
 
-@raises(Env.EnvError)
 let envConfig = switch envConfig {
 | Ok(config) => config
 | Error(err) => err->Env.EnvError->raise
 }
+
 
 let discordBotToken = envConfig["discordApiToken"]
 let githubAccessToken = envConfig["githubAccessToken"]
@@ -59,7 +57,7 @@ Client.login(client, discordBotToken)
     ->then(
       _ => {
         Js.log(
-          j`Removed ${keys->Belt.Set.String.size->Belt.Int.toString} guilds
+          `Removed ${keys->Belt.Set.String.size->Belt.Int.toString} guilds
              from gist`,
         )->resolve
       },

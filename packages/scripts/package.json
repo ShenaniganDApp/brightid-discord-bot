@@ -7,14 +7,10 @@
   "private": true,
   "dependencies": {
     "@brightidbot/shared": "./packages/shared",
-    "@brightidbot/utils": "~0.0.1",
-    "@glennsl/rescript-json-combinators": "^1.4.0",
-    "@ryyppy/rescript-promise": "^2.1.0",
-    "dotenv": "^16.0.1",
-    "find-up": "^6.3.0"
+    "@brightidbot/utils": "./packages/utils"
   },
   "scripts": {
-    "re:build": "rescript build -with-deps",
-    "re:start": "rescript build -w -with-deps"
+    "re:build": "rescript build",
+    "re:start": "rescript build -w"
   }
 }
