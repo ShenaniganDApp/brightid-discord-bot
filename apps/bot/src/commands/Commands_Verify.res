@@ -180,7 +180,10 @@ let handleUnverifiedGuildMember = async (errorNum, interaction, uuid) => {
     let _ = await Interaction.editReply(interaction, ~options, ())
 
   | 3 =>
-    let options = await makeLinkOptions(uuid)
+    let options = {
+      "content": "Your BrightID is linked, but it has not completed the required verification. Check your status in the BrightID app and attend a verification party: https://www.brightid.org/meet",
+      "ephemeral": true,
+    }
     let _ = await Interaction.editReply(interaction, ~options, ())
 
   | _ =>
@@ -194,8 +197,9 @@ let handleUnverifiedGuildMember = async (errorNum, interaction, uuid) => {
 
 let getAppUnusedSponsorships = async context => {
   switch await Services_AppInfo.getAppInfo(context) {
-  | exception Exceptions.BrightIdError(_) => None
-  | exception JsError(_) => None
+  | exception error =>
+    Console.error2("Failed to retrieve BrightID sponsorship availability", error)
+    None
   | data => Some(data.unusedSponsorships->BigInt.fromFloat)
   }
 }
@@ -244,7 +248,7 @@ let execute = interaction => {
           ->then(
             verificationInfo => {
               switch verificationInfo {
-              | VerificationInfo({unique}) =>
+              | VerificationInfo({unique, contextIds}) =>
                 switch unique {
                 | true =>
                   guildRole
@@ -259,9 +263,13 @@ let execute = interaction => {
                     },
                   )
 
+                | false if contextIds->Array.length === 0 =>
+                  makeLinkOptions(uuid)
+                  ->then(options => Interaction.editReply(interaction, ~options, ()))
+                  ->then(_ => resolve())
                 | false =>
                   let options = {
-                    "content": `Hey, I recognize you, but your account seems to be linked to a sybil attack. You have multiple Discord accounts on the same BrightID. If this is a mistake, contact one of the support channels. `,
+                    "content": `Your Discord account is linked, but its BrightID verification is not currently valid. Check your verification status in the BrightID app or contact BrightID support.`,
                     "ephemeral": true,
                   }
                   interaction
@@ -279,27 +287,22 @@ let execute = interaction => {
           ->catch(
             async e =>
               switch e {
-              | Exceptions.BrightIdError({errorNum}) =>
+              | Exceptions.BrightIdError(error)
+                if error.errorNum === 4 && Exceptions.isUnverifiedError(error) =>
                 switch await getAppUnusedSponsorships(context) {
                 | None =>
+                  let _ = await unknownErrorMessage(interaction)
+                | Some(available) if available <= BigInt.fromInt(0) =>
                   let _ = await noSponsorshipsMessage(interaction)
-                  VerifyCommandError("Discord Bot has no available sponsorships")->raise
-                | Some(appUnusedSponsorships) =>
-                  switch errorNum {
-                  | 4 =>
-                    Console.log2("App Sponsorships left: ", BigInt.toString(appUnusedSponsorships))
-                    let options = await beforeSponsorMessageOptions("before-premium-sponsor", uuid)
-                    let _ = await Interaction.editReply(interaction, ~options, ())
-                  | _ =>
-                    let _ = switch await handleUnverifiedGuildMember(errorNum, interaction, uuid) {
-                    | data => Some(data)
-                    | exception JsError(obj) =>
-                      Console.error(obj)
-                      VerifyCommandError("Unknown JS Error")->raise
-                    }
-                  }
+                | Some(_) =>
+                  let options = await beforeSponsorMessageOptions("before-premium-sponsor", uuid)
+                  let _ = await Interaction.editReply(interaction, ~options, ())
                 }
-              | _ => e->raise
+              | Exceptions.BrightIdError(error) if Exceptions.isUnverifiedError(error) =>
+                await handleUnverifiedGuildMember(error.errorNum, interaction, uuid)
+              | _ =>
+                let _ = await unknownErrorMessage(interaction)
+                raise(e)
               },
           )
         }

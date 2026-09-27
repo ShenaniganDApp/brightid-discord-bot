@@ -27,12 +27,17 @@ nvm use
 yarn install --frozen-lockfile
 yarn bot rescript build -with-deps
 yarn bot test:qr
+yarn bot test:brightid
 yarn bot dev
 ```
 
 The repository uses the locally installed ReScript 11.1.0 compiler from `yarn.lock`, with `rescript.json` configuration and ES module output in `.mjs` files. Its ReScript 11 build commands remain in use; upgrading to ReScript 12 requires a separate language and dependency migration.
 
 Verification QR attachments use `qrcode`'s PNG buffer renderer and do not require native Canvas or Cairo libraries. `yarn bot test:qr` decodes the actual attachments from the verification and sponsorship flows without connecting to Discord.
+
+The bot retains BrightID v5 verification and sponsorship requests because existing Discord links are stored in v5. Its primary API and QR links use `https://aura-node.brightid.org`; the public BrightID gateway is a fallback. Requests attempt each configured node once, with a 10-second timeout per node. Network failures, rate limits, and server errors trigger failover; structured account errors remain distinct from outages.
+
+The bot uses its own HTTP transport and does not depend on the BrightID SDK. Existing Discord account links remain on v5. `yarn bot test:brightid` covers Aura endpoint configuration, v5 response decoding, node failover, bounded failures, account matching, and user messages.
 
 Node.js 22 satisfies the [current ReScript installation prerequisites](https://rescript-lang.org/docs/manual/installation/). `.nvmrc`, the Node engine declarations, and `nixpacks.toml` select the same Node major version. Nixpacks deployments must not override `NIXPACKS_NODE_VERSION` with an older version in their service settings.
 

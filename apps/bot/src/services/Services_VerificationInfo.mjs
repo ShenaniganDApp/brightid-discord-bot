@@ -3,13 +3,9 @@
 import * as Env from "../Env.mjs";
 import * as Uuid from "uuid";
 import * as Endpoints from "../Endpoints.mjs";
-import * as Exceptions from "../Exceptions.mjs";
 import * as FetchTools from "../FetchTools.mjs";
-import * as Caml_option from "rescript/lib/es6/caml_option.js";
-import * as Core__Promise from "@rescript/core/src/Core__Promise.mjs";
 import * as Decode$Shared from "@brightidbot/shared/src/Decode.mjs";
 import * as Constants$Shared from "@brightidbot/shared/src/Constants.mjs";
-import * as Json$JsonCombinators from "@glennsl/rescript-json-combinators/src/Json.mjs";
 import * as Json_Decode$JsonCombinators from "@glennsl/rescript-json-combinators/src/Json_Decode.mjs";
 
 Env.createEnv();
@@ -28,75 +24,55 @@ if (config.TAG === "Ok") {
       };
 }
 
-function sleep(_ms) {
-  return (new Promise((resolve) => setTimeout(resolve, _ms)));
+function decodeVerification(json, contextId) {
+  var match = FetchTools.decodeResponse(json, Decode$Shared.Decode_BrightId.ContextId.data);
+  var data = match.data;
+  var isUnlinked = !data.unique && data.contextIds.length === 0;
+  if (data.app !== Constants$Shared.context || data.context !== Constants$Shared.context || !isUnlinked && !data.contextIds.includes(contextId)) {
+    throw {
+          RE_EXN_ID: Json_Decode$JsonCombinators.DecodeError,
+          _1: "BrightID verification does not match the requested account",
+          Error: new Error()
+        };
+  }
+  return {
+          TAG: "VerificationInfo",
+          _0: data
+        };
 }
 
-function fetchVerificationInfo(retryOpt, id) {
-  var retry = retryOpt !== undefined ? retryOpt : 5;
-  var uuid = Uuid.v5(id, config$1.uuidNamespace);
-  return Core__Promise.$$catch(FetchTools.fetchWithFallback("/verifications/" + Constants$Shared.context + "/" + uuid, undefined, Endpoints.nodes[0], Endpoints.nodes).then(function (maybeRes) {
-                    if (maybeRes !== undefined) {
-                      return Caml_option.valFromOption(maybeRes).json();
-                    } else {
-                      return Promise.reject({
-                                  RE_EXN_ID: FetchTools.NoRes
-                                });
-                    }
-                  }).then(function (json) {
-                  var match = Json$JsonCombinators.decode(json, Decode$Shared.Decode_BrightId.ContextId.data);
-                  var match$1 = Json$JsonCombinators.decode(json, Decode$Shared.Decode_BrightId.$$Error.data);
-                  if (match.TAG === "Ok") {
-                    return Promise.resolve({
-                                TAG: "VerificationInfo",
-                                _0: match._0.data
-                              });
-                  } else if (match$1.TAG === "Ok") {
-                    return Promise.reject({
-                                RE_EXN_ID: Exceptions.BrightIdError,
-                                _1: match$1._0
-                              });
-                  } else {
-                    return Promise.reject({
-                                RE_EXN_ID: Json_Decode$JsonCombinators.DecodeError,
-                                _1: match._0
-                              });
-                  }
-                }), (function (e) {
-                if (e.RE_EXN_ID === Exceptions.BrightIdError) {
-                  throw e;
-                }
-                var retry$1 = retry - 1 | 0;
-                if (retry$1 !== 0) {
-                  return sleep(3000).then(function () {
-                              return fetchVerificationInfo(retry$1, id);
-                            });
-                }
-                throw e;
-              }));
+async function getVerificationInfo(nodesOpt, contextId) {
+  var nodes = nodesOpt !== undefined ? nodesOpt : Endpoints.nodes;
+  var json = await FetchTools.fetchJson("/verifications/" + Constants$Shared.context + "/" + contextId, nodes);
+  return decodeVerification(json, contextId);
+}
+
+function fetchVerificationInfo(id) {
+  var contextId = Uuid.v5(id, config$1.uuidNamespace);
+  return getVerificationInfo(undefined, contextId);
 }
 
 function getBrightIdVerification(member) {
   var id = member.id;
-  return fetchVerificationInfo(undefined, id);
+  return fetchVerificationInfo(id);
+}
+
+async function getVerifiedContextIds(nodesOpt, param) {
+  var nodes = nodesOpt !== undefined ? nodesOpt : Endpoints.nodes;
+  var json = await FetchTools.fetchJson("/verifications/" + Constants$Shared.context, nodes);
+  var match = FetchTools.decodeResponse(json, Decode$Shared.Decode_BrightId.Verifications.data);
+  return new Set(match.data.contextIds);
 }
 
 var context = Constants$Shared.context;
 
-var brightIdVerificationEndpoint = Endpoints.brightIdVerificationEndpoint;
-
-var nodes = Endpoints.nodes;
-
-var requestTimeout = 60000;
-
 export {
   config$1 as config,
-  sleep ,
   context ,
-  brightIdVerificationEndpoint ,
-  nodes ,
-  requestTimeout ,
+  decodeVerification ,
+  getVerificationInfo ,
   fetchVerificationInfo ,
   getBrightIdVerification ,
+  getVerifiedContextIds ,
 }
 /*  Not a pure module */

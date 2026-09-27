@@ -2,9 +2,9 @@
 
 import * as Constants$Shared from "@brightidbot/shared/src/Constants.mjs";
 
-var nodeUrl = "http:%2f%2fnode.brightid.org";
+var nodeUrl = "https:%2f%2faura-node.brightid.org";
 
-var brightIdEndpointv5 = "https://app.brightid.org/node/v5";
+var brightIdEndpointv5 = "https://aura-node.brightid.org/brightid/v5";
 
 var brightIdVerificationEndpoint = brightIdEndpointv5 + "/verifications";
 
@@ -17,15 +17,15 @@ var brightIdAppDeeplink = "brightid://link-verification/" + nodeUrl + "/" + Cons
 var brightIdLinkVerificationEndpoint = "https://app.brightid.org/link-verification/" + nodeUrl + "/" + Constants$Shared.context;
 
 var nodeUrls = [
-  "http://node.brightid.org/brightid/v5",
-  "https://aura-node.brightid.org/brightid/v5"
+  "https://aura-node.brightid.org/brightid/v5",
+  "https://app.brightid.org/node/v5"
 ];
 
 var nodes = nodeUrls.map(function (url, i) {
       return {
               url: url,
               priority: i,
-              timeout: 60000
+              timeout: 10000
             };
     });
 

@@ -57,9 +57,7 @@ let _ =
     module(Commands_Invite),
   )
 
-let _ =
-  buttons
-  ->Collection.set(Buttons_Verify.customId, module(Buttons_Verify))
+let _ = buttons->Collection.set(Buttons_Verify.customId, module(Buttons_Verify))
 
 let updateGistOnGuildCreate = async (guild, roleId, content) => {
   open Utils
@@ -85,39 +83,7 @@ let updateGistOnGuildCreate = async (guild, roleId, content) => {
   await Gist.UpdateGist.addEntry(~content, ~config=gistConfig(), ~key=guildId, ~entry)
 }
 
-let rec fetchContextIds = async (~retry=5, ()) => {
-  open Decode
-  let requestTimeout = 60000
-  let endpoint = `${brightIdVerificationEndpoint}/${context}`
-  let params = {
-    "method": "GET",
-    "headers": {
-      "Accept": "application/json",
-      "Content-Type": "application/json",
-    },
-    "timestamp": requestTimeout,
-  }
-  let res = await fetch(endpoint, params)
-  let json = await Response.json(res)
-  switch (
-    json->Json.decode(Decode_BrightId.Verifications.data),
-    json->Json.decode(Decode_BrightId.Error.data),
-  ) {
-  | (Ok({data}), _) => Set.fromArray(data.contextIds)
-  | (_, Ok(error)) =>
-    let retry = retry - 1
-    switch retry {
-    | 0 => error->Exceptions.BrightIdError->raise
-    | _ => await fetchContextIds(~retry, ())
-    }
-  | (Error(error), _) =>
-    let retry = retry - 1
-    switch retry {
-    | 0 => error->Json.Decode.DecodeError->raise
-    | _ => await fetchContextIds(~retry, ())
-    }
-  }
-}
+let fetchContextIds = () => Services_VerificationInfo.getVerifiedContextIds()
 
 let assignRoleOnCreate = async (guild, role) => {
   let maybeMembers = switch await guild->Guild.getGuildMemberManager->GuildMemberManager.fetchAll {
@@ -130,7 +96,7 @@ let assignRoleOnCreate = async (guild, role) => {
     guildMember
     ->GuildMember.getGuildMemberId
     ->UUID.v5(envConfig["uuidNamespace"])
-    ->Set.has(contextIds, _)
+    ->(Set.has(contextIds, _))
 
   let assignRoleToGuildMember = (guildMember, role) => {
     guildMember->GuildMember.getGuildMemberRoleManager->GuildMemberRoleManager.add(role, ())
@@ -440,7 +406,7 @@ let onGuildMemberUpdate = async (_, newMember) => {
         }
       | exception e =>
         switch e {
-        | Exceptions.BrightIdError(_) =>
+        | Exceptions.BrightIdError(error) if Exceptions.isUnverifiedError(error) =>
           let role =
             guild
             ->Guild.getGuildRoleManager

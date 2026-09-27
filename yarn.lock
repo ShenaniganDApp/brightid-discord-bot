@@ -3382,16 +3382,6 @@ brightid_sdk@^1.0.1:
     fast-json-stable-stringify "^2.1.0"
     tweetnacl "^1.0.3"
 
-brightid_sdk_v5@^1.0.2:
-  version "1.0.2"
-  resolved "https://registry.yarnpkg.com/brightid_sdk_v5/-/brightid_sdk_v5-1.0.2.tgz#9f6d065bc4fa09357f2fa86238cccf14d7e7475f"
-  integrity sha512-6s7bxsp8shxEy78HmSaoVnFKSzkYP8tOS6Qk1q3lWm07QTC/LP3z1gDbh4CBnxHRqpjPnknLdvCiFjaDXLgCgw==
-  dependencies:
-    axios "^0.21.0"
-    base64-js "^1.5.1"
-    fast-json-stable-stringify "^2.1.0"
-    tweetnacl "^1.0.3"
-
 brorand@^1.1.0:
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/brorand/-/brorand-1.1.0.tgz#12c25efe40a45e3c323eb8675a0a0ce57b22371f"
