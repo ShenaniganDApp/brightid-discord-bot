@@ -1,5 +1,5 @@
 {
-  "name": "root",
+  "name": "@brightidbot/root",
   "private": true,
   "devDependencies": {
     "patch-package": "^6.4.7"
@@ -31,7 +31,7 @@
     "shared": "yarn workspace @brightidbot/shared"
   },
   "engines":{
-    "node": ">=20.10.0"
+    "node": "22.x"
   },
   "workspaces": [
     "apps/*",

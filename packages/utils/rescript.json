@@ -17,11 +17,7 @@
   "pinned-dependencies": [],
   "bs-dependencies": [
     "@rescript/core",
-    "@glennsl/rescript-json-combinators",
-    "@brightidbot/bot",
-    "@brightidbot/shared",
-    "@brightidbot/scripts",
-    "@brightidbot/utils"
+    "@glennsl/rescript-json-combinators"
   ],
   "bsc-flags": [
     "-open JsonCombinators",

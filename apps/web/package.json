@@ -12,8 +12,8 @@
     "build:rescript": "rescript build"
   },
   "dependencies": {
-    "@brightidbot/shared": "./packages/shared",
-    "@brightidbot/utils": "./packages/utils",
+    "@brightidbot/shared": "*",
+    "@brightidbot/utils": "*",
     "@glennsl/rescript-json-combinators": "^1.0.0",
     "@rainbow-me/rainbowkit": "^0.8.1",
     "@remix-run/node": "^1.11.1",
