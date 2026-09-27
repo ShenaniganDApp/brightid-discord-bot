@@ -5,6 +5,7 @@ __**Available BrightId Unique Bot commands:**__
 
 - \`/verify\` → Sends a BrightID QR code for users to connect with their BrightId.
 
+[Privacy Policy](https://github.com/ShenaniganDApp/brightid-discord-bot/blob/master/PRIVACY.md)
 
 `
 
