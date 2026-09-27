@@ -22,7 +22,6 @@
     "@remix-run/vercel": "1.11.1",
     "@rescript/react": "^0.12.1",
     "brightid_sdk": "^1.0.1",
-    "canvas": "^2.9.0",
     "concurrently": "^7.2.0",
     "ethers": "^5.6.6",
     "isbot": "^3.6.5",

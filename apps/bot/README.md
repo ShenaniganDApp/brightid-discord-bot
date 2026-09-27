@@ -26,10 +26,13 @@ nvm install
 nvm use
 yarn install --frozen-lockfile
 yarn bot rescript build -with-deps
+yarn bot test:qr
 yarn bot dev
 ```
 
 The repository uses the locally installed ReScript 11.1.0 compiler from `yarn.lock`, with `rescript.json` configuration and ES module output in `.mjs` files. Its ReScript 11 build commands remain in use; upgrading to ReScript 12 requires a separate language and dependency migration.
+
+Verification QR attachments use `qrcode`'s PNG buffer renderer and do not require native Canvas or Cairo libraries. `yarn bot test:qr` decodes the actual attachments from the verification and sponsorship flows without connecting to Discord.
 
 Node.js 22 satisfies the [current ReScript installation prerequisites](https://rescript-lang.org/docs/manual/installation/). `.nvmrc`, the Node engine declarations, and `nixpacks.toml` select the same Node major version. Nixpacks deployments must not override `NIXPACKS_NODE_VERSION` with an older version in their service settings.
 
