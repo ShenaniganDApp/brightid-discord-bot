@@ -2,7 +2,6 @@
 
 import * as Env from "../Env.mjs";
 import * as Uuid from "uuid";
-import * as Canvas from "canvas";
 import * as Ethers from "ethers";
 import * as Qrcode from "qrcode";
 import * as Endpoints from "../Endpoints.mjs";
@@ -17,8 +16,6 @@ import * as Services_AppInfo from "../services/Services_AppInfo.mjs";
 import * as Caml_js_exceptions from "rescript/lib/es6/caml_js_exceptions.js";
 import * as Builders from "@discordjs/builders";
 import * as Services_VerificationInfo from "../services/Services_VerificationInfo.mjs";
-
-var Canvas$1 = {};
 
 var QRCode = {};
 
@@ -68,14 +65,9 @@ function makeEmbed(fields) {
   return new DiscordJs.MessageEmbed().setColor("#fb8b60").setTitle("How To Get Verified with Bright ID").setURL("https://www.brightid.org/").setAuthor("BrightID Bot", "https://media.discordapp.net/attachments/708186850359246859/760681364163919994/1601430947224.png", "https://www.brightid.org/").setDescription("Here is a step-by-step guide to help you get verified with BrightID.").setThumbnail("https://media.discordapp.net/attachments/708186850359246859/760681364163919994/1601430947224.png").addFields(fields).setTimestamp().setFooter("Bot made by the Shenanigan team", "https://media.discordapp.net/attachments/708186850359246859/760681364163919994/1601430947224.png");
 }
 
-async function makeCanvasFromUri(uri) {
-  var canvas = Canvas.default.createCanvas(700, 250);
-  await Qrcode.toCanvas(canvas, uri);
-  return canvas;
-}
-
-async function createMessageAttachmentFromCanvas(canvas) {
-  return new DiscordJs.MessageAttachment(canvas.toBuffer(), "qrcode.png", undefined);
+async function createMessageAttachmentFromUri(uri) {
+  var buffer = await Qrcode.toBuffer(uri);
+  return new DiscordJs.MessageAttachment(buffer, "qrcode.png", undefined);
 }
 
 function getRolebyRoleId(guildRoleManager, roleId) {
@@ -120,8 +112,7 @@ function linkOptions(attachment, embed, row) {
 async function makeLinkOptions(uuid) {
   var uri = Endpoints.brightIdAppDeeplink + "/" + uuid;
   var verifyUrl = Endpoints.brightIdLinkVerificationEndpoint + "/" + uuid;
-  var canvas = await makeCanvasFromUri(uri);
-  var attachment = await createMessageAttachmentFromCanvas(canvas);
+  var attachment = await createMessageAttachmentFromUri(uri);
   var embed = makeEmbed(embedFields(verifyUrl));
   var row = makeLinkActionRow(verifyUrl);
   return linkOptions(attachment, embed, row);
@@ -138,8 +129,7 @@ async function unknownErrorMessage(interaction) {
 async function beforeSponsorMessageOptions(customId, uuid) {
   var uri = Endpoints.brightIdAppDeeplink + "/" + uuid;
   var verifyUrl = Endpoints.brightIdLinkVerificationEndpoint + "/" + uuid;
-  var canvas = await makeCanvasFromUri(uri);
-  var attachment = await createMessageAttachmentFromCanvas(canvas);
+  var attachment = await createMessageAttachmentFromUri(uri);
   var row = makeBeforeSponsorActionRow(customId, verifyUrl);
   return {
           content: "Please scan this QR code in the BrightID app to link Discord. \n\n **__You can download the app on Android and iOS__** \n Android: <https://play.google.com/store/apps/details?id=org.brightid> \n\n iOS: <https://apps.apple.com/us/app/brightid/id1428946820> \n\n",
@@ -325,15 +315,13 @@ export {
   context ,
   contractAddressID ,
   contractAddressETH ,
-  Canvas$1 as Canvas,
   QRCode ,
   envConfig ,
   gistConfig ,
   addRoleToMember ,
   embedFields ,
   makeEmbed ,
-  makeCanvasFromUri ,
-  createMessageAttachmentFromCanvas ,
+  createMessageAttachmentFromUri ,
   getRolebyRoleId ,
   makeLinkActionRow ,
   makeBeforeSponsorActionRow ,

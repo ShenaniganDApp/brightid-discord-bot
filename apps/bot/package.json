@@ -6,6 +6,7 @@
   "scripts": {
     "lint": "npx eslint ./src",
     "test": "npx jest",
+    "test:qr": "node --test test/verify-qr.test.mjs",
     "start": "node src/Bot.mjs",
     "dev": "nodemon src/Bot.mjs",
     "build:rescript": "rescript build",
@@ -16,7 +17,9 @@
   "author": "youngkidwarrior",
   "license": "GPL-3.0-or-later",
   "devDependencies": {
+    "jsqr": "^1.4.0",
     "nodemon": "^2.0.20",
+    "pngjs": "^5.0.0",
     "prettier": "^2.1.2"
   },
   "engines":{

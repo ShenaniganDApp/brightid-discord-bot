@@ -9,16 +9,8 @@ let {context, contractAddressID, contractAddressETH} = module(Constants)
 @val @scope("globalThis")
 external fetch: (string, 'params) => promise<Response.t<JSON.t>> = "fetch"
 
-module Canvas = {
-  type t
-  @module("canvas") @scope("default")
-  external createCanvas: (int, int) => t = "createCanvas"
-  @send external toBuffer: t => Buffer.t = "toBuffer"
-}
-
 module QRCode = {
-  type t
-  @module("qrcode") external toCanvas: (Canvas.t, string) => promise<unit> = "toCanvas"
+  @module("qrcode") external toBuffer: string => promise<Buffer.t> = "toBuffer"
 }
 
 Env.createEnv()
@@ -81,14 +73,9 @@ let makeEmbed = fields => {
   )
 }
 
-let makeCanvasFromUri = async uri => {
-  let canvas = Canvas.createCanvas(700, 250)
-  await QRCode.toCanvas(canvas, uri)
-  canvas
-}
-
-let createMessageAttachmentFromCanvas = async canvas => {
-  canvas->Canvas.toBuffer->Message.createMessageAttachment("qrcode.png", ())
+let createMessageAttachmentFromUri = async uri => {
+  let buffer = await QRCode.toBuffer(uri)
+  buffer->Message.createMessageAttachment("qrcode.png", ())
 }
 
 let getRolebyRoleId = (guildRoleManager, roleId) => {
@@ -142,8 +129,7 @@ let linkOptions = (attachment, embed, row) => {
 let makeLinkOptions = async uuid => {
   let uri = `${brightIdAppDeeplink}/${uuid}`
   let verifyUrl = `${brightIdLinkVerificationEndpoint}/${uuid}`
-  let canvas = await makeCanvasFromUri(uri)
-  let attachment = await createMessageAttachmentFromCanvas(canvas)
+  let attachment = await createMessageAttachmentFromUri(uri)
   let embed = verifyUrl->embedFields->makeEmbed
   let row = makeLinkActionRow(verifyUrl)
   linkOptions(attachment, embed, row)
@@ -159,8 +145,7 @@ let unknownErrorMessage = async interaction => {
 let beforeSponsorMessageOptions = async (customId, uuid) => {
   let uri = `${brightIdAppDeeplink}/${uuid}`
   let verifyUrl = `${brightIdLinkVerificationEndpoint}/${uuid}`
-  let canvas = await makeCanvasFromUri(uri)
-  let attachment = await createMessageAttachmentFromCanvas(canvas)
+  let attachment = await createMessageAttachmentFromUri(uri)
   let row = makeBeforeSponsorActionRow(customId, verifyUrl)
   {
     "content": "Please scan this QR code in the BrightID app to link Discord. \n\n **__You can download the app on Android and iOS__** \n Android: <https://play.google.com/store/apps/details?id=org.brightid> \n\n iOS: <https://apps.apple.com/us/app/brightid/id1428946820> \n\n",
@@ -205,8 +190,7 @@ let handleUnverifiedGuildMember = async (errorNum, interaction, uuid) => {
     }
     let _ = await Interaction.editReply(interaction, ~options, ())
   }
-  }
-
+}
 
 let getAppUnusedSponsorships = async context => {
   switch await Services_AppInfo.getAppInfo(context) {
@@ -301,15 +285,12 @@ let execute = interaction => {
                   let _ = await noSponsorshipsMessage(interaction)
                   VerifyCommandError("Discord Bot has no available sponsorships")->raise
                 | Some(appUnusedSponsorships) =>
-                  switch (errorNum) {
-                  | (4) =>
-                    Console.log2(
-                      "App Sponsorships left: ",
-                      BigInt.toString(appUnusedSponsorships),
-                    )
+                  switch errorNum {
+                  | 4 =>
+                    Console.log2("App Sponsorships left: ", BigInt.toString(appUnusedSponsorships))
                     let options = await beforeSponsorMessageOptions("before-premium-sponsor", uuid)
                     let _ = await Interaction.editReply(interaction, ~options, ())
-                  | (_) =>
+                  | _ =>
                     let _ = switch await handleUnverifiedGuildMember(errorNum, interaction, uuid) {
                     | data => Some(data)
                     | exception JsError(obj) =>
