@@ -4,7 +4,7 @@ import * as Caml_js_exceptions from "rescript/lib/es6/caml_js_exceptions.js";
 import * as Builders from "@discordjs/builders";
 
 var helpMessage = "\
-__**Available BrightId Unique Bot commands:**__\n\n- \`/verify\` → Sends a BrightID QR code for users to connect with their BrightId.\n\n\n";
+__**Available BrightId Unique Bot commands:**__\n\n- \`/verify\` → Sends a BrightID QR code for users to connect with their BrightId.\n\n[Privacy Policy](https://github.com/ShenaniganDApp/brightid-discord-bot/blob/master/PRIVACY.md)\n\n";
 
 var data = new Builders.SlashCommandBuilder().setName("help").setDescription("Explain the BrightId bot commands");
 
