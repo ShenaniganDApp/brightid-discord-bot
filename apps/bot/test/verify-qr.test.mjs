@@ -29,7 +29,7 @@ const {
 } = await import('../src/commands/Commands_Verify.mjs')
 
 const uuid = '17b91b76-e55d-4eab-b592-3bd5fa2d8c11'
-const expectedUri = `brightid://link-verification/http:%2f%2fnode.brightid.org/Discord/${uuid}`
+const expectedUri = `brightid://link-verification/https:%2f%2faura-node.brightid.org/Discord/${uuid}`
 
 for (const [name, makeOptions] of [
   ['verification', () => makeLinkOptions(uuid)],

@@ -91,14 +91,6 @@ module Operations = {
   type data = {data: t}
 }
 
-@module("brightid_sdk_v5")
-external sponsor: (~key: string, ~context: string, ~contextId: string) => Promise.t<JSON.t> =
-  "sponsor"
-
-@module("brightid_sdk_v5")
-external availableSponsorships: (~context: string) => Promise.t<JSON.t> =
-  "availableSponsorships"
-
 //@Todo:  rename this to contract name (IdSponsorships)
 module SPContract = {
   type t

@@ -68,7 +68,7 @@ let handleUnverifiedGuildMember = (errorNum, interaction) => {
 
   | 3 =>
     let options = {
-      "content": "Please scan the above QR code in the BrightID mobile app",
+      "content": "Your BrightID is linked, but it has not completed the required verification. Check your status in the BrightID app and attend a verification party: https://www.brightid.org/meet",
       "ephemeral": true,
     }
     interaction->Interaction.followUp(~options, ())->then(_ => resolve())
@@ -124,7 +124,7 @@ let execute = interaction => {
               let contextIdsLength = contextIds->Array.length
               switch (contextIdsLength, unique) {
               | (_, true) =>
-                let guildRole = roleId->getRolebyRoleId(guildRoleManager, _)
+                let guildRole = roleId->(getRolebyRoleId(guildRoleManager, _))
                 guildRole
                 ->addRoleToMember(member)
                 ->then(
@@ -145,7 +145,7 @@ let execute = interaction => {
                 interaction->Interaction.followUp(~options, ())->then(_ => resolve())
               | (_, false) =>
                 let options = {
-                  "content": "Hey, I recognize you, but your account seems to be linked to a possible sybil attack. You are not properly BrightID verified. If this is a mistake, contact one of the support channels",
+                  "content": "Your Discord account is linked, but its BrightID verification is not currently valid. Check your verification status in the BrightID app or contact BrightID support.",
                   "ephemeral": true,
                 }
                 interaction
@@ -170,9 +170,15 @@ let execute = interaction => {
               }
               let _ = await Interaction.followUp(interaction, ~options, ())
               JsError(obj)->raise
-            | Exceptions.BrightIdError({errorNum}) =>
-              let _ = await errorNum->handleUnverifiedGuildMember(interaction)
-            | _ => e->raise
+            | Exceptions.BrightIdError(error) if Exceptions.isUnverifiedError(error) =>
+              let _ = await error.errorNum->handleUnverifiedGuildMember(interaction)
+            | _ =>
+              let options = {
+                "content": "BrightID verification could not be checked. Please try again later.",
+                "ephemeral": true,
+              }
+              let _ = await Interaction.followUp(interaction, ~options, ())
+              raise(e)
             }
           },
         )

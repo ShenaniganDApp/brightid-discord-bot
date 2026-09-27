@@ -14,6 +14,20 @@ var SponsorButtonError = /* @__PURE__ */Caml_exceptions.create("Exceptions.Spons
 
 var PremiumSponsorButtonError = /* @__PURE__ */Caml_exceptions.create("Exceptions.PremiumSponsorButtonError");
 
+function isUnverifiedError(error) {
+  if (error.error) {
+    if (error.code === 403 && (error.errorNum === 2 || error.errorNum === 3 || error.errorNum === 4)) {
+      return true;
+    } else if (error.code === 404) {
+      return error.errorNum === 2;
+    } else {
+      return false;
+    }
+  } else {
+    return false;
+  }
+}
+
 export {
   BrightIdError ,
   VerifyCommandError ,
@@ -21,5 +35,6 @@ export {
   ButtonVerifyHandlerError ,
   SponsorButtonError ,
   PremiumSponsorButtonError ,
+  isUnverifiedError ,
 }
 /* No side effect */

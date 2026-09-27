@@ -162,32 +162,35 @@ async function noSponsorshipsMessage(interaction) {
 }
 
 async function handleUnverifiedGuildMember(errorNum, interaction, uuid) {
-  if (errorNum === 3 || errorNum === 2) {
-    var options = await makeLinkOptions(uuid);
-    await interaction.editReply(options);
+  if (errorNum !== 2) {
+    if (errorNum !== 3) {
+      var options = {
+        content: "Something unexpected happened. Please try again later.",
+        ephemeral: true
+      };
+      await interaction.editReply(options);
+      return ;
+    }
+    var options$1 = {
+      content: "Your BrightID is linked, but it has not completed the required verification. Check your status in the BrightID app and attend a verification party: https://www.brightid.org/meet",
+      ephemeral: true
+    };
+    await interaction.editReply(options$1);
     return ;
   }
-  var options$1 = {
-    content: "Something unexpected happened. Please try again later.",
-    ephemeral: true
-  };
-  await interaction.editReply(options$1);
+  var options$2 = await makeLinkOptions(uuid);
+  await interaction.editReply(options$2);
 }
 
 async function getAppUnusedSponsorships(context) {
   var data;
   try {
-    data = await Services_AppInfo.getAppInfo(context);
+    data = await Services_AppInfo.getAppInfo(undefined, context);
   }
-  catch (raw_exn){
-    var exn = Caml_js_exceptions.internalToOCamlException(raw_exn);
-    if (exn.RE_EXN_ID === Exceptions.BrightIdError) {
-      return ;
-    }
-    if (exn.RE_EXN_ID === "JsError") {
-      return ;
-    }
-    throw exn;
+  catch (raw_error){
+    var error = Caml_js_exceptions.internalToOCamlException(raw_error);
+    console.error("Failed to retrieve BrightID sponsorship availability", error);
+    return ;
   }
   return BigInt(data.unusedSponsorships);
 }
@@ -209,7 +212,8 @@ function execute(interaction) {
                                 if (roleId !== undefined) {
                                   var guildRole = getRolebyRoleId(guildRoleManager, roleId);
                                   return Core__Promise.$$catch(Services_VerificationInfo.getBrightIdVerification(member).then(function (verificationInfo) {
-                                                  if (verificationInfo._0.unique) {
+                                                  var match = verificationInfo._0;
+                                                  if (match.unique) {
                                                     return addRoleToMember(guildRole, member).then(function (param) {
                                                                 var options = {
                                                                   content: "Hey, I recognize you! I just gave you the \`" + guildRole.name + "\` role. You are now BrightID verified in " + guild.name + " server!",
@@ -220,8 +224,15 @@ function execute(interaction) {
                                                                           });
                                                               });
                                                   }
+                                                  if (match.contextIds.length === 0) {
+                                                    return makeLinkOptions(uuid).then(function (options) {
+                                                                  return interaction.editReply(options);
+                                                                }).then(function (param) {
+                                                                return Promise.resolve();
+                                                              });
+                                                  }
                                                   var options = {
-                                                    content: "Hey, I recognize you, but your account seems to be linked to a sybil attack. You have multiple Discord accounts on the same BrightID. If this is a mistake, contact one of the support channels. ",
+                                                    content: "Your Discord account is linked, but its BrightID verification is not currently valid. Check your verification status in the BrightID app or contact BrightID support.",
                                                     ephemeral: true
                                                   };
                                                   return interaction.editReply(options).then(function (param) {
@@ -232,43 +243,28 @@ function execute(interaction) {
                                                             });
                                                 }), (async function (e) {
                                                 if (e.RE_EXN_ID === Exceptions.BrightIdError) {
-                                                  var errorNum = e._1.errorNum;
-                                                  var appUnusedSponsorships = await getAppUnusedSponsorships(Constants$Shared.context);
-                                                  if (appUnusedSponsorships !== undefined) {
-                                                    if (errorNum !== 4) {
-                                                      var exit = 0;
-                                                      var data;
-                                                      try {
-                                                        data = await handleUnverifiedGuildMember(errorNum, interaction, uuid);
-                                                        exit = 1;
+                                                  var error = e._1;
+                                                  if (error.errorNum === 4 && Exceptions.isUnverifiedError(error)) {
+                                                    var available = await getAppUnusedSponsorships(Constants$Shared.context);
+                                                    if (available !== undefined) {
+                                                      if (available <= BigInt(0)) {
+                                                        await noSponsorshipsMessage(interaction);
+                                                        return ;
                                                       }
-                                                      catch (raw_obj){
-                                                        var obj = Caml_js_exceptions.internalToOCamlException(raw_obj);
-                                                        if (obj.RE_EXN_ID === "JsError") {
-                                                          console.error(obj._1);
-                                                          throw {
-                                                                RE_EXN_ID: Exceptions.VerifyCommandError,
-                                                                _1: "Unknown JS Error",
-                                                                Error: new Error()
-                                                              };
-                                                        }
-                                                        throw obj;
-                                                      }
-                                                      exit === 1;
+                                                      var options = await beforeSponsorMessageOptions("before-premium-sponsor", uuid);
+                                                      await interaction.editReply(options);
                                                       return ;
                                                     }
-                                                    console.log("App Sponsorships left: ", appUnusedSponsorships.toString());
-                                                    var options = await beforeSponsorMessageOptions("before-premium-sponsor", uuid);
-                                                    await interaction.editReply(options);
+                                                    await unknownErrorMessage(interaction);
                                                     return ;
                                                   }
-                                                  await noSponsorshipsMessage(interaction);
-                                                  throw {
-                                                        RE_EXN_ID: Exceptions.VerifyCommandError,
-                                                        _1: "Discord Bot has no available sponsorships",
-                                                        Error: new Error()
-                                                      };
+                                                  if (Exceptions.isUnverifiedError(error)) {
+                                                    return await handleUnverifiedGuildMember(error.errorNum, interaction, uuid);
+                                                  }
+                                                  await unknownErrorMessage(interaction);
+                                                  throw e;
                                                 }
+                                                await unknownErrorMessage(interaction);
                                                 throw e;
                                               }));
                                 }

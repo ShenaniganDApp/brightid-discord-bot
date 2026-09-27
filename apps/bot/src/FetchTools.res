@@ -9,32 +9,66 @@ type node = {
 }
 
 exception NoRes
+exception HttpError(int)
 
-let rec fetchWithFallback = async (~relativeUrl, ~nodeIndex=0, defaultNode, fallbackNodes) => {
-  let sortedNodes =
-    nodeIndex > 0 ? fallbackNodes->Array.toSorted((a, b) => a.priority > b.priority ? 1. : -1.) : []
-  try {
-    let node =
-      sortedNodes->Array.get(nodeIndex)->Option.mapOr(defaultNode, node => Some(node))
-    switch node {
-    | None => None
-    | Some(node) =>
-      let timeout = node.timeout->Option.getOr(1000)
-      let response = await fetch(
-        `${node.url}${relativeUrl}`,
-        {
-          "timeout": timeout,
-          "method": "GET",
-          "headers": {"Content-Type": "application/json", "Accept": "application/json"},
-        },
-      )
-      if response->Response.status === 404 {
-        raise(NoRes)
-      }
-
-      Some(response)
-    }
-  } catch {
-  | _ => await fetchWithFallback(~relativeUrl, ~nodeIndex=nodeIndex + 1, defaultNode, fallbackNodes)
+let fetchWithFallback = async (~relativeUrl, defaultNode, fallbackNodes) => {
+  let nodes = switch defaultNode {
+  | None => fallbackNodes
+  | Some(node) => [node, ...fallbackNodes->Array.filter(other => other.url !== node.url)]
   }
+  let rec attempt = async index => {
+    switch nodes->Array.get(index) {
+    | None => raise(NoRes)
+    | Some(node) =>
+      try {
+        let timeout = node.timeout->Option.getOr(10000)
+        let response = await fetch(
+          `${node.url}${relativeUrl}`,
+          {
+            "timeout": timeout,
+            "method": "GET",
+            "headers": {"Content-Type": "application/json", "Accept": "application/json"},
+          },
+        )
+        let status = response->Response.status
+        if status >= 500 || status === 429 {
+          raise(HttpError(status))
+        }
+
+        Some(response)
+      } catch {
+      | _ => await attempt(index + 1)
+      }
+    }
+  }
+  await attempt(0)
+}
+
+let decodeResponse = (json, decoder) => {
+  switch Json.decode(json, Shared.Decode.Decode_BrightId.Error.data) {
+  | Ok(error) if error.error && (error.code >= 500 || error.code === 429) =>
+    raise(HttpError(error.code))
+  | Ok(error) if error.error => raise(Exceptions.BrightIdError(error))
+  | _ =>
+    switch Json.decode(json, decoder) {
+    | Ok(data) => data
+    | Error(error) => raise(Json.Decode.DecodeError(error))
+    }
+  }
+}
+
+let fetchJson = async (~relativeUrl, nodes) => {
+  let response = switch await fetchWithFallback(~relativeUrl, nodes->Array.get(0), nodes) {
+  | None => raise(NoRes)
+  | Some(response) => response
+  }
+  let json = await Response.json(response)
+  let status = response->Response.status
+  if status >= 400 {
+    switch Json.decode(json, Shared.Decode.Decode_BrightId.Error.data) {
+    | Ok(error) if error.error && error.code === status => raise(Exceptions.BrightIdError(error))
+    | _ => raise(HttpError(status))
+    }
+  }
+  json
 }

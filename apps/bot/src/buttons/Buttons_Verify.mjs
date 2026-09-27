@@ -83,7 +83,7 @@ function handleUnverifiedGuildMember(errorNum, interaction) {
                   });
     case 3 :
         var options$1 = {
-          content: "Please scan the above QR code in the BrightID mobile app",
+          content: "Your BrightID is linked, but it has not completed the required verification. Check your status in the BrightID app and attend a verification party: https://www.brightid.org/meet",
           ephemeral: true
         };
         return interaction.followUp(options$1).then(function (param) {
@@ -140,7 +140,7 @@ function execute(interaction) {
                                             }
                                             if (contextIdsLength !== 0) {
                                               var options = {
-                                                content: "Hey, I recognize you, but your account seems to be linked to a possible sybil attack. You are not properly BrightID verified. If this is a mistake, contact one of the support channels",
+                                                content: "Your Discord account is linked, but its BrightID verification is not currently valid. Check your verification status in the BrightID app or contact BrightID support.",
                                                 ephemeral: true
                                               };
                                               return interaction.followUp(options).then(function (param) {
@@ -171,9 +171,18 @@ function execute(interaction) {
                                                 };
                                           }
                                           if (e.RE_EXN_ID === Exceptions.BrightIdError) {
-                                            await handleUnverifiedGuildMember(e._1.errorNum, interaction);
-                                            return ;
+                                            var error = e._1;
+                                            if (Exceptions.isUnverifiedError(error)) {
+                                              await handleUnverifiedGuildMember(error.errorNum, interaction);
+                                              return ;
+                                            }
+
                                           }
+                                          var options$1 = {
+                                            content: "BrightID verification could not be checked. Please try again later.",
+                                            ephemeral: true
+                                          };
+                                          await interaction.followUp(options$1);
                                           throw e;
                                         }));
                           }
