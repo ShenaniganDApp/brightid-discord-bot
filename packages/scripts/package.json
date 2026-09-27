@@ -6,8 +6,8 @@
   "type": "module",
   "private": true,
   "dependencies": {
-    "@brightidbot/shared": "./packages/shared",
-    "@brightidbot/utils": "./packages/utils"
+    "@brightidbot/shared": "*",
+    "@brightidbot/utils": "*"
   },
   "scripts": {
     "re:build": "rescript build",

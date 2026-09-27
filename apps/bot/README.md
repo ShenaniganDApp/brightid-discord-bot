@@ -19,7 +19,21 @@ Interacting with the bot is simple;
 
 ## Developer quick start
 
-`yarn` followed by `yarn bot dev` will launch the bot locally, with hot reloading included.
+Use Node.js 22 and the repository's bundled Yarn 1.18.0. Run these commands from the repository root:
+
+```sh
+nvm install
+nvm use
+yarn install --frozen-lockfile
+yarn bot rescript build -with-deps
+yarn bot dev
+```
+
+The repository uses the locally installed ReScript 11.1.0 compiler from `yarn.lock`, with `rescript.json` configuration and ES module output in `.mjs` files. Its ReScript 11 build commands remain in use; upgrading to ReScript 12 requires a separate language and dependency migration.
+
+Node.js 22 satisfies the [current ReScript installation prerequisites](https://rescript-lang.org/docs/manual/installation/). `.nvmrc`, the Node engine declarations, and `nixpacks.toml` select the same Node major version. Nixpacks deployments must not override `NIXPACKS_NODE_VERSION` with an older version in their service settings.
+
+Configure the required environment variables before starting the bot. `yarn bot dev` launches the bot with hot reloading; rebuild ReScript after source changes or run `yarn bot watch:rescript` in a separate terminal.
 
 There are a few other scripts provided:
 

@@ -18,8 +18,6 @@ import * as Caml_js_exceptions from "rescript/lib/es6/caml_js_exceptions.js";
 import * as Builders from "@discordjs/builders";
 import * as Services_VerificationInfo from "../services/Services_VerificationInfo.mjs";
 
-var abi = (import("../../../../packages/shared/src/abi/SP.json", {assert: {type: "json"}}).then((module) => module.default));
-
 var Canvas$1 = {};
 
 var QRCode = {};
@@ -327,7 +325,6 @@ export {
   context ,
   contractAddressID ,
   contractAddressETH ,
-  abi ,
   Canvas$1 as Canvas,
   QRCode ,
   envConfig ,
@@ -352,4 +349,4 @@ export {
   execute ,
   data ,
 }
-/* abi Not a pure module */
+/*  Not a pure module */

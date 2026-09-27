@@ -9,8 +9,6 @@ let {context, contractAddressID, contractAddressETH} = module(Constants)
 @val @scope("globalThis")
 external fetch: (string, 'params) => promise<Response.t<JSON.t>> = "fetch"
 
-let abi: ABI.t = %raw(`import("../../../../packages/shared/src/abi/SP.json", {assert: {type: "json"}}).then((module) => module.default)`)
-
 module Canvas = {
   type t
   @module("canvas") @scope("default")

@@ -6,8 +6,8 @@
   "scripts": {
     "lint": "npx eslint ./src",
     "test": "npx jest",
-    "start": "node --experimental-json-modules src/Bot.mjs ",
-    "dev": " nodemon --experimental-json-modules src/Bot.mjs",
+    "start": "node src/Bot.mjs",
+    "dev": "nodemon src/Bot.mjs",
     "build:rescript": "rescript build",
     "watch:rescript": "rescript build -w",
     "prettify": "prettier . --write",
@@ -20,11 +20,11 @@
     "prettier": "^2.1.2"
   },
   "engines":{
-    "node": ">=20.10.0"
+    "node": "22.x"
   },
   "dependencies": {
-    "@brightidbot/shared": "./packages/shared",
-    "@brightidbot/utils": "./packages/utils",
+    "@brightidbot/shared": "*",
+    "@brightidbot/utils": "*",
     "@discordjs/builders": "^0.13.0",
     "@discordjs/rest": "^0.4.1",
     "@glennsl/rescript-json-combinators": "^1.4.0",
