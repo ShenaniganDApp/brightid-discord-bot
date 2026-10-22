@@ -17,10 +17,10 @@ module.exports = {
   serverDependenciesToBundle: ['@rainbow-me/rainbowkit', /^@?wagmi.*/, /.*/],
   routes(defineRoutes) {
     return defineRoutes(route => {
-      route('/Root_FetchGuilds', './res-routes/Root_FetchGuilds.mjs')
+      route('/Root_FetchGuilds', './res-routes/Root_FetchGuilds.js')
       route(
         '/Root_FetchBrightIDDiscord',
-        './res-routes/Root_FetchBrightIDDiscord.mjs',
+        './res-routes/Root_FetchBrightIDDiscord.js',
       )
       // route(
       //   '/guilds/:guildId/Guilds_FetchGuild',
