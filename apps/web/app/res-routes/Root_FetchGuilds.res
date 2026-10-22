@@ -1,3 +1,5 @@
+module Promise = RescriptCore.Promise
+
 type loaderData = {
   user: Js.Nullable.t<RemixAuth.User.t>,
   userGuilds: array<Types.oauthGuild>,

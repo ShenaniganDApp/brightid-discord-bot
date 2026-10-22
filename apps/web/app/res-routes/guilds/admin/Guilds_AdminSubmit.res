@@ -1,3 +1,5 @@
+module Promise = RescriptCore.Promise
+
 open Promise
 
 exception EmptySubmit

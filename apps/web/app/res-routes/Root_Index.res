@@ -121,7 +121,11 @@ let loader: Remix.loaderFunction<loaderData> = async ({request}) => {
   switch maybeDiscordId {
   | Some(discordId) =>
     let contextId = UUID.v5(discordId, Remix.process["env"]["UUID_NAMESPACE"])
-    let deepLink = BrightId.generateDeeplink(~context=Shared.Constants.context, ~contextId, ())
+    let deepLink = BrightIDServer.generateDeeplink(
+      ~context=Shared.Constants.context,
+      ~contextId,
+      (),
+    )
     {maybeUser, maybeDeeplink: Some(deepLink)}
   | None => {maybeUser, maybeDeeplink: None}
   }

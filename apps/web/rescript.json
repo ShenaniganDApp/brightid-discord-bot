@@ -9,17 +9,19 @@
     "module": "esmodule",
     "in-source": true
   },
-  "suffix": ".js",
+  "suffix": ".mjs",
   "jsx": { "version": 4, "mode": "automatic" },
   "bs-dependencies": [
+    "@rescript/core",
     "@rescript/react",
     "rescript-remix",
+    "rescript-webapi",
     "@brightidbot/utils",
     "@glennsl/rescript-json-combinators",
     "@brightidbot/shared"
   ],
   "pinned-dependencies": ["@brightidbot/utils", "@brightidbot/shared"],
-  "bsc-flags": ["-open JsonCombinators"],
+  "bsc-flags": ["-open JsonCombinators", "-open Shared"],
   "warnings": {
     "error": "+101"
   }

@@ -1,3 +1,5 @@
+module Promise = RescriptCore.Promise
+
 type params = {guildId: string}
 type loaderData = {
   maybeUser: option<RemixAuth.User.t>,
@@ -237,19 +239,23 @@ let default = () => {
         {"Loading..."->React.string}
       </p>}>
       <Await resolve={maybeDiscordGuild}>
-        {(discordGuild: Types.guild) =>
-          <div className="flex gap-6 w-full justify-start items-center p-4">
-            <img
-              className="rounded-full h-24"
-              src={discordGuild.icon
-              ->Belt.Option.map(icon =>
-                `https://cdn.discordapp.com/icons/${discordGuild.id}/${icon}.png`
-              )
-              ->Belt.Option.getWithDefault("")}
-            />
-            <p className="text-4xl font-bold text-white"> {discordGuild.name->React.string} </p>
-            {isAdmin ? <AdminButton guildId={discordGuild.id} /> : <> </>}
-          </div>}
+        {(maybeGuild: option<Types.guild>) =>
+          switch maybeGuild {
+          | None => React.null
+          | Some(discordGuild) =>
+            <div className="flex gap-6 w-full justify-start items-center p-4">
+              <img
+                className="rounded-full h-24"
+                src={discordGuild.icon
+                ->Belt.Option.map(icon =>
+                  `https://cdn.discordapp.com/icons/${discordGuild.id}/${icon}.png`
+                )
+                ->Belt.Option.getWithDefault("")}
+              />
+              <p className="text-4xl font-bold text-white"> {discordGuild.name->React.string} </p>
+              {isAdmin ? <AdminButton guildId={discordGuild.id} /> : <> </>}
+            </div>
+          }}
 
         // | None => <p className="text-3xl text-white font-poppins p-4"> {"Loading..."->React.string} </p>
 

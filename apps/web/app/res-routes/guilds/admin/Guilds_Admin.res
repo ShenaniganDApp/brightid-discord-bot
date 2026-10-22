@@ -1,3 +1,5 @@
+module Promise = RescriptCore.Promise
+
 open Shared
 exception NoBrightIdData
 

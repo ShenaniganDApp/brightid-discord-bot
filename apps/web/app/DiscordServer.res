@@ -1,3 +1,6 @@
+module Promise = RescriptCore.Promise
+
+open Types
 open Promise
 
 exception DiscordRateLimited
@@ -121,7 +124,7 @@ let rec fetchBotGuilds = (~after=0, ~allGuilds=[], ()): Promise.t<array<Types.oa
   ->fetchWithRequest
   ->then(res => res->Response.json)
   ->then(json => {
-    switch json->Js.Json.test(Js.Json.Array) {
+    switch json->Js.Json.test(Js.Json.Kind.Array) {
     | false => {
         let rateLimit = json->Js.Json.decodeObject->Belt.Option.getUnsafe
 
@@ -177,7 +180,7 @@ let rec fetchBotGuildsLimit = (~after): Promise.t<guildsCursor> => {
     ->fetchWithRequest
     ->then(res => res->Response.json)
     ->then(json => {
-      switch json->Js.Json.test(Js.Json.Array) {
+      switch json->Js.Json.test(Js.Json.Kind.Array) {
       | false => {
           let rateLimit = json->Js.Json.decodeObject->Belt.Option.getUnsafe
 
@@ -224,7 +227,7 @@ let rec fetchUserGuilds = (user: RemixAuth.User.t) => {
   ->fetchWithRequest
   ->then(res => res->Response.json)
   ->then(json =>
-    switch json->Js.Json.test(Js.Json.Array) {
+    switch json->Js.Json.test(Js.Json.Kind.Array) {
     | false => {
         let rateLimit = json->Js.Json.decodeObject->Belt.Option.getUnsafe
 
@@ -295,7 +298,7 @@ let rec fetchGuildRoles = (~guildId) => {
   ->fetchWithRequest
   ->then(res => res->Response.json)
   ->then(json =>
-    switch json->Js.Json.test(Js.Json.Array) {
+    switch json->Js.Json.test(Js.Json.Kind.Array) {
     | false => {
         let rateLimit = json->Js.Json.decodeObject->Belt.Option.getUnsafe
 
