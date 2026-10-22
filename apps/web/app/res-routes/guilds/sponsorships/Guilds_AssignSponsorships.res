@@ -25,7 +25,7 @@ module Modal = {
 }
 
 module Lottie = {
-  @react.component @module("react-lottie")
+  @react.component @module("~/components/Lottie")
   external make: (
     ~options: {
       "animationData": Js.Json.t,

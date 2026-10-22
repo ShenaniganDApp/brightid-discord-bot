@@ -1,3 +1,5 @@
+module Promise = RescriptCore.Promise
+
 let clientID = Remix.process["env"]["DISCORD_CLIENT_ID"]
 let clientSecret = Remix.process["env"]["DISCORD_CLIENT_SECRET"]
 let baseUrl = Remix.process["env"]["BASE_URL"]
@@ -17,7 +19,7 @@ let cookie = Remix.createCookieWithOptions("__session", cookieOptions)
 let sessionStorage =
   cookie
   ->Remix.CreateCookieSessionStorageOptions.make(~cookie=_)
-  ->Remix.createCookieSessionStorageWithOptions(~options=_)
+  ->(Remix.createCookieSessionStorageWithOptions(~options=_))
 
 let authenticator = sessionStorage->RemixAuth.Authenticator.make
 

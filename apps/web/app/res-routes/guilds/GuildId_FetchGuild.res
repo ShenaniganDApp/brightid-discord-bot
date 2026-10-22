@@ -1,3 +1,5 @@
+module Promise = RescriptCore.Promise
+
 open Shared
 type loaderData = {
   maybeDiscordGuild: option<Types.guild>,

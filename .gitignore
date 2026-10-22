@@ -111,3 +111,5 @@ lib
 .VSCodeCounter
 .vercel
 .DS_Store
+# Web modules are generated before the Remix build
+/apps/web/app/**/*.mjs

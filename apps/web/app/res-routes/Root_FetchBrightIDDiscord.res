@@ -69,7 +69,7 @@ let loader: Remix.loaderFunction<loaderData> = async ({request}) => {
   | Some(existingUser) => {
       let userId = existingUser->RemixAuth.User.getProfile->RemixAuth.User.getId
       let contextId = userId->UUID.v5(uuidNamespace)
-      let json = await BrightId.verifyContextId(~context, ~contextId, ())
+      let json = await BrightIDServer.verifyContextId(~context, ~contextId, ())
 
       let unique =
         json

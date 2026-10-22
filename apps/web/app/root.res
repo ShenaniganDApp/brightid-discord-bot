@@ -1,3 +1,5 @@
+module Promise = RescriptCore.Promise
+
 %%raw(`import rainbowKit from "@rainbow-me/rainbowkit/styles.css"`)
 %%raw(`import proSidebar from "react-pro-sidebar/dist/css/styles.css"`)
 %%raw(`
@@ -250,22 +252,3 @@ let default = () => {
     </body>
   </html>
 }
-
-%%raw(`
-export function ErrorBoundary({ error }) {
-  console.error(error);
-  return (
-    <html>
-      <head>
-        <title>Oh no!</title>
-        <React$1.Meta />
-        <React$1.Links />
-      </head>
-      <body>
-        <p className="text-center">Something went wrong!</p>
-        <p className="text-center">BrightID command center is still in Beta. Try reloading the page!</p>
-        <React$1.Scripts />
-      </body>
-    </html>
-  );
-}`)

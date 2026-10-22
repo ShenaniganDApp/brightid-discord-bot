@@ -1,3 +1,5 @@
+module Promise = RescriptCore.Promise
+
 open Promise
 
 type loaderData = RemixAuth.User.t

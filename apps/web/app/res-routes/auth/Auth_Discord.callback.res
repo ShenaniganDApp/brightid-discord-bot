@@ -1,3 +1,5 @@
+module Promise = RescriptCore.Promise
+
 type loaderData = RemixAuth.User.t
 
 let loader: Remix.loaderFunction<loaderData> = ({request}): Promise.t<loaderData> => {

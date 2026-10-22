@@ -1,3 +1,5 @@
+module Promise = RescriptCore.Promise
+
 open Webapi
 open Promise
 
@@ -15,11 +17,11 @@ module Decode = {
 
   let content = field =>
     {
-      "content": field.required(. "content", string),
+      "content": field.required("content", string),
     }
 
   let files = field => {
-    files: content->object->dict->field.required(. "files", _),
+    files: content->object->dict->(field.required("files", _)),
   }
 
   let gist = files->object

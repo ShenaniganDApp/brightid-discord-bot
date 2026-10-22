@@ -1,6 +1,6 @@
 import GuildsSponsor_Res, {
   links,
-} from '~/res-routes/guilds/sponsorships/Guilds_AssignSponsorships.js'
+} from '~/res-routes/guilds/sponsorships/Guilds_AssignSponsorships.mjs'
 
 export default props => {
   return <GuildsSponsor_Res {...props} />
