@@ -19,7 +19,7 @@ Interacting with the bot is simple;
 
 ## Developer quick start
 
-Use Node.js 22 and the repository's bundled Yarn 1.18.0. Run these commands from the repository root:
+Use Node.js 24.22.1 and the repository's bundled Yarn 1.18.0. Run these commands from the repository root:
 
 ```sh
 nvm install
@@ -39,7 +39,7 @@ The bot retains BrightID v5 verification and sponsorship requests because existi
 
 The bot uses its own HTTP transport and does not depend on the BrightID SDK. Existing Discord account links remain on v5. `yarn bot test:brightid` covers Aura endpoint configuration, v5 response decoding, node failover, bounded failures, account matching, and user messages.
 
-Node.js 22 satisfies the [current ReScript installation prerequisites](https://rescript-lang.org/docs/manual/installation/). `.nvmrc`, the Node engine declarations, and `nixpacks.toml` select the same Node major version. Nixpacks deployments must not override `NIXPACKS_NODE_VERSION` with an older version in their service settings.
+Node.js 24.22.1 includes the fix for [CVE-2026-111497](https://nodejs.org/en/blog/vulnerability/october-2026-security-releases). `.nvmrc`, the Node engine declarations, and `nixpacks.toml` specify this version. Nixpacks resolves Node versions to a major-version package from its Nixpkgs archive, so its configuration alone does not guarantee the patch version. The exact engine requirement makes Yarn reject a different runtime; deployments need an archive or build environment that provides 24.22.1. Service settings must not override the version or disable Yarn's engine checks. Rebuild and redeploy existing services, then verify `node --version` in the running service.
 
 Configure the required environment variables before starting the bot. `yarn bot dev` launches the bot with hot reloading; rebuild ReScript after source changes or run `yarn bot watch:rescript` in a separate terminal.
 

@@ -29,7 +29,7 @@
     "shared": "yarn workspace @brightidbot/shared"
   },
   "engines":{
-    "node": "22.x"
+    "node": "24.22.1"
   },
   "workspaces": [
     "apps/*",

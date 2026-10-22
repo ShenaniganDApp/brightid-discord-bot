@@ -50,7 +50,7 @@
     "tailwindcss": "^3.0.24"
   },
   "engines": {
-    "node": ">=14"
+    "node": "24.22.1"
   },
   "sideEffects": false
 }
